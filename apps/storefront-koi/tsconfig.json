@@ -1,0 +1,45 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    /* The kit's helpers import each other with an explicit `.ts`, because their
+       tests run under `node --experimental-strip-types`, which resolves the
+       specifier literally and reads no tsconfig. */
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [{ "name": "next" }],
+    /* This app's own `@types` only. Without it TS also auto-includes the repo
+       root's, which pins React 18 for the admin/vendor panels — two React
+       typings in one program is every `ExoticComponent cannot be used as a JSX
+       component` error at once. */
+    "typeRoots": ["./node_modules/@types"],
+    /* The repo root pins `@types/react@18` (the admin/vendor panels' React), and
+       TS merges every `@types` dir it finds on the way up — so a dependency that
+       resolves `react` from the root gets 18's JSX types and every `<Suspense>`
+       in this app fails to typecheck. Pinning the specifier sends them all to
+       this app's own React 19 types. */
+    "paths": {
+      "@/*": ["./src/*"],
+      "react": ["./node_modules/@types/react"],
+      "react-dom": ["./node_modules/@types/react-dom"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
+}
