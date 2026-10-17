@@ -9,7 +9,13 @@
         ".env*",
         "$TURBO_ROOT$/packages/api/medusa-config.ts"
       ],
-      "env": ["NODE_ENV", "MERCUR_BACKEND_URL", "VITE_MERCUR_BACKEND_URL"],
+      "env": [
+        "NODE_ENV",
+        "MERCUR_BACKEND_URL",
+        "VITE_MERCUR_BACKEND_URL",
+        "MEDUSA_BACKEND_URL",
+        "NEXT_PUBLIC_*"
+      ],
       "outputs": [".next/**", "!.next/cache/**", ".medusa/**", "dist/**"]
     },
     "lint": {
