@@ -3,7 +3,7 @@ import type {
   GoodsSort,
   Product,
   SimpleProduct,
-} from "@/components/types/product"
+} from "@/types/product"
 import type { CountdownTarget } from "@/hooks/use-countdown"
 
 /** One page of a filtered feed, plus what the controls need to describe it. */

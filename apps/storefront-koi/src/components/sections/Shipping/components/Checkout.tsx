@@ -4,14 +4,14 @@ import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 
-import { ROUTES } from '@/components/constant/routes';
-import { ShippingPage } from '@/components/pages/shipping';
-import type { HeaderAccount, HeaderCart } from '@/components/types/header';
+import { ROUTES } from '@/const/routes';
+import { ShippingPage } from '@/components/sections/Shipping/components/ShippingPage';
+import type { HeaderAccount, HeaderCart } from '@/types/header';
 import type {
   ShippingAddress,
   ShippingDate,
   ShippingParcel
-} from '@/components/types/shipping';
+} from '@/types/shipping';
 import { setShippingMethod } from '@/lib/data/cart';
 
 /**

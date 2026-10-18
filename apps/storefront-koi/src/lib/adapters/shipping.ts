@@ -4,7 +4,7 @@ import type {
   ShippingAddress,
   ShippingOption,
   ShippingParcel
-} from '@/components/types/shipping';
+} from '@/types/shipping';
 import type { StoreCardShippingMethod } from '@/lib/data/fulfillment';
 
 import { toCartLines } from './cart';

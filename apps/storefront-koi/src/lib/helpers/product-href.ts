@@ -1,5 +1,5 @@
-import { goodHref, koiHref, lotHref } from "@/components/constant/routes"
-import type { Product } from "@/components/types/product"
+import { goodHref, koiHref, lotHref } from "@/const/routes"
+import type { Product } from "@/types/product"
 
 /**
  * Where a product's own page is, by kind.

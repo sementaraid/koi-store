@@ -11,7 +11,7 @@ import type {
   SimpleProduct,
   StockLevel,
   SupplyStock
-} from '@/components/types/product';
+} from '@/types/product';
 
 /**
  * Medusa/Mercur reads → the koi kit's presentation type.

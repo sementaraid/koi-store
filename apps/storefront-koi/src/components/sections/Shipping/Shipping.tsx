@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 
-import { ROUTES } from '@/components/constant/routes';
+import { ROUTES } from '@/const/routes';
 import { shippingDates } from '@/lib/helpers/shipping-date';
 import {
   toShippingAddresses,

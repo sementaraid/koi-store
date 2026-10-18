@@ -1,10 +1,10 @@
 'use client';
 
-import { Auctions } from '@/components/pages/auctions';
-import { DEFAULT_AUCTION_FILTER } from '@/components/constant/auctions';
-import type { HeaderAccount, HeaderCart } from '@/components/types/header';
+import { Auctions } from '@/components/sections/AuctionsPage/components/Auctions';
+import { DEFAULT_AUCTION_FILTER } from '@/const/auctions';
+import type { HeaderAccount, HeaderCart } from '@/types/header';
 import { useFeedSearch } from '@/hooks/use-feed-search';
-import type { AuctionStatus } from '@/components/types/product';
+import type { AuctionStatus } from '@/types/product';
 
 /**
  * The floor, with its filter and page held in the URL.

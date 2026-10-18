@@ -29,7 +29,11 @@ export const retrieveCustomer = async (): Promise<HttpTypes.StoreCustomer | null
 
   return await (sdk.store.customers.me
     .query({
-      fields: '*orders',
+      /* `*addresses` explicitly: the account's addresses page and the home
+         page's "Alamat utama" card both read `customer.addresses`, and a
+         relation that is only there by default is a relation that disappears
+         the day the default changes. */
+      fields: '*orders,*addresses',
       fetchOptions: { headers, next, cache: 'force-cache' }
     } as never) as unknown as Promise<{ customer: HttpTypes.StoreCustomer }>)
     .then(({ customer }) => customer ?? null)
@@ -187,12 +191,12 @@ export const addCustomerAddress = async (formData: FormData): Promise<any> => {
     });
 };
 
-export const deleteCustomerAddress = async (addressId: string): Promise<void> => {
+export const deleteCustomerAddress = async (addressId: string): Promise<any> => {
   const headers = {
     ...(await getAuthHeaders())
   };
 
-  await (sdk.store.customers.me.addresses.$addressId
+  return (sdk.store.customers.me.addresses.$addressId
     .delete({ $addressId: addressId, fetchOptions: { headers } } as never) as unknown as Promise<unknown>)
     .then(async () => {
       const customerCacheTag = await getCacheTag('customers');

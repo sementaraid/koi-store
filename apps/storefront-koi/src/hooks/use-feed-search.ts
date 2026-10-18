@@ -3,7 +3,7 @@
 import { useCallback } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
-import type { GoodsFilter } from '@/components/types/product';
+import type { GoodsFilter } from '@/types/product';
 
 /**
  * A feed's filter and page, read from and written to the URL.

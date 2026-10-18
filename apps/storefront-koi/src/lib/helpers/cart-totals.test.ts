@@ -6,7 +6,7 @@ import { test } from "node:test"
 import type {
   AuctionProduct,
   SimpleProduct,
-} from "../../components/types/product.ts"
+} from "../../types/product.ts"
 
 import { cartTotals, isCounted, lineTotal, settlement } from "./cart-totals.ts"
 

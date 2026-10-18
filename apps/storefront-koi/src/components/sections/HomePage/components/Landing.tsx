@@ -1,7 +1,7 @@
 'use client';
 
-import { Home } from '@/components/pages/homepage';
-import type { HeaderAccount } from '@/components/types/header';
+import { Home } from '@/components/sections/HomePage/components/Home';
+import type { HeaderAccount } from '@/types/header';
 
 /**
  * The front page's client boundary.

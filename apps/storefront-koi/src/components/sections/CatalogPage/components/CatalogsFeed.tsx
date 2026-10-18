@@ -1,9 +1,9 @@
 'use client';
 
-import { DEFAULT_CATALOG_FILTER } from '@/components/constant/catalog';
-import { Catalogs } from '@/components/pages/catalogs';
-import type { HeaderAccount, HeaderCart } from '@/components/types/header';
-import type { Availability, SimpleProduct } from '@/components/types/product';
+import { DEFAULT_CATALOG_FILTER } from '@/const/catalog';
+import { Catalogs } from '@/components/sections/CatalogPage/components/Catalogs';
+import type { HeaderAccount, HeaderCart } from '@/types/header';
+import type { Availability, SimpleProduct } from '@/types/product';
 import { useFeedSearch } from '@/hooks/use-feed-search';
 
 /**

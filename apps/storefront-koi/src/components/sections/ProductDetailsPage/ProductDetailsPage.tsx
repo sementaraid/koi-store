@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 
 import { SHELF_LIMIT } from '@/const';
-import type { MediaItem } from '@/components/types/product-page';
+import type { MediaItem } from '@/types/product-page';
 import { toSimpleProduct, toSimpleProducts } from '@/lib/adapters/product';
 import { listOffers } from '@/lib/data/offers';
 import { listProducts } from '@/lib/data/products';

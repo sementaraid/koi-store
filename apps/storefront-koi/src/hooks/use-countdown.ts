@@ -32,11 +32,18 @@ export function useCountdown(endAt?: CountdownTarget): number | null {
   /* The clock ticks a `now`, and the answer is *derived* from it during render.
      That keeps the countdown correct the moment a lot is extended, with no
      effect writing state to re-sync, and it exits early when `endAt` is
-     omitted — no timer for a card with no deadline. */
-  const [now, setNow] = React.useState(() => Date.now())
+     omitted — no timer for a card with no deadline.
+
+     `now` starts null so server and first client render agree: a clock read
+     during SSR is stale by the time the browser hydrates, and the differing
+     text is a hydration error. The first tick lands on mount instead. */
+  const [now, setNow] = React.useState<number | null>(null)
 
   React.useEffect(() => {
-    if (target === undefined || target <= Date.now()) return
+    if (target === undefined) return
+
+    setNow(Date.now())
+    if (target <= Date.now()) return
 
     const id = setInterval(() => {
       setNow(Date.now())
@@ -47,5 +54,5 @@ export function useCountdown(endAt?: CountdownTarget): number | null {
     return () => clearInterval(id)
   }, [target])
 
-  return target === undefined ? null : target - now
+  return target === undefined || now === null ? null : target - now
 }

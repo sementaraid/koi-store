@@ -5,10 +5,10 @@ import { notFound } from 'next/navigation';
 import {
   DEFAULT_AUCTION_FILTER,
   DEFAULT_AUCTION_LOTS
-} from '@/components/constant/auctions';
-import { LotPage } from '@/components/pages/lot';
-import type { HeaderAccount, HeaderCart } from '@/components/types/header';
-import type { AuctionStatus } from '@/components/types/product';
+} from '@/const/auctions';
+import { LotPage } from '@/components/sections/LotDetailsPage/components/LotPage';
+import type { HeaderAccount, HeaderCart } from '@/types/header';
+import type { AuctionStatus } from '@/types/product';
 import { useFeedSearch } from '@/hooks/use-feed-search';
 
 /**

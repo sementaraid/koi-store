@@ -1,7 +1,7 @@
 import type { HttpTypes } from '@medusajs/types';
 
-import type { CartLine } from '@/components/types/cart';
-import type { SimpleProduct } from '@/components/types/product';
+import type { CartLine } from '@/types/cart';
+import type { SimpleProduct } from '@/types/product';
 
 import { toSupplyStock } from './product';
 
