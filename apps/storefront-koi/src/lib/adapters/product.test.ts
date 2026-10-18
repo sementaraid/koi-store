@@ -4,6 +4,7 @@ import { test } from "node:test"
 /* Relative paths only, same reason as the helper tests: the runner strips types
    without reading tsconfig, so `@/` does not resolve. Type-only imports erase. */
 import { toSimpleProduct, toSupplyStock } from "./product.ts"
+import type { StoreOffer } from "../helpers/buybox.ts"
 
 /* What this mapping goes wrong at: quoting the wrong offer's money, reading an
    absent count as sold out, and a stock band off by one at its edges. */
@@ -14,7 +15,7 @@ const offer = (price: number, stock: number) => ({
   created_at: new Date(0),
   calculated_price: { calculated_amount: price, currency_code: "idr" },
   inventory_quantity: stock,
-})
+}) as unknown as StoreOffer
 
 const product = (over: Record<string, unknown> = {}) =>
   ({
@@ -62,7 +63,11 @@ test("stock bands at their edges", () => {
 
 test("maps seller, category and spec off the winner's offer", () => {
   const out = toSimpleProduct(product(), [
-    { ...offer(500, 3), sku: "SKU-1", seller: { name: "Sakai Farm" } },
+    {
+      ...offer(500, 3),
+      sku: "SKU-1",
+      seller: { name: "Sakai Farm" },
+    } as unknown as StoreOffer,
   ])
 
   assert.equal(out.listing?.seller, "Sakai Farm")

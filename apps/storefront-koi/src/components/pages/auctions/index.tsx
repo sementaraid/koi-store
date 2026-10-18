@@ -27,7 +27,7 @@ import {
   lotDeadline,
   lotPrice,
   lotStatus,
-} from "@/helper/filter-goods"
+} from "@/lib/helpers/filter-goods"
 
 export type {
   AuctionFilter,

@@ -21,8 +21,8 @@ import { RenderIf } from "@/components/module/render-if"
 import { SaleTerminal } from "@/components/module/sale-terminal"
 import type { SimpleProduct } from "@/components/types/product"
 import type { ProductPageProps } from "@/components/types/product-page"
-import { filterGoods, salePrice, saleStatus } from "@/helper/filter-goods"
-import { sessionLabel } from "@/helper/session-label"
+import { filterGoods, salePrice, saleStatus } from "@/lib/helpers/filter-goods"
+import { sessionLabel } from "@/lib/helpers/session-label"
 
 export type {
   MediaItem,

@@ -2,7 +2,7 @@ import type { ComponentProps } from "react"
 
 import type { FeedShell } from "@/components/types/product"
 import type { CartLine, CheckoutStep } from "@/components/types/cart"
-import type { Settlement } from "@/helper/cart-totals"
+import type { Settlement } from "@/lib/helpers/cart-totals"
 
 /**
  * A price the visitor can pick, as an option the house offers.

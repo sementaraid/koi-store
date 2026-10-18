@@ -23,8 +23,8 @@ import type {
   ShippingPageProps,
   ShippingParcel,
 } from "@/components/types/shipping"
-import { isCounted, settlement } from "@/helper/cart-totals"
-import { productHref } from "@/helper/product-href"
+import { isCounted, settlement } from "@/lib/helpers/cart-totals"
+import { productHref } from "@/lib/helpers/product-href"
 
 export type {
   ShippingAddress,

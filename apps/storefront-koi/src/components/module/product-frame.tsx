@@ -20,7 +20,7 @@ import type {
   SaleState,
   SellerKind,
 } from "@/components/types/product"
-import { formatPrice } from "@/helper/format-price"
+import { formatPrice } from "@/lib/helpers/format-price"
 import {
   SELLER_KIND,
   type PillSpec,

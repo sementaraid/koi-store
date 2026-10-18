@@ -17,7 +17,10 @@ export function formatPrice(amount: number, currency = "IDR") {
     style: "currency",
     currency,
     /* Whole Rupiah is the norm, so a .00 tail is noise; keep the decimals only
-       for the half-million-and-a-bit amounts that actually carry them. */
+       for the half-million-and-a-bit amounts that actually carry them. Both
+       bounds move together — id-ID defaults IDR to 0 decimals, so raising only
+       the maximum renders 1_000_000.5 as "Rp 1.000.000,5". */
+    minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
     maximumFractionDigits: Number.isInteger(amount) ? 0 : 2,
   }).format(amount)
 }

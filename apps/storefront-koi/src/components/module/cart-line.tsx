@@ -7,9 +7,9 @@ import { ROUTES } from "@/components/constant/routes"
 import { RenderIf } from "@/components/module/render-if"
 import type { CartLine as CartLineData } from "@/components/types/cart"
 import type { Product, SimpleProduct } from "@/components/types/product"
-import { isCounted, lineTotal, lineUnits } from "@/helper/cart-totals"
-import { formatPrice } from "@/helper/format-price"
-import { productHref } from "@/helper/product-href"
+import { isCounted, lineTotal, lineUnits } from "@/lib/helpers/cart-totals"
+import { formatPrice } from "@/lib/helpers/format-price"
+import { productHref } from "@/lib/helpers/product-href"
 import { cn } from "cn"
 
 /** Props for {@link CartLine}. */

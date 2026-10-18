@@ -1,11 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
-import { toCartLines, toLineIds } from '@/lib/adapters/cart';
-import { retrieveCart } from '@/lib/data/cart';
-import { getShell } from '@/lib/shell';
-
-import { CartLines } from './lines';
+import { Cart } from '@/components/sections';
 
 export const metadata: Metadata = {
   title: 'Keranjang',
@@ -14,20 +10,10 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false }
 };
 
-export default async function CartRoute() {
-  const [{ account, cart: bar }, cart] = await Promise.all([
-    getShell(),
-    retrieveCart()
-  ]);
-
+export default function CartRoute() {
   return (
     <Suspense>
-      <CartLines
-        lines={toCartLines(cart)}
-        lineIds={toLineIds(cart)}
-        account={account}
-        cart={bar}
-      />
+      <Cart />
     </Suspense>
   );
 }

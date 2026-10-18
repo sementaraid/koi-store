@@ -1,7 +1,7 @@
 import type { AuctionBid } from "@/components/types/product"
 import { MediaStage, type MediaItem } from "@/components/module/lot-dossier"
 import { RenderIf } from "@/components/module/render-if"
-import { formatPrice } from "@/helper/format-price"
+import { formatPrice } from "@/lib/helpers/format-price"
 
 /** Props for {@link LotLiveStage}. */
 export type LotLiveStageProps = {

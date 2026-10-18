@@ -2,7 +2,7 @@ import { AlarmClock } from "lucide-react"
 
 import { RenderIf } from "@/components/module/render-if"
 import type { CountdownTarget } from "@/hooks/use-countdown"
-import { formatClock } from "@/helper/format-remaining"
+import { formatClock } from "@/lib/helpers/format-remaining"
 import { useCountdown } from "@/hooks/use-countdown"
 
 /** Props for {@link CartDeadline}. */

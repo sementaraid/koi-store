@@ -21,7 +21,7 @@ import { PageShell } from "@/components/module/page-shell"
 import { ProductCard } from "@/components/module/product-card"
 import { RenderIf } from "@/components/module/render-if"
 import type { CatalogsProps } from "@/components/types/catalog"
-import { filterGoods, salePrice, saleStatus } from "@/helper/filter-goods"
+import { filterGoods, salePrice, saleStatus } from "@/lib/helpers/filter-goods"
 
 export type {
   CatalogFilter,

@@ -17,8 +17,8 @@ import type {
   CartPageProps,
 } from "@/components/types/cart"
 import type { Product, SimpleProduct } from "@/components/types/product"
-import { cartTotals } from "@/helper/cart-totals"
-import { formatDeadline } from "@/helper/format-deadline"
+import { cartTotals } from "@/lib/helpers/cart-totals"
+import { formatDeadline } from "@/lib/helpers/format-deadline"
 
 export type { CartLine, CartPageProps } from "@/components/types/cart"
 

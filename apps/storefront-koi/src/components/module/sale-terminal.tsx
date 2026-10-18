@@ -12,7 +12,7 @@ import { LotIdentity } from "@/components/module/lot-dossier"
 import { PulseIcon } from "@/components/module/pulse-icon"
 import { RenderIf } from "@/components/module/render-if"
 import type { SimpleProduct } from "@/components/types/product"
-import { formatPrice } from "@/helper/format-price"
+import { formatPrice } from "@/lib/helpers/format-price"
 
 /** Props for {@link SaleTerminal}. */
 export type SaleTerminalProps = ComponentProps<"div"> & {

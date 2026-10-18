@@ -5,9 +5,9 @@ import { Card } from "@/components/koi/card"
 import { TRUST_CLAIMS } from "@/components/constant/trust"
 import { RenderIf } from "@/components/module/render-if"
 import type { CheckoutStep } from "@/components/types/cart"
-import type { CartTotals, Settlement } from "@/helper/cart-totals"
-import { formatDeadline } from "@/helper/format-deadline"
-import { formatPrice } from "@/helper/format-price"
+import type { CartTotals, Settlement } from "@/lib/helpers/cart-totals"
+import { formatDeadline } from "@/lib/helpers/format-deadline"
+import { formatPrice } from "@/lib/helpers/format-price"
 import { cn } from "cn"
 
 /** What the control says on each step. The last one is the only that takes

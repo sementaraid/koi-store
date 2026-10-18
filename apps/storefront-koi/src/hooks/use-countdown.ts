@@ -1,6 +1,6 @@
 import * as React from "react"
 
-import { toEpochMs, type CountdownTarget } from "@/helper/format-ago"
+import { toEpochMs, type CountdownTarget } from "@/lib/helpers/format-ago"
 
 /** Lot end time, however the API hands it over: parsed, epoch ms, or ISO. */
 export type { CountdownTarget }

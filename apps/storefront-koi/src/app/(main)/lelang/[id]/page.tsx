@@ -2,9 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
 import { DEFAULT_AUCTION_LOTS } from '@/components/constant/auctions';
-import { getShell } from '@/lib/shell';
-
-import { LotDossier } from './dossier';
+import { LotDetailsPage } from '@/components/sections';
 
 export async function generateMetadata({
   params
@@ -22,11 +20,11 @@ export default async function LotRoute({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const [{ id }, { account, cart }] = await Promise.all([params, getShell()]);
+  const { id } = await params;
 
   return (
     <Suspense>
-      <LotDossier id={id} account={account} cart={cart} />
+      <LotDetailsPage id={id} />
     </Suspense>
   );
 }

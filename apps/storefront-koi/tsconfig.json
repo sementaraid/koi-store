@@ -30,6 +30,10 @@
        this app's own React 19 types. */
     "paths": {
       "@/*": ["./src/*"],
+      /* Type-only access to the generated route map. A package dependency on
+         @acme/api would form a workspace cycle. Same alias the admin/vendor
+         panels use. */
+      "@acme/api/_generated": ["../../packages/api/.mercur/routes.d.ts"],
       "react": ["./node_modules/@types/react"],
       "react-dom": ["./node_modules/@types/react-dom"]
     }

@@ -24,7 +24,7 @@ import { LotTrustList } from "@/components/module/lot-trust"
 import { PageShell } from "@/components/module/page-shell"
 import { RenderIf } from "@/components/module/render-if"
 import type { LiveRoomProps } from "@/components/types/live"
-import { sessionLabel } from "@/helper/session-label"
+import { sessionLabel } from "@/lib/helpers/session-label"
 
 export type {
   MediaStageProps,

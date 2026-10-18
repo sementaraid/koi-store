@@ -1,7 +1,7 @@
 "use client"
 
 import { useCountdown } from "@/hooks/use-countdown"
-import { formatRemaining } from "@/helper/format-remaining"
+import { formatRemaining } from "@/lib/helpers/format-remaining"
 
 import type { AuctionProduct } from "@/components/types/product"
 import { ProductFacts, ProductFrame, ProductOverlay } from "./product-frame"

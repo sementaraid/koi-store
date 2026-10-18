@@ -1,5 +1,5 @@
 import { RenderIf } from "@/components/module/render-if"
-import { formatPrice } from "@/helper/format-price"
+import { formatPrice } from "@/lib/helpers/format-price"
 import { cn } from "cn"
 
 /** One thing the visitor can pick: what it is, what that means, what it costs. */

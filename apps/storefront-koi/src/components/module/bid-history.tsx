@@ -26,9 +26,9 @@ import { RING } from "@/components/constant/surface"
 import { SELLER_KIND } from "@/components/constant/stamps"
 import { RenderIf } from "@/components/module/render-if"
 import type { AuctionProduct } from "@/components/types/product"
-import { formatAgo, toEpochMs } from "@/helper/format-ago"
-import { formatPrice } from "@/helper/format-price"
-import { formatRemaining } from "@/helper/format-remaining"
+import { formatAgo, toEpochMs } from "@/lib/helpers/format-ago"
+import { formatPrice } from "@/lib/helpers/format-price"
+import { formatRemaining } from "@/lib/helpers/format-remaining"
 import { useCountdown } from "@/hooks/use-countdown"
 
 /** Props for {@link BidHistory}. */

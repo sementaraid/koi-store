@@ -3,8 +3,8 @@ import type {
   ShippingParcel,
 } from "@/components/types/shipping"
 import { DEFAULT_CART_LINES } from "@/components/constant/cart"
-import { isCounted } from "@/helper/cart-totals"
-import { shippingDates } from "@/helper/shipping-date"
+import { isCounted } from "@/lib/helpers/cart-totals"
+import { shippingDates } from "@/lib/helpers/shipping-date"
 
 /* The shipping step's demo order: the cart's own three items, assembled into the
    parcels they would actually travel in — the two koi fly apart, because they

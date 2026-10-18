@@ -10,8 +10,8 @@ import { LotIdentity } from "@/components/module/lot-dossier"
 import { PulseIcon } from "@/components/module/pulse-icon"
 import { RenderIf } from "@/components/module/render-if"
 import type { AuctionProduct } from "@/components/types/product"
-import { formatPrice, formatPriceCompact } from "@/helper/format-price"
-import { formatRemaining, isClosing } from "@/helper/format-remaining"
+import { formatPrice, formatPriceCompact } from "@/lib/helpers/format-price"
+import { formatRemaining, isClosing } from "@/lib/helpers/format-remaining"
 import { useCountdown } from "@/hooks/use-countdown"
 
 /** What the visitor did with the terminal's controls, as one event. */
