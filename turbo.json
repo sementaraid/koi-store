@@ -27,6 +27,16 @@
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    "@acme/admin#dev": {
+      "dependsOn": ["@mercurjs/admin#build"],
+      "cache": false,
+      "persistent": true
+    },
+    "@acme/vendor#dev": {
+      "dependsOn": ["@mercurjs/vendor#build"],
+      "cache": false,
+      "persistent": true
     }
   }
 }

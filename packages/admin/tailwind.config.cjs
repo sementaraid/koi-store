@@ -5,9 +5,13 @@ const medusaUI = path.join(
   "**/*.{js,jsx,ts,tsx}"
 )
 
+// Locate the installed package (its exports map hides package.json from require.resolve);
+// the upstream "../dashboard-shared/src" sibling only exists inside the Mercur monorepo.
 const dashboardShared = path.join(
-  __dirname,
-  "../dashboard-shared/src/**/*.{js,jsx,ts,tsx}"
+  require.resolve.paths("@mercurjs/dashboard-shared")
+    .map((dir) => path.join(dir, "@mercurjs/dashboard-shared"))
+    .find((dir) => require("fs").existsSync(dir)),
+  "dist/**/*.js"
 )
 
 /** @type {import('tailwindcss').Config} */
