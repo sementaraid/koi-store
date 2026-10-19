@@ -2,9 +2,9 @@
 
 import { useSearchParams } from 'next/navigation';
 
-import { DEFAULT_AUCTION_LOTS } from '@/components/constant/auctions';
-import { LiveRoom } from '@/components/pages/live';
-import type { HeaderAccount, HeaderCart } from '@/components/types/header';
+import { DEFAULT_AUCTION_LOTS } from '@/const/auctions';
+import { LiveRoom } from '@/components/sections/LivePage/components/LiveRoom';
+import type { HeaderAccount, HeaderCart } from '@/types/header';
 
 /** The broadcast room. The spotlight lot rides as `?lot=`, same as
     {@link roomHref} links it — reading that is this file's only job. */

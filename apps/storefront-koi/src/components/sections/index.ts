@@ -2,7 +2,16 @@
    imports `@/components/sections`, never a deep path, so a section can be split
    or renamed without touching `app/`. */
 
+export { AccountPage } from './AccountPage/AccountPage';
+export { AddressesPage } from './AccountPage/AddressesPage';
+export { OrderDetailPage } from './AccountPage/OrderDetailPage';
+export { OrdersPage } from './AccountPage/OrdersPage';
+export { SettingsPage } from './AccountPage/SettingsPage';
 export { AuctionsPage } from './AuctionsPage/AuctionsPage';
+export { ForgotPasswordPage } from './AuthPage/ForgotPasswordPage';
+export { LoginPage } from './AuthPage/LoginPage';
+export { NewPasswordPage } from './AuthPage/NewPasswordPage';
+export { RegisterPage } from './AuthPage/RegisterPage';
 export { Cart } from './Cart/Cart';
 export { CatalogPage } from './CatalogPage/CatalogPage';
 export { HomePage } from './HomePage/HomePage';

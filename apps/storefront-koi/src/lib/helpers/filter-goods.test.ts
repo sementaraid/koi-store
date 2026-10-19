@@ -4,15 +4,15 @@ import { test } from "node:test"
 /* Relative paths only: the test runner strips types without reading tsconfig,
    so the `@/` alias does not resolve here. Type-only imports are erased, which
    is why the component modules can be named at all. */
-import { DEFAULT_AUCTION_LOTS } from "../../components/constant/auctions.ts"
-import { DEFAULT_CATALOG_KOI } from "../../components/constant/catalog.ts"
-import { DEFAULT_SUPPLIES } from "../../components/constant/marketplace.ts"
+import { DEFAULT_AUCTION_LOTS } from "../../const/auctions.ts"
+import { DEFAULT_CATALOG_KOI } from "../../const/catalog.ts"
+import { DEFAULT_SUPPLIES } from "../../const/marketplace.ts"
 import type {
   Availability,
   GoodsFilter,
   SimpleProduct,
   StockLevel,
-} from "../../components/types/product.ts"
+} from "../../types/product.ts"
 
 import {
   filterGoods,

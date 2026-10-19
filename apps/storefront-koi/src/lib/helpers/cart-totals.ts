@@ -2,7 +2,7 @@
    `node --experimental-strip-types`, which resolves bare specifiers against
    node_modules and cannot see the bundler's alias. */
 import { toEpochMs, type CountdownTarget } from "./format-ago.ts"
-import type { CartLine } from "@/components/types/cart"
+import type { CartLine } from "@/types/cart"
 
 /** What a cart comes to, and how much of it is running out.
     {@link settlement} answers the same question on the delivery step, where the

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
-import { DEFAULT_AUCTION_LOTS } from '@/components/constant/auctions';
+import { DEFAULT_AUCTION_LOTS } from '@/const/auctions';
 import { LotDetailsPage } from '@/components/sections';
 
 export async function generateMetadata({

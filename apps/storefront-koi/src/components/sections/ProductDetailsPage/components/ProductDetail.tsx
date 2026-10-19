@@ -4,12 +4,12 @@ import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 import { toast } from 'sonner';
 
-import { DEFAULT_CATALOG_FILTER } from '@/components/constant/catalog';
-import { ROUTES } from '@/components/constant/routes';
-import { ProductPage } from '@/components/pages/product';
-import type { MediaItem } from '@/components/types/product-page';
-import type { HeaderAccount, HeaderCart } from '@/components/types/header';
-import type { Availability, SimpleProduct } from '@/components/types/product';
+import { DEFAULT_CATALOG_FILTER } from '@/const/catalog';
+import { ROUTES } from '@/const/routes';
+import { ProductPage } from '@/components/sections/ProductDetailsPage/components/ProductPage';
+import type { MediaItem } from '@/types/product-page';
+import type { HeaderAccount, HeaderCart } from '@/types/header';
+import type { Availability, SimpleProduct } from '@/types/product';
 import { useFeedSearch } from '@/hooks/use-feed-search';
 import { addToCart } from '@/lib/data/cart';
 import { COUNTRY_CODE } from '@/lib/region';

@@ -2,8 +2,8 @@
 
 import type { PropsWithChildren } from 'react';
 
-import { CartProvider } from '@/components/provider';
-import type { Cart } from '@/types/cart';
+import { CartProvider } from '@/providers';
+import type { Cart } from '@/types/medusa';
 
 interface ProvidersProps extends PropsWithChildren {
   cart: Cart | null;

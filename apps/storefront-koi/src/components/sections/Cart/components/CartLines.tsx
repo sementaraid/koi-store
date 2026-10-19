@@ -4,11 +4,11 @@ import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 import { toast } from 'sonner';
 
-import { ROUTES } from '@/components/constant/routes';
-import { CartPage } from '@/components/pages/cart';
-import type { CartLine } from '@/components/types/cart';
-import type { HeaderAccount, HeaderCart } from '@/components/types/header';
-import type { Product } from '@/components/types/product';
+import { ROUTES } from '@/const/routes';
+import { CartPage } from '@/components/sections/Cart/components/CartPage';
+import type { CartLine } from '@/types/cart';
+import type { HeaderAccount, HeaderCart } from '@/types/header';
+import type { Product } from '@/types/product';
 import { deleteLineItem, updateLineItem } from '@/lib/data/cart';
 
 /**

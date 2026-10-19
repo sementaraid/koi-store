@@ -1,4 +1,4 @@
-import type { HeaderAccount, HeaderCart } from '@/components/types/header';
+import type { HeaderAccount, HeaderCart } from '@/types/header';
 import { retrieveCart } from '@/lib/data/cart';
 import { retrieveCustomer } from '@/lib/data/customer';
 

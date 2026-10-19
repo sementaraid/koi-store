@@ -3,7 +3,7 @@
 import { HttpTypes } from '@medusajs/types';
 
 import { sortProducts } from '@/lib/helpers/sort-products';
-import { SortOptions } from '@/types/product';
+import { SortOptions } from '@/types/sort';
 
 import { sdk } from '../client';
 import { getAuthHeaders } from './cookies';
