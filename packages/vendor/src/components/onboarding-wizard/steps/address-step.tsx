@@ -1,17 +1,12 @@
-import { Heading, Input } from "@medusajs/ui";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button, Heading, Input } from "@medusajs/ui";
 import i18n from "i18next";
+import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import * as z from "zod";
 
-import {
-  FormExtensionZone,
-  useExtendableForm,
-} from "@mercurjs/dashboard-shared";
-
 import { Form } from "@components/common/form";
 import { CountrySelect } from "@components/inputs/country-select/country-select";
-import { StepActions } from "./step-actions";
-import { StepProps } from "./types";
 
 const AddressStepSchema = z.object({
   name: z.string().min(1, i18n.t("onboarding.wizard.validation.nameRequired")),
@@ -25,23 +20,17 @@ const AddressStepSchema = z.object({
 
 type AddressStepValues = z.infer<typeof AddressStepSchema>;
 
-type AddressStepProps = StepProps<AddressStepValues & {
-  additional_data?: Record<string, unknown>;
-}>;
+type AddressStepProps = {
+  onSubmit: (data: AddressStepValues) => Promise<void>;
+  onSkip: () => void;
+  isPending?: boolean;
+};
 
-export const AddressStep = ({
-  onSubmit,
-  onSkip,
-  isLast,
-  isPending,
-}: AddressStepProps) => {
+export const AddressStep = ({ onSubmit, onSkip, isPending }: AddressStepProps) => {
   const { t } = useTranslation();
 
-  const form = useExtendableForm({
-    schema: AddressStepSchema,
-    model: "seller",
-    zone: "onboarding",
-    tab: "address",
+  const form = useForm<AddressStepValues>({
+    resolver: zodResolver(AddressStepSchema),
     defaultValues: {
       name: "",
       address_1: "",
@@ -161,14 +150,20 @@ export const AddressStep = ({
                 </Form.Item>
               )}
             />
-            <FormExtensionZone
-              model="seller"
-              zone="onboarding"
-              tab="address"
-              control={form.control}
-            />
           </div>
-          <StepActions onSkip={onSkip} isLast={isLast} isPending={isPending} />
+          <div className="flex flex-col gap-y-2">
+            <Button type="submit" className="w-full" isLoading={isPending}>
+              {t("actions.continue")}
+            </Button>
+            <Button
+              type="button"
+              variant="transparent"
+              className="w-full"
+              onClick={onSkip}
+            >
+              {t("onboarding.wizard.skip")}
+            </Button>
+          </div>
         </form>
       </Form>
     </div>

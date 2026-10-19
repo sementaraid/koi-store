@@ -5135,9 +5135,6 @@
             "shippingProfile": {
               "type": "string"
             },
-            "condition": {
-              "type": "string"
-            },
             "ean": {
               "type": "string"
             },
@@ -5203,7 +5200,6 @@
             "sku",
             "variant",
             "shippingProfile",
-            "condition",
             "ean",
             "upc",
             "requiredQuantity",
@@ -15267,21 +15263,6 @@
                 "handlePlaceholder": {
                   "type": "string"
                 },
-                "handleRequired": {
-                  "type": "string"
-                },
-                "handleInvalid": {
-                  "type": "string"
-                },
-                "handleChecking": {
-                  "type": "string"
-                },
-                "handleAvailable": {
-                  "type": "string"
-                },
-                "handleTaken": {
-                  "type": "string"
-                },
                 "currency": {
                   "type": "string"
                 },
@@ -15299,11 +15280,6 @@
                 "handle",
                 "handleTooltip",
                 "handlePlaceholder",
-                "handleRequired",
-                "handleInvalid",
-                "handleChecking",
-                "handleAvailable",
-                "handleTaken",
                 "currency",
                 "selectCurrency",
                 "currencyHint"
@@ -15311,9 +15287,6 @@
               "additionalProperties": false
             },
             "skip": {
-              "type": "string"
-            },
-            "finish": {
               "type": "string"
             },
             "address": {
@@ -15478,7 +15451,6 @@
             "steps",
             "store",
             "skip",
-            "finish",
             "address",
             "company",
             "payment",

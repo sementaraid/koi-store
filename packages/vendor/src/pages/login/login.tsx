@@ -96,7 +96,6 @@ const LoginForm = () => {
         },
         onSuccess: () => {
           const email = form.getValues("email");
-          sessionStorage.setItem("mercur_onboarding_email", email);
           setTimeout(() => {
             navigate("/store-select", {
               replace: true,

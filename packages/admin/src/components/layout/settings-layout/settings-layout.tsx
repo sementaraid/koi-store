@@ -102,10 +102,6 @@ const useSettingRoutes = (): INavItem[] => {
         to: "/settings/refund-reasons",
       },
       {
-        label: t("offerConditions.domain"),
-        to: "/settings/offer-conditions",
-      },
-      {
         label: t("salesChannels.domain"),
         to: "/settings/sales-channels",
       },

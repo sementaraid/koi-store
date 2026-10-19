@@ -51,26 +51,6 @@ export const useSeller = (
   return { ...data, ...rest };
 };
 
-export const useSellerHandleAvailability = (
-  handle: string,
-  options?: Omit<
-    UseQueryOptions<
-      InferClientOutput<typeof sdk.vendor.sellers.handleAvailability.query>,
-      ClientError
-    >,
-    "queryFn" | "queryKey"
-  >,
-) => {
-  const { data, ...rest } = useQuery({
-    queryKey: [...sellersQueryKeys.all, "handle-availability", handle],
-    queryFn: () => sdk.vendor.sellers.handleAvailability.query({ handle }),
-    staleTime: 30_000,
-    ...options,
-  });
-
-  return { ...data, ...rest };
-};
-
 export const useSellers = (
   query?: InferClientInput<typeof sdk.vendor.sellers.query>,
   options?: Omit<

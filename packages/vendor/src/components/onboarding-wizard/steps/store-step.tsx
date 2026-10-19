@@ -1,7 +1,5 @@
-import { CheckCircleSolid, Spinner } from "@medusajs/icons";
-import { Heading, Input, Select, Text, Textarea } from "@medusajs/ui";
+import { Button, Heading, Input, Select, Textarea } from "@medusajs/ui";
 import i18n from "i18next";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLoaderData } from "react-router-dom";
 import * as z from "zod";
@@ -13,15 +11,8 @@ import {
 
 import { Form } from "@components/common/form";
 import { HandleInput } from "@components/inputs/handle-input";
-import { useSellerHandleAvailability, useStore } from "@hooks/api";
-import { sdk } from "@lib/client";
+import { useStore } from "@hooks/api";
 import { onboardingLoader } from "../../../pages/onboarding/loader";
-import { StepActions } from "./step-actions";
-import { StepProps } from "./types";
-
-// Mirrors Medusa's `isValidHandle`, which the seller module enforces on create.
-const HANDLE_REGEX = /^[\p{Ll}\p{Lo}\p{Lm}\p{N}]+(?:-[\p{Ll}\p{Lo}\p{Lm}\p{N}]+)*$/u;
-const HANDLE_CHECK_DEBOUNCE_MS = 400;
 
 const StoreStepSchema = z.object({
   name: z.string().min(1, i18n.t("onboarding.wizard.validation.nameRequired")),
@@ -29,10 +20,7 @@ const StoreStepSchema = z.object({
   phone: z.string().optional(),
   currency_code: z.string().min(1, i18n.t("onboarding.wizard.validation.currencyRequired")),
   description: z.string().optional(),
-  handle: z
-    .string()
-    .min(1, i18n.t("onboarding.wizard.store.handleRequired"))
-    .regex(HANDLE_REGEX, i18n.t("onboarding.wizard.store.handleInvalid")),
+  handle: z.string().optional(),
 });
 
 type StoreStepValues = z.infer<typeof StoreStepSchema>;
@@ -41,25 +29,12 @@ type StoreStepSubmitValues = StoreStepValues & {
   additional_data?: Record<string, unknown>;
 };
 
-type StoreStepProps = StepProps<StoreStepSubmitValues>;
-
-const useDebouncedValue = (value: string, delay: number) => {
-  const [debounced, setDebounced] = useState(value);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(timeout);
-  }, [value, delay]);
-
-  return debounced;
+type StoreStepProps = {
+  onSubmit: (data: StoreStepSubmitValues) => Promise<void>;
+  isPending?: boolean;
 };
 
-export const StoreStep = ({
-  onSubmit,
-  onSkip,
-  isLast,
-  isPending,
-}: StoreStepProps) => {
+export const StoreStep = ({ onSubmit, isPending }: StoreStepProps) => {
   const { t } = useTranslation();
   const initialData = useLoaderData() as Awaited<
     ReturnType<typeof onboardingLoader>
@@ -82,55 +57,7 @@ export const StoreStep = ({
     },
   });
 
-  const handle = form.watch("handle");
-  const debouncedHandle = useDebouncedValue(handle, HANDLE_CHECK_DEBOUNCE_MS);
-  const canCheckHandle = HANDLE_REGEX.test(debouncedHandle);
-
-  const { available, reason, isFetching } = useSellerHandleAvailability(
-    debouncedHandle,
-    { enabled: canCheckHandle },
-  );
-
-  const isCheckingHandle =
-    HANDLE_REGEX.test(handle) && (handle !== debouncedHandle || isFetching);
-  const isHandleAvailable =
-    !isCheckingHandle && canCheckHandle && handle === debouncedHandle && available;
-
-  useEffect(() => {
-    if (isCheckingHandle || !canCheckHandle || available !== false) {
-      // RHF only re-validates on change after the first submit, so a stale
-      // "taken" error has to be cleared by hand.
-      if (form.getFieldState("handle").error?.type === "manual") {
-        form.clearErrors("handle");
-      }
-      return;
-    }
-
-    form.setError("handle", {
-      type: "manual",
-      message:
-        reason === "invalid"
-          ? t("onboarding.wizard.store.handleInvalid")
-          : t("onboarding.wizard.store.handleTaken"),
-    });
-  }, [available, reason, isCheckingHandle, canCheckHandle, form, t]);
-
   const handleSubmit = form.handleSubmit(async (data) => {
-    const result = await sdk.vendor.sellers.handleAvailability.query({
-      handle: data.handle,
-    });
-
-    if (!result.available) {
-      form.setError("handle", {
-        type: "manual",
-        message:
-          result.reason === "invalid"
-            ? t("onboarding.wizard.store.handleInvalid")
-            : t("onboarding.wizard.store.handleTaken"),
-      });
-      return;
-    }
-
     await onSubmit(data);
   });
 
@@ -203,43 +130,14 @@ export const StoreStep = ({
               render={({ field }) => (
                 <Form.Item>
                   <Form.Label
+                    optional
                     tooltip={t("onboarding.wizard.store.handleTooltip")}
                   >
                     {t("onboarding.wizard.store.handle")}
                   </Form.Label>
                   <Form.Control>
-                    <HandleInput
-                      placeholder={t("onboarding.wizard.store.handlePlaceholder")}
-                      data-testid="onboarding-handle-input"
-                      {...field}
-                    />
+                    <HandleInput {...field} />
                   </Form.Control>
-                  {isCheckingHandle && (
-                    <div
-                      className="text-ui-fg-muted flex items-center gap-x-1.5"
-                      data-testid="onboarding-handle-checking"
-                    >
-                      <Spinner className="size-3.5 animate-spin" />
-                      <Text size="small" leading="compact">
-                        {t("onboarding.wizard.store.handleChecking")}
-                      </Text>
-                    </div>
-                  )}
-                  {isHandleAvailable && (
-                    <div
-                      className="flex items-center gap-x-1.5"
-                      data-testid="onboarding-handle-available"
-                    >
-                      <CheckCircleSolid className="text-ui-tag-green-icon" />
-                      <Text
-                        size="small"
-                        leading="compact"
-                        className="text-ui-tag-green-text"
-                      >
-                        {t("onboarding.wizard.store.handleAvailable")}
-                      </Text>
-                    </div>
-                  )}
                   <Form.ErrorMessage />
                 </Form.Item>
               )}
@@ -283,11 +181,9 @@ export const StoreStep = ({
               data={store}
             />
           </div>
-          <StepActions
-            onSkip={onSkip}
-            isLast={isLast}
-            isPending={isPending || form.formState.isSubmitting}
-          />
+          <Button type="submit" className="w-full" isLoading={isPending}>
+            {t("actions.continue")}
+          </Button>
         </form>
       </Form>
     </div>

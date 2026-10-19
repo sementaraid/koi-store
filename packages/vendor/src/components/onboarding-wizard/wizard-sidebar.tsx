@@ -3,10 +3,10 @@ import { ChevronLeft } from "@medusajs/icons";
 import { Text } from "@medusajs/ui";
 import { useTranslation } from "react-i18next";
 
+import { TOTAL_STEPS } from "./constants";
 
 type WizardSidebarProps = {
   currentStep: number;
-  totalSteps: number;
   onBack?: () => void;
   showBack?: boolean;
   children: ReactNode;
@@ -14,7 +14,6 @@ type WizardSidebarProps = {
 
 export const WizardSidebar = ({
   currentStep,
-  totalSteps,
   onBack,
   showBack,
   children,
@@ -37,7 +36,7 @@ export const WizardSidebar = ({
         <Text size="small" className="text-ui-fg-subtle mb-1">
           {t("onboarding.wizard.stepOf", {
             current: currentStep + 1,
-            total: totalSteps,
+            total: TOTAL_STEPS,
           })}
         </Text>
         {children}

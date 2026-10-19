@@ -14,14 +14,12 @@ import { Thumbnail } from "../../../../components/common/thumbnail";
 import { useRouteModal } from "../../../../components/modals";
 import { defineTabMeta } from "../../../../components/tabbed-form/types";
 import { usePricePreferences } from "../../../../hooks/api/price-preferences";
-import { useOfferConditions } from "../../../../hooks/api/offer-conditions";
 import { useCurrentSeller } from "../../../../hooks/api/sellers";
 import { useShippingProfiles } from "../../../../hooks/api/shipping-profiles";
 import { useStockLocations } from "../../../../hooks/api/stock-locations";
 import { CreateOfferFormValues, OfferVariantRow } from "./schema";
 
 type ShippingProfileLite = { id: string; name?: string | null };
-type OfferConditionLite = { id: string; label: string };
 
 /**
  * The grid interleaves a non-editable product "group" row above each
@@ -60,7 +58,6 @@ const Root = () => {
   ) as {
     shipping_profiles?: ShippingProfileLite[];
   };
-  const { offer_conditions } = useOfferConditions();
   const { price_preferences: pricePreferences } = usePricePreferences(
     {},
     { enabled: can("price_preferences") }
@@ -94,7 +91,6 @@ const Root = () => {
       | HttpTypes.AdminStockLocation[]
       | undefined,
     shippingProfiles: shipping_profiles ?? [],
-    offerConditions: offer_conditions ?? [],
     pricePreferences,
   });
 
@@ -117,7 +113,6 @@ type ColumnArgs = {
   currencyCode?: string;
   stockLocations?: HttpTypes.AdminStockLocation[];
   shippingProfiles?: ShippingProfileLite[];
-  offerConditions?: OfferConditionLite[];
   pricePreferences?: HttpTypes.AdminPricePreference[];
 };
 
@@ -127,7 +122,6 @@ const useColumns = ({
   currencyCode,
   stockLocations = [],
   shippingProfiles = [],
-  offerConditions = [],
   pricePreferences = [],
 }: ColumnArgs) => {
   const { t } = useTranslation();
@@ -136,10 +130,6 @@ const useColumns = ({
     const shippingProfileOptions = shippingProfiles.map((p) => ({
       value: p.id,
       label: p.name ?? p.id,
-    }));
-    const conditionOptions = offerConditions.map((c) => ({
-      value: c.id,
-      label: c.label,
     }));
     const currencies = currencyCode ? [currencyCode] : [];
 
@@ -213,26 +203,6 @@ const useColumns = ({
             />
           ),
       }),
-      columnHelper.column({
-        id: "condition",
-        name: t("offers.fields.condition"),
-        header: t("offers.fields.condition"),
-        field: (context) => {
-          const row = context.row.original;
-          return isGroup(row) ? null : `variants.${row.__formIndex}.condition_id`;
-        },
-        type: "select",
-        cell: (context) =>
-          isGroup(context.row.original) ? (
-            <DataGrid.ReadonlyCell context={context} />
-          ) : (
-            <DataGrid.SelectCell
-              context={context}
-              options={conditionOptions}
-              placeholder=""
-            />
-          ),
-      }),
       ...createDataGridLocationStockColumns<GridRow, CreateOfferFormValues>({
         stockLocations,
         isReadyOnly: (context) => isGroup(context.row.original),
@@ -260,14 +230,7 @@ const useColumns = ({
         t,
       }),
     ];
-  }, [
-    t,
-    currencyCode,
-    stockLocations,
-    shippingProfiles,
-    offerConditions,
-    pricePreferences,
-  ]);
+  }, [t, currencyCode, stockLocations, shippingProfiles, pricePreferences]);
 };
 
 Root._tabMeta = defineTabMeta<CreateOfferFormValues>({
