@@ -18,8 +18,21 @@
     // form a workspace cycle — packages/api devDepends on this app so its sources travel
     // with the API through workspace-graph pruning (e.g. the Medusa Cloud builder).
     "paths": {
-      "@acme/api/_generated": ["../../packages/api/.mercur/routes.d.ts"]
+      "@acme/api/_generated": ["../../packages/api/.mercur/routes.d.ts"],
+      // The panel source (forked from @mercurjs/vendor) imports the route map under core's name and
+      // uses these aliases; vite.config.ts mirrors them for the build.
+      "@mercurjs/core/_generated": ["../../packages/api/.mercur/routes.d.ts"],
+      "@mercurjs/vendor": ["src/index.ts"],
+      "@mercurjs/vendor/pages": ["src/pages/index.ts"],
+      "@/*": ["src/*"],
+      "@components/*": ["src/components/*"],
+      "@hooks/*": ["src/hooks/*"],
+      "@lib/*": ["src/lib/*"],
+      "@pages/*": ["src/pages/*"],
+      "@providers/*": ["src/providers/*"],
+      "@assets/*": ["src/assets/*"]
     },
+    "resolveJsonModule": true,
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
