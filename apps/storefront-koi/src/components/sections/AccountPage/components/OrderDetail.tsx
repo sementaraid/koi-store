@@ -47,7 +47,6 @@ export function OrderDetail({ group, account, cart }: OrderDetailProps) {
       title={`Pesanan #${group.display_id ?? group.id}`}
       account={account}
       cart={cart}
-    >
       eyebrow={
         <>
           <Package
@@ -70,6 +69,7 @@ export function OrderDetail({ group, account, cart }: OrderDetailProps) {
           Semua pesanan
         </Link>
       }
+    >
 
       <div className="flex flex-col gap-6">
         {group.orders.map((order) => (

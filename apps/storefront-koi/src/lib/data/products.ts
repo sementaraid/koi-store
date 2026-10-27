@@ -10,8 +10,12 @@ import { getAuthHeaders } from './cookies';
 import { CACHE_TAGS, getGlobalCacheOptions } from './cache-tags';
 import { getRegion, retrieveRegion } from './regions';
 
+/* `+categories.name` merges onto the route's defaults, same convention as
+   `OFFER_FIELDS` in `lib/data/offers.ts`: `toSimpleProduct`'s `category` read
+   (`product.categories?.[0]?.name`) is otherwise always `undefined`, and every
+   feed's facet bar is empty for it. */
 const PRODUCT_LIST_FIELDS =
-  '*variants.calculated_price,+variants.inventory_quantity,*variants.options,*attribute_values,*attribute_values.attribute';
+  '*variants.calculated_price,+variants.inventory_quantity,*variants.options,*attribute_values,*attribute_values.attribute,+categories.id,+categories.name,+categories.handle';
 
 export type SearchFacetBucket = { value: string; count: number };
 

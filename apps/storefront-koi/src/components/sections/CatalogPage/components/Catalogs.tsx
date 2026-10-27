@@ -73,6 +73,9 @@ export function Catalogs({
   account,
   activeHref = ROUTES.catalogs,
   onSearch,
+  heading,
+  basePath = ROUTES.catalogs,
+  trail,
   className,
   ...props
 }: CatalogsProps) {
@@ -101,6 +104,7 @@ export function Catalogs({
       activeHref={activeHref}
       onSearch={onSearch}
       account={account}
+      trail={trail}
       {...props}
     >
       {/* The band that says what page you are on and what is on it. The count
@@ -110,11 +114,14 @@ export function Catalogs({
         eyebrow={
           <>
             <ShoppingBag aria-hidden className="size-3.5" />
-            Katalog Nishikigoi
+            {heading?.eyebrow ?? "Katalog Nishikigoi"}
           </>
         }
-        title="Koi siap kirim, harga langsung"
-        lede="Beli langsung tanpa lelang. Setiap koi lewat karantina BBKP, datang dengan sertifikat breeder, dan dijamin hidup sampai ke kolam Anda."
+        title={heading?.title ?? "Koi siap kirim, harga langsung"}
+        lede={
+          heading?.lede ??
+          "Beli langsung tanpa lelang. Setiap koi lewat karantina BBKP, datang dengan sertifikat breeder, dan dijamin hidup sampai ke kolam Anda."
+        }
         stat={
           <>
             <BadgeCheck aria-hidden />
@@ -207,7 +214,7 @@ export function Catalogs({
         <FeedPagination
           page={current}
           pageCount={pageCount}
-          href={ROUTES.catalogs}
+          href={basePath}
           onPageChange={onPageChange}
         />
       </div>

@@ -7,6 +7,7 @@ import type {
   FeedState,
   SimpleProduct,
 } from "@/types/product"
+import type { OfferQuote, VariantChoice } from "@/lib/adapters/product"
 
 export type { MediaItem } from "@/components/cells/MediaGallery/MediaGallery"
 
@@ -49,4 +50,31 @@ export type ProductPageProps = ComponentProps<"div"> &
     onBuy?: (product: SimpleProduct) => void
     /** Where the back control goes. @defaultValue `"/catalogs"` */
     backHref?: string
+    /** What the seller wrote about the product, as plain text. Rendered as a
+        paragraph, never as HTML — see the remark on `toPartnerProfile`.
+        Omitted, the description block is not drawn. */
+    description?: string
+    /** The marketplace's own product attributes, already labelled. These are
+        arbitrary per catalog, which is why they are a list beside the fixed
+        spec sheet rather than cells inside it. */
+    attributes?: { label: string; value: string }[]
+    /** Every seller's price on this product, buybox-first. Two or more draws
+        the comparison table; one or none draws nothing, because the terminal
+        already quotes it. */
+    offers?: OfferQuote[]
+    /** Which offer the terminal's price belongs to, so its row is tagged. */
+    offerWinnerId?: string
+    /** The buyable variants, when the product has more than one. The page shows
+        a picker above the terminal and the terminal quotes whichever is picked;
+        one variant (or none) draws no picker. */
+    variants?: VariantChoice[]
+    /** Which of `variants` is picked. The terminal quotes its price. */
+    selectedVariantId?: string
+    /** Called with the next picked variant's id. The page holds no state, same
+        as its filter and page. */
+    onVariantChange?: (id: string) => void
+    /** The breeder's handle, so the identity block links at their page. */
+    sellerHandle?: string
+    /** When the product was listed, for the "Diunggah …" line. */
+    postedAt?: string
   }

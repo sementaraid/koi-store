@@ -13,9 +13,15 @@ import { getRegion } from './regions';
 // `calculated_price` / `inventory_quantity` depend on — dropping them (via an
 // unprefixed field) silently yields null prices and zero stock.
 const OFFER_FIELDS =
-  '+seller.logo,+seller.banner,+seller.is_premium,' +
+  '+seller.logo,+seller.banner,+seller.is_premium,+seller.handle,' +
+  /* `status` is what the product page's suspended-seller guard reads. It is
+     not part of the offers route's defaults, so it has to be asked for. */
+  '+seller.status,' +
   '+calculated_price,+inventory_quantity,' +
-  '+product.id,+product.title,+product.handle,+product.thumbnail';
+  '+product.id,+product.title,+product.handle,+product.thumbnail,' +
+  // The variant's title, so a multi-variant product's offer rows say which
+  // variant each price is for rather than repeating the product's name.
+  '+product_variant.title';
 
 export const listOffers = async ({
   productId,

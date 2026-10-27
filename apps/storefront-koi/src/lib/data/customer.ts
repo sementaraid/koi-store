@@ -17,7 +17,12 @@ import {
 
 export const retrieveCustomer = async (): Promise<HttpTypes.StoreCustomer | null> => {
   const authHeaders = await getAuthHeaders();
-  if (!authHeaders) return null;
+
+  /* `getAuthHeaders()` returns `{}` when there is no token, and `{}` is truthy
+     — storefront's own `if (!authHeaders)` therefore never fires, and a
+     signed-out visitor goes on to make an unauthenticated `force-cache`
+     request for `customers/me`. Checking the key is what the guard meant. */
+  if (!('authorization' in authHeaders)) return null;
 
   const headers = {
     ...authHeaders

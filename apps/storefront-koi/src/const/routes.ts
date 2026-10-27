@@ -14,26 +14,22 @@ export const ROUTES = {
   auctions: "/lelang",
   /** The catalog: koi sold outright, at a price. */
   catalogs: "/katalog",
+  /** The varieties the catalog is cut into — Medusa's product categories. */
+  categories: "/kategori",
   /** The shop: everything that is not a koi. */
   marketplace: "/toko",
   /** The broadcast room. A lot rides as a query — see {@link roomHref}. */
   live: "/live",
-  /** How bidding works. */
+  /** How bidding works. A standing page — see `const/info.ts`. */
   guide: "/panduan",
   /** The breeder directory. */
   partners: "/mitra",
-  /** What the house holds the money under. */
+  /** What the house holds the money under. A standing page. */
   escrow: "/rekber",
-  /** The visitor's deposit balance. */
-  balance: "/saldo",
   /** What they are carrying and still owe. */
   cart: "/keranjang",
   /** Where it is going, and how — the step the freight is priced on. */
   shipping: "/pengiriman",
-  /** The lots they are watching, kept for later. */
-  watchlist: "/watchlist",
-  /** The invoices a won lot opens. */
-  invoices: "/tagihan",
   /** Where the customer stands with the house. */
   account: "/akun",
   /** Everything they have bought, newest first. */
@@ -52,12 +48,19 @@ export const ROUTES = {
   newPassword: "/atur-sandi",
   /** The way out. A POST route, not a page — see `(auth)/keluar/route.ts`. */
   signout: "/keluar",
-  /** Reach the house. */
+  /** Reach the house. A standing page. */
   contact: "/kontak",
 } as const
 
 /** A lot's own dossier. */
 export const lotHref = (id: string) => `${ROUTES.auctions}/${id}`
+
+/** One breeder's own page. The id is the seller's handle, not its id — the
+    page looks the seller up by handle so the URL stays readable. */
+export const partnerHref = (handle: string) => `${ROUTES.partners}/${handle}`
+
+/** One category's own catalog, cut to its handle and everything beneath it. */
+export const categoryHref = (handle: string) => `${ROUTES.categories}/${handle}`
 
 /** One checkout's own page — every seller's parcel from one payment. The id is
     the *order group's*, not a single order's: the customer paid once. */

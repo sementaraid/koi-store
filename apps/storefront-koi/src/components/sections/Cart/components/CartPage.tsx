@@ -55,6 +55,7 @@ export type { CartLine, CartPageProps } from "@/types/cart"
  */
 export function CartPage({
   lines = DEFAULT_CART_LINES,
+  money,
   step = "cart",
   onQuantityChange,
   onRemove,
@@ -171,6 +172,7 @@ export function CartPage({
                     due: totals.due,
                     dueRef: totals.dueRef,
                   }}
+                  {...(money ? { money } : {})}
                   detail={totals}
                   step={step}
                   onCheckout={onCheckout}

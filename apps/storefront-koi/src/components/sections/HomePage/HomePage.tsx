@@ -1,3 +1,5 @@
+import { toPartnerFarm } from '@/lib/adapters/seller';
+import { listSellers } from '@/lib/data/seller';
 import { getShell } from '@/lib/shell';
 
 import { Landing } from './components/Landing';
@@ -13,7 +15,16 @@ import { Landing } from './components/Landing';
 export async function HomePage() {
   /* `HomeProps` takes no `cart` — the landing page's bar carries no cart door,
      which is the kit's own call, not an omission here. */
-  const { account } = await getShell();
+  const [{ account }, { sellers }] = await Promise.all([
+    getShell(),
+    listSellers(6)
+  ]);
 
-  return <Landing account={account} />;
+  /* Real sellers, not the kit's demo farms: the demo set's hrefs point at
+     handles nothing registers, and a visitor who clicks one from the live
+     homepage gets a 404. Omitted when the directory is empty, which lets
+     `Home` fall back to its own demo band rather than render nothing. */
+  const partners = sellers.length ? sellers.map(toPartnerFarm) : undefined;
+
+  return <Landing account={account} {...(partners ? { partners } : {})} />;
 }

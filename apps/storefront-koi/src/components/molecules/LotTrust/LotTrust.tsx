@@ -100,17 +100,21 @@ export function LotTrustList({
       </RenderIf>
       <RenderIf when={room}>
         {() => (
+          /* No top-up action: the house holds no deposit balance in this
+             project, so a "Top up" link would promise a wallet that does not
+             exist. The claim about the money is true — the rekber is where it
+             goes — so the line stays and the control drops. */
           <TrustLine
             icon={Wallet}
-            title="Saldo deposit."
+            title="Pembayaran lewat rekber."
             body={
               signedIn
-                ? "Siap dipakai di ruang ini."
-                : "Masuk untuk memakai saldo."
+                ? "Dana ditahan sampai ikan diterima."
+                : "Masuk untuk melihat tagihan Anda."
             }
             action={
-              <Link href={ROUTES.balance} className="font-bold">
-                Top up
+              <Link href={signedIn ? ROUTES.orders : ROUTES.login} className="font-bold">
+                {signedIn ? "Lihat tagihan" : "Masuk"}
               </Link>
             }
           />

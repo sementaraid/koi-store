@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 
 import { ROUTES } from '@/const/routes';
 import { CartPage } from '@/components/sections/Cart/components/CartPage';
-import type { CartLine } from '@/types/cart';
+import type { CartLine, CartMoney } from '@/types/cart';
 import type { HeaderAccount, HeaderCart } from '@/types/header';
 import type { Product } from '@/types/product';
 import { deleteLineItem, updateLineItem } from '@/lib/data/cart';
@@ -22,11 +22,13 @@ import { deleteLineItem, updateLineItem } from '@/lib/data/cart';
 export function CartLines({
   lines,
   lineIds,
+  money,
   account,
   cart
 }: {
   lines: CartLine[];
   lineIds: Record<string, string>;
+  money?: CartMoney;
   account?: HeaderAccount;
   cart?: HeaderCart;
 }) {
@@ -50,6 +52,7 @@ export function CartLines({
   return (
     <CartPage
       lines={lines}
+      {...(money ? { money } : {})}
       account={account}
       cart={cart}
       onQuantityChange={(product, quantity) => {

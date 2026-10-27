@@ -43,6 +43,38 @@ export type CartLine = {
 }
 
 /**
+ * What the house's own cart says the bill is.
+ *
+ * @remarks
+ * The kit can add up its lines ({@link cartTotals}), and for a demo cart that is
+ * all there is. A real Medusa cart prices itself — tax, promotions, and the
+ * freight of whichever option each parcel took — and those figures are not
+ * derivable from unit prices. So when the backend has computed them, the rail
+ * draws *these* and the client arithmetic is only the fallback: two surfaces
+ * totalling the same cart differently is how a visitor is shown one figure and
+ * charged another.
+ *
+ * Every amount is in `currency`'s major units, as Medusa returns them.
+ */
+export type CartMoney = {
+  /** The goods, before freight, tax and promotions — `item_subtotal`. */
+  items: number
+  /** What delivery adds — `shipping_subtotal`. Zero until a method is chosen,
+      which is why the cart step hides the row rather than printing `Rp 0`. */
+  shipping?: number
+  /** Tax, where the region charges any — `tax_total`. */
+  tax?: number
+  /** What promotions took off, as a positive number — `discount_total`. Drawn
+      with its own minus sign. */
+  discount?: number
+  /** What the visitor is actually charged — `total`. Not a sum of the rows
+      above: it is the cart's own figure, and it is the one that is billed. */
+  total: number
+  /** ISO 4217, upper case. */
+  currency: string
+}
+
+/**
  * Which step of the checkout the visitor is on.
  *
  * @remarks
@@ -72,6 +104,11 @@ export type CartPageProps = ComponentProps<"div"> &
         under their own headings, so the order within a kind is the caller's.
         @defaultValue the kit's demo cart — one won lot and two shelf items */
     lines?: CartLine[]
+    /** What the house's own cart says the bill is. Given, the rail draws these
+        figures instead of totalling `lines` — see {@link CartMoney}. Omitted,
+        the kit's arithmetic stands, which is what Storybook and the demo cart
+        show. */
+    money?: CartMoney
     /** Which step of the checkout this page is drawing. @defaultValue `"cart"` */
     step?: CheckoutStep
     /** Called with the shelf item and the count the visitor picked. Only shelf

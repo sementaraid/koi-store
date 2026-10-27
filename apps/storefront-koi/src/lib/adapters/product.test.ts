@@ -3,7 +3,7 @@ import { test } from "node:test"
 
 /* Relative paths only, same reason as the helper tests: the runner strips types
    without reading tsconfig, so `@/` does not resolve. Type-only imports erase. */
-import { toSimpleProduct, toSupplyStock } from "./product.ts"
+import { toSimpleProduct, toSupplyStock, toVariantChoices } from "./product.ts"
 import type { StoreOffer } from "../helpers/buybox.ts"
 
 /* What this mapping goes wrong at: quoting the wrong offer's money, reading an
@@ -74,4 +74,44 @@ test("maps seller, category and spec off the winner's offer", () => {
   assert.equal(out.listing?.ref, "SKU-1")
   assert.equal(out.listing?.category, "Kohaku")
   assert.equal(out.listing?.spec, "62 cm")
+})
+
+/* The buybox is ranked *within* a variant: a page that ranked the whole field
+   would quote a price for a size the picker cannot sell. */
+
+const variant = (id: string, title: string) => ({ id, title }) as never
+
+const onVariant = (id: string, variant_id: string, price: number, stock: number) =>
+  ({ ...offer(price, stock), id, variant_id }) as unknown as StoreOffer
+
+test("each variant quotes its own winner", () => {
+  const choices = toVariantChoices(
+    [variant("v45", "45 cm"), variant("v60", "60 cm")],
+    [
+      onVariant("o1", "v45", 3_000_000, 4),
+      onVariant("o2", "v60", 9_000_000, 2),
+      // Undercuts the first 60 cm offer, and must not lift the 45 cm pick.
+      onVariant("o3", "v60", 7_500_000, 1),
+    ]
+  )
+
+  assert.deepEqual(
+    choices.map((choice) => [choice.title, choice.offerId, choice.price]),
+    [
+      ["45 cm", "o1", 3_000_000],
+      ["60 cm", "o3", 7_500_000],
+    ]
+  )
+})
+
+test("a variant no offer prices is not a choice", () => {
+  const choices = toVariantChoices(
+    [variant("v45", "45 cm"), variant("v70", "70 cm")],
+    [onVariant("o1", "v45", 3_000_000, 4)]
+  )
+
+  assert.deepEqual(
+    choices.map((choice) => choice.id),
+    ["v45"]
+  )
 })

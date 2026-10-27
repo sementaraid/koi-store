@@ -13,19 +13,19 @@ export const DEFAULT_FOOTER_COLUMNS: FooterColumn[] = [
     label: "Layanan Lelang",
     links: [
       { label: "Jadwal Lelang Live", href: ROUTES.auctions },
-      { label: "Lelang Kilat 24 Jam", href: `${ROUTES.auctions}/kilat` },
       { label: "Katalog Nishikigoi Champion", href: ROUTES.catalogs },
-      { label: "Registrasi Penitip Lot Lelang", href: "/penitip" },
-      { label: "Hasil Lelang Terdahulu", href: `${ROUTES.auctions}/hasil` },
+      { label: "Varietas & Kategori", href: ROUTES.categories },
+      { label: "Perlengkapan & Pakan", href: ROUTES.marketplace },
+      { label: "Mitra Breeder Terverifikasi", href: ROUTES.partners },
     ],
   },
   {
     label: "Kepatuhan & Pengiriman",
     links: [
       { label: "Mekanisme Pembayaran", href: "/pembayaran" },
+      { label: "Mekanisme Rekening Bersama", href: ROUTES.escrow },
       { label: "Standar Karantina BBKP RI", href: "/karantina" },
       { label: "Garansi Ikan Hidup D.O.A", href: "/garansi" },
-      { label: "Ekspedisi Kalog & Kargo Udara", href: "/pengiriman" },
       { label: "Cek Sertifikat Breeder", href: "/sertifikat" },
     ],
   },
@@ -46,7 +46,6 @@ export const DEFAULT_FOOTER_LEGAL_LINKS: FooterLink[] = [
   { label: "Kebijakan Privasi", href: "/privasi" },
   { label: "Syarat & Ketentuan Bidding", href: "/syarat" },
   { label: "Regulasi Lelang", href: "/regulasi" },
-  { label: "Status Layanan", href: "/status" },
 ]
 
 /**

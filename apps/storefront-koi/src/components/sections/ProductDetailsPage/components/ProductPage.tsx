@@ -1,4 +1,4 @@
-import { ShoppingBag } from "lucide-react"
+import { ArrowRight, ShoppingBag } from "lucide-react"
 
 import { Button } from "@/components/atoms/Button/Button"
 import { Link } from "@/components/atoms/Link/Link"
@@ -8,11 +8,12 @@ import {
 } from "@/const/catalog"
 import { CONTAINER, SECTION_LABEL } from "@/const/layout"
 import { DEFAULT_LIVE_MEDIA } from "@/const/live"
-import { ROUTES, goodHref, koiHref } from "@/const/routes"
+import { ROUTES, goodHref, koiHref, partnerHref } from "@/const/routes"
 import { EmptyFeed } from "@/components/cells/EmptyFeed/EmptyFeed"
 import { FeedGrid } from "@/components/atoms/FeedGrid/FeedGrid"
 import { FeedPagination } from "@/components/cells/FeedPagination/FeedPagination"
 import { MediaStage } from "@/components/molecules/MediaStage/MediaStage"
+import { OfferComparison } from "@/components/cells/OfferComparison/OfferComparison"
 import { SpecSheet } from "@/components/cells/SpecSheet/SpecSheet"
 import { LotLayout } from "@/components/atoms/LotLayout/LotLayout"
 import { LotTrustList } from "@/components/molecules/LotTrust/LotTrust"
@@ -23,6 +24,7 @@ import { SaleTerminal } from "@/components/organisms/SaleTerminal/SaleTerminal"
 import type { SimpleProduct } from "@/types/product"
 import type { ProductPageProps } from "@/types/product-page"
 import { filterGoods, salePrice, saleStatus } from "@/lib/helpers/filter-goods"
+import { formatAgo } from "@/lib/helpers/format-ago"
 import { sessionLabel } from "@/lib/helpers/session-label"
 
 export type {
@@ -71,6 +73,15 @@ export function ProductPage({
   media = DEFAULT_LIVE_MEDIA,
   onBuy,
   backHref,
+  description,
+  attributes,
+  offers,
+  offerWinnerId,
+  variants,
+  selectedVariantId,
+  onVariantChange,
+  sellerHandle,
+  postedAt,
   activeHref = ROUTES.catalogs,
   filter = DEFAULT_CATALOG_FILTER,
   page = 1,
@@ -84,6 +95,23 @@ export function ProductPage({
 }: ProductPageProps) {
   const { listing, info } = product
   const koi = listing?.sellerKind === "farm"
+
+  /* The terminal quotes the *picked* variant, not the product-wide buybox: its
+     price, its stock and (through `ProductDetail`'s `onBuy`) the offer a click
+     actually buys. With no picker — one variant, or none — the product's own
+     sale stands. */
+  const picked = variants?.find((variant) => variant.id === selectedVariantId)
+  const quoted: SimpleProduct = picked
+    ? {
+        ...product,
+        sale: {
+          ...product.sale,
+          price: picked.price,
+          currency: picked.currency,
+          stock: picked.supply,
+        },
+      }
+    : product
   const narrowing = filter.status !== "all" || filter.category !== ""
   /* Where the item came from, said twice — the step's wording and where it
      goes. A koi is a breeder's, a good is a shop's, and the trail is the one
@@ -131,6 +159,21 @@ export function ProductPage({
                 only when it has something to say, and the section as a whole
                 collapses when neither does. */}
             <section className="flex flex-col gap-8">
+              {/* The seller's own listing text. Plain text, never HTML — the
+                  field is whatever a seller typed into the vendor panel, and a
+                  customer page must not execute it. Same rule as the breeder
+                  bio on `/mitra/[handle]`. */}
+              <RenderIf when={description}>
+                {(text) => (
+                  <div className="flex flex-col gap-3">
+                    <h2 className={SECTION_LABEL}>Deskripsi</h2>
+                    <p className="text-xs leading-relaxed whitespace-pre-line text-pretty">
+                      {text}
+                    </p>
+                  </div>
+                )}
+              </RenderIf>
+
               <RenderIf when={listing?.note}>
                 {(note) => (
                   <div className="flex flex-col gap-3">
@@ -145,15 +188,115 @@ export function ProductPage({
               </RenderIf>
 
               <SpecSheet listing={listing} info={info} />
+
+              {/* The catalogue's own attributes — arbitrary per marketplace, so
+                  a list rather than cells in the sheet above, which holds the
+                  koi facts every product can be asked for. */}
+              <RenderIf when={attributes?.length ? attributes : null}>
+                {(rows) => (
+                  <section className="flex flex-col gap-3">
+                    <h2 className={SECTION_LABEL}>Atribut produk</h2>
+                    <dl className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                      {rows.map(({ label, value }) => (
+                        <div
+                          key={`${label}:${value}`}
+                          className="rounded-xl bg-muted/60 px-4 py-3.5"
+                        >
+                          <dt className="text-xs text-muted-foreground">
+                            {label}
+                          </dt>
+                          <dd className="font-heading text-xs font-bold text-pretty">
+                            {value}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </section>
+                )}
+              </RenderIf>
+
+              <RenderIf when={postedAt}>
+                {(when) => (
+                  <p className="text-2xs text-muted-foreground">
+                    Diunggah {formatAgo(when)}
+                  </p>
+                )}
+              </RenderIf>
             </section>
           </>
         }
         aside={
           <>
+            {/* Which one is for sale. Only drawn when there is a real choice:
+                the buybox is ranked within a variant, so picking one changes
+                both the money quoted below and the offer a click buys. */}
+            <RenderIf when={variants && variants.length > 1 ? variants : undefined}>
+              {(choices) => (
+                <div className="flex flex-col gap-2">
+                  <span className={SECTION_LABEL}>Varian</span>
+                  <div
+                    role="group"
+                    aria-label="Pilih varian"
+                    className="flex flex-wrap gap-2"
+                  >
+                    {choices.map((choice) => (
+                      <Button
+                        key={choice.id}
+                        variant={
+                          choice.id === selectedVariantId ? "outline" : "ghost"
+                        }
+                        size="sm"
+                        aria-pressed={choice.id === selectedVariantId}
+                        onClick={() => onVariantChange?.(choice.id)}
+                        className="text-xs"
+                      >
+                        {choice.title}
+                        <RenderIf when={choice.supply.level === "out-of-stock"}>
+                          {() => (
+                            <span className="text-2xs text-muted-foreground">
+                              habis
+                            </span>
+                          )}
+                        </RenderIf>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </RenderIf>
+
             {/* The board is the identity's whole right-hand column: a fixed
                 price is a thing you take or leave, and the panel says what it
                 costs, whether it is still there, and what holds the money. */}
-            <SaleTerminal product={product} onBuy={onBuy} className="p-0" />
+            <SaleTerminal product={quoted} onBuy={onBuy} className="p-0" />
+
+            {/* The way through to whoever is selling it. Only drawn when the
+                seller publishes a handle, because the page behind it is looked
+                up by handle. */}
+            <RenderIf when={sellerHandle}>
+              {(handle) => (
+                <Link
+                  href={partnerHref(handle)}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3 text-xs transition-colors hover:border-accent-ink"
+                >
+                  <span className="flex min-w-0 flex-col">
+                    <span className="truncate font-bold">
+                      {listing?.seller ?? "Penjual"}
+                    </span>
+                    <span className="text-2xs text-muted-foreground">
+                      Lihat semua yang dijual
+                    </span>
+                  </span>
+                  <ArrowRight aria-hidden className="size-4 shrink-0" />
+                </Link>
+              )}
+            </RenderIf>
+
+            {/* Every seller's own price, where more than one lists it. */}
+            <OfferComparison
+              offers={offers ?? []}
+              {...(offerWinnerId ? { winnerId: offerWinnerId } : {})}
+            />
 
             {/* What backs the money. A shelf good keeps the escrow and the
                 seller's standing; the live-arrival promise and the breeder's

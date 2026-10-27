@@ -44,4 +44,19 @@ export type CatalogsProps = ComponentProps<"div"> &
     /** Every koi the breeder lists outright, unfiltered and unpaged.
         @defaultValue the kit's demo ten */
     koi?: SimpleProduct[]
+    /** The band's own wording, where the feed is a narrower one than the whole
+        catalog — a single category, say. Omitted, the page speaks for the
+        catalog as a whole. */
+    heading?: {
+      eyebrow: string
+      title: string
+      lede: string
+    }
+    /** Where the pager links, and what the filter rewrites. Omitted, the
+        catalog's own path. */
+    basePath?: string
+    /** The steps above the heading, where the feed sits under something — a
+        category under the catalog. Omitted, the page draws no trail, as the
+        catalog's own top-level page does not. */
+    trail?: { label: string; href?: string }[]
   }

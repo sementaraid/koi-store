@@ -191,12 +191,9 @@ export function CartLine({
           <RenderIf when={!lot}>
             {() => (
               <>
-                <Link
-                  href={ROUTES.watchlist}
-                  className="text-xs text-accent-ink underline underline-offset-4"
-                >
-                  Simpan untuk nanti
-                </Link>
+                {/* No "save for later" control: a watchlist needs somewhere
+                    to save to, and this project has no wishlist module — the
+                    row offers only what the cart can actually do. */}
                 <Button
                   type="button"
                   variant="link"

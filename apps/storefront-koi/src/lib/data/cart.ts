@@ -4,6 +4,7 @@ import { HttpTypes } from '@medusajs/types';
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { redirect } from 'next/navigation';
 
+import { ROUTES, orderHref } from '@/const/routes';
 import medusaError from '@/lib/helpers/medusa-error';
 import { parseVariantIdsFromError } from '@/lib/helpers/parse-variant-error';
 
@@ -390,7 +391,7 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
     data.billing_address = data.shipping_address;
 
     await updateCart(data);
-    await revalidatePath('/cart');
+    await revalidatePath(ROUTES.cart);
   } catch (e: any) {
     return e.message;
   }
@@ -416,14 +417,13 @@ export async function placeOrder(cartId?: string) {
   revalidateTag(cartCacheTag);
 
   if (res.data?.order_group) {
-    revalidatePath('/user/reviews');
-    revalidatePath('/user/orders');
+    revalidatePath(ROUTES.orders);
     removeCartId();
     // The completed cart splits into one order group (many per-seller orders).
     // Send the shopper to the order-group detail page, which renders every
     // child order + aggregated totals. `order_group.id` is always present;
     // `orders[0].id` is not (the complete route omits `orders` from its fields).
-    redirect(`/user/orders/${res.data.order_group.id}`);
+    redirect(orderHref(res.data.order_group.id));
   }
 
   return res;
@@ -449,7 +449,13 @@ export async function updateRegion(countryCode: string, currentPath: string) {
   const productsCacheTag = await getCacheTag('products');
   revalidateTag(productsCacheTag);
 
-  redirect(`/${countryCode}${currentPath}`);
+  /* Storefront prefixes the path with the country because its routes live
+     under `[locale]`. This storefront has no such segment — the country is a
+     constant (`lib/region.ts`) — so a prefixed path here is a 404. The
+     function has no caller for the same reason: there is nothing to switch.
+     ponytail: delete this and `updateRegionWithValidation` the day the
+     constant stays a constant; wire a selector first if it does not. */
+  redirect(currentPath);
 }
 
 export async function updateRegionWithValidation(
@@ -524,9 +530,11 @@ export async function updateRegionWithValidation(
   const productsCacheTag = await getCacheTag('products');
   revalidateTag(productsCacheTag);
 
+  /* Same country-prefix mismatch as `updateRegion` above, and the same reason
+     nothing calls this: no `[locale]` segment exists here to prefix. */
   return {
     removedItems,
-    newPath: `/${countryCode}${currentPath}`
+    newPath: currentPath
   };
 }
 

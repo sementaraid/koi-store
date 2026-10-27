@@ -67,8 +67,10 @@ export const DEFAULT_ACCOUNT_LINKS: HeaderAccountLink[] = [
 
 export const DEFAULT_SEARCH_PLACEHOLDER = "Cari varietas, sertifikat, breeder…"
 
-/** The kit's logo. `public/logo-mark.png` is the 128px web copy of the source art. */
-export const DEFAULT_BRAND_ICON = "/logo-mark.png"
+/** The kit's logo. No `public/` art exists yet — `undefined` so `BrandMark`
+    draws its fish glyph on purpose instead of firing a 404 image request for
+    a file that was never shipped. Point this at a real asset once one lands. */
+export const DEFAULT_BRAND_ICON = undefined
 
 /**
  * Member-tier ink — the gold of the design's own palette. A token rather than
