@@ -20,3 +20,4 @@ export { Link } from './Link/Link';
 export { LotLayout } from './LotLayout/LotLayout';
 export { PulseIcon } from './PulseIcon/PulseIcon';
 export { RenderIf } from './RenderIf/RenderIf';
+export { Stars, StarsInput } from './Stars/Stars';

@@ -12,6 +12,7 @@ import type { HeaderAccount, HeaderCart } from '@/types/header';
 import type { AccountOrder } from '@/types/order';
 
 import { AccountFrame } from './AccountFrame';
+import { ParcelReviews } from './ParcelReviews';
 
 /** One checkout, as `retrieveOrderGroup` returns it. */
 export type OrderDetailGroup = {
@@ -148,6 +149,10 @@ function Parcel({ order }: { order: AccountOrder }) {
           {formatPrice(order.total ?? 0, order.currency_code ?? 'IDR')}
         </p>
       </div>
+
+      {/* Drawn only once the parcel has arrived — the component returns nothing
+          while the fish is still in transit. */}
+      <ParcelReviews order={order} />
     </Card>
   );
 }

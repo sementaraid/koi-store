@@ -17,6 +17,7 @@ export type AccountOrder = {
   items?: Array<{
     id: string;
     title?: string | null;
+    product_id?: string | null;
     product_title?: string | null;
     thumbnail?: string | null;
     quantity?: number | null;

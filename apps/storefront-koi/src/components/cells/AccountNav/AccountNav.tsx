@@ -1,7 +1,15 @@
 'use client';
 
 import type { LucideIcon } from 'lucide-react';
-import { LayoutDashboard, LogOut, MapPin, Package, Settings } from 'lucide-react';
+import {
+  LayoutDashboard,
+  LogOut,
+  MapPin,
+  MessageSquareText,
+  MessagesSquare,
+  Package,
+  Settings
+} from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from 'cn';
 
@@ -44,6 +52,8 @@ const ICONS: Record<string, LucideIcon> = {
   [ROUTES.account]: LayoutDashboard,
   [ROUTES.orders]: Package,
   [ROUTES.addresses]: MapPin,
+  [ROUTES.reviews]: MessageSquareText,
+  [ROUTES.messages]: MessagesSquare,
   [ROUTES.settings]: Settings,
   [ROUTES.signout]: LogOut
 };

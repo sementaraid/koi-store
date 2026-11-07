@@ -21,6 +21,7 @@ import { PageShell } from "@/components/organisms/PageShell/PageShell"
 import { ProductCard } from "@/components/organisms/ProductCard/ProductCard"
 import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
 import { SaleTerminal } from "@/components/organisms/SaleTerminal/SaleTerminal"
+import { ChatButton } from "@/components/cells/ChatButton/ChatButton"
 import type { SimpleProduct } from "@/types/product"
 import type { ProductPageProps } from "@/types/product-page"
 import { filterGoods, salePrice, saleStatus } from "@/lib/helpers/filter-goods"
@@ -81,6 +82,7 @@ export function ProductPage({
   selectedVariantId,
   onVariantChange,
   sellerHandle,
+  chatPartner,
   postedAt,
   activeHref = ROUTES.catalogs,
   filter = DEFAULT_CATALOG_FILTER,
@@ -292,6 +294,19 @@ export function ProductPage({
               )}
             </RenderIf>
 
+            {/* Ask the seller directly, before buying. Drawn only when the
+                buybox's seller is known and a chat session exists — the
+                component decides the latter. */}
+            <RenderIf when={chatPartner}>
+              {(partner) => (
+                <ChatButton
+                  partner={partner}
+                  subject={product.title}
+                  topicId={product.id}
+                />
+              )}
+            </RenderIf>
+
             {/* Every seller's own price, where more than one lists it. */}
             <OfferComparison
               offers={offers ?? []}
@@ -325,7 +340,12 @@ export function ProductPage({
                     product={other}
                     href={itemHref(other)}
                     action={
-                      <Button size="sm" variant="outline" className="flex-1">
+                      <Button
+                        render={<Link href={itemHref(other)} />}
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                      >
                         Lihat detail
                       </Button>
                     }

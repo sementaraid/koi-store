@@ -8,6 +8,7 @@ import type {
   SimpleProduct,
 } from "@/types/product"
 import type { OfferQuote, VariantChoice } from "@/lib/adapters/product"
+import type { ChatPartner } from "@/components/cells/ChatButton/ChatButton"
 
 export type { MediaItem } from "@/components/cells/MediaGallery/MediaGallery"
 
@@ -75,6 +76,9 @@ export type ProductPageProps = ComponentProps<"div"> &
     onVariantChange?: (id: string) => void
     /** The breeder's handle, so the identity block links at their page. */
     sellerHandle?: string
+    /** Who a "Hubungi penjual" chat would reach, when the buybox seller is
+        known. Omitted, no chat control is drawn. */
+    chatPartner?: ChatPartner
     /** When the product was listed, for the "Diunggah …" line. */
     postedAt?: string
   }

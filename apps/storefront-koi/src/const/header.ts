@@ -2,6 +2,8 @@ import {
   LayoutDashboard,
   LogOut,
   MapPin,
+  MessageSquareText,
+  MessagesSquare,
   Package,
   Settings,
   ShoppingBag,
@@ -49,7 +51,20 @@ export const DEFAULT_ACCOUNT_LINKS: HeaderAccountLink[] = [
     group: "Transaksi",
   },
 
+  {
+    label: "Pesan",
+    href: ROUTES.messages,
+    icon: MessagesSquare,
+    group: "Transaksi",
+  },
+
   { label: "Alamat", href: ROUTES.addresses, icon: MapPin, group: "Akun" },
+  {
+    label: "Ulasan",
+    href: ROUTES.reviews,
+    icon: MessageSquareText,
+    group: "Akun",
+  },
   {
     label: "Pengaturan",
     href: ROUTES.settings,

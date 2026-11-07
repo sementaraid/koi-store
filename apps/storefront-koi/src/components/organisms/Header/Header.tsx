@@ -10,6 +10,7 @@ import { AccountCluster } from "@/components/cells/AccountMenu/AccountCluster"
 import { BackButton } from "@/components/cells/BackButton/BackButton"
 import { BrandMark } from "@/components/cells/BrandMark/BrandMark"
 import { CartLink } from "@/components/cells/CartLink/CartLink"
+import { ChatLink } from "@/components/cells/ChatLink/ChatLink"
 import { DEFAULT_BRAND_ICON, DEFAULT_LINKS } from "@/const/header"
 import { NavLinks } from "@/components/cells/NavLinks/NavLinks"
 import { SearchField } from "@/components/cells/SearchField/SearchField"
@@ -129,6 +130,10 @@ export function Header({
           {/* The cart sits before the account: it belongs to the visit, not to
               the visitor, so it is there signed in or out. */}
           <RenderIf when={cart}>{(value) => <CartLink {...value} />}</RenderIf>
+
+          {/* Only inside a TalkJS session, and only once somebody is signed
+              in — the component itself returns nothing when there is none. */}
+          <RenderIf when={account}>{() => <ChatLink />}</RenderIf>
 
           <RenderIf when={account}>
             {(value) => <AccountCluster account={value} />}

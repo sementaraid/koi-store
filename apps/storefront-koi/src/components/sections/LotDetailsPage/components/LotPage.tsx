@@ -244,7 +244,12 @@ export function LotPage({
                     product={other}
                     href={lotHref(other.id)}
                     action={
-                      <Button size="sm" variant="outline" className="flex-1">
+                      <Button
+                        render={<Link href={lotHref(other.id)} />}
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                      >
                         Lihat detail
                       </Button>
                     }

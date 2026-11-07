@@ -162,8 +162,10 @@ export function Marketplace({
                     action={
                       /* The one good you can act on leads with the solid fill;
                          the rest fall back to the quiet detail link. Neither is
-                         disabled — the card's own link is how you get there. */
+                         disabled — both land on the good's own page, which is
+                         where the buy actually happens. */
                       <Button
+                        render={<Link href={goodHref(item.id)} />}
                         size="sm"
                         variant={level === "in-stock" ? "solid" : "outline"}
                         className="flex-1"

@@ -2,6 +2,7 @@ import { BadgeCheck, Fish, MapPin, PackageCheck, Star } from 'lucide-react';
 
 import { Badge } from '@/components/atoms/Badge/Badge';
 import { Button } from '@/components/atoms/Button/Button';
+import { ChatButton } from '@/components/cells/ChatButton/ChatButton';
 import { EmptyFeed } from '@/components/cells/EmptyFeed/EmptyFeed';
 import { Eyebrow } from '@/components/atoms/Eyebrow/Eyebrow';
 import { FeedGrid } from '@/components/atoms/FeedGrid/FeedGrid';
@@ -41,10 +42,8 @@ export type PartnerProps = {
  * breeder's own price for a koi even where another seller undercuts them on the
  * same master product.
  *
- * Presentational: the caller fetches, ranks and maps. No chat control, unlike
- * `apps/storefront`'s `SellerHeading` — the messaging feature has no backend in
- * this project (see the note in the parity plan), so a "Hubungi breeder" button
- * would open nothing.
+ * Presentational: the caller fetches, ranks and maps. The chat control draws
+ * only when a TalkJS session exists — see `ChatButton`.
  */
 export function Partner({
   partner,
@@ -136,10 +135,23 @@ export function Partner({
               </div>
             </div>
 
-            <Badge variant="live" className="h-7 gap-1.5 px-3 text-[13px]">
-              <PackageCheck aria-hidden />
-              {total} listing aktif
-            </Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              <ChatButton
+                partner={{
+                  id: partner.id,
+                  name,
+                  ...(logo ? { photoUrl: logo } : {})
+                }}
+                subject={name}
+                topicId={partner.id}
+                variant="soft"
+              />
+
+              <Badge variant="live" className="h-7 gap-1.5 px-3 text-[13px]">
+                <PackageCheck aria-hidden />
+                {total} listing aktif
+              </Badge>
+            </div>
           </div>
 
           {/* The breeder's own words, as text. Not HTML: see the remark on
@@ -169,7 +181,12 @@ export function Partner({
                     product={item}
                     href={koiHref(item.id)}
                     action={
-                      <Button size="sm" variant="outline" className="flex-1">
+                      <Button
+                        render={<Link href={koiHref(item.id)} />}
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                      >
                         Lihat detail
                       </Button>
                     }

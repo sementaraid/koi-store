@@ -36,6 +36,10 @@ export const ROUTES = {
   orders: "/akun/pesanan",
   /** Where their koi get delivered. */
   addresses: "/akun/alamat",
+  /** What they have said about the farms they bought from. */
+  reviews: "/akun/ulasan",
+  /** Every conversation they have with the shops. */
+  messages: "/akun/pesan",
   /** Name, contact, password. */
   settings: "/akun/pengaturan",
   /** Sign in. */

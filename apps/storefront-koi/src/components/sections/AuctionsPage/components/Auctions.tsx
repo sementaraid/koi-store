@@ -156,7 +156,12 @@ export function Auctions({
                   product={lot}
                   href={lotHref(lot.id)}
                   action={
-                    <Button size="sm" variant="outline" className="flex-1">
+                    <Button
+                      render={<Link href={lotHref(lot.id)} />}
+                      size="sm"
+                      variant="outline"
+                      className="flex-1"
+                    >
                       Lihat detail
                     </Button>
                   }

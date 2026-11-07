@@ -53,6 +53,7 @@ export function ProductDetail({
   | 'offers'
   | 'offerWinnerId'
   | 'sellerHandle'
+  | 'chatPartner'
   | 'postedAt'
 >) {
   const state = useFeedSearch<Availability>(DEFAULT_CATALOG_FILTER);

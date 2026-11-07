@@ -54,8 +54,23 @@ export const profileSchema = z.object({
   phone
 });
 
+/* 1–5 whole stars and at most 300 characters are the backend's own limits
+   (`StoreCreateReview` in `@mercurjs/core`), repeated here so the customer is
+   told before the request rather than by a 400 afterwards. */
+export const reviewSchema = z.object({
+  rating: z
+    .number({ message: 'Pilih nilai bintang' })
+    .int()
+    .min(1, 'Pilih nilai bintang')
+    .max(5, 'Nilai maksimal 5 bintang'),
+  /* Optional: a score with no words is a complete review, and the house would
+     rather have the number than nothing. */
+  note: z.string().trim().max(300, 'Ulasan maksimal 300 karakter').optional()
+});
+
 export type AddressData = z.infer<typeof addressSchema>;
 export type ProfileData = z.infer<typeof profileSchema>;
+export type ReviewData = z.infer<typeof reviewSchema>;
 
 /** A blank address form — the "tambah alamat" state. `id` defaults to Indonesia
     because that is where every fish the house sells is going. */

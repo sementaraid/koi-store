@@ -82,6 +82,15 @@ export async function ProductDetailsPage({ handle }: { handle: string }) {
       {...(winner?.seller?.handle
         ? { sellerHandle: winner.seller.handle }
         : {})}
+      {...(winner?.seller?.id
+        ? {
+            chatPartner: {
+              id: winner.seller.id,
+              name: winner.seller.name,
+              ...(winner.seller.logo ? { photoUrl: winner.seller.logo } : {})
+            }
+          }
+        : {})}
       {...(product.created_at
         ? { postedAt: new Date(product.created_at).toISOString() }
         : {})}
