@@ -12,7 +12,6 @@
       "env": [
         "NODE_ENV",
         "MERCUR_BACKEND_URL",
-        "VITE_MERCUR_BACKEND_URL",
         "MEDUSA_BACKEND_URL",
         "NEXT_PUBLIC_*"
       ],
@@ -26,7 +25,8 @@
     },
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "passThroughEnv": ["DATABASE_URL", "HOST", "MERCUR_BACKEND_URL"]
     }
   }
 }

@@ -1,0 +1,92 @@
+# Development only. The host keeps no node_modules and no bun/node install:
+# deps live in named volumes, the source tree is bind-mounted.
+#
+# Networking: the app runs on a project network (so it reaches `postgres` by
+# name) and on the shared external `web` network, where Caddy finds it as
+# `koi-app`. Host ports are published on loopback only — the public entry point
+# is Caddy, not these ports.
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    # Loopback-only, so the trust auth below is not reachable from other hosts.
+    # The app container connects over the project network by service name.
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: koi-store
+      # Dev only. Avoids duplicating the password from packages/api/.env here
+      # (two copies drift); any password in DATABASE_URL is accepted.
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d koi-store"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+
+  app:
+    depends_on:
+      postgres:
+        condition: service_healthy
+    build:
+      context: .
+      args:
+        UID: "1001"
+        GID: "1001"
+    image: koi-store-dev
+    init: true
+    stdin_open: true
+    tty: true
+    # `default` reaches postgres by name; `web` lets Caddy reach this container
+    # as `koi-app`. Dev servers bind 0.0.0.0 (see vite.config.ts and HOST below)
+    # so they are reachable across the bridge, not just on the container's
+    # loopback.
+    networks:
+      default: {}
+      web:
+        aliases: [koi-app]
+    ports:
+      # Loopback only, for the host browser. Public entry is Caddy.
+      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:3001:3001"
+      - "127.0.0.1:9000:9000"
+    environment:
+      NODE_ENV: development
+      # Turborepo's TUI needs a real terminal; it is attached via tty above.
+      TERM: xterm-256color
+      # Medusa binds 0.0.0.0 by default, but pin it so Caddy can always reach it.
+      HOST: 0.0.0.0
+      # .env keeps `localhost` for host-side `bun run dev`; on the bridge the DB
+      # is another container. Must also be in turbo.json passThroughEnv or turbo
+      # strips it before medusa sees it.
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/koi-store
+    volumes:
+      - .:/workspace
+      # Overlay volumes: bun's workspace install hoists to the root, but each
+      # workspace still gets its own .bin/ and unhoistable packages.
+      - root_modules:/workspace/node_modules
+      - api_modules:/workspace/packages/api/node_modules
+      - admin_modules:/workspace/apps/admin/node_modules
+      - vendor_modules:/workspace/apps/vendor/node_modules
+      - storefront_modules:/workspace/apps/storefront/node_modules
+      - storefront_koi_modules:/workspace/apps/storefront-koi/node_modules
+      - bun_cache:/home/app/.bun/install/cache
+    command: ["bash", "-lc", "bun install && bun run dev"]
+
+networks:
+  web:
+    external: true
+
+volumes:
+  root_modules:
+  api_modules:
+  admin_modules:
+  vendor_modules:
+  storefront_modules:
+  storefront_koi_modules:
+  bun_cache:
+  pg_data:
