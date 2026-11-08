@@ -2,6 +2,7 @@ import { BadgeCheck, ShoppingBag } from "lucide-react"
 
 import { Button } from "@/components/atoms/Button/Button"
 import { Link } from "@/components/atoms/Link/Link"
+import { PAGE_SIZE } from "@/const"
 import { CONTAINER } from "@/const/layout"
 import { ROUTES, koiHref } from "@/const/routes"
 import {
@@ -21,7 +22,7 @@ import { PageShell } from "@/components/organisms/PageShell/PageShell"
 import { ProductCard } from "@/components/organisms/ProductCard/ProductCard"
 import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
 import type { CatalogsProps } from "@/types/catalog"
-import { filterGoods, salePrice, saleStatus } from "@/lib/helpers/filter-goods"
+import { filterGoods, koiStatus, salePrice } from "@/lib/helpers/filter-goods"
 
 export type {
   CatalogFilter,
@@ -67,7 +68,7 @@ export function Catalogs({
   koi = DEFAULT_CATALOG_KOI,
   filter = DEFAULT_CATALOG_FILTER,
   page = 1,
-  pageSize = 6,
+  pageSize = PAGE_SIZE,
   onFilterChange,
   onPageChange,
   account,
@@ -88,7 +89,7 @@ export function Catalogs({
   } = filterGoods(
     koi,
     filter,
-    { statusOf: saleStatus, priceOf: salePrice },
+    { statusOf: koiStatus, priceOf: salePrice },
     page,
     pageSize
   )

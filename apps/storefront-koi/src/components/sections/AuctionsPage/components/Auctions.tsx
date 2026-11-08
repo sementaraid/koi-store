@@ -2,6 +2,7 @@ import { Gavel } from "lucide-react"
 
 import { Button } from "@/components/atoms/Button/Button"
 import { Link } from "@/components/atoms/Link/Link"
+import { PAGE_SIZE } from "@/const"
 import { CONTAINER } from "@/const/layout"
 import { ROUTES, lotHref } from "@/const/routes"
 import {
@@ -68,7 +69,7 @@ export function Auctions({
   lots = DEFAULT_AUCTION_LOTS,
   filter = DEFAULT_AUCTION_FILTER,
   page = 1,
-  pageSize = 6,
+  pageSize = PAGE_SIZE,
   onFilterChange,
   onPageChange,
   account,

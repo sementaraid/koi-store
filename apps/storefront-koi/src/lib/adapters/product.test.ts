@@ -54,6 +54,25 @@ test("falls back to the variant price when no offers are fetched", () => {
   assert.equal(out.sale.stock, undefined, "no offer, no count — not sold out")
 })
 
+/* Every feed tab reads a status off these two fields, so a product that leaves
+   both unsaid renders under "Semua" and nowhere else — which is how a seeded
+   catalog with untracked inventory emptied all three stock tabs. */
+test("an untracked variant is stocked, not statusless", () => {
+  const out = toSimpleProduct(
+    product({ variants: [{ title: "62 cm", manage_inventory: false }] })
+  )
+
+  assert.equal(out.sale.stock?.level, "in-stock")
+  assert.equal(out.sale.availability, "available")
+})
+
+test("a counted-out product reads sold in the koi vocabulary", () => {
+  const out = toSimpleProduct(product(), [offer(500, 0)])
+
+  assert.equal(out.sale.stock?.level, "out-of-stock")
+  assert.equal(out.sale.availability, "sold")
+})
+
 test("stock bands at their edges", () => {
   assert.equal(toSupplyStock(0).level, "out-of-stock")
   assert.equal(toSupplyStock(1).level, "low-stock")

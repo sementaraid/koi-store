@@ -24,7 +24,7 @@ import { SaleTerminal } from "@/components/organisms/SaleTerminal/SaleTerminal"
 import { ChatButton } from "@/components/cells/ChatButton/ChatButton"
 import type { SimpleProduct } from "@/types/product"
 import type { ProductPageProps } from "@/types/product-page"
-import { filterGoods, salePrice, saleStatus } from "@/lib/helpers/filter-goods"
+import { filterGoods, koiStatus, salePrice } from "@/lib/helpers/filter-goods"
 import { formatAgo } from "@/lib/helpers/format-ago"
 import { sessionLabel } from "@/lib/helpers/session-label"
 
@@ -132,7 +132,7 @@ export function ProductPage({
        read in full, is not "yang lain". */
     shelf.filter((other) => other.id !== product.id),
     filter,
-    { statusOf: saleStatus, priceOf: salePrice },
+    { statusOf: koiStatus, priceOf: salePrice },
     page,
     pageSize
   )

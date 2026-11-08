@@ -2,6 +2,7 @@ import { Boxes, PackageCheck } from "lucide-react"
 
 import { Button } from "@/components/atoms/Button/Button"
 import { Link } from "@/components/atoms/Link/Link"
+import { PAGE_SIZE } from "@/const"
 import { CONTAINER } from "@/const/layout"
 import { ROUTES, goodHref } from "@/const/routes"
 import {
@@ -68,7 +69,7 @@ export function Marketplace({
   goods = DEFAULT_SUPPLIES,
   filter = DEFAULT_MARKET_FILTER,
   page = 1,
-  pageSize = 6,
+  pageSize = PAGE_SIZE,
   onFilterChange,
   onPageChange,
   account,
