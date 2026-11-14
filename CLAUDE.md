@@ -12,6 +12,11 @@ build any wallet, auction, bidding, strike, claim or admin feature. It defines t
 rules: fees, the extend window, statuses, refunds and what is out of scope. If the
 code and the plan disagree, say so instead of picking one silently.
 
+**The backlog is `docs/user-stories.md`**, maintained by the `product-owner`
+agent. Work is done against a story ID (`US-xxx`) and its acceptance criteria.
+Name the story and task IDs in every report. Don't build a story that is
+`blocked` by an open question.
+
 These rules extend `AGENTS.md`. If they conflict, follow these rules. Each workspace
 has its own `CLAUDE.md`. Read it before you change anything in that workspace.
 
@@ -184,9 +189,10 @@ The root `check-types` script does nothing yet, because no workspace defines
   `docs/mvp-plan.md`, or moving money in a way the plan doesn't describe.
 - Run the checks for every workspace you touched (commands table above) and fix
   failures before you hand off. Don't hand off failing code.
-- Features go **backend → codegen → frontend → qa**. A feature is done only when
-  qa reports PASS. After a FAIL, allow at most 2 fix rounds, then report the
-  remaining bugs.
+- Features go **product-owner (story ready) → backend → codegen → frontend → qa
+  → product-owner (accept)**. A story is done only when qa reports PASS and the
+  product owner has checked every acceptance criterion against the evidence.
+  After a FAIL, allow at most 2 fix rounds, then report the remaining bugs.
 
 ### 3. Mercur coding standard
 Backend code follows `node_modules/@mercurjs/docs/content/resources/best-practices/`.
