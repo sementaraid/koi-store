@@ -1,6 +1,8 @@
 # Storefront (Koi) Guide
 
 This guide covers work in `apps/storefront-koi`, the customer-facing Next.js app.
+It also holds the **Farmer area**: farm registration, auctions and lots, bids and
+winners, paid and shipped, claims and balance. See `docs/mvp-plan.md`.
 
 Stack: Next.js 15 (App Router, Turbopack), React 19, Tailwind v4, Base UI, cva,
 react-hook-form + zod, TalkJS chat. Dev server: `bun run dev` → http://localhost:3001
@@ -10,7 +12,8 @@ react-hook-form + zod, TalkJS chat. Dev server: `bun run dev` → http://localho
 | Path | What goes there |
 |---|---|
 | `src/app/(main\|auth\|account)/<slug>/page.tsx` | Routes. Thin: metadata + `<Suspense>` + one section |
-| `src/components/{atoms,cells,molecules,organisms,sections}` | Component tiers, smallest to largest |
+| `@koi/ui` (`packages/ui`) | Shared primitives: Button, Card, Badge, Input, FormField, RenderIf, surface tokens |
+| `src/components/{atoms,cells,molecules,organisms,sections}` | Component tiers, smallest to largest. `atoms/index.ts` re-exports the `@koi/ui` primitives |
 | `src/lib/data/*.ts` | `'use server'` fetchers that call `sdk` and return raw Medusa/Mercur types |
 | `src/lib/adapters/*.ts` | Map raw API types to the kit's presentation types (`SimpleProduct`, etc.) |
 | `src/lib/helpers/*.ts` | Pure functions, each with a colocated `*.test.ts` |
@@ -31,8 +34,13 @@ react-hook-form + zod, TalkJS chat. Dev server: `bun run dev` → http://localho
   Atoms import no other components.
 - Each component lives in `Tier/Name/Name.tsx` and is exported from the tier's
   `index.ts` barrel. Callers import from the barrel (`@/components/atoms`).
-- Reuse atoms such as `Button`, `Card`, `Badge` and `Input` before you create new
-  ones. Use the shared surface tokens (`@/const/surface`) and the theme colours in
+- `Button`, `Card`, `Badge`, `Input`, `FormField` and `RenderIf` live in
+  **`@koi/ui`**, not in `atoms/`. Import them from `@/components/atoms` (which
+  re-exports them) or from `@koi/ui`. Never copy them back into this app.
+- A new primitive that the admin app could also use belongs in `packages/ui`.
+  Read `packages/ui/CLAUDE.md` first. Koi-specific pieces (`LotLayout`,
+  `PulseIcon`, `Stars`) stay in this app.
+- Use the surface tokens from `@koi/ui/surface` and the theme colours in
   `globals.css` (`accent-ink`, `live-ink`, `gold-ink`, ...). No raw hex values.
 - Variants use `cva`. Merge classes with `cn` from the `cn` package.
 - Every data view handles loading, empty (`EmptyFeed`) and error states.
@@ -74,6 +82,17 @@ Auctions (`const/auctions.ts`), live rooms (`const/live.ts`) and parts of the ho
 page (`const/home.ts`) are placeholders, because no auction backend exists yet.
 When a real API arrives, add a `lib/data` fetcher and an adapter, then replace the
 constant wholesale. Don't mix demo and real data in the same view.
+
+The MVP has **no fixed-price checkout**. The plan puts the cart and marketplace
+out of scope. Keep the existing cart and catalog pages working, but don't extend
+checkout or payments unless the task says so.
+
+Plan rules that affect this app:
+- Show bidders masked, for example `Bud***23`. Never show a bidder's full name or
+  number on public pages.
+- Live prices **poll** every few seconds in the MVP. Don't add websockets or SSE.
+- The farmer's WhatsApp and bank details are shown **only to the winner** of that
+  lot. The farmer sees only the winner's name and WhatsApp.
 
 ## Verification
 
