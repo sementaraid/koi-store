@@ -2,52 +2,87 @@
 
 # Koi Store: project rules
 
-Koi Store is an Indonesian koi **auction** platform. Farmers (`mitra`) run auctions,
-and registered customers pay a join fee from a prepaid store-credit wallet, then
-bid from the website or WhatsApp. Winners pay the farmer directly. Mercur 2.3.7
-(Medusa 2.21.2) is used **as the backend only**. Every screen is custom.
+Koi Store is an Indonesian koi auction platform built on Mercur 2.3.7 (Medusa
+2.21.2), used as the backend only. Every screen is custom. What the product is:
+`docs/product/overview.md`.
 
-**The product spec is `docs/mvp-plan.md`.** Read the relevant section before you
-build any wallet, auction, bidding, strike, claim or admin feature. It defines the
-rules: fees, the extend window, statuses, refunds and what is out of scope. If the
-code and the plan disagree, say so instead of picking one silently.
+This file holds the **engineering rules** every agent follows. **What to build**
+lives in `docs/` (map: `docs/README.md`). These rules extend `AGENTS.md`; if they
+conflict, follow these. Each workspace also has its own `CLAUDE.md`. Read it
+before you change anything in that workspace.
 
-**The backlog is `docs/user-stories.md`**, maintained by the `product-owner`
-agent. Work is done against a story ID (`US-xxx`) and its acceptance criteria.
-Name the story and task IDs in every report. Don't build a story that is
-`blocked` by an open question.
+## 1. Where things are
 
-These rules extend `AGENTS.md`. If they conflict, follow these rules. Each workspace
-has its own `CLAUDE.md`. Read it before you change anything in that workspace.
+| Need | Read |
+|---|---|
+| What we're building now | `docs/releases/README.md` → the active release's `plan.md` |
+| Which story to work on, and its acceptance criteria | That release's `stories.md` |
+| Owner decisions in force | `docs/product/decisions.md` |
+| Roles and Indonesian terms | `docs/product/overview.md` |
+| The process from idea to shipped | `docs/README.md` |
+| Mercur and Medusa APIs | `node_modules/@mercurjs/docs/llms.txt`, and the `mercur` and `medusa` MCP servers |
 
-## Workspaces
+If code, a plan and a decision disagree, the newest decision in
+`docs/product/decisions.md` wins. Report the conflict instead of picking silently.
+
+## 2. The team
+
+| Agent | Owns | Never does | Hands off to |
+|---|---|---|---|
+| Owner (human) | Scope, rules, plan approval, decisions, shipping | — | product-owner |
+| `product-owner` | Release plans (drafts), stories, coverage, open questions, acceptance | Write application code; change a rule without the owner | backend / frontend |
+| `backend` | `packages/api`: modules, workflows, routes, links, subscribers, jobs, migrations | Frontend code; features in `apps/admin` | frontend (with the API contract) |
+| `frontend` | `apps/storefront-koi`, `apps/admin-koi`, `packages/ui` | Backend code; raw `fetch` | qa |
+| `qa` | Verifying acceptance criteria, tests, bug reports with evidence | Change application code | product-owner |
+
+**Flow for every story:** product-owner (story ready, no open question blocking
+it) → backend → `bun run codegen` → frontend → qa → product-owner (accepts).
+- A story is `done` only when qa reports PASS **and** the product-owner has
+  checked every acceptance criterion against the evidence.
+- After a qa FAIL, allow at most 2 fix rounds, then report the remaining bugs to
+  the owner.
+- Never build a story that is `blocked`.
+
+**Every agent's report starts with this header:**
+```
+Story: US-xxx (tasks T-xxx.n)   Release: <slug>
+Files changed: …
+Checks run: <command> → <pass/fail lines>
+Not verified: <what and why>
+Docs used: <plan sections, decisions, Mercur doc pages>
+```
+Then add the role-specific part from your agent file. Keep it short.
+
+## 3. Decisions every agent must know
+
+Full text and reasons: `docs/product/decisions.md`.
+- **D-002:** Admin features go only in `apps/admin-koi`, through `/admin/*`
+  routes. Never add anything to `apps/admin`, and never send admins to
+  `:9000/dashboard`.
+- **D-003:** Farmers use Mercur's member login (option A) and `/vendor/*`
+  routes. Read D-003 before any farmer or seller auth work. Don't build a custom
+  customer↔seller link.
+- **D-004:** No features in `apps/vendor` or `apps/storefront`.
+- **D-005:** Components used by both Koi apps live in `packages/ui`.
+
+## 4. Workspaces
 
 | Path | What it is | Port | Guide |
 |---|---|---|---|
 | `packages/api` | Mercur/Medusa backend (`@acme/api`) | 9000 | `packages/api/CLAUDE.md` |
-| `packages/ui` | Shared design system (`@koi/ui`) used by both Koi apps | — | `packages/ui/CLAUDE.md` |
+| `packages/ui` | Shared design system (`@koi/ui`) | — | `packages/ui/CLAUDE.md` |
 | `apps/storefront-koi` | Customer site plus the Farmer area. Next.js 15, React 19 | 3001 | `apps/storefront-koi/CLAUDE.md` |
-| `apps/admin-koi` | Custom admin app for the admin team. Next.js 15, React 19 | 3002 | `apps/admin-koi/CLAUDE.md` |
-| `apps/admin` | Mercur's built-in admin at `:9000/dashboard`. **Not used by the admin team.** All admin work goes in `apps/admin-koi`. Kept mounted for developer emergencies only | 7000 | `apps/admin/CLAUDE.md` |
-| `apps/vendor` | Mercur's seller panel at `:9000/seller`. **Not used in the MVP** | 7001 | `apps/vendor/CLAUDE.md` |
-| `apps/storefront` | Mercur's stock B2C storefront. **Reference only** | 3000 | none |
+| `apps/admin-koi` | Admin app. Next.js 15, React 19 | 3002 | `apps/admin-koi/CLAUDE.md` |
+| `apps/admin` | Mercur's admin at `:9000/dashboard`. Developer emergencies only (D-002) | 7000 | `apps/admin/CLAUDE.md` |
+| `apps/vendor` | Mercur's seller panel at `:9000/seller`. Not used (D-004) | 7001 | `apps/vendor/CLAUDE.md` |
+| `apps/storefront` | Mercur's stock B2C storefront. Reference only (D-004) | 3000 | none |
 
-- Customer and farmer screens go in `apps/storefront-koi`. Admin screens go in
-  `apps/admin-koi`. Don't build features in `apps/admin`, `apps/vendor` or
-  `apps/storefront`.
-- **Admin uses `apps/admin-koi` only, never `apps/admin`** (owner's decision).
-  Reason: admin-koi is built on `@koi/ui`, so it looks and works like the
-  storefront, while Mercur's admin does far more than our team needs. Every admin
-  feature gets an `/admin/*` route in `packages/api` and a screen in admin-koi.
-  Don't add widgets, routes or extensions to `apps/admin`, and don't send people
-  there as a workaround.
-- A component used by both Koi apps belongs in `packages/ui`.
 - `AGENTS.md` lists the panel paths the wrong way round. In `medusa-config.ts`,
   admin is `/dashboard` and vendor is `/seller`.
-- `apps/admin` and `apps/vendor` use React 18, pinned at the repo root. The Koi apps
-  and `packages/ui` use React 19. Don't add React or `@types/react` to the root.
+- `apps/admin` and `apps/vendor` use React 18, pinned at the repo root. The Koi
+  apps and `packages/ui` use React 19. Don't add React or `@types/react` to the root.
 
-## Running the project
+## 5. Running the project
 
 Development runs in Docker (`compose.yaml`): Postgres plus one `app` container that
 runs `bun install && bun run dev`. Caddy, outside this repo, routes public
@@ -72,7 +107,7 @@ docker compose exec app bash
 - When a dev server is reached through a new public hostname, add the hostname to
   that app's allowed hosts (`allowedDevOrigins` in Next, `server.allowedHosts` in Vite).
 
-## Commands
+## 6. Commands
 
 The package manager is **bun**. Don't use npm, yarn or pnpm, and don't create
 other lockfiles.
@@ -93,137 +128,96 @@ other lockfiles.
 The root `check-types` script does nothing yet, because no workspace defines
 `check-types`. Use the commands above instead.
 
-## How the parts connect
+## 7. How the parts connect
 
 - Both Koi apps call the backend through `@mercurjs/client`, typed by
   `@acme/api/_generated`. **After you add or change a backend route, run
   `bun run codegen` in `packages/api`.** Otherwise the apps' types go stale.
-- `storefront-koi` uses store routes (`/store/*`) with the publishable key and the
-  customer token. `admin-koi` uses admin routes (`/admin/*`) with an admin user
-  token only. It has no publishable key.
+- `storefront-koi` uses `/store/*` (publishable key plus customer token) and, for
+  farmers, `/vendor/*` (member token plus `x-seller-id`, D-003). `admin-koi` uses
+  `/admin/*` with an admin user token only.
 - Backend changes reach the storefront through
   `src/subscribers/storefront-cache-revalidate.ts`, which calls the storefront's
   `/api/revalidate` route.
 - Mercur CLI blocks install into the aliases in `blocks.json`: `api` installs to
   `packages/api/src`, `vendor` to `apps/vendor/src`, `admin` to `apps/admin/src`.
 
-## Domain rules (from the plan; apply everywhere)
+## 8. Engineering invariants (every release)
 
-- Store money as **whole rupiah in integer columns**. Never use floats. Format it
-  with `id-ID`.
-- **Wallet transactions are append-only.** Never update or delete one. Fix a
-  mistake with an `adjustment`. A balance is the sum of transactions and is never
-  stored as an overwritable number.
-- **Store credit only pays platform fees.** It can't pay farmers, be withdrawn or
-  move between users.
-- Statuses are fixed. Auction: `draft → scheduled → live → closed | cancelled`.
-  Lot: `open → unsold | won → paid → shipped → delivered | claimed`.
-- **The server's timestamp decides bid order.** Placing a bid locks the lot row.
-  Save the winner and final price on the lot when it closes. Don't recompute them
-  from bids.
-- Wallet charges, joining, bidding and closing are **workflows**: all or nothing.
-- Never change Mercur's or Medusa's code. Add around it.
+- **Money is whole rupiah in integer columns.** Never floats. Format it with `id-ID`.
+- **Ledgers are append-only.** Wallet transactions are never updated or deleted.
+  A mistake is fixed with a new entry. A balance is a sum, never a stored number
+  that gets overwritten.
+- **Every mutation runs a workflow:** all or nothing, with compensation.
+- **Concurrency:** where order matters (bids), lock the row and let the server's
+  timestamp decide. Save results (winner, final price) when the action happens.
+  Don't recompute them later.
+- **Statuses are explicit enums**, and transitions follow the release plan.
+  Don't skip states.
+- Never change Mercur's or Medusa's code, or anything in `node_modules`. Add around it.
 
-## Docs first (Mercur / Medusa)
+## 9. Mercur coding standard
 
-1. Read the bundled docs first: `node_modules/@mercurjs/docs/llms.txt`. They match
-   the installed version, 2.3.7.
-2. Use the `mercur` MCP server for search and the `medusa` MCP server for core
-   Medusa topics: modules, workflows, links, subscribers, jobs and API routes.
-   Both are configured in `.mcp.json`.
-3. Follow the documented pattern. Don't invent APIs, options or file locations.
-   If the docs don't cover something, say so before you improvise.
-4. Never edit `node_modules` or the Mercur/Medusa packages.
-5. List the doc pages you used in your final summary.
-
-## Current state (as of milestone 1)
-
-- **Built:** `packages/ui`, admin login and the nav skeleton in `admin-koi`, and the
-  storefront catalog with facets and pagination.
-- **Demo data:** auctions, live rooms and parts of the home page come from
-  `apps/storefront-koi/src/const/*`. No wallet, auction, bid or moderation module
-  exists in `packages/api` yet. These are milestones 2–5 in the plan.
-- **Farmer account link (decided: option A, Mercur's member login, tested in dev
-  on 2026-11-14).** A farmer is one auth identity whose `app_metadata` holds
-  both `customer_id` and `member_id`. Each token covers one actor only, so the
-  storefront signs in at both `/auth/customer/emailpass` (for `/store/*`) and
-  `/auth/member/emailpass` (for `/vendor/*` plus the `x-seller-id` header), with
-  the same credentials. Farm registration is a member login (which gives a token
-  with an empty `actor_id`), then `POST /vendor/sellers`. That creates the seller
-  as `pending_approval`. Once admin approves, the farmer logs in as a member again.
-  This uses Mercur's `/vendor/*` API, not the `apps/vendor` panel. Don't build a
-  custom customer↔seller link.
-- The workspace guides for `apps/admin` and `apps/vendor` refer to skills
-  (`medusa-ui-conformance`, `admin-page-ui`, ...) that aren't installed. Those
-  apps aren't used for features anyway.
-
-## Secrets
-
-- Never read, print or commit `.env` files. Only `.env.template` and `.env.test`
-  are committed. When you add an env var, add it to the matching `.env.template`
-  with a safe placeholder.
-- Don't rely on the `"supersecret"` fallbacks in `medusa-config.ts` in anything new.
-
-## Working style (all agents)
-
-### 1. No assumptions, no unproven claims
-- **Verify, don't assume.** Before you rely on an API, field, route, file or
-  behaviour, confirm it in the code, the bundled Mercur docs or
-  `docs/mvp-plan.md`. If you can't confirm it, say "not verified" and say what
-  you checked.
-- If a requirement is missing and the code, docs and plan don't answer it, **ask**.
-  Don't guess. Following an existing pattern in the codebase is not guessing.
-- **Back every claim with evidence.** Never write "done", "works", "fixed" or
-  "tested" unless you ran the check and can show its output (the command and
-  the pass/fail lines). Say plainly what you did not run or could not check.
-- Don't describe code you haven't read. Quote file paths and line numbers.
-
-### 2. Fewer back-and-forth rounds
-- Read everything relevant first, then ask **all** your open questions in one
-  message before you start. Don't ask mid-task about anything you could have
-  found out up front.
-- When nothing is blocking, work end to end without check-ins, and report once
-  at the end.
-- Stop and ask only before: deleting data or migrations, breaking an API
-  contract, adding a paid service or new dependency, changing a rule in
-  `docs/mvp-plan.md`, or moving money in a way the plan doesn't describe.
-- Run the checks for every workspace you touched (commands table above) and fix
-  failures before you hand off. Don't hand off failing code.
-- Features go **product-owner (story ready) → backend → codegen → frontend → qa
-  → product-owner (accept)**. A story is done only when qa reports PASS and the
-  product owner has checked every acceptance criterion against the evidence.
-  After a FAIL, allow at most 2 fix rounds, then report the remaining bugs.
-
-### 3. Mercur coding standard
-Backend code follows `node_modules/@mercurjs/docs/content/resources/best-practices/`.
-Read the matching page before you write that kind of code. In short:
+Backend code follows `node_modules/@mercurjs/docs/content/resources/best-practices/`
+(`overview`, `modules`, `workflows`, `api-routes`, `module-links`,
+`subscribers-and-jobs`, `types`, `custom-fields`). Read the matching page before
+you write that kind of code, and list the pages you used in your report.
 - **Every mutation runs a workflow.** Routes, subscribers and jobs never write
   directly. Reads use `query.graph`.
-- **Modules are thin CRUD** (`MedusaService`). No cross-module service calls, no
-  foreign keys into another module. Relationships use `defineLink` in `src/links/`.
+- **Modules are thin CRUD** (`MedusaService`), registered with an exported id
+  constant. No cross-module service calls, no foreign keys into another module.
+  Relationships use `defineLink` in `src/links/`.
 - **Routes are thin:** Zod validation, both generics typed
   (`AuthenticatedMedusaRequest<T>`, `MedusaResponse<T>`), only GET/POST/DELETE,
   identity from `req.auth_context`, never from the body.
 - **Workflows:** one mutation per step, each with compensation. No
   `async`/`if`/loops in the composition function (use `transform` and `when`).
   Reuse built-in steps.
+- **Subscribers and jobs:** fetch by `{ id }`, run a workflow, be idempotent,
+  batch large sets.
 - **Types:** no `any`. Import shipped types from `@mercurjs/types`.
-- Mercur's panel rules (`frontend.mdx`, `@medusajs/ui` only) apply to
-  `apps/admin` and `apps/vendor`. The Koi apps use `@koi/ui` instead, but still
-  get data only through the typed `@mercurjs/client`, never raw `fetch`.
+- **Frontend:** the Koi apps use `@koi/ui` (not `@medusajs/ui`, whose rule in
+  `frontend.mdx` applies only to Mercur's own panels). Data comes only through
+  the typed `@mercurjs/client`, never raw `fetch`.
+- If the docs don't cover something, say so before you improvise.
 
-### 4. Keep it simple
-- Make the smallest change that meets the requirement and the plan. Nothing
+## 10. Working style (all agents)
+
+### No assumptions, no unproven claims
+- **Verify, don't assume.** Before you rely on an API, field, route, file or
+  behaviour, confirm it in the code, the Mercur docs, the release plan or a
+  decision. If you can't confirm it, say "not verified" and say what you checked.
+- If a requirement is missing and nothing answers it, **ask**. Don't guess.
+  Following an existing pattern in the codebase is not guessing.
+- **Back every claim with evidence.** Never write "done", "works", "fixed" or
+  "tested" without the command and its pass/fail output. Say plainly what you
+  didn't run or couldn't check.
+- Don't describe code you haven't read. Quote file paths and line numbers.
+
+### Fewer back-and-forth rounds
+- Read everything relevant first, then ask **all** your open questions in one
+  numbered message before you start. Don't ask mid-task about anything you
+  could have found out up front.
+- When nothing is blocking, work end to end and report once at the end.
+- Stop and ask only before: deleting data or migrations, breaking an API
+  contract, adding a paid service or new dependency, changing a plan rule or a
+  decision, or moving money in a way the plan doesn't describe.
+- Run the checks for every workspace you touched, and fix failures before you
+  hand off.
+
+### Keep it simple
+- Make the smallest change that meets the story's acceptance criteria. Nothing
   speculative: no "for later" options, flags or abstractions.
 - Don't create a helper, hook, component or layer that has only one caller,
   unless an existing pattern requires it.
 - Use what exists (Mercur, Medusa built-in steps, `@koi/ui`, existing helpers)
   before you write new code. No new dependencies without asking.
 - Don't refactor, rename or reformat code outside the task.
-- Prefer plain, readable code over clever code. If a reviewer needs a comment to
-  understand the control flow, simplify it.
+- Prefer plain, readable code over clever code.
 
-### Final report
-Files changed · API or contract changes · checks run, with their output ·
-what was not verified · doc and plan sections used · how to see the change
-(URL and port). Keep it short.
+## 11. Secrets
+
+- Never read, print or commit `.env` files. Only `.env.template` and `.env.test`
+  are committed. When you add an env var, add it to the matching `.env.template`
+  with a safe placeholder.
+- Don't rely on the `"supersecret"` fallbacks in `medusa-config.ts` in anything new.

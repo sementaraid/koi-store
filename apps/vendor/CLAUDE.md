@@ -2,6 +2,10 @@
 
 This guide covers work in `apps/vendor`.
 
+> **Not used in Koi Store** (D-004). Farmers work in the Farmer area of
+> `apps/storefront-koi`, through Mercur's `/vendor/*` API (D-003). Don't add
+> features here. See `docs/product/decisions.md`.
+
 Read this guide when a task touches:
 - custom vendor pages
 - vendor routing and navigation

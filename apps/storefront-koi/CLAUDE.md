@@ -2,7 +2,8 @@
 
 This guide covers work in `apps/storefront-koi`, the customer-facing Next.js app.
 It also holds the **Farmer area**: farm registration, auctions and lots, bids and
-winners, paid and shipped, claims and balance. See `docs/mvp-plan.md`.
+winners, paid and shipped, claims and balance. What to build comes from the
+active release (`docs/releases/README.md`). Farmer auth follows D-003.
 
 Stack: Next.js 15 (App Router, Turbopack), React 19, Tailwind v4, Base UI, cva,
 react-hook-form + zod, TalkJS chat. Dev server: `bun run dev` → http://localhost:3001
@@ -82,6 +83,8 @@ Auctions (`const/auctions.ts`), live rooms (`const/live.ts`) and parts of the ho
 page (`const/home.ts`) are placeholders, because no auction backend exists yet.
 When a real API arrives, add a `lib/data` fetcher and an adapter, then replace the
 constant wholesale. Don't mix demo and real data in the same view.
+
+### MVP release rules (`docs/releases/mvp/plan.md`)
 
 The MVP has **no fixed-price checkout**. The plan puts the cart and marketplace
 out of scope. Keep the existing cart and catalog pages working, but don't extend

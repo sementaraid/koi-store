@@ -1,25 +1,16 @@
-# Koi Store: User Stories and Tasks
+# Koi Store: MVP Stories and Tasks
 
-**Source of truth:** `docs/mvp-plan.md`. Every story here traces back to a plan
+**Source of truth:** `plan.md` (this folder). Every story here traces back to a plan
 section. Nothing here adds rules the plan doesn't contain. Gaps are listed under
 [Open questions](#open-questions) and need an owner decision before they're built.
 
 **Owner:** the `product-owner` agent maintains this file. Builders (`backend`,
 `frontend`) and `qa` refer to story IDs in their reports.
 
-## How to read this
+**Release status:** in progress. See `docs/releases/README.md`.
 
-- **Story:** `US-xxx`, written as *As a … I want … so that …*
-- **Acceptance criteria (AC):** testable statements. qa verifies each one.
-- **Tasks:** `T-xxx.n`, tagged with the owning agent:
-  `[backend]` (`packages/api`), `[storefront]` (`apps/storefront-koi`),
-  `[admin]` (`apps/admin-koi`), `[ui]` (`packages/ui`), `[qa]`, `[ops]`.
-- **Status:** `todo` · `in progress` · `done` (qa PASS, with evidence linked) ·
-  `blocked` (waiting on an open question)
-- Tick a task `[x]` only when its check has run and passed.
-
-Roles: **Customer** (any registered user) · **Farmer** (a customer whose farm is
-approved, same login) · **Admin** (admin team, `apps/admin-koi` only)
+IDs, statuses and task tags follow the conventions in `docs/README.md`. Roles
+are defined in `docs/product/overview.md`.
 
 ---
 
@@ -40,10 +31,10 @@ As a **visitor**, I want to register and sign in so that I can top up, join
 auctions and bid. *(Plan: Users and roles)*
 - AC1: Registering with name, email, phone and password creates a customer account.
 - AC2: Sign in, sign out, forgotten password and setting a new password all work.
-- AC3: The phone number is stored on the customer, so WhatsApp can be linked later (US-080). → **Q1**
+- AC3: The phone number is stored on the customer, so WhatsApp can be linked later (US-080). → **mvp-Q1**
 - [x] T-002.1 [storefront] Pages `daftar`, `masuk`, `lupa-sandi`, `atur-sandi`, `keluar` exist
 - [ ] T-002.2 [qa] Verify AC1–AC2 end to end against the backend
-- [ ] T-002.3 [storefront] Depends on Q1: confirm the phone format and that it's saved as the WhatsApp number
+- [ ] T-002.3 [storefront] Depends on mvp-Q1: confirm the phone format and that it's saved as the WhatsApp number
 
 ### US-003 One shared design system · `done`
 As the **owner**, I want the storefront and the admin app to share one UI kit so
@@ -75,7 +66,7 @@ As a **customer**, I want to upload my transfer screenshot so that admin can
 credit my wallet. *(Plan: How credit moves 1–2)*
 - AC1: Any amount is accepted (no minimum), as an integer.
 - AC2: Uploading a screenshot creates a `pending` top-up request. The balance doesn't change yet.
-- AC3: The page shows the platform's bank account to transfer to. → **Q2**
+- AC3: The page shows the platform's bank account to transfer to. → **mvp-Q2**
 - AC4: I can see my requests and their status (pending, approved, rejected with reason).
 - [ ] T-011.1 [backend] `topup_request` model (amount, screenshot file, status, reviewed_by, reason) + create workflow
 - [ ] T-011.2 [backend] Store routes: create request (with file upload), list my requests
@@ -117,7 +108,7 @@ As an **admin**, I want to change the platform limits so that rules can be tuned
 *(Plan: Structure, Extend, Dead-on-arrival claims)*
 - AC1: Editable values: extend window (default 5 min), max lots per auction (20), auction length (1–7 days), claim window (4 h).
 - AC2: An extend-window change applies only to auctions that haven't started.
-- [ ] T-015.1 [backend] Settings storage + `/admin` routes. → **Q3**
+- [ ] T-015.1 [backend] Settings storage + `/admin` routes. → **mvp-Q3**
 - [ ] T-015.2 [admin] Settings section in `/pengaturan/biaya`
 - [ ] T-015.3 [qa] Live auctions keep their original extend window
 
@@ -174,7 +165,7 @@ so that farmers pay to list. *(Plan: How credit moves 4, Fees)*
 - AC3: All or nothing: the charge and the auction are saved together, or neither is.
 - [ ] T-031.1 [backend] Charge step inside the create workflow, with compensation
 - [ ] T-031.2 [storefront] Short-balance prompt that links to top-up
-- [ ] T-031.3 [qa] A failure after the charge rolls the charge back. → **Q4, Q5**
+- [ ] T-031.3 [qa] A failure after the charge rolls the charge back. → **mvp-Q4, mvp-Q5**
 
 ### US-032 Admin approves auctions · `todo`
 As an **admin**, I want to approve each auction before it's scheduled so that
@@ -184,7 +175,7 @@ category, photos and fees are checked. *(Plan: Structure, Fees)*
 - AC3: Admin can override the listing or join fee for this one auction, with a saved written reason.
 - [ ] T-032.1 [backend] Approve workflow + fee override with a reason + `/admin` routes
 - [ ] T-032.2 [admin] `/lelang` approval queue
-- [ ] T-032.3 [qa] An override without a reason is rejected. → **Q5**
+- [ ] T-032.3 [qa] An override without a reason is rejected. → **mvp-Q5**
 
 ### US-033 Auctions start and farmers track them · `todo`
 As a **farmer**, I want to see my auctions and their status so that I know
@@ -222,7 +213,7 @@ I can bid on all its lots. *(Plan: Structure, Fair play, Strikes)*
 ### US-042 Customer places a bid on the website · `todo`
 As a **joined customer**, I want to bid on a lot so that I can win it. *(Plan: Bidding)*
 - AC1: Only joined customers can bid. Not the farmer, not banned users.
-- AC2: A bid must be at least current price + KB. → **Q6**
+- AC2: A bid must be at least current price + KB. → **mvp-Q6**
 - AC3: The lot row is locked and the server's timestamp decides order. Of two equal bids, the first wins and the second is rejected with the new current price.
 - AC4: Bids can't be retracted.
 - AC5: Each bid saves bidder, amount, source (`web`) and time.
@@ -309,7 +300,7 @@ As a **winner**, I want to claim within 4 hours if the fish arrives dead or sick
 so that I get a refund or a replacement. *(Plan: Dead-on-arrival claims 1–2)*
 - AC1: A claim is allowed only within the claim window (4 h, a setting) after delivered.
 - AC2: It needs an unboxing video (up to 100 MB) and a remedy choice: full refund or replacement.
-- AC3: The farmer and admin are notified. → **Q7**
+- AC3: The farmer and admin are notified. → **mvp-Q7**
 - [ ] T-054.1 [backend] Moderation module: `claim` model + open-claim workflow; video stored on the VPS file provider
 - [ ] T-054.2 [storefront] Claim form with video upload and size limit
 - [ ] T-054.3 [qa] Late claims and oversized videos are rejected on the server
@@ -345,7 +336,7 @@ can judge farms. *(Plan: Ratings)*
 As a **farmer**, I want to report a winner who didn't pay within 1×24 h so that
 admin can act. *(Plan: Winner doesn't pay)*
 - AC1: The farmer can report after the deadline. The admin reviews it and may give a strike.
-- AC2: The farmer may offer the lot to the second-highest bidder at that bidder's price. This is arranged between them, off platform. → **Q8**
+- AC2: The farmer may offer the lot to the second-highest bidder at that bidder's price. This is arranged between them, off platform. → **mvp-Q8**
 - [ ] T-058.1 [backend] Report model/state + routes
 - [ ] T-058.2 [storefront] Report button after the deadline
 - [ ] T-058.3 [admin] Report review that leads to a strike
@@ -365,7 +356,7 @@ As a **farmer**, I want to cancel my auction so that I can withdraw it, with
 joiners refunded. *(Plan: Cancellations, Refunds in the MVP)*
 - AC1: Every customer who joined gets a `refund` (+) of their join fee.
 - AC2: The farmer's listing fee isn't refunded.
-- AC3: A lot that has bids can be cancelled only by admin. → **Q9**
+- AC3: A lot that has bids can be cancelled only by admin. → **mvp-Q9**
 - [ ] T-060.1 [backend] Cancel workflow: refund each participant, set status `cancelled`
 - [ ] T-060.2 [storefront] Cancel action in the Farmer area
 - [ ] T-060.3 [qa] Refunds total exactly the join fees collected
@@ -389,13 +380,13 @@ act on bad actors. *(Plan: Users and roles, Strikes)*
 ### US-071 Admin spots shill bidding · `todo`
 As an **admin**, I want to see bid patterns per bidder and farmer so that I can
 spot shill bidding. *(Plan: Fair play)*
-- [ ] T-071.1 [backend] `/admin` read route: bids grouped by bidder × farmer. → **Q10**
+- [ ] T-071.1 [backend] `/admin` read route: bids grouped by bidder × farmer. → **mvp-Q10**
 - [ ] T-071.2 [admin] Pattern view on the user and auction pages
 
 ### US-072 Admin monitors live auctions · `todo`
 As an **admin**, I want to watch live auctions, remove obviously wrong bids and
 cancel lots so that auctions stay fair. *(Plan: Bidding, Cancellations, Milestone 6)*
-- AC1: Removing a bid is allowed only for an obvious error, and needs a reason. → **Q11**
+- AC1: Removing a bid is allowed only for an obvious error, and needs a reason. → **mvp-Q11**
 - AC2: Only admin can cancel a lot that has bids.
 - [ ] T-072.1 [backend] Remove-bid and cancel-lot workflows + `/admin` routes
 - [ ] T-072.2 [admin] Live monitoring screen
@@ -404,7 +395,7 @@ cancel lots so that auctions stay fair. *(Plan: Bidding, Cancellations, Mileston
 
 ## Epic 7: WhatsApp bot (Milestone 7)
 
-### US-080 WhatsApp number linked to an account · `blocked (Q12)`
+### US-080 WhatsApp number linked to an account · `blocked (mvp-Q12)`
 As a **customer**, I want my WhatsApp number linked to my account so that I can
 bid by WhatsApp. *(Plan: WhatsApp bot: Identity)*
 - AC1: One number links to one account.
@@ -448,6 +439,11 @@ The website must work without WhatsApp. The bot can launch after the web.
 
 ---
 
+## Unplanned
+
+Fixes and small changes made during this release that aren't in the plan.
+None yet.
+
 ## Coverage matrix
 
 Every plan section maps to at least one story. The product owner keeps this
@@ -490,19 +486,19 @@ withdrawals or transfers of credit.
 ## Open questions
 
 The plan doesn't answer these. Each one needs an owner decision before its story
-is built. Record the answer here and in `docs/mvp-plan.md`.
+is built. Record the answer here, in `plan.md`, and as a decision in `docs/product/decisions.md`.
 
-| # | Question | Blocks |
+| ID | Question | Blocks |
 |---|---|---|
-| Q1 | Is the phone number given at registration the WhatsApp number used by the bot, and is it required? | US-002, US-080 |
-| Q2 | Where is the platform's bank account (shown on the top-up page) stored: env var, admin setting or constant? | US-011 |
-| Q3 | Where are settings stored: a settings module/table, or env/config? | US-015 |
-| Q4 | Is the listing fee charged at creation (draft) or at submission for approval? The plan says "creating one". | US-031 |
-| Q5 | If admin **rejects** an auction, or **lowers its fee** at approval after the listing fee was charged, is the difference refunded? The plan only allows refunds for farmer cancels. | US-031, US-032 |
-| Q6 | Can the **first** bid equal OB, or must it be OB + KB? | US-042 |
-| Q7 | How are the farmer and admin notified of a claim: WhatsApp, on-site only, or both? | US-054 |
-| Q8 | Does the platform record the second-bidder offer at all, or is it fully off-platform? | US-058 |
-| Q9 | Can a farmer cancel an auction after bidding has started (some lots have bids)? Cancellations say yes with refunds, but a lot with bids "can only be cancelled by admin". | US-060 |
-| Q10 | What exactly should the shill-bidding view show (fields and thresholds)? | US-071 |
-| Q11 | When admin removes a bid, how is the lot's current price restored (previous highest bid)? Does extend still apply? | US-072 |
-| Q12 | Qontak API capability and plan (already an open question in the plan). | US-080 – US-085 |
+| mvp-Q1 | Is the phone number given at registration the WhatsApp number used by the bot, and is it required? | US-002, US-080 |
+| mvp-Q2 | Where is the platform's bank account (shown on the top-up page) stored: env var, admin setting or constant? | US-011 |
+| mvp-Q3 | Where are settings stored: a settings module/table, or env/config? | US-015 |
+| mvp-Q4 | Is the listing fee charged at creation (draft) or at submission for approval? The plan says "creating one". | US-031 |
+| mvp-Q5 | If admin **rejects** an auction, or **lowers its fee** at approval after the listing fee was charged, is the difference refunded? The plan only allows refunds for farmer cancels. | US-031, US-032 |
+| mvp-Q6 | Can the **first** bid equal OB, or must it be OB + KB? | US-042 |
+| mvp-Q7 | How are the farmer and admin notified of a claim: WhatsApp, on-site only, or both? | US-054 |
+| mvp-Q8 | Does the platform record the second-bidder offer at all, or is it fully off-platform? | US-058 |
+| mvp-Q9 | Can a farmer cancel an auction after bidding has started (some lots have bids)? Cancellations say yes with refunds, but a lot with bids "can only be cancelled by admin". | US-060 |
+| mvp-Q10 | What exactly should the shill-bidding view show (fields and thresholds)? | US-071 |
+| mvp-Q11 | When admin removes a bid, how is the lot's current price restored (previous highest bid)? Does extend still apply? | US-072 |
+| mvp-Q12 | Qontak API capability and plan (already an open question in the plan). | US-080 – US-085 |

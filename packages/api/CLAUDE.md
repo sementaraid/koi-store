@@ -2,6 +2,11 @@
 
 This guide covers work in `packages/api`.
 
+> **Koi Store:** follow the root `CLAUDE.md` sections 8 (engineering invariants)
+> and 9 (Mercur coding standard). Admin features are `/admin/*` routes for
+> `apps/admin-koi` (D-002). Farmer auth uses `/vendor/*` with the member actor
+> (D-003). What to build comes from the active release in `docs/releases/`.
+
 Read this guide when a task touches:
 - custom API routes
 - modules, services, models, and migrations

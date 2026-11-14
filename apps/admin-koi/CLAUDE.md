@@ -6,7 +6,8 @@ team. It runs on its own subdomain so admin code never reaches customers' browse
 Stack: Next.js 15 (App Router), React 19, Tailwind v4, `@koi/ui`, react-hook-form +
 zod. Dev server: `bun run dev` → http://localhost:3002
 
-What admins do here, from `docs/mvp-plan.md`: approve farms, auctions and top-ups;
+This is the only admin app (D-002). What to build comes from the active release
+(`docs/releases/README.md`). In the MVP, admins approve farms, auctions and top-ups;
 adjust balances; edit the fee table and the extend window; moderate bids; issue
 strikes and bans; decide claim disputes. Read the matching plan section before you
 build a screen.
