@@ -1,5 +1,5 @@
 import { Link } from '@/components/atoms/Link/Link';
-import { RenderIf } from '@/components/atoms/RenderIf/RenderIf';
+import { RenderIf } from "@koi/ui";
 
 /** Props for {@link SectionHead}. */
 export type SectionHeadProps = {

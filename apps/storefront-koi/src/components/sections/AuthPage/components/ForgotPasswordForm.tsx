@@ -4,9 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { Button, Link } from '@/components/atoms';
-import { FormField } from '@/components/cells/FormField/FormField';
-import { RenderIf } from '@/components/atoms/RenderIf/RenderIf';
+import { Button, FormField, RenderIf } from '@koi/ui';
+import { Link } from '@/components/atoms';
 import { ROUTES } from '@/const/routes';
 import { sendResetPasswordEmail } from '@/lib/data/customer';
 import type { HeaderAccount, HeaderCart } from '@/types/header';

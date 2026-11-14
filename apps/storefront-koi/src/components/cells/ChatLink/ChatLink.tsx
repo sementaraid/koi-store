@@ -4,7 +4,7 @@ import { useUnreads } from '@talkjs/react';
 import { MessagesSquare } from 'lucide-react';
 
 import { Link } from '@/components/atoms/Link/Link';
-import { RenderIf } from '@/components/atoms/RenderIf/RenderIf';
+import { RenderIf } from "@koi/ui";
 import { ROUTES } from '@/const/routes';
 
 /**

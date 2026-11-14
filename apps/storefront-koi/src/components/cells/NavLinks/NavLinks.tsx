@@ -1,8 +1,7 @@
 import { cn } from "cn"
 
-import { Button } from "@/components/atoms/Button/Button"
+import { Button, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
 import { PulseIcon } from "@/components/atoms/PulseIcon/PulseIcon"
 import type { HeaderLink } from "@/types/header"
 

@@ -1,10 +1,8 @@
 import { Minus, Plus } from "lucide-react"
 
-import { Badge } from "@/components/atoms/Badge/Badge"
-import { Button } from "@/components/atoms/Button/Button"
+import { Badge, Button, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
 import { ROUTES } from "@/const/routes"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
 import type { CartLine as CartLineData } from "@/types/cart"
 import type { Product, SimpleProduct } from "@/types/product"
 import { isCounted, lineTotal, lineUnits } from "@/lib/helpers/cart-totals"

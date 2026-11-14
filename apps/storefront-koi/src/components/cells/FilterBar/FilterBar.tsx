@@ -1,11 +1,10 @@
 import { LayoutGrid } from "lucide-react"
 import { cn } from "cn"
 
-import { Label } from "@/components/ui/label"
+import { Label, RenderIf } from "@koi/ui"
 import { CONTAINER } from "@/const/layout"
-import { NativeSelect } from "@/components/ui/native-select"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
+import { NativeSelect } from "@koi/ui/primitives/native-select"
+import { Tabs, TabsList, TabsTrigger } from "@koi/ui/primitives/tabs"
 
 /** One selectable option: the value the API will take, and its wording. */
 export type FilterOption = {
@@ -15,19 +14,26 @@ export type FilterOption = {
 
 /** One labelled native select. Native rather than the kit's popup select: this
     is a form bar, a form works without JavaScript, and this is the cheaper
-    thing to build. */
-function Facet({
+    thing to build.
+
+    Exported because the attribute facets left this bar for a sidebar and draw
+    the same control — one select, labelled, in a column. */
+export function Facet({
   id,
   label,
   value,
   onChange,
   options,
+  className = "w-full sm:w-44",
 }: {
   id: string
   label: string
   value: string
   onChange: (value: string) => void
   options: FilterOption[]
+  /** The select's width. Defaults to the band's fixed column; a sidebar passes
+      `w-full`. */
+  className?: string
 }) {
   return (
     <div className="flex flex-col gap-1">
@@ -40,7 +46,7 @@ function Facet({
         size="sm"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full sm:w-44"
+        className={className}
       >
         {options.map(({ value: v, label: l }) => (
           <option key={v} value={v}>

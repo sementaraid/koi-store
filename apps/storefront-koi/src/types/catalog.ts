@@ -1,6 +1,8 @@
 import type { ComponentProps } from "react"
 
 import type {
+  AttributeFacet,
+  AttributeSelection,
   Availability,
   FeedShell,
   FeedState,
@@ -52,6 +54,19 @@ export type CatalogsProps = ComponentProps<"div"> &
       title: string
       lede: string
     }
+    /** Whether this feed is already a search's results rather than the shelf.
+        It changes what an empty grid means: a search that matched nothing is a
+        narrowing the visitor can back out of, an empty catalog is not. */
+    searching?: boolean
+    /** The attribute facets the catalog offers — bloodline, age, certificate.
+        Omitted or empty, the page draws no sidebar beside the grid. */
+    attributes?: AttributeFacet[]
+    /** The attribute narrowings in force. These are applied by the API, not by
+        `filterGoods`: the values are not on `SimpleProduct`, so the server has
+        to do the narrowing and the feed arrives already cut. */
+    selected?: AttributeSelection
+    /** Called with the whole next attribute selection. */
+    onAttributesChange?: (selected: AttributeSelection) => void
     /** Where the pager links, and what the filter rewrites. Omitted, the
         catalog's own path. */
     basePath?: string

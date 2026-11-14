@@ -1,4 +1,4 @@
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
+import { RenderIf } from "@koi/ui"
 
 import type { SimpleProduct } from "@/types/product"
 import { ProductFacts, ProductFrame, ProductOverlay } from "./ProductFrame"

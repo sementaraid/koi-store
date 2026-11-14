@@ -13,9 +13,19 @@ export default defineConfig(({ mode }) => {
   // Baked into the panel at build time. For a backend-served production build
   // (e.g. Medusa Cloud) set it to the deployed backend origin so API calls are
   // same-origin; it defaults to http://localhost:9000 for development.
-  const backendUrl = env.VITE_MERCUR_BACKEND_URL || env.MERCUR_BACKEND_URL
+  // `loadEnv(..., '')` above takes every key, so the unprefixed name works from
+  // both .env and the process environment — no VITE_ duplicate needed.
+  const backendUrl = env.MERCUR_BACKEND_URL
 
   return {
+    // Vite rejects requests whose Host header it does not recognise, which is
+    // what a reverse proxy in front of the dev server sends. The panel runs
+    // behind Caddy at this domain (see ~/apps/caddy/Caddyfile).
+    server: {
+      allowedHosts: ['koi-backoffice.sunar.dev'],
+      // Reachable across the compose bridge, not just the container loopback.
+      host: true,
+    },
     plugins: [
       react(),
       mercurDashboardPlugin({

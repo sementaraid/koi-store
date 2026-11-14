@@ -4,8 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { Button } from '@/components/atoms/Button/Button';
-import { FormField } from '@/components/cells/FormField/FormField';
+import { Button, FormField } from "@koi/ui";
 import {
   Sheet,
   SheetContent,
@@ -13,7 +12,7 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle
-} from '@/components/ui/sheet';
+} from '@koi/ui/primitives/sheet';
 import { addCustomerAddress, updateCustomerAddress } from '@/lib/data/customer';
 
 import { addressSchema, EMPTY_ADDRESS, type AddressData } from './schema';

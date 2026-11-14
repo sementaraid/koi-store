@@ -1,6 +1,6 @@
 import { ArrowRight, ShoppingBag } from "lucide-react"
 
-import { Button } from "@/components/atoms/Button/Button"
+import { Button, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
 import {
   DEFAULT_CATALOG_FILTER,
@@ -19,12 +19,11 @@ import { LotLayout } from "@/components/atoms/LotLayout/LotLayout"
 import { LotTrustList } from "@/components/molecules/LotTrust/LotTrust"
 import { PageShell } from "@/components/organisms/PageShell/PageShell"
 import { ProductCard } from "@/components/organisms/ProductCard/ProductCard"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
 import { SaleTerminal } from "@/components/organisms/SaleTerminal/SaleTerminal"
 import { ChatButton } from "@/components/cells/ChatButton/ChatButton"
 import type { SimpleProduct } from "@/types/product"
 import type { ProductPageProps } from "@/types/product-page"
-import { filterGoods, salePrice, saleStatus } from "@/lib/helpers/filter-goods"
+import { filterGoods, koiStatus, salePrice } from "@/lib/helpers/filter-goods"
 import { formatAgo } from "@/lib/helpers/format-ago"
 import { sessionLabel } from "@/lib/helpers/session-label"
 
@@ -132,7 +131,7 @@ export function ProductPage({
        read in full, is not "yang lain". */
     shelf.filter((other) => other.id !== product.id),
     filter,
-    { statusOf: saleStatus, priceOf: salePrice },
+    { statusOf: koiStatus, priceOf: salePrice },
     page,
     pageSize
   )

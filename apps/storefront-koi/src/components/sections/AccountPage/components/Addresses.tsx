@@ -5,10 +5,7 @@ import { MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { Badge } from '@/components/atoms/Badge/Badge';
-import { Button } from '@/components/atoms/Button/Button';
-import { Card } from '@/components/atoms/Card/Card';
-import { RenderIf } from '@/components/atoms/RenderIf/RenderIf';
+import { Badge, Button, Card, RenderIf } from "@koi/ui";
 import { EmptyFeed } from '@/components/cells/EmptyFeed/EmptyFeed';
 import { deleteCustomerAddress } from '@/lib/data/customer';
 import type { HeaderAccount, HeaderCart } from '@/types/header';

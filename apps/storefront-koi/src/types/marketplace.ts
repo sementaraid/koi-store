@@ -1,6 +1,8 @@
 import type { ComponentProps } from "react"
 
 import type {
+  AttributeFacet,
+  AttributeSelection,
   FeedShell,
   FeedState,
   FilterTab,
@@ -44,4 +46,16 @@ export type MarketplaceProps = ComponentProps<"div"> &
     /** Every good the sellers list, unfiltered and unpaged.
         @defaultValue the kit's demo ten */
     goods?: SimpleProduct[]
+    /** The shop's own attribute facets — weight, grade, feed type, pellet
+        size. Omitted or empty, the page draws no sidebar beside the grid. */
+    attributes?: AttributeFacet[]
+    /** The attribute narrowings in force. Applied by the API, not by
+        `filterGoods`: the values are not on `SimpleProduct`, so the server has
+        to do the narrowing and the feed arrives already cut. */
+    selected?: AttributeSelection
+    /** Called with the whole next attribute selection. */
+    onAttributesChange?: (selected: AttributeSelection) => void
+    /** Where the pager links, and what the filter rewrites. Omitted, the
+        shop's own path. */
+    basePath?: string
   }

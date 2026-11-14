@@ -8,8 +8,8 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "@/components/ui/pagination"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
+} from "@koi/ui/primitives/pagination"
+import { RenderIf } from "@koi/ui"
 
 /** Props for {@link FeedPagination}. */
 export type FeedPaginationProps = {
@@ -58,6 +58,11 @@ export function FeedPagination({
 }: FeedPaginationProps) {
   /** Handled, the anchor stays a real href for the router to intercept;
       unhandled, it is the navigation. */
+  /** A page's URL, appending to a base that may already carry a query — the
+      catalog's search keeps its `q` across a page change. */
+  const pageHref = (target: number) =>
+    `${href}${href.includes("?") ? "&" : "?"}page=${target}`
+
   const to = (target: number) =>
     onPageChange &&
     ((event: MouseEvent) => {
@@ -76,7 +81,7 @@ export function FeedPagination({
                 aria-disabled={page === 1}
                 tabIndex={page === 1 ? -1 : undefined}
                 className={page === 1 ? "pointer-events-none opacity-50" : ""}
-                href={`${href}?page=${page - 1}`}
+                href={pageHref(page - 1)}
                 onClick={to(page - 1)}
               />
             </PaginationItem>
@@ -84,7 +89,7 @@ export function FeedPagination({
             {Array.from({ length: pageCount }, (_, i) => i + 1).map((p) => (
               <PaginationItem key={p}>
                 <PaginationLink
-                  href={`${href}?page=${p}`}
+                  href={pageHref(p)}
                   isActive={p === page}
                   onClick={to(p)}
                 >
@@ -101,7 +106,7 @@ export function FeedPagination({
                 className={
                   page === pageCount ? "pointer-events-none opacity-50" : ""
                 }
-                href={`${href}?page=${page + 1}`}
+                href={pageHref(page + 1)}
                 onClick={to(page + 1)}
               />
             </PaginationItem>

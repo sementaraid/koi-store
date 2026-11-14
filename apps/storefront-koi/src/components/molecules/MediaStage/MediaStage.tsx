@@ -1,8 +1,7 @@
 import { useState, type ReactNode } from "react"
 import { cn } from "cn"
 
-import { Button } from "@/components/atoms/Button/Button"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
+import { Button, RenderIf } from "@koi/ui"
 import {
   MediaGallery,
   type MediaItem,

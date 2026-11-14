@@ -5,10 +5,8 @@ import { Controller, useForm } from 'react-hook-form';
 import { useId } from 'react';
 import { toast } from 'sonner';
 
-import { Button } from '@/components/atoms/Button/Button';
-import { RenderIf } from '@/components/atoms/RenderIf/RenderIf';
+import { Button, Label, RenderIf } from "@koi/ui";
 import { StarsInput } from '@/components/atoms/Stars/Stars';
-import { Label } from '@/components/ui/label';
 import {
   Sheet,
   SheetContent,
@@ -16,7 +14,7 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle
-} from '@/components/ui/sheet';
+} from '@koi/ui/primitives/sheet';
 import { createReview } from '@/lib/data/reviews';
 import type { ReviewSubject } from '@/lib/helpers/review-subjects';
 

@@ -45,7 +45,7 @@ if (!fs.existsSync(artifactDir)) {
 
 // The panels bake their backend URL at build time (MERCUR_BACKEND_URL → __BACKEND_URL__).
 // Refuse to ship a production bundle that silently targets the localhost default.
-if (isProduction && !process.env.MERCUR_BACKEND_URL && !process.env.VITE_MERCUR_BACKEND_URL) {
+if (isProduction && !process.env.MERCUR_BACKEND_URL) {
   fail(
     'NODE_ENV=production but MERCUR_BACKEND_URL is not set — the panels would target ' +
       'http://localhost:9000. Set MERCUR_BACKEND_URL to the deployed backend origin ' +

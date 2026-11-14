@@ -6,7 +6,7 @@ import { CONTAINER } from '@/const/layout';
 import { ROUTES } from '@/const/routes';
 import { Eyebrow } from '@/components/atoms/Eyebrow/Eyebrow';
 import { PageShell } from '@/components/organisms/PageShell/PageShell';
-import { RenderIf } from '@/components/atoms/RenderIf/RenderIf';
+import { RenderIf } from "@koi/ui";
 import { initials } from '@/lib/helpers/header';
 import type { HeaderAccount, HeaderCart } from '@/types/header';
 

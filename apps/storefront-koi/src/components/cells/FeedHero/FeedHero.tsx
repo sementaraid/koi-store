@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import { cn } from "cn"
 
-import { Badge } from "@/components/atoms/Badge/Badge"
+import { Badge } from "@koi/ui"
 import { CONTAINER } from "@/const/layout"
 import { Eyebrow } from "@/components/atoms/Eyebrow/Eyebrow"
 

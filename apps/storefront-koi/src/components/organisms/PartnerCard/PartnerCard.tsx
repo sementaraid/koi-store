@@ -2,18 +2,9 @@ import type { ComponentProps } from "react"
 import { cn } from "cn"
 import { BadgeCheck, Star } from "lucide-react"
 
-import { TILE } from "@/const/surface"
-import { Button } from "@/components/atoms/Button/Button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/atoms/Card/Card"
+import { TILE } from "@koi/ui/surface"
+import { Button, Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
 
 /** One figure a farm publishes about itself, e.g. `142` / `Kolam aktif`. */
 export type PartnerFact = {

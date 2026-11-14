@@ -3,6 +3,7 @@
 import { HttpTypes } from '@medusajs/types';
 
 import { sortProducts } from '@/lib/helpers/sort-products';
+import type { AttributeFacet } from '@/types/product';
 import { SortOptions } from '@/types/sort';
 
 import { sdk } from '../client';
@@ -17,48 +18,68 @@ import { getRegion, retrieveRegion } from './regions';
 const PRODUCT_LIST_FIELDS =
   '*variants.calculated_price,+variants.inventory_quantity,*variants.options,*attribute_values,*attribute_values.attribute,+categories.id,+categories.name,+categories.handle';
 
-export type SearchFacetBucket = { value: string; count: number };
-
-/**
- * Storefront filter facets. `attributes` is keyed by the global product
- * attribute handle (e.g. `size`, `color`, `condition`); each entry is the list
- * of selectable values. Backed by `GET /store/product-attributes`.
- */
-export type SearchFacets = {
-  attributes: Record<string, SearchFacetBucket[]>;
-};
-
 type StoreProductAttribute = {
   handle: string;
   name: string;
   is_variant_axis: boolean;
+  rank?: number;
   values?: { name: string; rank?: number }[];
 };
 
-export const getSearchFacets = async (): Promise<SearchFacets> => {
+/**
+ * The attribute facets a feed can be narrowed by, in the catalog's own rank
+ * order, backed by `GET /store/product-attributes`.
+ *
+ * @remarks
+ * The values come from the attribute's own definition, not from the products on
+ * screen: a facet built off the current page would offer only what survived the
+ * last narrowing, so widening it again would be impossible. There are no counts
+ * for the same reason — the endpoint describes the attribute, not the feed, and
+ * a count that is really "1" dressed as a tally is worse than none.
+ *
+ * Variant axes are kept: on koi the body-length axis (`ukuran`) is the one most
+ * buyers filter on first.
+ *
+ * Attributes are global in Mercur — a koi's bloodline and a sack of food's
+ * pellet size come back from the same endpoint — so a feed says which of them
+ * are its own. Without that the shop offers "Bloodline" on a water treatment
+ * and the catalog offers "Tipe Pakan" on a fish.
+ */
+export const getAttributeFacets = async (
+  /** The handles this feed draws facets for, in the attribute's own rank order.
+      Omitted, every filterable attribute in the catalog. */
+  handles?: readonly string[]
+): Promise<AttributeFacet[]> => {
   const { product_attributes } = await (
     sdk.store.productAttributes.query({
       is_filterable: true,
       limit: 100,
-      fields: 'handle,name,is_variant_axis,values.name,values.rank',
+      fields: 'handle,name,is_variant_axis,rank,values.name,values.rank',
       fetchOptions: { next: { revalidate: 300 } },
     } as never) as unknown as Promise<{
       product_attributes: StoreProductAttribute[];
     }>
   ).catch(() => ({ product_attributes: [] as StoreProductAttribute[] }));
 
-  const attributes: Record<string, SearchFacetBucket[]> = {};
-  for (const attribute of product_attributes) {
-    attributes[attribute.handle] = (attribute.values ?? [])
-      .slice()
-      .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))
-      .map((value) => ({
-        value: value.name,
-        count: 1,
-      }));
-  }
+  /* Filtered here rather than in the request: the endpoint takes no handle
+     list, and 11 rows is not a fetch worth narrowing server-side. */
+  const wanted = handles ? new Set(handles) : null;
 
-  return { attributes };
+  return product_attributes
+    .filter((attribute) => !wanted || wanted.has(attribute.handle))
+    .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))
+    .flatMap((attribute) => {
+      const values = (attribute.values ?? [])
+        .slice()
+        .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))
+        .map((value) => value.name);
+
+      /* An attribute with nothing to pick is not a facet, it is an empty
+         select the visitor cannot use. */
+      return values.length
+        ? [{ handle: attribute.handle, label: attribute.name, values }]
+        : [];
+    });
 };
 
 /**

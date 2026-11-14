@@ -1,6 +1,8 @@
 import { CONTAINER } from '@/const/layout';
 import { ROUTES } from '@/const/routes';
 import type { InfoDoc } from '@/const/info';
+import { Button, RenderIf } from "@koi/ui";
+import { Link } from '@/components/atoms/Link/Link';
 import { Eyebrow } from '@/components/atoms/Eyebrow/Eyebrow';
 import { PageShell } from '@/components/organisms/PageShell/PageShell';
 import type { HeaderAccount, HeaderCart } from '@/types/header';
@@ -69,6 +71,36 @@ export function Info({ doc, slug, account, cart }: InfoProps) {
             </section>
           ))}
         </div>
+
+        {/* What the page asks of the reader, where it asks anything. An
+            off-site destination keeps its own tab, since it is a different app
+            and coming back should not cost them this page. */}
+        <RenderIf when={doc.action}>
+          {(action) => (
+            <div className="mt-10 flex flex-col items-start gap-2 border-t border-border pt-8">
+              <Button
+                render={
+                  <Link
+                    href={action.href}
+                    {...(/^https?:/.test(action.href)
+                      ? { target: '_blank', rel: 'noopener noreferrer' }
+                      : {})}
+                  />
+                }
+                nativeButton={false}
+              >
+                {action.label}
+              </Button>
+              <RenderIf when={action.note}>
+                {(note) => (
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    {note}
+                  </p>
+                )}
+              </RenderIf>
+            </div>
+          )}
+        </RenderIf>
       </article>
     </PageShell>
   );

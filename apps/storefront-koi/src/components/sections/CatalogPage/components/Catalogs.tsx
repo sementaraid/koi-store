@@ -1,7 +1,8 @@
 import { BadgeCheck, ShoppingBag } from "lucide-react"
 
-import { Button } from "@/components/atoms/Button/Button"
+import { Button, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
+import { PAGE_SIZE } from "@/const"
 import { CONTAINER } from "@/const/layout"
 import { ROUTES, koiHref } from "@/const/routes"
 import {
@@ -12,6 +13,7 @@ import {
   DEFAULT_CATALOG_TABS,
 } from "@/const/catalog"
 import { EmptyFeed } from "@/components/cells/EmptyFeed/EmptyFeed"
+import { FacetSidebar } from "@/components/cells/FacetSidebar/FacetSidebar"
 import { FeedFilters } from "@/components/molecules/FeedFilters/FeedFilters"
 import { FeedGrid } from "@/components/atoms/FeedGrid/FeedGrid"
 import { FeedHero } from "@/components/cells/FeedHero/FeedHero"
@@ -19,9 +21,8 @@ import { FeedPagination } from "@/components/cells/FeedPagination/FeedPagination
 import { FeedSummary } from "@/components/cells/FeedSummary/FeedSummary"
 import { PageShell } from "@/components/organisms/PageShell/PageShell"
 import { ProductCard } from "@/components/organisms/ProductCard/ProductCard"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
 import type { CatalogsProps } from "@/types/catalog"
-import { filterGoods, salePrice, saleStatus } from "@/lib/helpers/filter-goods"
+import { filterGoods, koiStatus, salePrice } from "@/lib/helpers/filter-goods"
 
 export type {
   CatalogFilter,
@@ -67,12 +68,16 @@ export function Catalogs({
   koi = DEFAULT_CATALOG_KOI,
   filter = DEFAULT_CATALOG_FILTER,
   page = 1,
-  pageSize = 6,
+  pageSize = PAGE_SIZE,
   onFilterChange,
   onPageChange,
   account,
   activeHref = ROUTES.catalogs,
   onSearch,
+  searching = false,
+  attributes,
+  selected = {},
+  onAttributesChange,
   heading,
   basePath = ROUTES.catalogs,
   trail,
@@ -88,14 +93,27 @@ export function Catalogs({
   } = filterGoods(
     koi,
     filter,
-    { statusOf: saleStatus, priceOf: salePrice },
+    { statusOf: koiStatus, priceOf: salePrice },
     page,
     pageSize
   )
   const available = koi.filter(
     (item) => item.sale.availability === "available"
   ).length
-  const narrowing = filter.status !== "all" || filter.category !== ""
+  const narrowedByAttributes = Object.keys(selected).length > 0
+  const filtered =
+    filter.status !== "all" || filter.category !== "" || narrowedByAttributes
+  /* A search narrows the feed too, so an empty result is a no-match rather
+     than an empty shelf — but it is narrowed by the URL, not by these
+     controls, which is why the reset below stays tied to `filtered`. */
+  const narrowing = searching || filtered
+
+  /* One reset for the whole band: clearing the tabs but leaving a bloodline
+     picked is not what "Reset filter" says. */
+  const reset = () => {
+    onFilterChange?.(DEFAULT_CATALOG_FILTER)
+    if (narrowedByAttributes) onAttributesChange?.({})
+  }
 
   return (
     <PageShell
@@ -141,84 +159,108 @@ export function Catalogs({
         allCategoriesLabel="Semua varietas"
       />
 
-      <div className={`${CONTAINER} py-8 lg:py-10`}>
-        <FeedSummary
-          total={total}
-          statusLabel={AVAILABILITY_LABEL[filter.status]}
-          category={filter.category}
-          page={current}
-          pageCount={pageCount}
-          onReset={
-            narrowing
-              ? () => onFilterChange?.(DEFAULT_CATALOG_FILTER)
-              : undefined
-          }
+      {/* A quarter to the filters, three quarters to the grid — as a four-track
+          grid rather than flex widths, so the split is one number in one place
+          and the cards cannot push the rail off the container. One column below
+          `lg`, where the filters sit above the feed instead. */}
+      <div
+        className={`${CONTAINER} grid gap-8 py-8 lg:grid-cols-4 lg:py-10`}
+      >
+        <FacetSidebar
+          attributes={attributes}
+          selected={selected}
+          {...(onAttributesChange ? { onAttributesChange } : {})}
         />
 
-        <RenderIf when={items.length ? items : null}>
-          {(list) => (
-            <FeedGrid>
-              {list.map((item) => (
-                <ProductCard
-                  key={item.id}
-                  product={item}
-                  href={koiHref(item.id)}
-                  action={
-                    /* The one koi you can act on leads with the solid fill;
-                       the rest fall back to the quiet detail link. Neither is
-                       disabled — both land on the koi's own page, which is
-                       where the buy actually happens. */
-                    <Button
-                      render={<Link href={koiHref(item.id)} />}
-                      size="sm"
-                      variant={
-                        item.sale.availability === "available"
-                          ? "solid"
-                          : "outline"
-                      }
-                      className="flex-1"
-                    >
-                      {item.sale.availability === "available"
-                        ? "Beli sekarang"
-                        : "Lihat detail"}
-                    </Button>
-                  }
-                />
-              ))}
-            </FeedGrid>
-          )}
-        </RenderIf>
+        {/* `min-w-0` because a grid item defaults to `min-width:auto`: without
+            it a wide card floors the track at its own width and the three-track
+            span overflows instead of the cards narrowing. */}
+        <div className="min-w-0 lg:col-span-3">
+          <FeedSummary
+            total={total}
+            statusLabel={AVAILABILITY_LABEL[filter.status]}
+            category={filter.category}
+            page={current}
+            pageCount={pageCount}
+            onReset={filtered ? reset : undefined}
+          />
 
-        {/* Nothing matched. The copy differs by cause: a narrowed catalog is
-            not the same as an empty shelf. */}
-        <RenderIf when={!items.length}>
-          {() => (
-            <EmptyFeed
-              icon={<ShoppingBag aria-hidden />}
-              narrowing={narrowing}
-              onReset={() => onFilterChange?.(DEFAULT_CATALOG_FILTER)}
-              noMatchTitle="Tidak ada koi yang cocok"
-              noMatchBody="Coba longgarkan filter, atau lihat semua koi yang tersedia."
-              emptyTitle="Belum ada koi"
-              emptyBody="Stok baru masuk setiap minggu. Pantau halaman ini atau ikut lelang yang sedang dibuka."
-              action={
-                <Button
-                  render={<Link href={ROUTES.auctions} />}
-                  nativeButton={false}
-                >
-                  Lihat lelang
-                </Button>
-              }
-            />
-          )}
-        </RenderIf>
+          <RenderIf when={items.length ? items : null}>
+            {(list) => (
+              /* Three across, not the default four: the sidebar took a quarter
+                 of the row, and a fourth card in three quarters of the width is
+                 a card too narrow to read a price off. */
+              <FeedGrid cols={3}>
+                {list.map((item) => (
+                  <ProductCard
+                    key={item.id}
+                    product={item}
+                    href={koiHref(item.id)}
+                    action={
+                      /* The one koi you can act on leads with the solid fill;
+                         the rest fall back to the quiet detail link. Neither is
+                         disabled — both land on the koi's own page, which is
+                         where the buy actually happens. */
+                      <Button
+                        render={<Link href={koiHref(item.id)} />}
+                        size="sm"
+                        variant={
+                          item.sale.availability === "available"
+                            ? "solid"
+                            : "outline"
+                        }
+                        className="flex-1"
+                      >
+                        {item.sale.availability === "available"
+                          ? "Beli sekarang"
+                          : "Lihat detail"}
+                      </Button>
+                    }
+                  />
+                ))}
+              </FeedGrid>
+            )}
+          </RenderIf>
 
-        <FeedPagination
-          page={current}
-          pageCount={pageCount}
-          href={basePath}
-          onPageChange={onPageChange}
-        />
+          {/* Nothing matched. The copy differs by cause: a narrowed catalog is
+              not the same as an empty shelf. */}
+          <RenderIf when={!items.length}>
+            {() => (
+              <EmptyFeed
+                icon={<ShoppingBag aria-hidden />}
+                narrowing={narrowing}
+                {...(filtered ? { onReset: reset } : {})}
+                noMatchTitle="Tidak ada koi yang cocok"
+                noMatchBody={
+                  searching
+                    ? "Coba kata kunci lain, atau telusuri seluruh katalog."
+                    : "Coba longgarkan filter, atau lihat semua koi yang tersedia."
+                }
+                emptyTitle="Belum ada koi"
+                emptyBody="Stok baru masuk setiap minggu. Pantau halaman ini atau ikut lelang yang sedang dibuka."
+                action={
+                  /* Out of a search, the door is the unfiltered catalog — the
+                     floor is a different shop and does not answer the query. */
+                  <Button
+                    render={
+                      <Link href={searching ? ROUTES.catalogs : ROUTES.auctions} />
+                    }
+                    nativeButton={false}
+                  >
+                    {searching ? "Lihat semua koi" : "Lihat lelang"}
+                  </Button>
+                }
+              />
+            )}
+          </RenderIf>
+
+          <FeedPagination
+            page={current}
+            pageCount={pageCount}
+            href={basePath}
+            onPageChange={onPageChange}
+          />
+        </div>
       </div>
     </PageShell>
   )

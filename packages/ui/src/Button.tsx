@@ -9,7 +9,7 @@ import {
   PRESS_IN,
   RAISED,
   SURFACE,
-} from "@/const/surface"
+} from "./surface"
 
 /* koi button: soft pill, layered shadow with a top sheen, springs down on press. */
 

@@ -2,10 +2,8 @@ import type { ReactElement, ReactNode } from "react"
 import { cn } from "cn"
 import { BadgeCheck, ExternalLink, Gavel, ShieldCheck } from "lucide-react"
 
-import { Badge } from "@/components/atoms/Badge/Badge"
-import { Button } from "@/components/atoms/Button/Button"
+import { Badge, Button, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
 import { BidHistory } from "@/components/molecules/BidHistory/BidHistory"
 import {
   Sheet,
@@ -15,10 +13,10 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
-import { RING } from "@/const/surface"
+} from "@koi/ui/primitives/sheet"
+import { ScrollArea } from "@koi/ui/primitives/scroll-area"
+import { Separator } from "@koi/ui/primitives/separator"
+import { RING } from "@koi/ui/surface"
 import { SELLER_KIND } from "@/const/stamps"
 import type { AuctionProduct } from "@/types/product"
 import { formatPrice } from "@/lib/helpers/format-price"

@@ -5,9 +5,8 @@ import { MessageSquareText } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import Talk from 'talkjs';
 
-import { Button } from '@/components/atoms/Button/Button';
+import { Button, buttonVariants } from "@koi/ui";
 import type { VariantProps } from 'class-variance-authority';
-import { buttonVariants } from '@/components/atoms/Button/Button';
 
 type ButtonVariant = VariantProps<typeof buttonVariants>;
 import {
@@ -16,7 +15,7 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle
-} from '@/components/ui/sheet';
+} from '@koi/ui/primitives/sheet';
 
 /** The shop at the other end of a conversation.
  *

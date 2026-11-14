@@ -1,7 +1,8 @@
 import { Gavel } from "lucide-react"
 
-import { Button } from "@/components/atoms/Button/Button"
+import { Button, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
+import { PAGE_SIZE } from "@/const"
 import { CONTAINER } from "@/const/layout"
 import { ROUTES, lotHref } from "@/const/routes"
 import {
@@ -20,7 +21,6 @@ import { FeedSummary } from "@/components/cells/FeedSummary/FeedSummary"
 import { PageShell } from "@/components/organisms/PageShell/PageShell"
 import { ProductCard } from "@/components/organisms/ProductCard/ProductCard"
 import { PulseIcon } from "@/components/atoms/PulseIcon/PulseIcon"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
 import type { AuctionsProps } from "@/types/auctions"
 import {
   filterGoods,
@@ -68,7 +68,7 @@ export function Auctions({
   lots = DEFAULT_AUCTION_LOTS,
   filter = DEFAULT_AUCTION_FILTER,
   page = 1,
-  pageSize = 6,
+  pageSize = PAGE_SIZE,
   onFilterChange,
   onPageChange,
   account,

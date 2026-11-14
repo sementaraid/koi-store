@@ -22,11 +22,13 @@ export async function generateMetadata({
    `notFound()` inside the section, and a boundary above it would flush the
    shell before the 404 could be set. */
 export default async function CategoryRoute({
-  params
+  params,
+  searchParams
 }: {
   params: Promise<{ category: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { category } = await params;
+  const [{ category }, query] = await Promise.all([params, searchParams]);
 
-  return <CategoryPage handle={category} />;
+  return <CategoryPage handle={category} params={query} />;
 }

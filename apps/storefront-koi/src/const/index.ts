@@ -6,5 +6,8 @@
     themselves, so this is the whole working set, not a screenful. */
 export const FEED_LIMIT = 100;
 
+/** How many cards one feed page shows. */
+export const PAGE_SIZE = 20;
+
 /** The shelf under a product: enough to fill the strip, not the catalog. */
 export const SHELF_LIMIT = 12;

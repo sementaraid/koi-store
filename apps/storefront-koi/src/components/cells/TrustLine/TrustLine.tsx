@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import type { ShieldCheck } from "lucide-react"
 
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
+import { RenderIf } from "@koi/ui"
 
 /** Props for {@link TrustLine}. */
 export type TrustLineProps = {

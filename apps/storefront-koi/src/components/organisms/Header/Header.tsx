@@ -1,11 +1,10 @@
 import type { ComponentProps } from "react"
 import { cn } from "cn"
 
-import { Button } from "@/components/atoms/Button/Button"
+import { Button, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
 import { CONTAINER } from "@/const/layout"
 import { ROUTES } from "@/const/routes"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
 import { AccountCluster } from "@/components/cells/AccountMenu/AccountCluster"
 import { BackButton } from "@/components/cells/BackButton/BackButton"
 import { BrandMark } from "@/components/cells/BrandMark/BrandMark"

@@ -2,9 +2,7 @@ import { useState, type ReactNode } from "react"
 import { cn } from "cn"
 import { Play } from "lucide-react"
 
-import { Button } from "@/components/atoms/Button/Button"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
-
+import { Button, RenderIf } from "@koi/ui"
 /** One item in a gallery: a still, or a clip the breeder recorded. */
 export type MediaItem = {
   /** The photo, or the clip's file. */

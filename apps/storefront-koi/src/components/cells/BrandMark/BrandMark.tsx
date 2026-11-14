@@ -1,8 +1,8 @@
 import { Fish } from "lucide-react"
 
 import { Link } from "@/components/atoms/Link/Link"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { RenderIf } from "@koi/ui"
+import { Avatar, AvatarFallback, AvatarImage } from "@koi/ui/primitives/avatar"
 import type { HeaderBrand } from "@/types/header"
 
 /**

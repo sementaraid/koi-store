@@ -4,7 +4,7 @@ import { Activity, ShieldCheck } from "lucide-react"
 
 import { CONTAINER } from "@/const/layout"
 import { PulseIcon } from "@/components/atoms/PulseIcon/PulseIcon"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
+import { RenderIf } from "@koi/ui"
 
 /** One figure the house publishes beside the broadcast: a value and what it counts. */
 export type BroadcastStat = {

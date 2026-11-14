@@ -140,6 +140,15 @@ export function saleStatus(item: SimpleProduct): string | undefined {
   return item.sale.stock?.level ?? item.sale.availability
 }
 
+/**
+ * A koi's status is where it stands, never the shelf band: the catalog tabs
+ * over `available`/`reserved`/`sold`, and a product that also carries a count
+ * would otherwise answer `in-stock` and match no tab at all.
+ */
+export function koiStatus(item: SimpleProduct): string | undefined {
+  return item.sale.availability
+}
+
 /** A fixed-price item's figure is what the seller asks. */
 export function salePrice(item: SimpleProduct): number {
   return item.sale.price

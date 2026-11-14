@@ -13,9 +13,8 @@ import {
 import { usePathname } from 'next/navigation';
 import { cn } from 'cn';
 
-import { buttonVariants } from '@/components/atoms/Button/Button';
+import { RenderIf, buttonVariants } from "@koi/ui";
 import { Link } from '@/components/atoms/Link/Link';
-import { RenderIf } from '@/components/atoms/RenderIf/RenderIf';
 import { ROUTES } from '@/const/routes';
 
 /** One row of the account sidebar. */

@@ -1,4 +1,4 @@
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
+import { RenderIf } from "@koi/ui"
 import { formatPrice } from "@/lib/helpers/format-price"
 import { cn } from "cn"
 

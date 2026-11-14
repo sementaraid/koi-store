@@ -2,17 +2,26 @@ import type { FormEvent } from "react"
 import { Search } from "lucide-react"
 import { cn } from "cn"
 
-import { Input } from "@/components/atoms/Input/Input"
+import { Input } from "@koi/ui"
 import { DEFAULT_SEARCH_PLACEHOLDER } from "@/const/header"
+import { ROUTES } from "@/const/routes"
 import type { HeaderSearch } from "@/types/header"
 
 /**
  * Filled search field, the one control the design draws as a field rather than
  * as a kit surface: no border, a recessed fill, and the icon inside it.
  *
- * With no `onSearch` the form falls through to a native GET submit; with one it
- * is prevented and handed the trimmed query — an empty or whitespace query is
- * dropped rather than reported.
+ * With no `onSearch` the form does a native GET submit at the catalog, which is
+ * the whole search feature: `/katalog?q=…` is a real page that queries the
+ * catalog server-side, so the bar needs no handler, no state and no JavaScript
+ * to work. With an `onSearch` the submit is prevented and the handler is handed
+ * the trimmed query instead — an empty or whitespace query is dropped rather
+ * than reported.
+ *
+ * @remarks
+ * ponytail: a native submit is a full page navigation. Pass an `onSearch` that
+ * `router.push`es the same URL from a client page once the catalog is worth
+ * keeping warm across a search.
  */
 export function SearchField({
   onSearch,
@@ -28,9 +37,13 @@ export function SearchField({
   return (
     <form
       role="search"
-      aria-label="Cari lot"
+      aria-label="Cari koi"
       className={cn("relative flex min-w-0 items-center", className)}
-      onSubmit={onSearch ? handleSubmit : undefined}
+      /* No handler: a plain GET at the catalog, which is a page that reads `q`.
+         With one: prevented and handed over. */
+      {...(onSearch
+        ? { onSubmit: handleSubmit }
+        : { action: ROUTES.catalogs, method: "get" })}
     >
       <Search
         aria-hidden

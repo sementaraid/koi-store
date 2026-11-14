@@ -1,17 +1,8 @@
 import type { ComponentProps, ReactNode } from "react"
 import { cn } from "cn"
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/atoms/Card/Card"
-import { Badge } from "@/components/atoms/Badge/Badge"
-import { TILE } from "@/const/surface"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
+import { Badge, Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, RenderIf } from "@koi/ui"
+import { TILE } from "@koi/ui/surface"
 import { PulseIcon } from "@/components/atoms/PulseIcon/PulseIcon"
 
 import type { ProductCardProps } from "./ProductCard"

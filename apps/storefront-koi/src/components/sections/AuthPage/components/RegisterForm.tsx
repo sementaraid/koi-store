@@ -5,8 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { Button, Link } from '@/components/atoms';
-import { FormField } from '@/components/cells/FormField/FormField';
+import { Button, FormField } from '@koi/ui';
+import { Link } from '@/components/atoms';
 import { ROUTES } from '@/const/routes';
 import { signup } from '@/lib/data/customer';
 import { authErrorMessage } from '@/lib/helpers/auth-error';

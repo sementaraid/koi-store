@@ -1,8 +1,7 @@
 import { cn } from "cn"
 import { ArrowRight, Gavel } from "lucide-react"
 
-import { Button } from "@/components/atoms/Button/Button"
-import { Card } from "@/components/atoms/Card/Card"
+import { Button, Card, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
 import {
   DEFAULT_AUCTION_FILTER,
@@ -23,7 +22,6 @@ import { LotLayout } from "@/components/atoms/LotLayout/LotLayout"
 import { LotTrustList } from "@/components/molecules/LotTrust/LotTrust"
 import { PageShell } from "@/components/organisms/PageShell/PageShell"
 import { ProductCard } from "@/components/organisms/ProductCard/ProductCard"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
 import type { LotPageProps } from "@/types/lot"
 import { formatDeadline } from "@/lib/helpers/format-deadline"
 import { formatPrice } from "@/lib/helpers/format-price"

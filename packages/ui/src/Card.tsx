@@ -10,9 +10,9 @@ import {
   CardHeader,
   CardTitle,
   Card as CardPrimitive,
-} from "@/components/ui/card"
+} from "./primitives/card"
 
-import { RAISED, RING } from "@/const/surface"
+import { RAISED, RING } from "./surface"
 
 /* koi card: the button's material spread over a panel — standoff shadow,
    hairline top highlight, inset edge — so panels and controls read as one kit.

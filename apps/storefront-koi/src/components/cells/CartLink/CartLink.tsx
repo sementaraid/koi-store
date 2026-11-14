@@ -2,7 +2,7 @@ import { ShoppingCart } from "lucide-react"
 
 import { Link } from "@/components/atoms/Link/Link"
 import { ROUTES } from "@/const/routes"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
+import { RenderIf } from "@koi/ui"
 import type { HeaderCart } from "@/types/header"
 
 /**

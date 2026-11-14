@@ -1,7 +1,6 @@
 import { Bell } from "lucide-react"
 
-import { Button } from "@/components/atoms/Button/Button"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
+import { Button, RenderIf } from "@koi/ui"
 import { AccountMenu } from "./AccountMenu"
 import type { HeaderAccount } from "@/types/header"
 

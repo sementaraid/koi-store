@@ -2,7 +2,7 @@ import { Check } from "lucide-react"
 
 import { cn } from "cn"
 
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
+import { RenderIf } from "@koi/ui"
 import type { CheckoutStep } from "@/types/cart"
 
 /** The three steps, in the order the visitor walks them. */

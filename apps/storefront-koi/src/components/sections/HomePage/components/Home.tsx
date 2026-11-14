@@ -1,7 +1,6 @@
 import { BadgeCheck, Gavel } from "lucide-react"
 
-import { Badge } from "@/components/atoms/Badge/Badge"
-import { Button } from "@/components/atoms/Button/Button"
+import { Badge, Button, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
 import { CONTAINER } from "@/const/layout"
 import { ROUTES, lotHref } from "@/const/routes"
@@ -18,7 +17,6 @@ import { PageShell } from "@/components/organisms/PageShell/PageShell"
 import { PartnerCard } from "@/components/organisms/PartnerCard/PartnerCard"
 import { PulseIcon } from "@/components/atoms/PulseIcon/PulseIcon"
 import { ProductCard } from "@/components/organisms/ProductCard/ProductCard"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
 import type { HomeProps } from "@/types/home"
 
 export type { HomeClaim, HomeProps, HomeStat } from "@/types/home"

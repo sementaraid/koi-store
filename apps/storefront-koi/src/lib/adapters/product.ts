@@ -73,10 +73,21 @@ export function toSimpleProduct(
      every offer read). A bare product read may not, and an absent count is not
      a count of zero — a product with untracked inventory would otherwise read
      as sold out — so the band is left unsaid instead. */
-  const count = winner
-    ? getOfferStock(winner)
-    : (variant as { inventory_quantity?: number | null } | undefined)
-        ?.inventory_quantity;
+  const tracked = variant as
+    | { inventory_quantity?: number | null; manage_inventory?: boolean }
+    | undefined;
+
+  const count = winner ? getOfferStock(winner) : tracked?.inventory_quantity;
+
+  /* A seller who does not count units still sells: `manage_inventory: false`
+     means unlimited, not unknown, so it bands as stocked rather than falling
+     through to an unsaid status that no tab can match. */
+  const stock =
+    typeof count === 'number'
+      ? toSupplyStock(count)
+      : variant && tracked?.manage_inventory === false
+        ? ({ level: 'in-stock' } satisfies SupplyStock)
+        : undefined;
 
   const seller = winner?.seller;
 
@@ -104,7 +115,13 @@ export function toSimpleProduct(
     sale: {
       price,
       currency,
-      ...(typeof count === 'number' ? { stock: toSupplyStock(count) } : {})
+      ...(stock ? { stock } : {}),
+      /* Both vocabularies, because one product feeds both feeds: the shop tabs
+         over the stock band, the catalog over an availability, and a koi read
+         through `listProducts` carries no availability of its own. Mercur has
+         no reserved/sold state on a product, so the band is what there is.
+         ponytail: map `reserved`/`sold` off the offer once a sale marks one. */
+      availability: stock?.level === 'out-of-stock' ? 'sold' : 'available'
     }
   };
 }

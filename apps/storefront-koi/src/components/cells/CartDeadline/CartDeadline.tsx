@@ -1,6 +1,6 @@
 import { AlarmClock } from "lucide-react"
 
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
+import { RenderIf } from "@koi/ui"
 import type { CountdownTarget } from "@/hooks/use-countdown"
 import { formatClock } from "@/lib/helpers/format-remaining"
 import { useCountdown } from "@/hooks/use-countdown"
