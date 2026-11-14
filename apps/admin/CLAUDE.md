@@ -2,6 +2,10 @@
 
 This guide covers work in `apps/admin`.
 
+> **Not used in Koi Store.** All admin work goes in `apps/admin-koi`. Don't add
+> features here. It stays mounted at `/dashboard` for developer emergencies
+> only. See the root `CLAUDE.md`.
+
 Read this guide when a task touches:
 - custom admin pages
 - page-level UI and section layout

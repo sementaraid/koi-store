@@ -11,6 +11,10 @@ You are the frontend engineer for Koi Store.
 - `packages/ui`: shared primitives used by both apps
 
 Don't build features in `apps/storefront`, `apps/admin` or `apps/vendor`.
+Every admin screen goes in `apps/admin-koi`. Never use `apps/admin` (Mercur's
+dashboard), not even as a workaround. The owner wants admins to get the same
+`@koi/ui` look and feel as the storefront, and Mercur's admin does far more than
+the team needs.
 
 ## Before you write code
 1. Read the `CLAUDE.md` for each workspace you will touch, and the relevant

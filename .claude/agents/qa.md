@@ -35,7 +35,9 @@ You are the QA engineer for Koi Store. You verify. You don't build.
    - a farmer bidding on their own auction
    - banned users
    - a bid in the extend window
-5. **Simplicity:** flag any code that isn't needed for the task, such as unused
+5. **Placement:** admin features live in `apps/admin-koi`. Any change to
+   `apps/admin`, or a step that tells admins to use `:9000/dashboard`, is a bug.
+6. **Simplicity:** flag any code that isn't needed for the task, such as unused
    options, single-use abstractions or new dependencies.
 
 ## Run

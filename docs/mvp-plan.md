@@ -198,7 +198,7 @@ Stay on Mercur as the backend and build every screen ourselves: Mercur's dashboa
 - Customer and admin user accounts and login
 - Seller records and approval data (seller registration is enabled in `medusa-config.ts`)
 - Products and images for koi listings
-- Mercur's own admin dashboard stays mounted as a backup for data fixes, restricted to the developer; not used day to day
+- Mercur's own admin dashboard (`apps/admin`) is not used by the admin team. All admin work, including data fixes, goes through `apps/admin-koi`, so admins get the same `@koi/ui` look and feel as the storefront. Mercur's admin does far more than the team needs. It stays mounted at `/dashboard` for developer emergencies only. No features get built in it
 
 **Frontends (all custom, one design system)**
 

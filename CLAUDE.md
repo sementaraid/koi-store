@@ -23,13 +23,19 @@ has its own `CLAUDE.md`. Read it before you change anything in that workspace.
 | `packages/ui` | Shared design system (`@koi/ui`) used by both Koi apps | — | `packages/ui/CLAUDE.md` |
 | `apps/storefront-koi` | Customer site plus the Farmer area. Next.js 15, React 19 | 3001 | `apps/storefront-koi/CLAUDE.md` |
 | `apps/admin-koi` | Custom admin app for the admin team. Next.js 15, React 19 | 3002 | `apps/admin-koi/CLAUDE.md` |
-| `apps/admin` | Mercur's built-in admin at `:9000/dashboard`. Backup for data fixes only | 7000 | `apps/admin/CLAUDE.md` |
+| `apps/admin` | Mercur's built-in admin at `:9000/dashboard`. **Not used by the admin team.** All admin work goes in `apps/admin-koi`. Kept mounted for developer emergencies only | 7000 | `apps/admin/CLAUDE.md` |
 | `apps/vendor` | Mercur's seller panel at `:9000/seller`. **Not used in the MVP** | 7001 | `apps/vendor/CLAUDE.md` |
 | `apps/storefront` | Mercur's stock B2C storefront. **Reference only** | 3000 | none |
 
 - Customer and farmer screens go in `apps/storefront-koi`. Admin screens go in
   `apps/admin-koi`. Don't build features in `apps/admin`, `apps/vendor` or
   `apps/storefront`.
+- **Admin uses `apps/admin-koi` only, never `apps/admin`** (owner's decision).
+  Reason: admin-koi is built on `@koi/ui`, so it looks and works like the
+  storefront, while Mercur's admin does far more than our team needs. Every admin
+  feature gets an `/admin/*` route in `packages/api` and a screen in admin-koi.
+  Don't add widgets, routes or extensions to `apps/admin`, and don't send people
+  there as a workaround.
 - A component used by both Koi apps belongs in `packages/ui`.
 - `AGENTS.md` lists the panel paths the wrong way round. In `medusa-config.ts`,
   admin is `/dashboard` and vendor is `/seller`.
@@ -132,8 +138,16 @@ The root `check-types` script does nothing yet, because no workspace defines
 - **Demo data:** auctions, live rooms and parts of the home page come from
   `apps/storefront-koi/src/const/*`. No wallet, auction, bid or moderation module
   exists in `packages/api` yet. These are milestones 2–5 in the plan.
-- **Still open:** linking a customer account to a farmer (seller) account in Mercur.
-  Check the Mercur docs before you build anything that depends on it.
+- **Farmer account link (decided: option A, Mercur's member login, tested in dev
+  on 2026-11-14).** A farmer is one auth identity whose `app_metadata` holds
+  both `customer_id` and `member_id`. Each token covers one actor only, so the
+  storefront signs in at both `/auth/customer/emailpass` (for `/store/*`) and
+  `/auth/member/emailpass` (for `/vendor/*` plus the `x-seller-id` header), with
+  the same credentials. Farm registration is a member login (which gives a token
+  with an empty `actor_id`), then `POST /vendor/sellers`. That creates the seller
+  as `pending_approval`. Once admin approves, the farmer logs in as a member again.
+  This uses Mercur's `/vendor/*` API, not the `apps/vendor` panel. Don't build a
+  custom customer↔seller link.
 - The workspace guides for `apps/admin` and `apps/vendor` refer to skills
   (`medusa-ui-conformance`, `admin-page-ui`, ...) that aren't installed. Those
   apps aren't used for features anyway.

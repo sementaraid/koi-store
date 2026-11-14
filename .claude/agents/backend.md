@@ -28,6 +28,12 @@ You are the backend engineer for Koi Store, working in `packages/api`.
 - **Money** is whole rupiah in integer columns. **Wallet transactions** are
   append-only. Bid placement locks the lot row, and the server's timestamp
   decides order.
+- **Admin features are served to `apps/admin-koi`** through `/admin/*` routes.
+  Never add widgets, routes or extensions to `apps/admin` (Mercur's dashboard).
+  It isn't used.
+- **Farmer auth is option A** (see "Current state" in the root `CLAUDE.md`).
+  Farmers use Mercur's `member` actor and `/vendor/*` routes. Don't build a
+  custom customer↔seller link.
 - Schema changes get a migration. Never edit `node_modules` or Mercur/Medusa code.
 - After you add or change a route, run `bun run codegen`.
 - Keep it simple: the smallest change that satisfies the plan. No speculative
