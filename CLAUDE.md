@@ -145,17 +145,65 @@ The root `check-types` script does nothing yet, because no workspace defines
   with a safe placeholder.
 - Don't rely on the `"supersecret"` fallbacks in `medusa-config.ts` in anything new.
 
-## Working style
+## Working style (all agents)
 
-- Work end to end without asking about routine decisions. Choose the option that
-  matches the plan, the docs and the existing code, then list your assumptions.
-- Stop and ask only before: deleting data or migrations, breaking an API contract,
-  adding a paid service, changing a rule in `docs/mvp-plan.md`, or anything that
-  touches money movement in a way the plan doesn't describe.
-- Before you hand off, run the checks for every workspace you touched, using the
-  commands table above. Don't hand off code that fails them.
+### 1. No assumptions, no unproven claims
+- **Verify, don't assume.** Before you rely on an API, field, route, file or
+  behaviour, confirm it in the code, the bundled Mercur docs or
+  `docs/mvp-plan.md`. If you can't confirm it, say "not verified" and say what
+  you checked.
+- If a requirement is missing and the code, docs and plan don't answer it, **ask**.
+  Don't guess. Following an existing pattern in the codebase is not guessing.
+- **Back every claim with evidence.** Never write "done", "works", "fixed" or
+  "tested" unless you ran the check and can show its output (the command and
+  the pass/fail lines). Say plainly what you did not run or could not check.
+- Don't describe code you haven't read. Quote file paths and line numbers.
+
+### 2. Fewer back-and-forth rounds
+- Read everything relevant first, then ask **all** your open questions in one
+  message before you start. Don't ask mid-task about anything you could have
+  found out up front.
+- When nothing is blocking, work end to end without check-ins, and report once
+  at the end.
+- Stop and ask only before: deleting data or migrations, breaking an API
+  contract, adding a paid service or new dependency, changing a rule in
+  `docs/mvp-plan.md`, or moving money in a way the plan doesn't describe.
+- Run the checks for every workspace you touched (commands table above) and fix
+  failures before you hand off. Don't hand off failing code.
 - Features go **backend → codegen → frontend → qa**. A feature is done only when
   qa reports PASS. After a FAIL, allow at most 2 fix rounds, then report the
   remaining bugs.
-- Final summary: files changed, API or contract changes, assumptions, doc and plan
-  sections used, and how to see the change (URL and port).
+
+### 3. Mercur coding standard
+Backend code follows `node_modules/@mercurjs/docs/content/resources/best-practices/`.
+Read the matching page before you write that kind of code. In short:
+- **Every mutation runs a workflow.** Routes, subscribers and jobs never write
+  directly. Reads use `query.graph`.
+- **Modules are thin CRUD** (`MedusaService`). No cross-module service calls, no
+  foreign keys into another module. Relationships use `defineLink` in `src/links/`.
+- **Routes are thin:** Zod validation, both generics typed
+  (`AuthenticatedMedusaRequest<T>`, `MedusaResponse<T>`), only GET/POST/DELETE,
+  identity from `req.auth_context`, never from the body.
+- **Workflows:** one mutation per step, each with compensation. No
+  `async`/`if`/loops in the composition function (use `transform` and `when`).
+  Reuse built-in steps.
+- **Types:** no `any`. Import shipped types from `@mercurjs/types`.
+- Mercur's panel rules (`frontend.mdx`, `@medusajs/ui` only) apply to
+  `apps/admin` and `apps/vendor`. The Koi apps use `@koi/ui` instead, but still
+  get data only through the typed `@mercurjs/client`, never raw `fetch`.
+
+### 4. Keep it simple
+- Make the smallest change that meets the requirement and the plan. Nothing
+  speculative: no "for later" options, flags or abstractions.
+- Don't create a helper, hook, component or layer that has only one caller,
+  unless an existing pattern requires it.
+- Use what exists (Mercur, Medusa built-in steps, `@koi/ui`, existing helpers)
+  before you write new code. No new dependencies without asking.
+- Don't refactor, rename or reformat code outside the task.
+- Prefer plain, readable code over clever code. If a reviewer needs a comment to
+  understand the control flow, simplify it.
+
+### Final report
+Files changed · API or contract changes · checks run, with their output ·
+what was not verified · doc and plan sections used · how to see the change
+(URL and port). Keep it short.
