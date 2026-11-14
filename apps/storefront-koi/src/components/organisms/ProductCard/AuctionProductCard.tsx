@@ -1,6 +1,6 @@
 "use client"
 
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
+import { RenderIf } from "@koi/ui"
 import { useCountdown } from "@/hooks/use-countdown"
 import { formatRemaining } from "@/lib/helpers/format-remaining"
 

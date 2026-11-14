@@ -48,7 +48,7 @@ If a block touches backend code, inspect:
 
 Run these from `packages/api` unless noted otherwise:
 - `dev`
-- `dev:codegen`
+- `codegen`
 - `build`
 - `test:integration:http`
 - `test:integration:modules`
@@ -78,6 +78,6 @@ After non-trivial backend changes, verify the smallest relevant set:
 - `test:integration:http` for changed route behavior
 - `test:integration:modules` for module-level behavior
 - `test:unit` for local utility or service logic
-- `dev:codegen` or equivalent codegen verification when generated types changed
+- `codegen` verification when generated types changed
 
 If a block was installed, also verify the files landed in the expected `src/*` locations.

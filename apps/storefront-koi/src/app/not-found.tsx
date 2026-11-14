@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { FishOff } from 'lucide-react';
 
-import { Button } from '@/components/atoms/Button/Button';
+import { Button } from "@koi/ui";
 import { Link } from '@/components/atoms/Link/Link';
 import { CONTAINER } from '@/const/layout';
 import { EmptyFeed } from '@/components/cells/EmptyFeed/EmptyFeed';

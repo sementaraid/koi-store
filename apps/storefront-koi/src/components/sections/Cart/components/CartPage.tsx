@@ -1,6 +1,6 @@
 import { ShoppingBag } from "lucide-react"
 
-import { Button } from "@/components/atoms/Button/Button"
+import { Button, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
 import { DEFAULT_CART_LINES } from "@/const/cart"
 import { CONTAINER, SECTION_LABEL } from "@/const/layout"
@@ -11,7 +11,6 @@ import { CartSteps } from "@/components/cells/CartSteps/CartSteps"
 import { CartSummary } from "@/components/organisms/CartSummary/CartSummary"
 import { EmptyFeed } from "@/components/cells/EmptyFeed/EmptyFeed"
 import { PageShell } from "@/components/organisms/PageShell/PageShell"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
 import type {
   CartLine as CartLineData,
   CartPageProps,

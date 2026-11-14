@@ -3,7 +3,8 @@
 import { useCallback } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
-import type { GoodsFilter } from '@/types/product';
+import { readAttributeSelection } from '@/lib/helpers/attribute-facets';
+import type { AttributeSelection, GoodsFilter } from '@/types/product';
 
 /**
  * A feed's filter and page, read from and written to the URL.
@@ -16,7 +17,13 @@ import type { GoodsFilter } from '@/types/product';
  * One hook for all three feeds, because all three take the same
  * `FeedState` shape; what differs is the slice of URLs each searches.
  */
-export function useFeedSearch<S extends string>(fallback: GoodsFilter<S>) {
+export function useFeedSearch<S extends string>(
+  fallback: GoodsFilter<S>,
+  /** The attribute handles this feed offers a facet for. Only these are read
+      off the query string — an unknown param is not a narrowing, and passing
+      one to the API would filter on an attribute that does not exist. */
+  attributeHandles: string[] = []
+) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -28,6 +35,13 @@ export function useFeedSearch<S extends string>(fallback: GoodsFilter<S>) {
   };
 
   const page = Number(params.get('page')) || 1;
+
+  /* Same reader the server used, over the live query string, so the controls
+     echo exactly what the feed was fetched with. */
+  const selected = readAttributeSelection(
+    attributeHandles.map((handle) => ({ handle, label: handle, values: [] })),
+    Object.fromEntries(params.entries())
+  );
 
   /** Replace rather than push: a filter change is not a place to go back to. */
   const write = useCallback(
@@ -68,5 +82,19 @@ export function useFeedSearch<S extends string>(fallback: GoodsFilter<S>) {
     [params, write]
   );
 
-  return { filter, page, onFilterChange, onPageChange };
+  const onAttributesChange = useCallback(
+    (next: AttributeSelection) => {
+      const q = new URLSearchParams(params.toString());
+      /* Every facet is rewritten, not merged: the caller reports the whole
+         selection, so a handle missing from it is one that was cleared. */
+      for (const handle of attributeHandles) {
+        next[handle] ? q.set(handle, next[handle]) : q.delete(handle);
+      }
+      q.delete('page');
+      write(q);
+    },
+    [params, attributeHandles, write]
+  );
+
+  return { filter, page, selected, onFilterChange, onPageChange, onAttributesChange };
 }

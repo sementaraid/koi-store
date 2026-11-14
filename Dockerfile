@@ -24,6 +24,7 @@ RUN mkdir -p /workspace/node_modules \
              /workspace/apps/vendor/node_modules \
              /workspace/apps/storefront/node_modules \
              /workspace/apps/storefront-koi/node_modules \
+             /workspace/apps/admin-koi/node_modules \
              /home/app/.bun/install/cache \
  && chown -R "$UID:$GID" /workspace /home/app
 

@@ -13,7 +13,7 @@ import {
   DEFAULT_FOOTER_TAGLINE,
   DEFAULT_FOOTER_TRUST,
 } from "@/const/footer"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
+import { RenderIf } from "@koi/ui"
 import type {
   FooterColumn,
   FooterLink,

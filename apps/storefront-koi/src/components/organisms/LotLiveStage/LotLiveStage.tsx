@@ -1,6 +1,6 @@
 import type { AuctionBid } from "@/types/product"
 import { MediaStage, type MediaItem } from "@/components/molecules/MediaStage/MediaStage"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
+import { RenderIf } from "@koi/ui"
 import { formatPrice } from "@/lib/helpers/format-price"
 
 /** Props for {@link LotLiveStage}. */

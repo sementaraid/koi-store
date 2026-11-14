@@ -4,10 +4,7 @@ import { MessageSquareText, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { Badge } from '@/components/atoms/Badge/Badge';
-import { Button } from '@/components/atoms/Button/Button';
-import { Card } from '@/components/atoms/Card/Card';
-import { RenderIf } from '@/components/atoms/RenderIf/RenderIf';
+import { Badge, Button, Card, RenderIf } from "@koi/ui";
 import { Stars } from '@/components/atoms/Stars/Stars';
 import { EmptyFeed } from '@/components/cells/EmptyFeed/EmptyFeed';
 import { deleteReview, type StoreReview } from '@/lib/data/reviews';

@@ -5,7 +5,7 @@ import { CONTAINER } from "@/const/layout"
 import { Footer } from "@/components/organisms/Footer/Footer"
 import { Header } from "@/components/organisms/Header/Header"
 import { PageBreadcrumb, type Crumb } from "@/components/cells/PageBreadcrumb/PageBreadcrumb"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
+import { RenderIf } from "@koi/ui"
 import type { FeedShell } from "@/types/product"
 
 /** Props for {@link PageShell}: whose bar it wears, and what it opens with. */

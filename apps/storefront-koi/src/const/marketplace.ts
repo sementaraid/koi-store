@@ -236,3 +236,14 @@ export const STOCK_LABEL: Record<StockLevel | "all", string> = {
   "low-stock": "produk stok menipis",
   "out-of-stock": "produk habis",
 }
+
+/** The shop's own attribute facets. `berat` and `varian` are the supply
+    variant axes; the two feed attributes only supplies carry. Attributes are
+    global in Mercur, so this is what keeps a koi's bloodline off a sack of
+    food. */
+export const MARKET_ATTRIBUTE_HANDLES = [
+  "berat",
+  "varian",
+  "tipe-pakan",
+  "ukuran-butiran",
+] as const

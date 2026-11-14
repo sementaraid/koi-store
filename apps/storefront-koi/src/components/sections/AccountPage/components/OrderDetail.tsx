@@ -1,9 +1,7 @@
 import { Package } from 'lucide-react';
 
 import { Link } from '@/components/atoms/Link/Link';
-import { Badge } from '@/components/atoms/Badge/Badge';
-import { Card } from '@/components/atoms/Card/Card';
-import { RenderIf } from '@/components/atoms/RenderIf/RenderIf';
+import { Badge, Card, RenderIf } from "@koi/ui";
 import { ROUTES } from '@/const/routes';
 import { formatAgo } from '@/lib/helpers/format-ago';
 import { formatPrice } from '@/lib/helpers/format-price';

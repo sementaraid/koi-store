@@ -214,3 +214,17 @@ export const AVAILABILITY_LABEL: Record<Availability | "all", string> = {
   reserved: "koi terpesan",
   sold: "koi terjual",
 }
+
+/** The catalog's own attribute facets. Attributes are global in Mercur — a
+    sack of food's pellet size comes back from the same endpoint as a koi's
+    bloodline — so the catalog says which of them are about a koi. Order here
+    is just the fallback before `getAttributeFacets` sorts by rank. */
+export const CATALOG_ATTRIBUTE_HANDLES = [
+  "ukuran",
+  "umur",
+  "jenis-kelamin",
+  "asal",
+  "tipe-sisik",
+  "bloodline",
+  "sertifikat",
+] as const

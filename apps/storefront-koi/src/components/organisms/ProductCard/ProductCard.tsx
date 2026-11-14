@@ -1,6 +1,6 @@
 import type { ComponentProps, ReactNode } from "react"
 
-import { Card } from "@/components/atoms/Card/Card"
+import { Card } from "@koi/ui"
 import type { Product } from "@/types/product"
 
 import { AuctionProductCard } from "./AuctionProductCard"

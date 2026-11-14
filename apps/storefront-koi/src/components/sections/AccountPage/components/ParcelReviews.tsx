@@ -3,8 +3,7 @@
 import { Star } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button } from '@/components/atoms/Button/Button';
-import { RenderIf } from '@/components/atoms/RenderIf/RenderIf';
+import { Button, RenderIf } from "@koi/ui";
 import { reviewSubjects } from '@/lib/helpers/review-subjects';
 import type { AccountOrder } from '@/types/order';
 

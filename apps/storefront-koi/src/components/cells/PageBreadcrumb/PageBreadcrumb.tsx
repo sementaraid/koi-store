@@ -7,9 +7,9 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+} from "@koi/ui/primitives/breadcrumb"
 import { cn } from "cn"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
+import { RenderIf } from "@koi/ui"
 
 /** One step of the trail. Everything but the last is a link. */
 export type Crumb = {

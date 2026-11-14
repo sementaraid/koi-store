@@ -11,6 +11,18 @@
    it without a deploy needs these rows behind an API — the route already reads
    them through one lookup, so that swap is this file plus `InfoPage`. */
 
+/**
+ * Where the seller panel lives. Its own app, on its own host, so it is an
+ * environment value and not a route: there is nothing in this storefront to
+ * link to.
+ *
+ * Falls back to Mercur's hosted panel, as the reference storefront does, so a
+ * deploy that forgot the variable sends a breeder somewhere real rather than
+ * to `/undefined`.
+ */
+export const VENDOR_URL =
+  process.env.NEXT_PUBLIC_VENDOR_URL || "https://vendor.mercurjs.com"
+
 /** One block of a standing page: a heading over its paragraphs. */
 export type InfoSection = {
   heading: string
@@ -28,6 +40,15 @@ export type InfoDoc = {
   /** The sentence under the heading, and the page's meta description. */
   lede: string
   sections: InfoSection[]
+  /** The one thing the page asks the reader to do, under the prose. Omitted on
+      most of them: a privacy policy wants nothing from the reader. The `href`
+      may be off-site — the seller panel is its own app. */
+  action?: {
+    label: string
+    href: string
+    /** One line under the button, where the destination needs explaining. */
+    note?: string
+  }
 }
 
 /**
@@ -322,7 +343,14 @@ export const INFO_DOCS: Record<string, InfoDoc> = {
           "Pencairan mengikuti mekanisme rekening bersama: dana diteruskan setelah pembeli menerima ikan, bukan setelah pembeli membayar."
         ]
       }
-    ]
+    ],
+    /* The panel is a separate app, so the URL is read from the environment
+       rather than written here — see `VENDOR_URL`. */
+    action: {
+      label: "Buka panel penjual",
+      href: VENDOR_URL,
+      note: "Farm yang sudah terverifikasi masuk lewat panel penjual. Pengajuan baru lewat surel kemitraan di atas."
+    }
   },
 
   syarat: {

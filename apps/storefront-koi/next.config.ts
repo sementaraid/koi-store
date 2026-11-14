@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
       fullUrl: true
     }
   },
+  /* `@koi/ui` ships as source, so it is compiled as part of this app. */
+  transpilePackages: ['@koi/ui'],
   images: {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',

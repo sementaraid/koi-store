@@ -4,7 +4,7 @@ import { Link } from "@/components/atoms/Link/Link"
 import { ROUTES } from "@/const/routes"
 import { TRUST_CLAIMS } from "@/const/trust"
 import { TrustLine } from "@/components/cells/TrustLine/TrustLine"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
+import { RenderIf } from "@koi/ui"
 import type { SellerKind } from "@/types/product"
 
 /** Props for {@link LotTrustList}. */

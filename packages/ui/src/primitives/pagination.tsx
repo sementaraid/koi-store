@@ -1,7 +1,7 @@
 import type { ComponentProps } from "react"
 import { cn } from "cn"
 
-import { Button } from "@/components/ui/button"
+import { Button } from "./button"
 import {
   ChevronLeftIcon,
   ChevronRightIcon,

@@ -8,10 +8,17 @@ export const metadata: Metadata = {
   description: 'Nishikigoi yang dijual langsung, dengan harga tetap.'
 };
 
-export default function CatalogsRoute() {
+export default async function CatalogsRoute({
+  searchParams
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const q = Array.isArray(params.q) ? params.q[0] : params.q;
+
   return (
     <Suspense>
-      <CatalogPage />
+      <CatalogPage params={params} {...(q ? { q } : {})} />
     </Suspense>
   );
 }

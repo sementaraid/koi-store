@@ -1,8 +1,7 @@
 import { cn } from "cn"
 import { Crown } from "lucide-react"
 
-import { Badge } from "@/components/atoms/Badge/Badge"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
+import { Badge, RenderIf } from "@koi/ui"
 import type { AuctionProduct } from "@/types/product"
 import { formatAgo, toEpochMs } from "@/lib/helpers/format-ago"
 import { formatPrice } from "@/lib/helpers/format-price"

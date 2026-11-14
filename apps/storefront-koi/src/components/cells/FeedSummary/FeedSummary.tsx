@@ -1,9 +1,7 @@
 import { SlidersHorizontal } from "lucide-react"
 import { cn } from "cn"
 
-import { Button } from "@/components/atoms/Button/Button"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
-
+import { Button, RenderIf } from "@koi/ui"
 /** Props for {@link FeedSummary}. */
 export type FeedSummaryProps = {
   /** Items matching the filter, before paging. */

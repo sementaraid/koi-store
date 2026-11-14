@@ -1,9 +1,7 @@
 import { ArrowLeft, ArrowRight, ShieldCheck, Video } from "lucide-react"
 
-import { Button } from "@/components/atoms/Button/Button"
-import { Card } from "@/components/atoms/Card/Card"
+import { Button, Card, RenderIf } from "@koi/ui"
 import { TRUST_CLAIMS } from "@/const/trust"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
 import type { CartMoney, CheckoutStep } from "@/types/cart"
 import type { CartTotals, Settlement } from "@/lib/helpers/cart-totals"
 import { formatDeadline } from "@/lib/helpers/format-deadline"

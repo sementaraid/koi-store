@@ -2,8 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cn } from 'cn';
 
-import { Card } from '@/components/atoms/Card/Card';
-import { RenderIf } from '@/components/atoms/RenderIf/RenderIf';
+import { Card, RenderIf } from "@koi/ui";
 import { SECTION_LABEL } from '@/const/layout';
 
 /** Props for {@link StatCard}. */

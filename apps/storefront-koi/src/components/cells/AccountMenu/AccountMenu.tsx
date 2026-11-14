@@ -2,10 +2,9 @@ import { Fragment } from "react"
 import { ChevronDown } from "lucide-react"
 import { cn } from "cn"
 
-import { Button } from "@/components/atoms/Button/Button"
+import { Button, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@koi/ui/primitives/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +13,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@koi/ui/primitives/dropdown-menu"
 import { DEFAULT_ACCOUNT_LINKS, GOLD_TEXT } from "@/const/header"
 import { ROUTES } from "@/const/routes"
 import { initials, sections } from "@/lib/helpers/header"

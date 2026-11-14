@@ -1,9 +1,7 @@
 import { Package } from 'lucide-react';
 
-import { Button } from '@/components/atoms/Button/Button';
-import { Card } from '@/components/atoms/Card/Card';
+import { Button, Card, RenderIf } from "@koi/ui";
 import { Link } from '@/components/atoms/Link/Link';
-import { RenderIf } from '@/components/atoms/RenderIf/RenderIf';
 import { EmptyFeed } from '@/components/cells/EmptyFeed/EmptyFeed';
 import { FeedPagination } from '@/components/cells/FeedPagination/FeedPagination';
 import { OrderRow } from '@/components/cells/OrderRow/OrderRow';

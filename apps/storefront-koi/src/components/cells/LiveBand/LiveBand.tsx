@@ -3,7 +3,7 @@ import { cn } from "cn"
 
 import { LIVE_TINT } from "@/const/live"
 import { PulseIcon } from "@/components/atoms/PulseIcon/PulseIcon"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
+import { RenderIf } from "@koi/ui"
 
 /** Props for {@link LiveBand}. */
 export type LiveBandProps = ComponentProps<"div"> & {

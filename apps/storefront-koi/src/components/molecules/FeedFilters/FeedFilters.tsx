@@ -2,7 +2,8 @@ import { FilterBar, type FilterOption } from "@/components/cells/FilterBar/Filte
 import type { FiltersProps, GoodsFilter } from "@/types/product"
 
 /** Props for {@link FeedFilters}: the feed's own vocabulary, on top of
-    {@link FiltersProps}. */
+    {@link FiltersProps}. The attribute facets are not here — they live in
+    {@link FacetSidebar}, beside the grid. */
 export type FeedFiltersProps<F extends GoodsFilter<string>> =
   FiltersProps<F> & {
     /** What the band belongs to, as one word in `data-slot`: `"auction"`,

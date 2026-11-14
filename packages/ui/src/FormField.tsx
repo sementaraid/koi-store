@@ -2,9 +2,9 @@ import type { ComponentProps, ReactNode } from 'react';
 import { useId } from 'react';
 import { cn } from 'cn';
 
-import { Input } from '@/components/atoms/Input/Input';
-import { Label } from '@/components/ui/label';
-import { RenderIf } from '@/components/atoms/RenderIf/RenderIf';
+import { Input } from './Input';
+import { Label } from './primitives/label';
+import { RenderIf } from './RenderIf';
 
 /** Props for {@link FormField}: the label and the error, plus everything the
     input itself takes — so `register()`'s `ref`, `name`, `onChange` and

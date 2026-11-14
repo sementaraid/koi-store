@@ -2,7 +2,7 @@ import type { ReactNode } from "react"
 import { cn } from "cn"
 import { Award } from "lucide-react"
 
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
+import { RenderIf } from "@koi/ui"
 import type { AuctionProduct, ListingBase } from "@/types/product"
 
 /** Props for {@link SpecCell}. */

@@ -12,7 +12,7 @@ import {
 import { CONTAINER } from '@/const/layout';
 import { ROUTES } from '@/const/routes';
 import { PageShell } from '@/components/organisms/PageShell/PageShell';
-import { RenderIf } from '@/components/atoms/RenderIf/RenderIf';
+import { RenderIf } from "@koi/ui";
 import type { HeaderAccount, HeaderCart } from '@/types/header';
 
 /** Props for {@link AuthFrame}: the page's words, and the session the bar

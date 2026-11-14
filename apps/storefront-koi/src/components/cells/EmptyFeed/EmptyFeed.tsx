@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import { cn } from "cn"
 
-import { Button } from "@/components/atoms/Button/Button"
+import { Button, RenderIf } from "@koi/ui"
 import {
   Empty,
   EmptyContent,
@@ -9,8 +9,7 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
+} from "@koi/ui/primitives/empty"
 
 /** Props for {@link EmptyFeed}. */
 export type EmptyFeedProps = {
@@ -29,7 +28,8 @@ export type EmptyFeedProps = {
   /** Whether the feed is narrowed. Picks the copy, and whether a reset is
       offered — a narrowing can be undone, an empty shelf cannot. */
   narrowing: boolean
-  /** Resets the filter. Called only when `narrowing`. */
+  /** Resets the filter. Drawn only when `narrowing` *and* given — a feed
+      narrowed by something these controls do not own offers no reset. */
   onReset?: () => void
   /** The forward door under the reset, e.g. a link to the floor or the guide.
       Omitted, the actions row is the reset alone. */
@@ -86,9 +86,12 @@ export function EmptyFeed({
       </EmptyHeader>
 
       <EmptyContent>
-        <RenderIf when={narrowing}>
-          {() => (
-            <Button variant="outline" onClick={onReset}>
+        {/* A narrowing with no `onReset` is one these controls do not own —
+            a search lives in the URL — so no reset is drawn rather than a
+            button that does nothing. */}
+        <RenderIf when={narrowing ? onReset : undefined}>
+          {(reset) => (
+            <Button variant="outline" onClick={reset}>
               Reset filter
             </Button>
           )}

@@ -1,10 +1,8 @@
 import { useState, type ReactNode } from "react"
 import { Plus } from "lucide-react"
 
-import { Button } from "@/components/atoms/Button/Button"
+import { Button, Input, Label, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
-import { Input } from "@/components/atoms/Input/Input"
-import { Label } from "@/components/ui/label"
 import { cn } from "cn"
 
 import {
@@ -18,7 +16,6 @@ import { CartSteps } from "@/components/cells/CartSteps/CartSteps"
 import { CartSummary } from "@/components/organisms/CartSummary/CartSummary"
 import { ChoiceList } from "@/components/cells/ChoiceList/ChoiceList"
 import { PageShell } from "@/components/organisms/PageShell/PageShell"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
 import type {
   ShippingPageProps,
   ShippingParcel,

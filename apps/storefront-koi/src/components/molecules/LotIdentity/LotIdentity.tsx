@@ -1,7 +1,6 @@
 import { cn } from "cn"
 
-import { Badge } from "@/components/atoms/Badge/Badge"
-import { RenderIf } from "@/components/atoms/RenderIf/RenderIf"
+import { Badge, RenderIf } from "@koi/ui"
 import { BID_HIGHLIGHTS, TRUST_STAMPS, SELLER_KIND, type PillSpec } from "@/const/stamps"
 import type { AuctionProduct, ListingBase } from "@/types/product"
 

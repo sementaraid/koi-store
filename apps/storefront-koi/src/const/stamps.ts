@@ -18,7 +18,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 
-import type { Badge } from "@/components/atoms/Badge/Badge"
+import type { Badge } from "@koi/ui"
 import type {
   AuctionStatus,
   Availability,

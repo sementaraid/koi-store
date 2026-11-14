@@ -53,6 +53,7 @@ services:
       # Loopback only, for the host browser. Public entry is Caddy.
       - "127.0.0.1:3000:3000"
       - "127.0.0.1:3001:3001"
+      - "127.0.0.1:3002:3002"
       - "127.0.0.1:9000:9000"
     environment:
       NODE_ENV: development
@@ -74,6 +75,7 @@ services:
       - vendor_modules:/workspace/apps/vendor/node_modules
       - storefront_modules:/workspace/apps/storefront/node_modules
       - storefront_koi_modules:/workspace/apps/storefront-koi/node_modules
+      - admin_koi_modules:/workspace/apps/admin-koi/node_modules
       - bun_cache:/home/app/.bun/install/cache
     command: ["bash", "-lc", "bun install && bun run dev"]
 
@@ -88,5 +90,6 @@ volumes:
   vendor_modules:
   storefront_modules:
   storefront_koi_modules:
+  admin_koi_modules:
   bun_cache:
   pg_data:

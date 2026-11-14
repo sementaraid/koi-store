@@ -1,7 +1,6 @@
 import { BadgeCheck, Fish, MapPin, PackageCheck, Star } from 'lucide-react';
 
-import { Badge } from '@/components/atoms/Badge/Badge';
-import { Button } from '@/components/atoms/Button/Button';
+import { Badge, Button, RenderIf } from "@koi/ui";
 import { ChatButton } from '@/components/cells/ChatButton/ChatButton';
 import { EmptyFeed } from '@/components/cells/EmptyFeed/EmptyFeed';
 import { Eyebrow } from '@/components/atoms/Eyebrow/Eyebrow';
@@ -10,7 +9,6 @@ import { FeedPagination } from '@/components/cells/FeedPagination/FeedPagination
 import { Link } from '@/components/atoms/Link/Link';
 import { PageShell } from '@/components/organisms/PageShell/PageShell';
 import { ProductCard } from '@/components/organisms/ProductCard/ProductCard';
-import { RenderIf } from '@/components/atoms/RenderIf/RenderIf';
 import { CONTAINER, SECTION_LABEL } from '@/const/layout';
 import { ROUTES, koiHref, partnerHref } from '@/const/routes';
 import { formatAgo } from '@/lib/helpers/format-ago';

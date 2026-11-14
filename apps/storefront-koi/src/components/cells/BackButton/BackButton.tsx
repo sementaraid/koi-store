@@ -2,7 +2,7 @@ import type { ComponentProps } from "react"
 import { ArrowLeft } from "lucide-react"
 import { cn } from "cn"
 
-import { Button } from "@/components/atoms/Button/Button"
+import { Button } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
 import type { HeaderBack } from "@/types/header"
 

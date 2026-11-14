@@ -7,11 +7,9 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { Badge } from '@/components/atoms/Badge/Badge';
-import { Button } from '@/components/atoms/Button/Button';
+import { Badge, Button, FormField } from "@koi/ui";
 import { Eyebrow } from '@/components/atoms/Eyebrow/Eyebrow';
-import { FormField } from '@/components/cells/FormField/FormField';
-import { Separator } from '@/components/ui/separator';
+import { Separator } from '@koi/ui/primitives/separator';
 import { sendResetPasswordEmail, updateCustomer } from '@/lib/data/customer';
 import type { HeaderAccount, HeaderCart } from '@/types/header';
 

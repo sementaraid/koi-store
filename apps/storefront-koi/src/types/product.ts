@@ -363,3 +363,29 @@ export type FiltersProps<F extends GoodsFilter<string>> = {
   /** Called with the whole next filter. */
   onFilterChange?: (filter: F) => void
 }
+
+/**
+ * One filterable product attribute, as a facet offers it.
+ *
+ * @remarks
+ * The options come from the catalog's attribute definitions
+ * (`getAttributeFacets`), never from the items on screen: a facet built off the
+ * current feed loses the option you would need to widen it again, which is the
+ * same trap {@link filterGoods} keeps its `categories` off the unfiltered list
+ * to avoid. Here the list is not even complete — the feed is one page.
+ */
+export type AttributeFacet = {
+  /** The global attribute's handle, which is what the API filters on:
+      `bloodline`, `umur`, `sertifikat`. */
+  handle: string
+  /** Its name, as the shop words it: `"Bloodline"`, `"Umur"`. */
+  label: string
+  /** Every value a product can carry, in the catalog's rank order. */
+  values: string[]
+}
+
+/** The attribute narrowings in force: handle → the one value picked. Absent
+    means that attribute does not narrow. One value per attribute, because the
+    bar's facets are single selects — the API takes arrays, so this widens
+    without a shape change. */
+export type AttributeSelection = Record<string, string>

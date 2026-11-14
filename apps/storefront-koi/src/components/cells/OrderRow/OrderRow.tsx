@@ -1,9 +1,8 @@
 import { ArrowRight } from 'lucide-react';
 import { cn } from 'cn';
 
-import { Badge } from '@/components/atoms/Badge/Badge';
+import { Badge, RenderIf } from "@koi/ui";
 import { Link } from '@/components/atoms/Link/Link';
-import { RenderIf } from '@/components/atoms/RenderIf/RenderIf';
 import { orderHref } from '@/const/routes';
 import { formatAgo } from '@/lib/helpers/format-ago';
 import { formatPrice } from '@/lib/helpers/format-price';

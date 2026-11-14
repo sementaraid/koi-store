@@ -1,0 +1,6 @@
+/* The kit's stylesheet: it tells Tailwind where the kit's own markup lives.
+   Tailwind's auto source detection skips node_modules, and `@koi/ui` resolves
+   through the workspace symlink there, so without this every class that only a
+   kit component uses is missing from the app's stylesheet. `@source` resolves
+   against this file, so the path stays correct wherever the app sits. */
+@source ".";
