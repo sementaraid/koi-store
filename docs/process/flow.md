@@ -11,8 +11,8 @@ from the `koi-delivery` skill.
 | 0 | Owner or orchestrator | Previous story accepted | 1 min | Commit |
 | 1 | product-owner | Story picked | 10 min | Briefs, endpoint inventory; missing routes become backend tasks |
 | 2 | backend | Briefs ready | 45 min per task | Code, spec, `codegen`, API contract |
-| 3 | frontend | Backend contract delivered | 45 min per screen | Screen, `check`, screenshot |
-| 4 | qa | No `packages/api` agent running | 30 min | PASS/FAIL per AC, browser check |
+| 3 | frontend | Backend contract delivered | 45 min per screen | Screen, `check`, render check |
+| 4 | qa | No `packages/api` agent running | 30 min | PASS/FAIL per AC, render check per route |
 | 5 | backend or frontend | qa FAIL | 2 rounds max, then report to owner | Fix |
 | 6 | product-owner | qa PASS | 10 min | `done`, tasks ticked |
 | 7 | Owner or orchestrator | Accepted | 1 min | Commit |
@@ -82,8 +82,8 @@ Start from: <component/data file to copy>
 Do not touch: packages/api, <the other app>, <other screens>
 Done when:
   cd apps/<app> && bun run check                   → pass
-  playwright MCP: screenshot <route> signed in as <account>
-Report: standard header + screenshot path. Don't commit.
+  render check (render-check skill) on <route> as <account>, incl. one form submit → clean
+Report: standard header + render check result + screenshot path. Don't commit.
 ```
 
 ### Step 4: qa
@@ -94,7 +94,7 @@ Story: US-xxx   Release: <slug>   Agent: qa   Expected: ≤30 min
 Verify every AC in stories.md. Decisions: <D-xxx>.
 Code under test: <paths>
 Commands (alone, nothing else on Jest): <spec list>; bun run check in each touched app.
-Browser (playwright MCP): <screens and accounts>.
+Browser: render check (render-check skill) on <routes> as <accounts>, walking each AC's flow.
 Watch for: <recurring risk for this story>.
 Don't change app code. Report PASS/FAIL per AC with file:line and command output;
 bugs with repro and expected/actual.

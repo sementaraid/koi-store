@@ -71,8 +71,10 @@ Never two Jest runs at once (`EADDRINUSE 127.0.0.1:5432`).
 - Verify AC-by-AC against the story text, with `file:line` and command output.
 - Run the changed specs, not the full suite; a full `test:integration:http` is
   ~10 min and runs alone.
-- UI stories: render the screen once (browser or Playwright) before PASS. If
-  you couldn't, say "not verified" and do not claim the AC.
+- UI stories: run the render check (`.claude/skills/render-check/SKILL.md`)
+  on every changed route before PASS. A page that looks right can still hide a
+  hydration or runtime error. If you couldn't, say "not verified" and do not
+  claim the AC.
 - Bugs get a repro and an expected/actual pair. Do not fix application code.
 - Check the cross-cutting list in the task brief; those are the recurring
   failures.
