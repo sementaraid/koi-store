@@ -398,6 +398,81 @@ medusaIntegrationTestRunner({
       expect(stored.ktp_nik).toEqual("3273012345678901")
     })
 
+    // AC5/D-017. The middleware in `src/api/middlewares.ts` strips these
+    // fields on a method-less `/store` matcher precisely so a route that
+    // walks the seller relation (not just /store/sellers itself) can't
+    // surface them. An offer carries `seller_id` as a field-link
+    // (`offer-seller-link.ts`), so `GET /store/offers?fields=+seller.*`
+    // is the concrete path the comment on that matcher calls out; this
+    // proves it, rather than only the direct `/store/sellers` route.
+    it("never returns the bank or KTP fields through a store route that walks the seller relation (AC5, D-017)", async () => {
+      const container = getContainer()
+      const email = `public-seller-offer-${Date.now()}@test.dev`
+      const registered = await container
+        .resolve(Modules.AUTH)
+        .register("emailpass", { body: { email, password: "Rahasia123!" } })
+      const { result: seller } = await createSellerAccountWorkflow(container).run({
+        input: {
+          auth_identity_id: registered.authIdentity!.id,
+          member_email: email,
+          seller: { name: `Farm Offer ${Date.now()}`, email, currency_code: "idr" },
+          payment_details: {
+            holder_name: "Budi Rahasia",
+            bank_name: "Bank Rahasia",
+            account_number: "9999999999",
+          },
+        },
+      })
+      await approveSellerWorkflow(container).run({ input: { seller_id: seller.id } })
+      await container.resolve<CustomFieldsService>(MercurModules.CUSTOM_FIELDS).upsert("seller", {
+        id: seller.id,
+        ktp_photo_key: "private-1700000000001-ktp-rahasia.jpg",
+        ktp_nik: "3273019999999999",
+        farm_photo_urls: [],
+      })
+
+      // An offer row linking to this seller. No FK on `offer` ties it to a
+      // real variant/product/shipping profile, so the row only needs to
+      // exist for the field-walk; this suite never calls createOffersWorkflow.
+      const pg = container.resolve(ContainerRegistrationKeys.PG_CONNECTION)
+      const offerId = `offer_qa_${Date.now()}`
+      await pg.raw(
+        `insert into "offer"
+           (id, seller_id, variant_id, shipping_profile_id, sku, created_by, product_id,
+            manage_inventory, allow_backorder, created_at, updated_at)
+         values (?, ?, 'variant_qa_fake', 'sp_qa_fake', 'SKU-QA-FAKE', 'member_qa_fake', 'prod_qa_fake',
+                 true, false, now(), now())`,
+        [offerId, seller.id]
+      )
+
+      const forbidden = [
+        "payment_details",
+        "professional_details",
+        "custom_fields",
+        "Budi Rahasia",
+        "Bank Rahasia",
+        "9999999999",
+        "3273019999999999",
+        "ktp-rahasia",
+      ]
+
+      for (const path of [
+        `/store/offers?fields=+seller.payment_details.*,+seller.professional_details.*,+seller.custom_fields.*&seller_id=${seller.id}`,
+        `/store/offers?fields=+seller.*&seller_id=${seller.id}`,
+      ]) {
+        const response = await api.get(path, { headers: storeHeaders })
+        expect(response.status).toEqual(200)
+        const serialized = JSON.stringify(response.data)
+        for (const field of forbidden) {
+          expect({ path, field, leaked: serialized.includes(field) }).toEqual({
+            path,
+            field,
+            leaked: false,
+          })
+        }
+      }
+    })
+
     it("lets the farmer read the registration status (AC3)", async () => {
       const { email, password, body } = await registeredFarm()
       const token = await memberToken(email, password)

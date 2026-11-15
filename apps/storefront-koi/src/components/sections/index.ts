@@ -4,6 +4,8 @@
 
 export { AccountPage } from './AccountPage/AccountPage';
 export { AddressesPage } from './AccountPage/AddressesPage';
+export { CreateAuctionPage } from './AccountPage/CreateAuctionPage';
+export { EditAuctionPage } from './AccountPage/EditAuctionPage';
 export { FarmHomePage } from './AccountPage/FarmHomePage';
 export { FarmPage } from './AccountPage/FarmPage';
 export { MessagesPage } from './AccountPage/MessagesPage';

@@ -54,6 +54,17 @@ module.exports = withMercur({
       resolve: './src/modules/platform-settings',
     },
 
+    // US-030: auctions and lots. Seller, fee category and product are links
+    // (src/links/), so the module holds no foreign keys into other modules.
+    {
+      resolve: './src/modules/auction',
+    },
+
+    // US-092 T-092.5 (D-042): append-only log of every full-PII reveal.
+    {
+      resolve: './src/modules/pii-audit',
+    },
+
     // US-020 (T-020.1). Farm registration data that Mercur's seller has no
     // column for. D-017: the KTP photo key and NIK are private; the farm photos
     // are public and will show on auction pages. The module creates the linked

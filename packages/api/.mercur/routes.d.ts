@@ -511,7 +511,19 @@ export type Routes = {
                 subscribe: typeof import("@medusajs/medusa/api/admin/workflows-executions/[workflow_id]/subscribe/route");
             };
         };
+        auctions: typeof import("../src/api/admin/auctions/route") & {
+            $id: {
+                approve: typeof import("../src/api/admin/auctions/[id]/approve/route");
+                reject: typeof import("../src/api/admin/auctions/[id]/reject/route");
+            };
+        };
         custom: typeof import("../src/api/admin/custom/route");
+        farms: typeof import("../src/api/admin/farms/route") & {
+            $id: typeof import("../src/api/admin/farms/[id]/route") & {
+                ktp: typeof import("../src/api/admin/farms/[id]/ktp/route");
+                reveal: typeof import("../src/api/admin/farms/[id]/reveal/route");
+            };
+        };
         feeCategories: typeof import("../src/api/admin/fee-categories/route") & {
             $id: typeof import("../src/api/admin/fee-categories/[id]/route");
         };
@@ -942,5 +954,14 @@ export type Routes = {
         };
         stores: typeof import("@mercurjs/core/api/vendor/stores/route");
         uploads: typeof import("@mercurjs/core/api/vendor/uploads/route");
+        auctions: typeof import("../src/api/vendor/auctions/route") & {
+            $id: typeof import("../src/api/vendor/auctions/[id]/route") & {
+                lots: typeof import("../src/api/vendor/auctions/[id]/lots/route") & {
+                    $lotId: typeof import("../src/api/vendor/auctions/[id]/lots/[lot_id]/route");
+                };
+                submit: typeof import("../src/api/vendor/auctions/[id]/submit/route");
+            };
+        };
+        feeCategories: typeof import("../src/api/vendor/fee-categories/route");
     };
 };

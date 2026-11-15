@@ -7,7 +7,7 @@ import {
   validateAndTransformBody,
   validateAndTransformQuery,
 } from "@medusajs/framework/http"
-import { MedusaError } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 import multer from "multer"
 import {
   AdminCreateFeeCategory,
@@ -23,6 +23,22 @@ import {
   AdminGetTopupRequestsParams,
   AdminRejectTopupRequest,
 } from "./admin/topup-requests/validators"
+import {
+  AdminGetFarmsParams,
+  AdminRevealFarmPii,
+  AdminSuspendReason,
+} from "./admin/farms/validators"
+import {
+  VendorAddDraftLots,
+  VendorCreateAuction,
+  VendorGetAuctionsParams,
+  VendorUpdateAuction,
+} from "./vendor/auctions/validators"
+import {
+  AdminApproveAuction,
+  AdminGetAuctionsParams,
+  AdminRejectAuction,
+} from "./admin/auctions/validators"
 import { StorePhone } from "./store/customers/validators"
 import { StoreGetWalletParams } from "./store/wallet/validators"
 import {
@@ -40,6 +56,11 @@ import {
   copyCustomerPhoneToSeller,
   FarmRegistrationAdditionalData,
 } from "./utils/farm-registration"
+import {
+  adminPiiMask,
+  storePiiMask,
+  vendorPiiMask,
+} from "./utils/mask-response"
 
 // Medusa's documented upload pattern (docs.medusajs.com/learn/fundamentals/
 // api-routes/parse-body#configure-file-uploads): multer in memory, then the
@@ -152,8 +173,85 @@ const requirePhone =
     next()
   }
 
+// US-021 AC2/AC3 (D-015): a farm rejection is Mercur's suspend with the reason
+// the farmer reads. Mercur's own validator makes `reason` optional; this makes
+// it required and non-blank. Reads the raw body, so it holds whichever of the
+// two validators Medusa's route sorting runs first.
+const requireSuspendReason = (
+  req: MedusaRequest,
+  _res: MedusaResponse,
+  next: MedusaNextFunction
+) => {
+  const parsed = AdminSuspendReason.safeParse(
+    (req.body as Record<string, unknown> | undefined)?.reason
+  )
+  if (!parsed.success) {
+    return next(new MedusaError(MedusaError.Types.INVALID_DATA, "reason is required"))
+  }
+  next()
+}
+
+// US-021 AC3 (D-015): rejection is final. Mercur's unsuspend moves a suspended
+// seller straight to `open`, which would approve a rejected registration. A
+// farm that was never approved (`approved_at` null) is a rejected
+// registration, so unsuspend is refused for it. A seller suspended after
+// approval (a later ban) keeps Mercur's unsuspend.
+const refuseUnsuspendOfRejectedFarm = async (
+  req: MedusaRequest,
+  _res: MedusaResponse,
+  next: MedusaNextFunction
+) => {
+  try {
+    const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+    const {
+      data: [seller],
+    } = await query.graph({
+      entity: "seller",
+      fields: ["id", "approved_at"],
+      filters: { id: req.params.id },
+    })
+    if (seller && !seller.approved_at) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "A rejected farm registration is final and cannot be unsuspended."
+      )
+    }
+    next()
+  } catch (error) {
+    next(error)
+  }
+}
+
 export default defineMiddlewares({
   routes: [
+    // ---------------------------------------------------------------------
+    // US-092 T-092.2 (D-039, D-042). Masks on Mercur's and Medusa's own
+    // routes, which a `req.disallowed` query filter can't cover: `*relation`
+    // selects a relation's scalar columns (a seller's `phone` rides along in
+    // `seller.*`), and Mercur's `/vendor/customers` overwrites `req.disallowed`
+    // with its own list after ours. These wrap `res.json` instead.
+    //
+    // No method on purpose (a global matcher), so every verb on the surface is
+    // covered, including Mercur's POST approve/suspend replies.
+    //
+    // Self-view exception (owner, 2026-11-15): the caller's own phone and
+    // payment_details stay full on their own record — /store/customers,
+    // carts and orders; /vendor/sellers* — and the farm reveal keeps its
+    // logged full value (T-092.5, D-042). Everyone else, admins included,
+    // gets the mask.
+    {
+      matcher: "/store",
+      middlewares: [storePiiMask],
+    },
+    {
+      matcher: "/admin",
+      middlewares: [adminPiiMask],
+    },
+    {
+      matcher: "/vendor",
+      middlewares: [vendorPiiMask],
+    },
+    // ---------------------------------------------------------------------
     {
       method: ["POST"],
       matcher: "/store/customers",
@@ -275,6 +373,82 @@ export default defineMiddlewares({
       method: ["POST"],
       matcher: "/admin/topup-requests/:id/reject",
       middlewares: [validateAndTransformBody(AdminRejectTopupRequest)],
+    },
+    // US-030. Mercur's /vendor/* catch-all already authenticates the member
+    // and resolves `req.seller_context` from `x-seller-id`; these only validate.
+    {
+      method: ["GET"],
+      matcher: "/vendor/auctions",
+      // No query config: the route builds its own fields and pagination from
+      // the validated params.
+      middlewares: [validateAndTransformQuery(VendorGetAuctionsParams, {})],
+    },
+    {
+      method: ["POST"],
+      matcher: "/vendor/auctions",
+      middlewares: [validateAndTransformBody(VendorCreateAuction)],
+    },
+    {
+      method: ["POST"],
+      matcher: "/vendor/auctions/:id",
+      middlewares: [validateAndTransformBody(VendorUpdateAuction)],
+    },
+    // US-031 (D-032): lots added to a draft. Submit and lot DELETE take no body.
+    {
+      method: ["POST"],
+      matcher: "/vendor/auctions/:id/lots",
+      middlewares: [validateAndTransformBody(VendorAddDraftLots)],
+    },
+    // US-032. Admin-authenticated by Medusa's /admin default (D-002).
+    {
+      method: ["GET"],
+      matcher: "/admin/auctions",
+      middlewares: [
+        validateAndTransformQuery(AdminGetAuctionsParams, {
+          defaults: [],
+          isList: true,
+          defaultLimit: 20,
+        }),
+      ],
+    },
+    {
+      method: ["POST"],
+      matcher: "/admin/auctions/:id/approve",
+      middlewares: [validateAndTransformBody(AdminApproveAuction)],
+    },
+    {
+      method: ["POST"],
+      matcher: "/admin/auctions/:id/reject",
+      middlewares: [validateAndTransformBody(AdminRejectAuction)],
+    },
+    // US-021 T-021.1. The farm queue reads; approve and reject are Mercur's
+    // own POST /admin/sellers/:id/approve and /suspend.
+    {
+      method: ["GET"],
+      matcher: "/admin/farms",
+      middlewares: [
+        validateAndTransformQuery(AdminGetFarmsParams, {
+          defaults: [],
+          isList: true,
+          defaultLimit: 20,
+        }),
+      ],
+    },
+    // US-092 T-092.5 (D-042): the logged reveal of one farm PII field.
+    {
+      method: ["POST"],
+      matcher: "/admin/farms/:id/reveal",
+      middlewares: [validateAndTransformBody(AdminRevealFarmPii)],
+    },
+    {
+      method: ["POST"],
+      matcher: "/admin/sellers/:id/suspend",
+      middlewares: [requireSuspendReason],
+    },
+    {
+      method: ["POST"],
+      matcher: "/admin/sellers/:id/unsuspend",
+      middlewares: [refuseUnsuspendOfRejectedFarm],
     },
     // US-013. Sub-paths of /admin/customers/:id that Medusa core doesn't use.
     {

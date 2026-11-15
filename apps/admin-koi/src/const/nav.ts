@@ -27,7 +27,7 @@ export const NAV: NavGroup[] = [
         href: ROUTES.farms,
         label: 'Pendaftaran kebun',
         hint: 'Periksa KTP, foto kebun, dan rekening pemilik.',
-        ready: false
+        ready: true
       },
       {
         href: ROUTES.topups,
@@ -39,7 +39,7 @@ export const NAV: NavGroup[] = [
         href: ROUTES.auctions,
         label: 'Persetujuan lelang',
         hint: 'Periksa kategori, foto, dan biaya tiap lelang.',
-        ready: false
+        ready: true
       },
       {
         href: ROUTES.claims,

@@ -47,8 +47,11 @@ export const ROUTES = {
   /** The Farmer area's front door: register a farm, or read where the
       registration stands. */
   farm: "/akun/kebun",
-  /** The Farmer area home. A placeholder until the auction screens land. */
+  /** The Farmer area home: the farmer's auctions, and the way to make a new
+      one. */
   farmHome: "/akun/kebun/beranda",
+  /** Create a new auction and its lots (US-030). */
+  farmAuctionNew: "/akun/kebun/lelang/baru",
   /** Name, contact, password. */
   settings: "/akun/pengaturan",
   /** Sign in. */
@@ -96,3 +99,6 @@ export const roomHref = (id: string) => `${ROUTES.live}?lot=${id}`
 
 /** A page of a feed, as the pager links it. */
 export const pageHref = (base: string, page: number) => `${base}?page=${page}`
+
+/** One draft auction's own edit page (US-030 AC8). */
+export const farmAuctionHref = (id: string) => `/akun/kebun/lelang/${id}`

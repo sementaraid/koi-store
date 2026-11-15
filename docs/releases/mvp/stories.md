@@ -59,6 +59,7 @@ know what I can spend. *(Plan: Store credit wallet)*
 - AC1: Balance equals the sum of my transactions.
 - AC2: History lists type, signed amount, reference and date, newest first.
 - AC3: The wallet is created when the profile is complete (D-011). Each customer has exactly one wallet, enforced by a unique constraint.
+**PII (D-039, D-043):** the wallet and top-up tables are encrypted in US-092 (T-092.8). US-010 stays `done`; US-092 delivers it.
 - [x] T-010.1 [backend] Wallet module: `wallet`, `wallet_transaction` (type, amount as whole rupiah with no size cap (D-012), reference, created_by). Link wallet ↔ customer, with a unique constraint so there is one wallet per customer (D-011) — `src/modules/wallet/`, `src/links/customer-wallet.ts`, `src/migration-scripts/customer-wallet-unique-customer.ts`
 - [x] T-010.2 [backend] Store route `GET /store/wallet` (balance + paginated transactions), identity from `auth_context` — `src/api/store/wallet/route.ts:28-75`; `wallet.spec.ts:86-161`
 - [x] T-010.3 [storefront] Balance and history page under `akun` — `akun/saldo/page.tsx`; `AccountPage/components/Wallet.tsx`
@@ -83,6 +84,7 @@ proof. Admins fetch the image through `GET /admin/topup-requests/:id/screenshot`
 - AC2: Uploading a screenshot creates a `pending` top-up request. The balance doesn't change yet.
 - AC3: The page shows the platform's bank account to transfer to, read from the admin setting. *(D-009, answers mvp-Q2)*
 - AC4: I can see my requests and their status (pending, approved, rejected with reason).
+**PII (D-039):** the screenshot stays a private file (D-018). Any account number or phone shown with a request is masked; the top-up table is encrypted by US-092 (D-043, T-092.8).
 - [x] T-011.1 [backend] `topup_request` model (amount, screenshot file, status, reviewed_by, reason) + create workflow — `src/modules/wallet/models/topup-request.ts`; `topup-requests.spec.ts:102,126,131,138,165`
 - [x] T-011.2 [backend] Store routes: create request (with file upload), list my requests, read the platform bank account from settings (US-015) — `src/api/store/topup-requests/route.ts`, `src/api/store/platform-bank-account/route.ts`; `topup-requests.spec.ts:180,222,231,264-354`; private files at `medusa-config.ts:84-105`
 - [x] T-011.3 [storefront] Top-up form with the platform bank account, and the request list — `apps/storefront-koi/src/lib/data/topups.ts:65-88` (auth headers, `no-store`); TopupPage
@@ -95,6 +97,7 @@ that credit only exists for real transfers. *(Plan: How credit moves 3)*
 - AC2: Rejecting needs a reason that the customer can see. No transaction is recorded.
 - AC3: A request can be decided only once.
 - AC4: The screenshot is shown only to an admin, fetched through `GET /admin/topup-requests/:id/screenshot` (admin token), never from a stored public URL (D-018).
+**PII (D-039, D-043):** the account number the customer transcribes, and any phone shown beside a request, are masked in API results and screens; the top-up table is encrypted by US-092 (T-092.8). US-012 stays `done`.
 - [x] T-012.1 [backend] Approve/reject workflow (one mutation per step, compensation) + `/admin` routes — `src/workflows/decide-topup-request.ts:28-73`, `src/workflows/steps/decide-topup-request.ts:21-95`, `src/api/admin/topup-requests/`; `admin-topup-requests.spec.ts:196-309`, `admin-topup-requests-compensation.spec.ts:43-80`
 - [x] T-012.2 [admin] Top-up queue `/saldo/topup`: screenshot via the admin route (not a stored URL), amount, approve/reject with reason — `apps/admin-koi/src/lib/data/topups.ts:91,112,142` (`requireAdmin` on each action)
 - [x] T-012.3 [qa] Double approval impossible; audit fields saved; the screenshot route answers 200 with an admin token and 401 with a customer token or none — `admin-topup-requests.spec.ts:255-272,292-309`; `topup-requests.spec.ts:314-349`
@@ -107,6 +110,7 @@ mistakes are fixed without editing history. *(Plan: Transaction types, Rules)*
 - AC2: Existing transactions are never changed.
 - AC3: A correction that would make the balance negative is refused with a clear error, and nothing is written (D-019).
 **Note:** admin-koi shows Indonesian copy for the no-wallet error and the below-zero error.
+**PII (D-039, D-043):** no PII of its own; the wallet table it reads is encrypted by US-092 (T-092.8). US-013 stays `done`.
 - [x] T-013.1 [backend] Adjustment workflow + `/admin` route — `src/workflows/create-wallet-adjustment.ts:27-57`, `src/workflows/steps/create-wallet-adjustment.ts:25-59`; `admin-wallet-adjustments.spec.ts:91-207`
 - [x] T-013.2 [admin] `/saldo/koreksi` screen — `apps/admin-koi/src/lib/data/wallet-adjustments.ts:60,86,120` (`requireAdmin`; signed amount built server-side from direction + magnitude), `src/lib/helpers/wallet-error.ts` (Indonesian copy, tested)
 - [x] T-013.3 [qa] Reason required; append-only holds; a correction below Rp0 is refused and writes nothing (AC3) — `admin-wallet-adjustments.spec.ts:116-146,180-207`; `qa-wallet-adjustments-concurrency.spec.ts:104-125` (lock released on the refused path)
@@ -151,6 +155,7 @@ at auction. *(Plan: Becoming a farmer)*
 - AC6: The seller's `member_email` must match my signed-in auth identity's email; any other email is rejected.
 - AC2: Submitting creates the seller as `pending_approval` under my same email and password.
 - AC3: I can see my registration status.
+**PII (D-039, D-043):** the stored NIK, bank details, phone and the KTP photo are encrypted at rest, and every API result and screen shows them masked, except the farmer's own registration screen, which shows the owner's own full values (self-view, D-045). US-092 delivers it (D-042, D-043, D-045). The private-key return to the uploader is confirmed by D-040.
 - [x] T-020.1 [backend] Native seller fields cover name, description, address, `payment_details` (bank) and `phone`. Store KTP photo, NIK and farm photos as Mercur Custom Fields on `Seller` (`resources/best-practices/custom-fields`). List the doc pages used
 - [x] T-020.5 [backend] Private upload route for the KTP photo. Mercur's `POST /vendor/uploads` needs an existing seller and stores files publicly, so it can't be used (D-017)
 - [x] T-020.6 [backend] Middleware on public `/store/sellers` routes that strips `payment_details`, `professional_details` and `custom_fields` (KTP, NIK) (D-017)
@@ -160,15 +165,18 @@ at auction. *(Plan: Becoming a farmer)*
 - [x] T-020.3 [storefront] Farm registration form + status page in the Farmer area
 - [x] T-020.4 [qa] KTP photo, NIK and bank data never appear on public pages or any `/store/*` response; a mismatched `member_email` is rejected
 
-### US-021 Admin approves or rejects a farm · `todo`
+### US-021 Admin approves or rejects a farm · `done (evidence: packages/api/src/api/admin/farms/route.ts:120-128,194-219; packages/api/src/workflows/reveal-farm-pii.ts:19-27; packages/api/src/workflows/steps/pii-reveal.ts:15-71; packages/api/src/modules/pii-audit/service.ts:6-24; packages/api/src/workflows/steps/validate-seller-open.ts:28-33; packages/api/src/api/middlewares.ts:176-215; apps/admin-koi/src/components/FarmQueue.tsx:120-183,205-321,357-421; apps/storefront-koi/src/components/sections/AccountPage/FarmHomePage.tsx:34-44; packages/api/integration-tests/http/admin-farms.spec.ts:139-335; packages/api/integration-tests/http/pii-reveal.spec.ts:126-208; packages/api/integration-tests/http/farmer-auctions.spec.ts:283-315,604-630; qa PASS)`
+**Depends on:** US-092 (masking and the logged reveal delivered here; column encryption stays open in US-092).
 As an **admin**, I want to review farm registrations so that only real farmers
 can create auctions. *(Plan: Becoming a farmer)*
-- AC1: The queue shows KTP, farm photos, bank account name vs the account holder's name.
+**PII (D-039, D-042):** the queue shows masked NIK, bank account and phone, plus a reveal action to compare the KTP/NIK, bank account and phone with the applicant; every reveal is logged (D-042). US-092 delivers it.
+- AC1: The queue shows the KTP photo, farm photos, and the bank account name versus the account holder's name. NIK, bank account and phone appear masked; the full value comes through the logged reveal (D-042).
 - AC2: Approving gives farmer access. Rejecting needs a reason the applicant sees.
 - AC3: Rejection is final, with no resubmission. It uses Mercur's `POST /admin/sellers/:id/suspend` with `reason` (sets `status_reason`, `rejected_at`). admin-koi never offers unsuspend for a rejected farm, because unsuspend goes straight to `open` (D-015).
 - AC4: Farmer actions require `seller.status === open`. Mercur's `/vendor/*` doesn't check status, so our routes and workflows must.
-- [ ] T-021.1 [backend] `/admin` routes that use Mercur's seller approval workflow and, for rejection, the suspend workflow with a reason (D-015). Don't write new ones
-- [ ] T-021.5 [backend] Shared check that a farmer's seller is `open`, used by every custom `/vendor/*` route and workflow (AC4; also US-030)
+- [x] T-021.1 [backend] `/admin` routes that use Mercur's seller approval workflow and, for rejection, the suspend workflow with a reason (D-015). Don't write new ones — `src/api/admin/farms/route.ts`, `src/api/middlewares.ts:176-215`; `admin-farms.spec.ts:201-335`
+- [x] T-021.5 [backend] Shared check that a farmer's seller is `open`, used by every custom `/vendor/*` route and workflow (AC4; also US-030) — `src/workflows/steps/validate-seller-open.ts:16-34`; `farmer-auctions.spec.ts:283-315,604-630`
+- [ ] T-021.6 [backend] Rejected-registration guard misses the pre-registration member token (empty `actor_id`), so `POST /vendor/sellers` hits Medusa's duplicate-metadata 500 instead of the guard's 400. Finality holds (nothing written), only the error shape is wrong. Fix so the guard runs for that token too — `src/workflows/hooks/seller-registration.ts:120-125`; spec exists at `integration-tests/http/admin-farms-rejection-stale-token.spec.ts` (reports `[low]`).
 - [ ] T-021.2 [admin] `/kebun` queue screen
 - [ ] T-021.3 [storefront] Farmer area appears once the seller is `open`. The member token comes from the re-login right after registration (D-030); whether approval needs yet another login is not verified, so check it at runtime
 - [ ] T-021.4 [qa] An unapproved or rejected (suspended) seller can't reach farmer actions; the rejection reason shows to the farmer; no unsuspend in admin-koi
@@ -332,22 +340,29 @@ fixed. *(Plan: Closing and winners, Key flows)*
 - [ ] T-050.3 [qa] Running the job twice changes nothing; an extended lot isn't closed early
 
 ### US-051 Winner and farmer see each other's contact details · `todo`
+**Depends on:** US-092 (masking and the logged reveal).
 As a **winner**, I want the farmer's WhatsApp and bank details so that I can pay
 within 1×24 hours. *(Plan: Closing and winners)*
 - AC1: Only the winner of that lot sees the farmer's WhatsApp and bank account, plus the 1×24 h deadline.
-- AC2: The farmer sees only the winner's name and WhatsApp.
-- [ ] T-051.1 [backend] Store routes for won lots (winner) and sold lots (farmer), scoped by `auth_context`
+- AC2: The farmer sees only the winner's name and WhatsApp number; the number is masked by default (D-039), and the farmer reveals the full number for their own sold lot through the logged reveal (D-044 confirmation).
+- AC3: The farmer's bank account is shown masked; the winner reveals the full account for their own winning lot only, through the logged reveal (D-044). Until the reveal, both sides see a mask.
+- AC4: Every reveal is recorded: who, when, which lot, which field (D-042, D-044).
+**PII (D-039, D-044):** the full bank number is a narrow exception for the winner's own lot, through the same logged reveal as the admin; the farmer's full view of the winner's phone comes the same way (D-044 confirmation, 2026-11-15). US-052's shipping flow uses this: the farmer ships the winner but keeps seeing the masked phone until this story's reveal exists.
+- [ ] T-051.1 [backend] Store routes for won lots (winner) and sold lots (farmer), scoped by `auth_context`; masked by default, reveal scoped to the winner's own lot (bank) and the farmer's own lot (winner's phone)
 - [ ] T-051.2 [storefront] Won lots under `akun`; sold lots in the Farmer area
-- [ ] T-051.3 [qa] Other users get 403 or no data
+- [ ] T-051.3 [backend] Reveal action writes an append-only audit entry (who, when, lot, field) (D-044)
+- [ ] T-051.4 [qa] Other users get 403 or no data; the full account is reachable only for the winner's own lot; the winner's full phone only for the farmer's own lot; every reveal is audited
 
 ### US-052 Farmer marks paid and shipped · `todo`
+**Depends on:** US-051 (the logged contact reveal used when shipping), US-092 (masking).
 As a **farmer**, I want to mark a lot paid and then shipped so that progress is
 tracked. *(Plan: Closing, Delivery)*
 - AC1: `won → paid → shipped`, in order only.
 - AC2: Courier delivery requires a tracking number. Self-delivery doesn't.
+- AC3: While shipping, the farmer sees the winner's phone **masked** (D-039); the full number comes only through US-051's logged reveal for the farmer's own sold lot.
 - [ ] T-052.1 [backend] Status workflows + store routes (the farmer must own the lot)
 - [ ] T-052.2 [storefront] Farmer area actions
-- [ ] T-052.3 [qa] States can't be skipped
+- [ ] T-052.3 [qa] States can't be skipped; the farmer's phone view stays masked unless revealed through US-051, which is audited
 
 ### US-053 Winner marks delivered · `todo`
 As a **winner**, I want to mark the fish delivered so that the sale completes and
@@ -391,10 +406,12 @@ whole. *(Plan: Dead-on-arrival claims 4–6; D-027, D-038)*
 - [ ] T-056.4 [qa] A `resolved` claim older than 3 days becomes `confirmed` once; running the job twice changes nothing
 
 ### US-057 Winner rates the farmer · `todo`
+**Depends on:** US-092 (masking on the public farm page).
 As a **winner**, I want to rate the farmer after shipping so that other buyers
 can judge farms. *(Plan: Ratings)*
 - AC1: Available once the lot is `shipped`: 1–5 stars and a comment, once per lot.
 - AC2: Ratings show on the farm's page (`mitra/[handle]`).
+**PII (D-039):** anything this story shows about the rater beyond a display name (phone, NIK) is masked, because `mitra/[handle]` is a public page. US-092 delivers it.
 - [ ] T-057.1 [backend] `farmer_rating` model + workflow + routes
 - [ ] T-057.2 [storefront] Rating form + display on the partner page
 
@@ -413,7 +430,8 @@ offenders are banned. *(Plan: Strikes)*
 - AC1: Admin gives each strike with a reason (winner: didn't pay; farmer: didn't ship a paid lot, or refused an approved claim).
 - AC2: 2 active strikes = ban. A banned winner can't join or bid. A banned farmer can't create auctions.
 - AC3: Strikes expire after 6 months. Admin can remove a strike with a reason.
-- [ ] T-059.1 [backend] `strike` model + give/remove workflows + an active-strike check used by join, bid and create
+- AC4: Every ban and every suspend needs a written reason, the same rule as a farm rejection (D-041). admin-koi refuses the action without one.
+- [ ] T-059.1 [backend] `strike` model + give/remove workflows + an active-strike check used by join, bid and create; every suspend and ban passes `reason` (D-041)
 - [ ] T-059.2 [admin] Strike actions on reports and users
 - [ ] T-059.3 [qa] An expired strike no longer counts; the ban lifts when active strikes drop below 2
 
@@ -439,8 +457,10 @@ that storage stays bounded. *(Plan: Dead-on-arrival claims 7; D-027)*
 ## Epic 6: Admin operations (Milestone 6)
 
 ### US-070 Admin manages users · `todo`
+**Depends on:** US-092 (masking of phone and NIK; the full value only through the logged reveal, D-042).
 As an **admin**, I want to see users with their strikes and bans so that I can
 act on bad actors. *(Plan: Users and roles, Strikes)*
+**PII (D-039, D-042):** phone and NIK on these screens are masked, as on every admin route; the full value only through the logged reveal. US-092 applies.
 - [ ] T-070.1 [backend] `/admin` user list and detail with wallet, strikes and ban status
 - [ ] T-070.2 [admin] `/pengguna` screens
 
@@ -468,14 +488,50 @@ so that auctions stay fair. *(Plan: Bidding, Milestone 6; D-024, D-036)*
 - [ ] T-072.3 [qa] After removal: bid row still exists and is marked removed; price = highest remaining bid or OB; end time unchanged; removal on a closed lot refused; after removing every bid, a bid = OB is accepted
 
 ### US-091 Admin cancels lots and live auctions · `todo`
+**Depends on:** US-092 (masking of bidder details; the full value only through the logged reveal, D-042).
 As an **admin**, I want to cancel a lot that has bids, or a live auction, so that
 a broken listing can be stopped. *(Plan: Cancellations, Lot lifecycle; D-022, D-034, D-035)*
 - AC1: Only admin can cancel a lot: `open → cancelled`, with a saved reason and no winner (D-035).
 - AC2: Once an auction is `live`, only admin can cancel it (D-022).
 - AC3: An admin cancel of an auction refunds every participant's join fee as a `refund` (+), the same as a farmer cancel. The listing fee is not refunded (D-034).
+**PII (D-039, D-042):** bidder and participant details shown on the cancel and monitoring screens are masked, as on every admin route; the full value only through the logged reveal. US-092 delivers it.
 - [ ] T-091.1 [backend] Cancel-lot and cancel-live-auction workflows + `/admin` routes (moved from T-072.1)
 - [ ] T-091.2 [admin] Cancel actions with a required reason on the live monitoring screen
 - [ ] T-091.3 [qa] A farmer can't reach either cancel; a cancelled lot has no winner and is skipped by the close job; refunds total exactly the join fees collected; no `listing_fee` refund; statuses follow the plan's enums only
+
+### US-092 Personal data is encrypted and masked · `todo`
+As a **customer**, I want my personal data encrypted at rest and hidden behind
+masks everywhere it is shown, so that a leak or a stolen screenshot exposes
+little of it. *(Plan: Personal data protection; D-039, D-040, D-042, D-043, D-045)*
+- AC1: NIK, bank account number and account-holder name, and phone are encrypted at **column level**, on top of the database's disk encryption; a direct database read shows ciphertext, not the value (D-043). **Not built yet.**
+- AC2: The existing wallet and top-up tables are covered in the same story; their plain values are migrated by a one-off script that encrypts in place, verifies, and leaves no plaintext copy (D-043). **Not built yet.**
+- AC3: No API result returns a full PII value to any client except the owner's own record; `/admin/*` included, admins get the mask. Each returns a masked form (a short prefix/suffix or last-4, the rest hidden) or nothing. The KTP photo is only ever a private file, never a URL. Self-view is the only unmasked path and is limited to the owner's own phone and own bank details on `/store/customers/me` and the farmer's own `/vendor/sellers*` record (D-045).
+- AC4: Every screen in `apps/storefront-koi` and `apps/admin-koi` renders the masked value only, except the owner's own full value on their own account and farm-registration screens (D-045); no page source or client payload holds another person's full value. Admins are not exempt (D-042).
+- AC5: A full value of someone else's PII is reachable only through an explicit reveal route. It is **required**, not optional, and records who, when, which record and which field in an append-only audit table (D-042). Its only callers are an admin reveal and a winner's reveal of their own won lot's bank account (D-044) and, for the farmer, the winner's phone on their own sold lot (US-051).
+- AC6: Encryption keys come from the environment, not the database or the repo; `.env.template` gets a placeholder (root `CLAUDE.md` §11).
+- AC7: `/admin/sellers*` responses do not return unmasked `payout_account.data`, because that free-form JSON can hold a bank number or a phone; it is masked like the other PII fields. `professional_details` (`corporate_name`, `registration_number`, `tax_id`) stays unmasked deliberately — out of scope unless the owner says otherwise.
+**Status note:** masking is the part that lands here; column-level encryption (AC1, AC2; T-092.1, T-092.6) is **still not built**. Don't read this story as complete while encryption is missing. Still open as of US-021 acceptance (2026-11-15): T-092.1/T-092.6 column encryption, and T-092.9 `/admin/sellers*` `payout_account.data` masking.
+- [ ] T-092.1 [backend] Column-level encryption for the PII fields — NIK, bank account number and account-holder name, phone — on the seller/custom-field, wallet and top-up tables; encrypt on write, decrypt only inside the server (D-043) — **open**
+- [ ] T-092.2 [backend] Masking in every API result that carries PII: `/store/*`, `/vendor/*`, `/admin/*`; admins get the mask too (D-042); owner's own record is the only unmasked result (D-045)
+- [ ] T-092.3 [admin] Masked rendering on every admin-koi screen that shows PII (`/kebun`, `/pengguna`, `/saldo/*`, live monitoring, cancel), plus the reveal button wired to the audit-logged route
+- [ ] T-092.4 [storefront] Account screen (`/store/customers/me`) and farm-registration screen show the owner's own full phone and own bank details (self-view, D-045); any PII about someone else shown on storefront screens stays masked, e.g. the won-lot screens in US-051
+- [ ] T-092.5 [backend] Reveal route (`/admin/*` and the winner's own-lot route) writing an append-only audit entry (who, when, record, field) (D-042, D-044)
+- [ ] T-092.6 [backend] One-off migration script that encrypts the existing plain PII values in the wallet and top-up tables in place, verifies, and leaves no plaintext copy (D-043) — **open**
+- [ ] T-092.7 [qa] A direct DB read shows ciphertext; every PII-bearing API response shows only the mask, admin routes included, except the owner's own record; the key is not committed; the KTP photo is still only a private file key (D-040)
+- [ ] T-092.8 [qa] Every admin-koi and storefront screen that shows PII renders only the mask, except the owner's own full value on their own account and farm-registration screens; a reveal writes exactly one audit row with who, when, record and field; the migration leaves no plaintext
+- [ ] T-092.9 [backend] Mask `payout_account.data` on every `/admin/sellers*` response (free-form JSON can hold a bank number or phone); leave `professional_details` unmasked (AC7)
+
+### US-093 Orphan KTP uploads are cleaned up · `todo`
+As the **platform**, I want KTP photos never attached to a seller deleted after a
+while, so that stray uploads don't pile up forever. *(Plan: Personal data
+protection; owner follow-up 2026-11-15. Low priority, not in the current
+milestone order.)*
+**Note:** the `ponytail:` comment in `packages/api/src/api/store/farm-uploads/route.ts:33-35` stays until this story lands.
+- AC1: A private `ktp` file with no seller reference and older than a set age is deleted; nothing that is referenced is touched.
+- AC2: The job runs on a schedule, is idempotent and batches large sets.
+- AC3: A KTP attached to a seller, or a public farm photo, is never deleted.
+- [ ] T-093.1 [backend] Scheduled cleanup job over `private-uploads/` KTP files with no seller reference (idempotent, batched)
+- [ ] T-093.2 [qa] An orphan older than the age is deleted; a referenced one and a public farm photo are not
 
 ---
 
@@ -561,6 +617,8 @@ table complete.
 | Plan section | Stories |
 |---|---|
 | Users and roles | US-002, US-020, US-021, US-070 |
+| Personal data protection (column encryption on top of disk; masked everywhere incl. admin; logged reveal; self-view; D-039, D-042, D-043, D-044, D-045) | US-092, US-020, US-021, US-010 – US-013, US-051, US-052, US-057, US-070, US-091 |
+| Orphan upload cleanup (owner follow-up) | US-093 |
 | Becoming a farmer | US-020, US-021 |
 | Store credit wallet: how credit moves (4 join, 5 submit/approve, D-020, D-031–D-033) | US-010, US-011, US-012, US-015, US-031, US-032, US-041 |
 | Transaction types (`manual_topup`, `join_fee`, `listing_fee`, `adjustment`, `refund`) | US-012, US-041, US-031, US-013, US-060, US-091 |
@@ -628,3 +686,6 @@ is built. Record the answer here, in `plan.md`, and as a decision in `docs/produ
 | mvp-Q22 | **Answered 2026-11-15 (D-037):** option (b), a farmer's non-payment report (US-058); counts cover all time. *(Was: what is an unpaid win, which period?)* | none (was US-071) |
 | mvp-Q23 | **Answered 2026-11-15 (D-038):** farmer accept moves the claim straight to `approved`; `accepted` dropped from the enum; admin decides only disputes; 3-day clock starts at `approved` on both paths. *(Was: does an accepted claim need admin approval, when does the clock start?)* | none (was US-055, US-056) |
 | mvp-Q24 | **Answered 2026-11-15 (D-033):** option (a); the payer's `customer_id` (from the member token, mvp-Q15) is saved on the auction at submit; approval charges that wallet. A field on the auction, not a customer↔seller link; D-003 holds. *(Was: how the admin-token approve step finds the farmer's wallet.)* | none (was US-031) |
+| mvp-Q25 | **Answered 2026-11-15 (D-042):** admins see masked PII everywhere, admin-only routes and UI included; the full value only through an explicit reveal action logged with who, when, record and field. Covers KTP/NIK, bank account and phone. *(Was: how does an admin review PII that their screens now show masked? Options were (a) admins exempt, (b) masked plus a logged reveal, (c) masking only outside admin.)* | none (was US-021 AC1, US-092 T-092.2/T-092.5, US-070, US-091) |
+| mvp-Q26 | **Answered 2026-11-15 (D-043):** column-level encryption for NIK, bank account and phone, on top of whole-disk/storage encryption; the existing wallet and top-up tables are included in US-092, not a follow-up; existing plain values are migrated by a one-off script that encrypts in place, verifies and leaves no plaintext. US-010 – US-015 stay `done`. *(Was: whole-disk, column-level, or both; do the wallet/top-up tables need it now, and do accepted stories need a follow-up?)* | none (was US-092; US-010 – US-013) |
+| mvp-Q27 | **Answered 2026-11-15 (D-044):** the winner sees the farmer's full bank account, but only for the lot they won, through the same logged reveal as D-042. A narrow exception to D-039, coordinated with D-040. *(Was: full account to pay, or a masked account with another payment path?)* | none (was US-051) |

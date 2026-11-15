@@ -9,6 +9,12 @@ test('pending registration waits for admin', () => {
   assert.equal(info.approved, false);
 });
 
+test('pending shows no reason box, even if a stale reason is on the seller', () => {
+  const info = farmStatusInfo({ status: 'pending_approval', status_reason: 'sisa lama' });
+  assert.equal(info.reasonLabel, undefined);
+  assert.equal(info.approved, false);
+});
+
 test('open is approved and opens the Farmer area', () => {
   const info = farmStatusInfo({ status: 'open' });
   assert.equal(info.approved, true);

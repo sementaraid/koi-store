@@ -1,5 +1,5 @@
 import { createSellerAccountWorkflow } from "@mercurjs/core/workflows"
-import { MercurModules } from "@mercurjs/types"
+import { MercurModules, SellerStatus } from "@mercurjs/types"
 import {
   ContainerRegistrationKeys,
   MedusaError,
@@ -20,6 +20,35 @@ type QueryGraph = {
     fields: string[]
     filters: Record<string, unknown>
   }): Promise<{ data: Record<string, unknown>[] }>
+}
+
+// AC3 (D-015): a rejected registration is final. Rejection is Mercur's
+// suspend, so a rejected seller is `suspended` with `approved_at` null; a
+// seller suspended after approval keeps `approved_at`, and a pending
+// registration is not suspended at all. Only the first case is refused.
+const assertNoRejectedRegistration = async (
+  query: QueryGraph,
+  memberId: string
+) => {
+  const { data: links } = await query.graph({
+    entity: "seller_member",
+    fields: ["seller.id", "seller.status", "seller.approved_at"],
+    filters: { member_id: memberId },
+  })
+
+  const rejected = links.some((link) => {
+    const seller = link.seller as
+      | { status?: string; approved_at?: unknown }
+      | undefined
+    return seller?.status === SellerStatus.SUSPENDED && !seller.approved_at
+  })
+
+  if (rejected) {
+    throw new MedusaError(
+      MedusaError.Types.NOT_ALLOWED,
+      "A rejected farm registration is final and cannot be resubmitted."
+    )
+  }
 }
 
 type ProviderIdentity = { provider: string; entity_id: string }
@@ -83,6 +112,16 @@ createSellerAccountWorkflow.hooks.validate(
           "member_email must be the email you are signed in with."
         )
       }
+    }
+
+    // US-021 AC3 (D-015): the same member cannot register a second farm after
+    // a rejection, not even with a different seller email. `member_id` is the
+    // caller's own member; a first registration has none yet.
+    if (input.member_id) {
+      const query = container.resolve<QueryGraph>(
+        ContainerRegistrationKeys.QUERY
+      )
+      await assertNoRejectedRegistration(query, input.member_id)
     }
 
     // Every route to this workflow that carries farm data is a farm

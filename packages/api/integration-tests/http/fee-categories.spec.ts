@@ -5,6 +5,7 @@ import {
   generateJwtToken,
 } from "@medusajs/framework/utils"
 import type { MedusaContainer } from "@medusajs/framework/types"
+import { createSellerAccountWorkflow } from "@mercurjs/core/workflows"
 import {
   APPROVED_FEE_CATEGORIES,
   seedFeeCategories,
@@ -177,6 +178,122 @@ medusaIntegrationTestRunner({
         )
         expect(response.status).toEqual(200)
         expect(response.data.settings.bank_name).toEqual("BCA")
+      })
+    })
+
+    // US-030 AC1/AC4: the farmer's read of the same table. `/vendor/*` is
+    // authenticated for the member actor by Mercur's catch-all; `x-seller-id`
+    // is required by `ensureSellerMiddleware`. Pending farms may read.
+    describe("/vendor/fee-categories", () => {
+      const registerFarm = async () => {
+        const container = getContainer()
+        const email = `fee-farmer-${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2, 6)}@test.dev`
+        const password = "Rahasia123!"
+        const auth = container.resolve(Modules.AUTH)
+        const { authIdentity } = await auth.register("emailpass", {
+          body: { email, password },
+        })
+        const [customer] = await container
+          .resolve(Modules.CUSTOMER)
+          .createCustomers([{ email, first_name: "Budi", last_name: "Santoso" }])
+        await auth.updateAuthIdentities({
+          id: authIdentity!.id,
+          app_metadata: { customer_id: customer.id },
+        })
+        const { result: seller } = await createSellerAccountWorkflow(
+          container
+        ).run({
+          input: {
+            auth_identity_id: authIdentity!.id,
+            member_email: email,
+            seller: {
+              name: `Kebun ${Date.now()}`,
+              email,
+              currency_code: "idr",
+            },
+            payment_details: {
+              holder_name: "Budi Santoso",
+              bank_name: "BCA",
+              account_number: "1234567890",
+            },
+          },
+        })
+        const signIn = await api.post("/auth/member/emailpass", {
+          email,
+          password,
+        })
+        return {
+          seller,
+          headers: {
+            authorization: `Bearer ${signIn.data.token}`,
+            "x-seller-id": seller.id,
+          },
+        }
+      }
+
+      it("lists the fee table for a member farmer, in the public shape", async () => {
+        await seedFeeCategories(getContainer())
+        const { headers } = await registerFarm()
+
+        const response = await api.get("/vendor/fee-categories", { headers })
+        expect(response.status).toEqual(200)
+        expect(response.data.fee_categories).toEqual(
+          APPROVED_FEE_CATEGORIES.map((category) => ({
+            id: expect.stringMatching(/^feecat_/),
+            ...category,
+          }))
+        )
+        // No admin-only field leaks into the farmer response.
+        for (const category of response.data.fee_categories) {
+          expect(Object.keys(category).sort()).toEqual([
+            "id",
+            "join_fee",
+            "listing_fee",
+            "name",
+          ])
+        }
+      })
+
+      it("lets a farmer whose farm is still pending read it (no open check)", async () => {
+        const container = getContainer()
+        await seedFeeCategories(container)
+        const { seller, headers } = await registerFarm()
+        const { data } = await container
+          .resolve(ContainerRegistrationKeys.QUERY)
+          .graph({
+            entity: "seller",
+            fields: ["id", "status"],
+            filters: { id: seller.id },
+          })
+        expect(data[0].status).not.toEqual("open")
+
+        expect(
+          (await api.get("/vendor/fee-categories", { headers })).status
+        ).toEqual(200)
+      })
+
+      it("rejects a customer token, a missing token and an invalid token", async () => {
+        const container = getContainer()
+        const [customer] = await container
+          .resolve(Modules.CUSTOMER)
+          .createCustomers([{ email: `fee-cust2-${Date.now()}@test.dev` }])
+        const customerAuth = {
+          authorization: `Bearer ${jwt(container, customer.id, "customer")}`,
+        }
+
+        expect(
+          await statusOf(api.get("/vendor/fee-categories", { headers: customerAuth }))
+        ).toEqual(401)
+        expect(await statusOf(api.get("/vendor/fee-categories"))).toEqual(401)
+        expect(
+          await statusOf(
+            api.get("/vendor/fee-categories", {
+              headers: { authorization: "Bearer not-a-jwt" },
+            })
+          )
+        ).toEqual(401)
       })
     })
   },

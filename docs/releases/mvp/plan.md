@@ -1,6 +1,6 @@
 # Koi Store — MVP Plan
 
-Nov 13, 2026 · @Herlina Sunaryanto · updated 2026-11-15 with the owner's answers (D-020 – D-038)
+Nov 13, 2026 · @Herlina Sunaryanto · updated 2026-11-15 with the owner's answers (D-020 – D-044)
 
 ## Summary
 
@@ -26,6 +26,16 @@ There are three roles; every farmer is also a customer with the same login.
 **Becoming a farmer:** a logged-in customer submits a farm registration: farm name, location, ID card (KTP photo and 16-digit NIK, stored privately and never public, D-017), farm photos, and a bank account in their own name for winners to pay into. The farm's WhatsApp number is the registration phone, copied to the seller and not editable (D-016). Admin approves it, and the account gains farmer access. Admin may instead reject it with a reason the farmer sees; rejection is final, with no resubmission (D-015).
 
 **Account link (settled, D-003):** a farmer is one auth identity whose `app_metadata` holds both `customer_id` and `member_id`. The storefront signs in as customer (for `/store/*`) and as member (for `/vendor/*` with `x-seller-id`) with the same credentials. Farm registration is a member login followed by `POST /vendor/sellers`, which creates the seller as `pending_approval`. Right after that, the farmer logs in as a member again to get a token for the new seller; farmer actions stay closed until the admin approves (`status === open`) (D-030). No custom customer↔seller link.
+
+## Personal data protection
+Added 2026-11-15 by the owner (D-039, D-040).
+- Every customer's personal data is **encrypted at rest**: KTP/NIK, bank account details, phone numbers and similar PII.
+- API results and the frontend show only a **small part** of each value (masked), never the full value, except the owner's own full values on their own record (D-045). This covers the farm registration (US-020), the admin farm queue (US-021), the wallet and top-up tables (US-010 – US-012), contact details (US-051), ratings (US-057), admin screens generally (US-070, US-091) and the new story US-092.
+- KTP photos and transfer screenshots stay private files (D-017, D-018). One exception to "no key on a store route": the KTP upload may return its private file **key** to the customer who uploaded it, for their own registration only. Never a URL, never another user (D-040; exception to `packages/api/CLAUDE.md`).
+- **Settled:** admins see masked PII everywhere and the full value only through a logged reveal (D-042); encryption is column-level on top of disk encryption and includes the wallet/top-up tables (D-043); the winner sees the full bank account for their own won lot through the same logged reveal (D-044).
+- **Self-view (D-045):** a person sees their **own** full phone and own bank details on their **own** record — the storefront account screen (`/store/customers/me`) and the farmer's own `/vendor/sellers*` record. Every other caller gets the mask, admins included; PII about anyone else on those screens stays masked.
+- **Contact between winner and farmer (D-044, confirmed 2026-11-15):** the farmer sees the winner's phone masked until US-051's logged reveal of the farmer's own sold lot; US-052's shipping flow uses the same rule.
+- **Open, not lost:** `/admin/sellers*` still returns unmasked `payout_account.data`, whose free-form JSON can hold a bank number or phone — masked by US-092 T-092.9. `professional_details` (`corporate_name`, `registration_number`, `tax_id`) stays unmasked deliberately, out of scope unless the owner says otherwise. Column-level encryption (US-092 AC1/AC2, T-092.1, T-092.6) is **not built**; masking lands while encryption remains open, so US-092 isn't complete until then.
 
 ## Store credit wallet
 
@@ -143,6 +153,7 @@ An admin can cancel an open lot (`open → cancelled`, reason saved, no winner, 
 - **Winners** get a strike for not paying within 1×24 hours.
 - **Farmers** get a strike for not shipping a paid lot, or for refusing an approved dead-on-arrival claim.
 - Admin gives every strike after checking the report. **2 active strikes = ban**: a banned winner can't join or bid; a banned farmer can't create auctions.
+- Every ban or suspend needs a written reason, the same rule as a farm rejection (D-041). This covers Mercur's `POST /admin/sellers/:id/suspend` and every customer ban.
 - Strikes expire after **6 months**. Admin can remove a strike if there was a good reason.
 
 **Delivery**
@@ -241,6 +252,8 @@ Mercur's vendor dashboard (`apps/vendor`) is not used in the MVP.
 - Integer rupiah everywhere; wallet transactions never edited or deleted.
 - Clear statuses: auction `draft → pending_approval → scheduled → live → closed | cancelled` (rejection returns `pending_approval → draft`, D-031); lot `open → unsold | won | cancelled` (D-035), `won → paid → shipped` → delivered | claimed; claim `open → approved | disputed`, `disputed → approved | rejected`, `approved → resolved → confirmed` (D-038, D-027).
 - Save results on the lot at close instead of recalculating from bids.
+- Personal data is encrypted at rest and masked in API results and the frontend (D-039), except a person's own full values on their own record (D-045); private data stays off public routes (D-017, D-040).
+- Every seller suspend and every ban needs a written reason (D-041).
 
 ## Path to beta
 
@@ -271,6 +284,11 @@ Build in this order; each milestone ends with something usable. There is no fixe
 7. **WhatsApp bot:** Qontak setup and Meta approval, templates, bid commands, outbid and win alerts.
 8. **Pilot:** one or two friendly farmers run real auctions before public launch.
 
+**Personal data (D-039):** US-092 lands with Milestone 2, because farm
+registration is the first place KTP/NIK/bank/phone are stored. No PII screen goes
+live before it. It is unblocked (`mvp-Q25`, `mvp-Q26` answered by D-042, D-043). US-093 (orphan KTP cleanup)
+is low priority and sits outside this order.
+
 ## Open questions
 
 Full text and options: `stories.md`, Open questions.
@@ -297,10 +315,23 @@ Full text and options: `stories.md`, Open questions.
 - [x] Bid removal only on open lots; OB rule after removals (D-036, `mvp-Q21`).
 - [x] Unpaid win = non-payment report, all time (D-037, `mvp-Q22`).
 - [x] Farmer-accepted claim is approved at once; clock starts at `approved` (D-038, `mvp-Q23`).
+- [x] Every seller suspend and every ban needs a written reason (D-041).
 
 **Farmers**
 
 - [ ] None open. Farmers use the same strike system as winners.
+- [x] Private file key may return to its own uploader for the registration, never a URL and never to another user (D-040).
+
+**Personal data**
+
+- [x] Encrypted at rest; API results and the frontend show masked values only (D-039).
+- [x] Column-level encryption for NIK, bank account and phone, on top of disk encryption; the wallet and top-up tables are included in US-092; plain values are migrated in place (D-043, `mvp-Q26`).
+- [x] Admins see masked PII everywhere, admin-only routes and UI included; the full value only through an explicit reveal action logged with who, when, record and field (D-042, `mvp-Q25`).
+- [x] Winner pays into the farmer's full bank account: visible only for the lot they won, through the same logged reveal (D-044, `mvp-Q27`).
+- [x] A person sees their own full phone and own bank details on their own record (`/store/customers/me`, own `/vendor/sellers*`); every other caller, admins included, gets the mask (D-045).
+- [x] The farmer sees the winner's phone masked; the full number comes only through US-051's logged reveal for the farmer's own sold lot (D-044 confirmation, 2026-11-15). US-052 depends on US-051 for this.
+- [ ] `/admin/sellers*` masks `payout_account.data` (free-form JSON can hold a bank number or phone) — US-092 T-092.9. `professional_details` stays unmasked, out of scope unless the owner says otherwise.
+- [ ] Column-level encryption (US-092 AC1/AC2, T-092.1, T-092.6) is still not built; masking is done while encryption is not.
 
 **Accounts and settings**
 

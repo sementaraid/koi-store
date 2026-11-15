@@ -65,6 +65,8 @@ export const getTopupQueues = async (): Promise<{
   pending: TopupRequest[];
   decided: TopupRequest[];
 } | null> => {
+  await requireAdmin(ROUTES.topups);
+
   try {
     const [pending, approved, rejected] = await Promise.all([
       listByStatus('pending'),

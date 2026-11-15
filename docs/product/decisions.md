@@ -46,6 +46,13 @@ The product-owner agent drafts entries. The owner approves them.
 | D-036 | 2026-11-15 | Bids can be removed only while the lot is open; first-bid rule applies again after removals | In force |
 | D-037 | 2026-11-15 | An "unpaid win" is a farmer's non-payment report, counted over all time | In force |
 | D-038 | 2026-11-15 | A claim the farmer accepts is `approved` at once; `accepted` dropped from the enum | In force |
+| D-039 | 2026-11-15 | Every customer's personal data is encrypted at rest and shown masked in API results and the frontend | In force; narrow exceptions in D-040, D-044 and D-045; admin review settled by D-042; encryption scope by D-043 |
+| D-040 | 2026-11-15 | A private file key may return to its own uploader's registration, never a URL or another user (clarifies D-017) | In force |
+| D-041 | 2026-11-15 | Every seller suspend and every ban needs a reason (extends D-015) | In force |
+| D-042 | 2026-11-15 | Admins see masked PII everywhere; a full value only through an explicit reveal, logged (answers `mvp-Q25`) | In force |
+| D-043 | 2026-11-15 | Column-level encryption for NIK, bank account and phone on top of disk encryption; the wallet and top-up tables are included in US-092 (answers `mvp-Q26`) | In force |
+| D-044 | 2026-11-15 | The winner of a lot sees the farmer's full bank account for that lot only, through the logged reveal (answers `mvp-Q27`) | In force; farmer's view of the winner's phone confirmed 2026-11-15 |
+| D-045 | 2026-11-15 | A person sees their own full PII on their own record; every other caller, admins included, gets the mask | In force |
 
 ---
 
@@ -412,3 +419,108 @@ both paths. New claim enum:
 **Reason:** Admin time goes to disputes only, and one clock start serves both
 paths.
 **Source:** Owner, answer to `mvp-Q23` (2026-11-15). Supersedes D-027's enum.
+
+### D-039: Personal data is encrypted at rest and masked
+**Decision:** Every customer's personal data is stored encrypted at rest, and API
+results and the frontend show only a small part of it, never the full value. This
+covers the KTP/NIK, bank account details, phone numbers and similar PII.
+- The KTP photo and transfer screenshots stay private files (D-017, D-018).
+- How admins review masked PII is settled by D-042 (masked everywhere, full
+  value only through a logged reveal).
+- The encryption mechanism is settled by D-043 (column-level on top of disk
+  encryption, wallet and top-up tables included).
+- Three narrow exceptions to "never the full value": the private file key back
+  to its own uploader (D-040), the winner's reveal of the farmer's bank account
+  for their own winning lot (D-044), and a person's view of their own full PII
+  on their own record (D-045).
+- Scope of the new story: US-092 in `docs/releases/mvp/stories.md`.
+**Reason:** A leak then exposes little, and staff screens never display a full
+NIK, bank account or phone.
+**Source:** Owner follow-up, 2026-11-15 (after US-020 acceptance).
+
+### D-040: Private file key may return to its own uploader
+**Decision:** The rule "nothing private is exposed on public routes" holds as
+written in D-017. One exception is allowed and confirmed by the owner: the KTP
+upload route (`POST /store/farm-uploads`, US-020 T-020.5) may return the private
+file key to the customer who uploaded it, for their own farm registration.
+- It never returns a URL for a private file.
+- It never returns the key to any other user.
+- This is the exception to `packages/api/CLAUDE.md`'s "store routes must never
+  return a key or URL". That guide is not edited; this decision is the
+  exception. Transfer screenshots keep D-018's `has_screenshot` contract.
+**Reason:** The storefront must store the key on the registration, and the key
+alone (no URL, no second user) cannot read the private file.
+**Source:** Owner follow-up, 2026-11-15.
+
+### D-041: Every suspend and ban carries a reason
+**Decision:** D-015's reason requirement applies to every seller suspend, not only
+a farm rejection: every `POST /admin/sellers/:id/suspend` and every customer ban
+needs a written reason. `apps/admin-koi` refuses the action without one.
+**Reason:** The reason is what the affected farmer or customer sees, and the admin
+team needs it to review a ban later.
+**Source:** Owner follow-up, 2026-11-15. Extends D-015.
+
+### D-042: Admins see masked PII; a full value needs a logged reveal
+**Decision:** Admins see **masked** personal data everywhere, including
+admin-only routes and the admin UI. The full value is reachable only through an
+explicit reveal action that is logged with who, when, which record and which
+field, in an append-only table. This applies to KTP/NIK, bank account and phone.
+- The farm queue (US-021 AC1) shows masked values plus a reveal to compare the
+  KTP/NIK, bank account and phone with the applicant.
+- Answered `mvp-Q25`; supersedes the "open" line in D-039. Unblocks US-092
+  T-092.2 and T-092.5, and US-021.
+**Reason:** Staff still do the review, and every look at a full value leaves a
+trace.
+**Source:** Owner, answer to `mvp-Q25` (2026-11-15).
+
+### D-043: Column-level encryption on top of disk encryption
+**Decision:** The sensitive fields — NIK, bank account number and account-holder
+name, phone — are encrypted at **column level**, on top of whole-disk/storage
+encryption of the database. The existing wallet and top-up tables are included
+in the same story (US-092), not a follow-up.
+- Keys come from the environment, never the database or the repo.
+- Existing plain values are migrated in a one-off migration script: read, encrypt
+  in place, verify, and keep a rollback note; no plaintext copy is left behind.
+- Answered `mvp-Q26`. US-010 – US-015 stay `done`; their encryption is delivered
+  by US-092.
+**Reason:** Disk encryption protects a stolen disk, not a leaked database user;
+column encryption protects both.
+**Source:** Owner, answer to `mvp-Q26` (2026-11-15).
+
+### D-044: Winner sees the farmer's full bank account for its own lot
+**Decision:** The winner of a lot sees the farmer's **full** bank account, but
+only for the lot they won, and only through the same logged reveal as D-042
+(who, when, lot record, field). The farmer's view of the winner's phone stays
+masked.
+- This is a narrow exception to D-039, coordinated with D-040's private-key
+  return.
+- Confirmed 2026-11-15: the farmer's view of the winner's phone stays masked;
+  the full number comes only through US-051's logged reveal of the winner's
+  phone for the farmer's own sold lot. This is a confirmation of the line above;
+  no separate decision is needed.
+- Answered `mvp-Q27`; unblocks US-051.
+**Reason:** The winner must type the full account number to transfer the money;
+any other user, and any other lot, stays masked.
+**Source:** Owner, answer to `mvp-Q27` (2026-11-15).
+
+### D-045: A person sees their own full PII on their own record
+**Decision:** A person may see their **own** full personal data on their **own**
+record, with no reveal step. The scope is narrow:
+- The customer's own phone and own bank details on the storefront account screen
+  (`/store/customers/me`).
+- The farmer's own seller record on `/vendor/sellers*` (own phone, own bank
+  details, own NIK).
+- Every other caller gets the masked value, **admins included** (D-042 stands).
+  Another customer's, another farmer's, or the same person's data on someone
+  else's record stays masked.
+- Everything else in D-039 stands: values are still stored encrypted (D-043),
+  masks apply everywhere else, and the logged reveal is still the only way to a
+  non-owner's full value.
+- This is a narrow exception to D-039, alongside D-040 and D-044.
+- Consequences for US-092: AC3 becomes "no API result returns a full PII value
+  to any client except the owner's own record"; AC4's "admins are not exempt"
+  stays. T-092.4 becomes the self-view plus masking of anyone else's PII shown
+  on those screens.
+**Reason:** A person needs their own phone and account number to use the site;
+masking them to the owner adds friction and protects nothing.
+**Source:** Owner follow-up, 2026-11-15 (after D-042, D-044).
