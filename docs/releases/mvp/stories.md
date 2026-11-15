@@ -386,14 +386,14 @@ As a **customer**, I want to browse live and upcoming auctions and their lots so
 that I can choose what to bid on. *(Plan: Milestone 4)*
 - AC1: `lelang` and lot pages show API data. The demo constants are removed.
 - AC2: Each lot shows photos, OB, KB, current price and time left.
-- AC3: Lots of `scheduled`, `live` and `closed` auctions are public; `draft`, `pending_approval` and `cancelled` never are. A closed lot shows its final price and "Terjual" or "Tidak terjual", never who won: no winner field of any kind on a public route or page (D-046).
+- AC3: Lots of `scheduled`, `live` and `closed` auctions are public; `draft`, `pending_approval` and `cancelled` auctions never are. A closed lot shows its final price and "Terjual" or "Tidak terjual", never who won: no winner field of any kind on a public route or page (D-046). A cancelled lot inside a public auction stays visible, labelled "Dibatalkan", with no price, no final price, no sold label, no winner and no bids (D-050).
 - [ ] T-040.1 [backend] Public store routes `GET /store/lots` and `GET /store/lots/:id` (the storefront is lot-centric: `lelang` lists lots, and `/lelang/[id]` takes a lot id)
 - [ ] T-040.2a [storefront] `lib/data/lots.ts` + `lib/adapters/lot.ts` (+ test); the `lelang` feed on API data
 - [ ] T-040.2b [storefront] The lot page `/lelang/[id]` on API data (photos, OB, KB, current price, time left); remove the demo lots from `const/auctions.ts`
 - [ ] T-040.2c [storefront] Home page hero and lot strip on API data (`const/home.ts` demo lots link to ids `1…n`, which 404 once T-040.2b lands)
 - [ ] T-040.3 [qa] No demo data left in auction views
 
-**Readiness (2026-11-15):** ready. `mvp-Q28` answered (D-046): public statuses are `scheduled`, `live` and `closed`; closed lots show final price and sold/unsold, never the winner; the "Selesai" tab stays. Lot cancel (D-035) can't happen before US-091, so `mvp-Q32` doesn't block this story.
+**Readiness (2026-11-15):** ready. `mvp-Q28` answered (D-046): public statuses are `scheduled`, `live` and `closed`; closed lots show final price and sold/unsold, never the winner; the "Selesai" tab stays. `mvp-Q32` answered (D-050): a cancelled lot inside a public auction stays visible as "Dibatalkan", with no price, no final price, no sold label, no winner and no bids. No lot can be cancelled before US-091, so the tasks build it now (flag, labels) and US-091 only produces the cancelled lots.
 **Known interim:** the live room (`/live`) keeps its demo lots until US-046 T-046.2. Its tiles link to demo ids, which 404 once T-040.2b lands. Accepted until US-046 and recorded here so qa doesn't fail US-040 on it.
 **Interpretation of AC2, for qa:** the lot page shows all five (photos, OB, KB, current price, time left). The feed card keeps photo, current price and time left. OB and KB are on the lot page.
 **Out of this story:** bids, bid counts and bidder names (US-044), join (US-041), the live room's demo data (US-046 T-046.2), the cart demo (fixed-price cart is out of MVP scope).
@@ -407,7 +407,7 @@ Agent: backend   Expected: <=45 min
 ## Acceptance criteria
 - AC1: `lelang` and lot pages show API data. (Backend part: the routes those pages read.)
 - AC2: Each lot shows photos, OB, KB, current price and time left. (Backend part: the response carries them.)
-- AC3: Lots of `scheduled`, `live` and `closed` auctions are public; never `draft`, `pending_approval`, `cancelled`. A closed lot returns final price and sold/unsold, never any winner field (D-046).
+- AC3: Lots of `scheduled`, `live` and `closed` auctions are public; never `draft`, `pending_approval`, `cancelled` auctions. A closed lot returns final price and sold/unsold, never any winner field (D-046). A cancelled lot inside a public auction is returned too, with `cancelled: true` and null price fields (D-050).
 
 ## Decisions in force
 D-017: seller payment_details, professional_details and custom_fields (KTP, NIK) never appear on a /store route.
@@ -416,14 +416,18 @@ D-044: the farmer's bank details reach only the winner, through US-051's reveal.
 D-032: the join fee shown is the final one: fee_override_join_fee ?? join_fee.
 D-046: PUBLIC_AUCTION_STATUSES = ["scheduled", "live", "closed"] in one constant. A closed lot returns final_price and
   sold; never winner_customer_id or any other winner field.
+D-050: a cancelled lot (lot status `cancelled`, D-035) inside a public auction is still listed. It returns
+  cancelled: true, and current_price, final_price and sold are all null. No bids for it. Its auction status still
+  decides visibility; a `cancelled` auction is never public.
 
 ## Build (reads only, query.graph, no workflow)
 Response shape (the storefront brief pins it):
   StoreLot = {
     id, title: string|null, description: string|null, photos: string[],
-    ob, kb, current_price, end_time (ISO),
-    final_price: number|null   (null while the lot is open),
-    sold: boolean|null         (null while open; true for won/paid/shipped/delivered/claimed; false for unsold),
+    ob, kb, current_price: number|null (null when the lot is cancelled), end_time (ISO),
+    final_price: number|null   (null while the lot is open, and when cancelled),
+    sold: boolean|null         (null while open, and when cancelled; true for won/paid/shipped/delivered/claimed; false for unsold),
+    cancelled: boolean         (true when the lot status is `cancelled`, D-050),
     auction: { id, status, start_at, end_at, join_fee, delivery_method,
                category: { id, name } | null,
                seller: { id, name, handle } | null }
@@ -432,7 +436,9 @@ Response shape (the storefront brief pins it):
     status = auction status, one of PUBLIC_AUCTION_STATUSES (anything else → 400). No status → scheduled + live,
     ordered by end_time ASC. status=closed → closed auctions' lots, ordered by end_time DESC (newest result first).
   GET /store/lots/:id → { lot: StoreLot }; 404 when the lot is missing OR its auction isn't public (a draft lot id must not leak)
-The raw lot status is not returned (won/paid/shipped would tell about the winner); `sold` is the only result field.
+    A lot cancelled inside a public auction is 200, with cancelled: true (D-050).
+The raw lot status is not returned (won/paid/shipped would tell about the winner); `sold` and `cancelled` are the only
+  result flags. `cancel_reason` stays private.
 Never selected: payer_customer_id, winner_customer_id, listing_fee, fee_override_*, rejection_reason,
   cancel_reason, extend_window_minutes, any seller field other than id/name/handle.
 Filtering lots by auction status: try a same-module relation filter on `lot` (filters: { auction: { status } }).
@@ -456,7 +462,8 @@ Write the mapper in the store route file. Don't import from src/api/vendor/** (d
 
 ## Spec
 packages/api/integration-tests/http/store-lots.spec.ts:
-- a live and a scheduled auction's lots are listed, ordered by end_time; draft / pending_approval / cancelled / closed lots are not (no status)
+- a live and a scheduled auction's lots are listed, ordered by end_time; lots of draft / pending_approval / cancelled auctions and closed auctions' lots are not (no status)
+- a cancelled lot (D-050) inside a live auction, in both the list and GET /store/lots/:id: 200, cancelled true, current_price, final_price and sold all null, and no cancel_reason; same for one inside a closed auction, listed under status=closed
 - status=closed lists a closed auction's lots: a won lot with final_price set and sold true, an unsold lot with sold false
 - status=cancelled or status=draft → 400
 - GET /store/lots/:id: 200 for a public lot, including a closed one; 404 for a draft and a cancelled auction's lot
@@ -485,11 +492,12 @@ Starts after: T-040.1 has delivered its contract and codegen.
 ## Acceptance criteria
 - AC1: `lelang` and lot pages show API data. The demo constants are removed. (This task: the `lelang` feed.)
 - AC2: Each lot shows photos, OB, KB, current price and time left. (Card: photo, current price, time left.)
-- AC3: A closed lot shows final price and "Terjual" / "Tidak terjual" under "Selesai", never who won (D-046).
+- AC3: A closed lot shows final price and "Terjual" / "Tidak terjual" under "Selesai", never who won (D-046). A cancelled lot shows "Dibatalkan" and no price (D-050).
 
 ## Decisions in force
 D-005 @koi/ui; typed @mercurjs/client only; D-039 nothing beyond seller name/handle is shown; money id-ID via formatPrice.
 D-046: keep the "Selesai" tab. A closed lot shows final price and "Terjual" / "Tidak terjual", never the winner.
+D-050: a cancelled lot (lot status `cancelled`, D-035) stays in the feed, labelled "Dibatalkan", with no price, no final price, no sold label and no bids. Its auction may be scheduled, live or closed.
 
 ## Endpoint inventory
 | Method | Path | Exists? | Shape / owner |
@@ -499,13 +507,29 @@ D-046: keep the "Selesai" tab. A closed lot shows final price and "Terjual" / "T
 
 ## Build
 - src/lib/data/lots.ts: listLots({ limit = FEED_LIMIT, status? }) and getLot(id), both `cache: 'no-store'`. getLot returns null on 404.
-- src/lib/adapters/lot.ts: StoreLot → AuctionProduct. Status: sold !== null (lot closed) → "ended"; else auction
+- src/lib/adapters/lot.ts: StoreLot → AuctionProduct. Cancelled (lot.cancelled, D-050) → status "cancelled",
+  currentBid 0, cancelled: true, endsAt undefined (no clock). Otherwise: sold !== null (lot closed) → "ended"; else auction
   scheduled → "upcoming", live → "live". Ended: currentBid = final_price ?? current_price, plus a sold flag for the
   "Terjual" / "Tidak terjual" label. Otherwise currentBid = current_price. endsAt = end_time,
   image = photos[0], listing = { seller: auction.seller.name, sellerKind: "farm",
   category: auction.category.name, note: description }.
-  Leave bidCount and bids undefined (no bids until US-044). Add a node:test file next to it.
+  Leave bidCount and bids undefined (no bids until US-044). Add a node:test file next to it (include the cancelled case).
 - Add `openingBid` and `bidStep` (optional numbers) to AuctionState in src/types/product.ts, filled from ob/kb (T-040.2b renders them).
+  Add `cancelled?: boolean` there too. Keep `currentBid` required: the adapter sets `currentBid: 0` for a cancelled lot
+  (a cancelled lot is closed, so no bid, cart, terminal or sheet ever receives it — those readers are untouched) and
+  the cancelled flag gates every place a price would render. One `ponytail:` note on the 0: ceiling is the four readers
+  above; upgrade is making `currentBid` optional if a cancelled lot ever reaches one of them.
+- Add `cancelled` to AuctionStatus (src/types/product.ts:25) with `{ label: "Dibatalkan", variant: "muted", pulse: false }`
+  in AUCTION_STATUS (src/const/stamps.ts:50) and a `cancelled: "lot dibatalkan"` key in STATUS_LABEL
+  (src/const/auctions.ts:268, `Record<AuctionStatus|"all">` forces it). No "Dibatalkan" tab: DEFAULT_AUCTION_TABS is
+  explicit, leave it.
+- AuctionProductCard: with `cancelled`, pass no `sale` to ProductFacts (the price row and "Bid" label disappear,
+  ProductFrame.tsx:324) and no `trailing` (no tally, no clock). The status pill already says "Dibatalkan".
+- Tabs: a cancelled lot appears under "Semua" only. The "Selesai" tab stays closed (ended) lots; there is no
+  "Dibatalkan" tab (D-050).
+- If this no longer fits 45 min, split it: T-040.2a keeps the data layer, adapter and test; a new
+  T-040.2d [storefront] takes the `cancelled` status (types/product.ts, const/stamps.ts, const/auctions.ts) and the
+  AuctionProductCard rendering. Say in the report which one you did.
 - AuctionsPage (server) loads listLots() and listLots({ status: "closed" }) and passes both, joined, as `lots` down
   through AuctionsFeed → Auctions; the "Selesai" tab shows the ended ones. Never render a winner. Remove the
   DEFAULT_AUCTION_LOTS default from Auctions.tsx. Keep client-side filterGoods over the first FEED_LIMIT lots,
@@ -537,15 +561,16 @@ Starts after: T-040.2a (shares lib/data/lots.ts and lib/adapters/lot.ts).
 ## Acceptance criteria
 - AC1: `lelang` and lot pages show API data. The demo constants are removed.
 - AC2: Each lot shows photos, OB, KB, current price and time left. (The lot page shows all five.)
-- AC3: A closed lot's page shows final price and "Terjual" / "Tidak terjual", never who won (D-046).
+- AC3: A closed lot's page shows final price and "Terjual" / "Tidak terjual", never who won (D-046). A cancelled lot's page is a normal 200 page (not 404) showing "Dibatalkan" and no price (D-050).
 
 ## Decisions in force
-Same as T-040.2a.
+Same as T-040.2a. D-050: a cancelled lot's page is a normal 200 page (not 404) showing "Dibatalkan" and no price, no
+final price, no "Terjual" / "Tidak terjual", no winner and no bids.
 
 ## Endpoint inventory
 | Method | Path | Exists? | Shape / owner |
 |---|---|---|---|
-| GET | /store/lots/:id | no → T-040.1 | { lot: StoreLot } |
+| GET | /store/lots/:id | no → T-040.1 | { lot: StoreLot }; a cancelled lot inside a public auction is 200 |
 | GET | /store/lots | no → T-040.1 | grid under the lot (same list as the feed) |
 
 ## Build
@@ -553,7 +578,9 @@ Same as T-040.2a.
 - LotDetailsPage (server) loads getLot(id) (null → notFound()) and listLots(), and passes lot, lots and
   media = photos.map(src => ({ src, kind: "image" })) to LotDossier → LotPage. LotDossier stops reading demo data.
 - LotPage: render OB (openingBid) and KB (bidStep) with formatPrice next to the current price. A closed lot (D-046):
-  final price and "Terjual" / "Tidak terjual" in place of the current price and countdown; no winner shown. Remove the
+  final price and "Terjual" / "Tidak terjual" in place of the current price and countdown; no winner shown. A cancelled
+  lot (D-050): "Dibatalkan" where the price and countdown sit, no price figure, no OB/KB price row, no bid controls, no
+  bid history. Remove the
   DEFAULT_AUCTION_LOT / DEFAULT_AUCTION_LOTS / DEFAULT_LIVE_MEDIA defaults for lot, lots and media.
 - const/auctions.ts keeps only UI config (DEFAULT_AUCTION_FILTER, _TABS, _SORTS, STATUS_LABEL). Delete DEFAULT_AUCTION_LOTS,
   DEFAULT_AUCTION_LOT, the demo bidders and bidsFor. Move what other screens still import:
@@ -598,6 +625,8 @@ Same as T-040.2a.
 HomePage (server) loads listLots(SHELF_LIMIT) once. featured = the lot whose end_time comes first; lots = the rest.
 Pass both into Landing → Home. With no lots, hide the hero card and the strip; don't fall back to demo data.
 Delete DEFAULT_FEATURED / DEFAULT_LOTS from const/home.ts and the defaults in Home.tsx:51-52.
+A cancelled lot can land in `lots`; it renders through the same card (no price, "Dibatalkan" pill, T-040.2a). Don't
+filter it out.
 
 ## Start from
 - src/components/sections/HomePage/HomePage.tsx (it already loads listSellers the same way), components/Landing.tsx, components/Home.tsx:51-52,125-150
@@ -618,13 +647,14 @@ none
 Story: US-040 (task T-040.3)   Release: mvp
 Agent: qa   Expected: <=30 min
 
-Verify AC1, AC2, AC3. Decisions: D-017, D-039, D-044, D-045, D-032, D-046.
+Verify AC1, AC2, AC3. Decisions: D-017, D-039, D-044, D-045, D-032, D-046, D-050.
 Code under test: packages/api/src/api/store/lots/**, apps/storefront-koi/src/lib/{data/lots.ts,adapters/lot.ts}, AuctionsPage/**, LotDetailsPage/**, const/auctions.ts.
 Commands (alone): cd packages/api && bun run test:integration:http -- store-lots; cd apps/storefront-koi && bun run check.
 Browser (render-check): /lelang and /lelang/<id> signed out. Every lot is a seeded API lot; OB, KB, current price and countdown are on the lot page.
 A seeded closed auction: its lots are under "Selesai" with final price and Terjual / Tidak terjual; no winner on the card or lot page.
+A cancelled lot inside a public auction (seed one by hand if needed, D-050): still in the feed and its /lelang/<id> page is 200, labelled "Dibatalkan", no price, no final price, no Terjual label, no winner, no bids.
 Watch for: any PII or private field in /store/lots responses (curl it and grep for phone/email/payment_details/custom_fields/
-payer_customer_id/winner_customer_id, and "winner" at all on a closed lot); a draft, pending or cancelled lot reachable by id; demo picsum images or "Sakai Fish Farm" left anywhere in /lelang.
+payer_customer_id/winner_customer_id/cancel_reason, and "winner" at all on a closed or cancelled lot); a draft, pending or cancelled auction's lot reachable by id; demo picsum images or "Sakai Fish Farm" left anywhere in /lelang.
 Report PASS/FAIL per AC with file:line and command output. Don't change app code.
 ```
 
@@ -1042,18 +1072,18 @@ so that auctions stay fair. *(Plan: Bidding, Milestone 6; D-024, D-036)*
 - [ ] T-072.2 [admin] Live monitoring screen with remove-bid and a required reason
 - [ ] T-072.3 [qa] After removal: bid row still exists and is marked removed; price = highest remaining bid or OB; end time unchanged; removal on a closed lot refused; after removing every bid, a bid = OB is accepted
 
-### US-091 Admin cancels lots and live auctions · `blocked (mvp-Q32)`
+### US-091 Admin cancels lots and live auctions · `todo`
 **Depends on:** US-092 (masking of bidder details; the full value only through the logged reveal, D-042).
 As an **admin**, I want to cancel a lot that has bids, or a live auction, so that
 a broken listing can be stopped. *(Plan: Cancellations, Lot lifecycle; D-022, D-034, D-035)*
 - AC1: Only admin can cancel a lot: `open → cancelled`, with a saved reason and no winner (D-035).
 - AC2: Once an auction is `live`, only admin can cancel it (D-022).
 - AC3: An admin cancel of an auction refunds every participant's join fee as a `refund` (+), the same as a farmer cancel. The listing fee is not refunded (D-034).
-**Blocked by `mvp-Q32`:** whether a cancelled lot inside a public auction stays on `/store/lots` (US-040) decides what the cancel changes on the public pages.
+**Answered `mvp-Q32` (D-050):** a cancelled lot inside a public auction stays on `/store/lots` and its lot page, labelled "Dibatalkan", with no price, final price, sold label, winner or bids. US-040 T-040.1/2a/2b already return and render it; this story only produces the cancelled lots (no change needed on the public pages).
 **PII (D-039, D-042):** bidder and participant details shown on the cancel and monitoring screens are masked, as on every admin route; the full value only through the logged reveal. US-092 delivers it.
 - [ ] T-091.1 [backend] Cancel-lot and cancel-live-auction workflows + `/admin` routes (moved from T-072.1)
 - [ ] T-091.2 [admin] Cancel actions with a required reason on the live monitoring screen
-- [ ] T-091.3 [qa] A farmer can't reach either cancel; a cancelled lot has no winner and is skipped by the close job; refunds total exactly the join fees collected; no `listing_fee` refund; statuses follow the plan's enums only
+- [ ] T-091.3 [qa] A farmer can't reach either cancel; a cancelled lot has no winner and is skipped by the close job; refunds total exactly the join fees collected; no `listing_fee` refund; statuses follow the plan's enums only; after the cancel, the lot is still on `/lelang` and its lot page is 200 with "Dibatalkan" and no price (D-050, US-040 already renders it)
 
 ### US-092 Personal data is encrypted and masked · `todo`
 As a **customer**, I want my personal data encrypted at rest and hidden behind
@@ -1181,10 +1211,10 @@ table complete.
 | Wallet rules (integer, append-only, closed loop) | Epic 1 rules, US-010, US-013 |
 | Refunds in the MVP (farmer or admin cancel, D-034; none on rejection or lowered fee, D-020) | US-060, US-091, US-031 |
 | Fees and fee table (recomputed at submit, override cleared on rejection, D-032) | US-014, US-030, US-031, US-032, US-041 |
-| Lot lifecycle and statuses (incl. `cancelled`, D-035) | US-033, US-050, US-052, US-053, US-054, US-091 |
+| Lot lifecycle and statuses (incl. `cancelled`, D-035; a cancelled lot stays public as "Dibatalkan", D-050) | US-033, US-050, US-052, US-053, US-054, US-091, US-040 |
 | Auction statuses (`pending_approval`, rejection back to `draft`, D-031) | US-030, US-031, US-032, US-033, US-060 |
 | Claim statuses (D-027, D-038) | US-054, US-055, US-056, US-061 |
-| Structure (20 lots, 1–7 days, approval, rejection, approval refused after start D-049, join while scheduled or live D-048, public statuses D-046) | US-015, US-030, US-032, US-040, US-041 |
+| Structure (20 lots, 1–7 days, approval, rejection, approval refused after start D-049, join while scheduled or live D-048, public statuses D-046, cancelled lot public D-050) | US-015, US-030, US-032, US-040, US-041, US-091 |
 | Pricing per lot (OB, KB, first bid = OB, D-023) | US-030, US-042 |
 | Bidding (incl. bid removal, D-024, D-036) | US-042, US-044, US-072 |
 | Extend (anti-sniping) | US-043, US-015, US-030 |
@@ -1194,7 +1224,7 @@ table complete.
 | Strikes (incl. ban check on join and bid, D-047) | US-059 |
 | Delivery | US-030, US-052, US-053 |
 | Dead-on-arrival claims (on-site notices D-025, auto-confirm D-027) | US-054, US-055, US-056, US-061 |
-| Cancellations (farmer before start, admin once live, D-022, D-031, D-034, D-035) | US-060, US-091 |
+| Cancellations (farmer before start, admin once live, D-022, D-031, D-034, D-035; a cancelled lot stays public as "Dibatalkan", D-050) | US-060, US-091, US-040 |
 | Key flows: approve auction (D-033) | US-031, US-032 |
 | Key flows: place bid | US-042, US-043 |
 | Open questions: owner actions (Qontak quote, Meta verification, D-029) | US-080 (T-080.2, T-080.5) |
@@ -1249,4 +1279,4 @@ is built. Record the answer here, in `plan.md`, and as a decision in `docs/produ
 | mvp-Q29 | **Answered 2026-11-15 (D-047):** option (a); US-041 ships without a ban check; US-059 T-059.1 adds it to join and bid; the ban clauses of US-041 AC4 and US-042 AC1 are delivered and verified by US-059. *(Was: banned customers vs. join, before bans exist.)* | none (was US-041) |
 | mvp-Q30 | **Answered 2026-11-15 (D-048):** option (a); joinable while the auction is `scheduled` or `live`, including while a lot runs past `end_at` on extends; any other status → 409 `auction_not_joinable`. *(Was: when does an auction "end" for joining?)* | none (was US-041) |
 | mvp-Q31 | **Answered 2026-11-15 (D-049):** option (b); approval is refused when `start_at` is now or past (400 `start_passed`, nothing charged, stays `pending_approval`); the admin rejects it so the farmer picks new dates. Follow-up US-032 T-032.6, T-032.7. *(Was: approving an auction whose start time has already passed.)* | none |
-| mvp-Q32 | **Is a cancelled lot (D-035) in a public auction shown on the public pages?** D-046 makes `closed` auctions public and says `cancelled` auctions never are, but says nothing about a single cancelled lot inside a `live` or `closed` auction. Options: (a) hidden from `/store/lots` and the lot page (404). (b) Shown as "Dibatalkan" with no price and no winner. No lot can be cancelled before US-091, so US-040 doesn't wait for it. | US-091 (must be answered before it) |
+| mvp-Q32 | **Answered 2026-11-15 (D-050):** option (b); a cancelled lot inside a public auction (`scheduled`, `live` or `closed`) stays visible on `/store/lots` and the lot page, labelled "Dibatalkan", with no price, no final price, no sold label, no winner and no bids. Delivered by US-040 T-040.1/2a/2b; US-091 only produces the cancelled lots. *(Was: is a cancelled lot (D-035) in a public auction shown or hidden?)* | none (was US-091) |

@@ -53,6 +53,11 @@ The product-owner agent drafts entries. The owner approves them.
 | D-043 | 2026-11-15 | Column-level encryption for NIK, bank account and phone on top of disk encryption; the wallet and top-up tables are included in US-092 (answers `mvp-Q26`) | In force |
 | D-044 | 2026-11-15 | The winner of a lot sees the farmer's full bank account for that lot only, through the logged reveal (answers `mvp-Q27`) | In force; farmer's view of the winner's phone confirmed 2026-11-15 |
 | D-045 | 2026-11-15 | A person sees their own full PII on their own record; every other caller, admins included, gets the mask | In force |
+| D-046 | 2026-11-15 | Public pages show `scheduled`, `live` and `closed` auctions; a closed lot shows final price and sold/unsold, never the winner | In force |
+| D-047 | 2026-11-15 | Join ships before bans; the ban check lands with strikes (US-059) | In force |
+| D-048 | 2026-11-15 | Customers may join while the auction is `scheduled` or `live` | In force |
+| D-049 | 2026-11-15 | Approval is refused once the auction's start time has passed | In force |
+| D-050 | 2026-11-15 | A cancelled lot inside a public auction stays visible, labelled "Dibatalkan", with no price, final price, winner or bids | In force |
 
 ---
 
@@ -569,3 +574,18 @@ farmer picks new dates and resubmits.
 **Reason:** An auction that goes live at once runs shorter than the farmer
 planned and its bidders had no notice.
 **Source:** Owner, answer to `mvp-Q31` (2026-11-15).
+
+### D-050: A cancelled lot stays visible on the public pages, labelled "Dibatalkan"
+**Decision:** A lot cancelled inside a public auction (D-035) stays visible on
+`/store/lots`, the lot page and `/lelang`, whether its auction is `scheduled`,
+`live` or `closed`. It is labelled "Dibatalkan" and shows no price, no final
+price, no "Terjual / Tidak terjual" and no winner. Bids on it are not shown
+either.
+- The auction's status still decides whether its lots are public at all:
+  `draft`, `pending_approval` and `cancelled` auctions are never public (D-046).
+- Answered `mvp-Q32`, option (b); unblocks US-091. Delivered by US-040 (routes
+  and pages already handle it).
+**Reason:** Hiding one lot from a running auction makes the auction look
+incomplete, and a bidder who followed the lot can see it was stopped, not lost.
+The reason stays private.
+**Source:** Owner, answer to `mvp-Q32` (2026-11-15).

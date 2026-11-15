@@ -111,7 +111,7 @@ An admin can cancel an open lot (`open → cancelled`, reason saved, no winner, 
 - If the admin **rejects** an auction, it goes from `pending_approval` back to `draft` with a written reason the farmer sees. The farmer fixes it and resubmits. There is no rejected status (D-031).
 - The join fee is paid once per auction and covers all its lots (fees come from the fee table above).
 - Customers can join at any time until the auction ends, including after bidding has started: while the auction is `scheduled` or `live`, including while a lot runs past `end_at` on extends (D-048).
-- Public pages (`/lelang`, lot pages) show auctions that are `scheduled`, `live` or `closed`. A closed lot shows its final price and whether it sold, never who won (D-046).
+- Public pages (`/lelang`, lot pages) show auctions that are `scheduled`, `live` or `closed`. A closed lot shows its final price and whether it sold, never who won (D-046). A cancelled lot inside a public auction stays visible, labelled "Dibatalkan", with no price, no final price, no winner and no bids (D-050).
 
 **Pricing per lot (set by the farmer)**
 
@@ -319,7 +319,7 @@ Full text and options: `stories.md`, Open questions.
 - [x] Join ships without a ban check; US-059 adds it to join and bid (D-047, `mvp-Q29`).
 - [x] Joining allowed while the auction is `scheduled` or `live`, extensions included (D-048, `mvp-Q30`).
 - [x] Approval refused once `start_at` has passed (D-049, `mvp-Q31`).
-- [ ] Is a cancelled lot inside a public auction shown on the public pages, or hidden? Blocks US-091 (`mvp-Q32`).
+- [x] A cancelled lot inside a public auction stays visible as "Dibatalkan", no price, no final price, no winner, no bids (D-050, `mvp-Q32`).
 - [x] Farmer-accepted claim is approved at once; clock starts at `approved` (D-038, `mvp-Q23`).
 - [x] Every seller suspend and every ban needs a written reason (D-041).
 
