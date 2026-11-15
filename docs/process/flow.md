@@ -125,7 +125,7 @@ git add <the story's files> && git commit -m "feat(US-xxx): <what it does>"
 
 | App | URL | Sign in |
 |---|---|---|
-| Storefront + Farmer area | `http://127.0.0.1:3001` | Seeded customers `*@koi.dev` / `supersecret`; approved farm `sakura.koi.farm@koi.dev` / `supersecret` |
+| Storefront + Farmer area | `http://127.0.0.1:3001` | Seeded customers `*@koi.dev` / `supersecret`; approved farm `sakura.koi.farm@koi.dev` / `supersecret` (the Farmer area login only works once MVP T-020.9 seeds that farmer as a customer with a wallet) |
 | Admin | `http://127.0.0.1:3002/masuk` | Seeded admin user |
 | Backend | `http://127.0.0.1:9000` | — |
 

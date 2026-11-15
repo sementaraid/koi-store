@@ -164,6 +164,7 @@ at auction. *(Plan: Becoming a farmer)*
 - [x] T-020.2 [storefront] Member sign-in with the same credentials + `POST /vendor/sellers` flow, then member sign-in again right after registration to get a token for the new seller (D-030)
 - [x] T-020.3 [storefront] Farm registration form + status page in the Farmer area
 - [x] T-020.4 [qa] KTP photo, NIK and bank data never appear on public pages or any `/store/*` response; a mismatched `member_email` is rejected
+- [ ] T-020.9 [backend] *(Seed fix, not an AC. Found during the T-033.2 render check.)* Seed one dual-actor demo farmer: a customer row, its wallet and balance (D-011), the member login and an `open` seller under the same email, so the Farmer area (`/akun/kebun*`) and top-up work for that account. Today `sakura.koi.farm@koi.dev` exists only as member + seller: no customer row, no wallet, so no seeded farmer can use the Farmer area, while US-020 assumes a farmer is a customer. Extend `src/scripts/seed-koi.ts`; keep the existing logins. The `docs/process/flow.md` credential line for the Farmer area is only accurate once this lands.
 
 ### US-021 Admin approves or rejects a farm · `done (evidence: packages/api/src/api/admin/farms/route.ts:120-128,194-219; packages/api/src/workflows/reveal-farm-pii.ts:19-27; packages/api/src/workflows/steps/pii-reveal.ts:15-71; packages/api/src/modules/pii-audit/service.ts:6-24; packages/api/src/workflows/steps/validate-seller-open.ts:28-33; packages/api/src/api/middlewares.ts:176-215; apps/admin-koi/src/components/FarmQueue.tsx:120-183,205-321,357-421; apps/storefront-koi/src/components/sections/AccountPage/FarmHomePage.tsx:34-44; packages/api/integration-tests/http/admin-farms.spec.ts:139-335; packages/api/integration-tests/http/pii-reveal.spec.ts:126-208; packages/api/integration-tests/http/farmer-auctions.spec.ts:283-315,604-630; qa PASS)`
 **Depends on:** US-092 (masking and the logged reveal delivered here; column encryption stays open in US-092).
@@ -352,11 +353,12 @@ Keep the existing Ubah/Lihat links and the draft submit button as they are.
 
 ## Do not touch
 - packages/api/**, apps/admin-koi/**
-- SubmitAuctionButton.tsx, CreateAuction*.tsx, EditAuction*.tsx, akun/kebun/lelang/** (US-030–032 under qa)
+- SubmitAuctionButton.tsx, CreateAuction*.tsx, EditAuction*.tsx, akun/kebun/lelang/**
 
 ## Definition of done
 cd apps/storefront-koi && bun run check                            → pass
 Browser check (render-check skill / playwright MCP): http://127.0.0.1:3001/akun/kebun/beranda signed in as sakura.koi.farm@koi.dev; filter to one status, then page
+Note: that login has no customer row or wallet yet (MVP T-020.9 seeds it). Until T-020.9 lands, verify this screen with a farmer account you register and get approved by hand, and say so in the report.
 Report: standard header + screenshot path.
 
 ## Open questions
