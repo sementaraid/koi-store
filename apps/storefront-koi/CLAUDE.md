@@ -105,6 +105,7 @@ Plan rules that affect this app:
 | A route's request/response shape | Find the sdk name in `packages/api/.mercur/routes.d.ts`; it points at the route file to read |
 | Customer auth headers | `getAuthHeaders()` in `lib/data/cookies.ts` (cookie `_medusa_jwt`) |
 | Farmer (member) auth, D-003 | `getMemberAuthHeaders()`, `setMemberToken()` in `lib/data/cookies.ts` (cookie `_medusa_member_jwt`); `memberSignIn()` in `lib/data/member.ts`; `isTokenExpired()`, `tokenActorId()` in `lib/helpers/token.ts` |
+| Seller-scoped farmer calls | Every `/vendor/*` call except `/vendor/sellers`, `/vendor/sellers/select`, `/vendor/stores`, `/vendor/feature-flags` and `/vendor/members/invites/accept` also needs the header `x-seller-id: <seller.id>` (from `getMyFarm()`). Without it, Mercur rejects the request with "x-seller-id header is required for vendor routes" (`ensureSellerMiddleware` in `@mercurjs/core`) |
 | Passing headers to a call | `sdk.vendor.sellers.query({ fetchOptions: { headers, cache: 'no-store' } })`, as in `lib/data/farm.ts` |
 | Guard an account page | `requireCustomer(from)` in `lib/guard.ts` |
 | Money | `formatPrice()`, `formatPriceCompact()` in `lib/helpers/format-price.ts` |
