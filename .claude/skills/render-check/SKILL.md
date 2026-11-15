@@ -29,13 +29,11 @@ overlay, and the visible text. Missing one of them misses a class of bug.
   restart servers.
 - The first visit to a route compiles it, which can take 10 s or more. That's
   normal.
-- Test logins come from `packages/api/src/scripts/seed-koi.ts` (run
-  `bun run seed` first if the data is missing): customers are `budi@koi.dev`,
-  `siti@koi.dev`, `agus@koi.dev`, `dewi@koi.dev` and `rian@koi.dev`, sellers are
-  derived from the farm name (`sellerEmail()`), and every seeded login uses
-  `SEED_PASSWORD` from that file. No admin user is seeded: admin credentials
-  must be in the brief. Without them, admin screens are NOT VERIFIED. Never
-  create users or change data to get in.
+- Logins: use the account the brief names. The table "Accounts and ports for
+  browser checks" in `docs/process/flow.md` lists the standard ones (seeded
+  customers, the approved farm `sakura.koi.farm@koi.dev`, the admin). If the
+  seed data is missing, report NOT VERIFIED; don't run the seed yourself
+  unless the brief says so. Never create users or change data to get in.
 
 ## Procedure (per route, and again after every action)
 
