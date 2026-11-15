@@ -47,8 +47,13 @@ team flow, the report header, the decisions, the Mercur coding standard (section
 ## Before you hand off
 In each app you touched, run `bun run check` once. If you changed `packages/ui`,
 run it in both apps. Every new helper or adapter gets a `*.test.ts`. Fix any
-failures. If you didn't open the page in a browser, say so. Don't claim that it
-renders correctly.
+failures.
+
+Then run the render check (`.claude/skills/render-check/SKILL.md`) with the
+`playwright` MCP on each route you added or changed, including one submit of
+each form. Fix hydration errors, runtime errors and `undefined`/`NaN` text
+before handing off; qa will fail them anyway. If you couldn't run it, say so.
+Don't claim that it renders correctly.
 
 ## Report (after the standard header)
 - How to see it: app, URL, port and the route path

@@ -57,8 +57,9 @@ brief, not in the agent's memory:
 - [ ] A route file reading `req.seller_context` imports
       `…/types/seller-context` (otherwise the Koi apps' `tsc` fails)
 - [ ] `bun run tsc` passes in **both** Koi apps when `packages/api/src` changed
-- [ ] UI task: render it once in a browser with the `playwright` MCP (or state
-      plainly that it wasn't). Dev servers run on 3001 (storefront), 3002
+- [ ] UI task: run the render check (`.claude/skills/render-check/SKILL.md`)
+      with the `playwright` MCP on every changed route (or state plainly that
+      it wasn't). It catches hydration and runtime errors a screenshot hides. Dev servers run on 3001 (storefront), 3002
       (admin) and 9000 (backend); the MCP container reaches them on
       `127.0.0.1`. Screenshots and page snapshots land in `.playwright-mcp/`
       (gitignored).
