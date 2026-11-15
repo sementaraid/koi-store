@@ -15,6 +15,8 @@ process. The root `CLAUDE.md` defines the engineering rules. This folder defines
 | `docs/releases/<release>/plan.md` | The spec for one release: goals, rules, scope, milestones | owner (product-owner drafts) |
 | `docs/releases/<release>/stories.md` | That release's user stories, acceptance criteria, tasks, coverage, open questions | product-owner |
 | `docs/releases/_template/` | Starting files for a new release | product-owner |
+| `docs/process/flow.md` | Per-story delivery cycle, parallel rules, prompt templates per step | product-owner |
+| `docs/process/task-brief.md` | Brief template and cross-cutting checklist for every agent task | product-owner |
 
 **Which spec applies?** The plan of the release you're working in. If a later
 release changes a rule from an earlier one, its plan must say so explicitly, and
