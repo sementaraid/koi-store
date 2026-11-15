@@ -123,10 +123,10 @@ pricing can change without code. *(Plan: Fees)*
 - AC2: It's seeded with the four approved categories and fees (Lokal no cert 50.000/100.000, Lokal cert 100.000/250.000, Import cert 200.000/500.000, Premium 400.000/1.000.000).
 - AC3: *(Carried forward to US-030 AC7.)* A change applies only to auctions created after it, never to approved ones. It needs the auction table, which US-030 builds, so this story can't prove it.
 - [x] T-014.1 [backend] `fee_category` model, seed, `/admin` CRUD routes — `src/modules/platform-settings/models/fee-category.ts:7-17`, `src/scripts/seed-fee-categories.ts:6-30`, `src/api/admin/fee-categories/`; `fee-categories.spec.ts:50-172`
-- [ ] T-014.2 [backend] *(Superseded, moved to US-030 T-030.6)* Auctions store the fees they were created with (snapshot)
+- [x] T-014.2 [backend] *(Superseded, moved to US-030 T-030.6)* Auctions store the fees they were created with (snapshot) — passed as T-030.6, `farmer-auctions.spec.ts:255-281,445-512`
 - [x] T-014.3 [admin] `/pengaturan/biaya` screen — `apps/admin-koi/src/components/FeeTable.tsx`, `src/lib/data/fee-categories.ts`
 - **Accepted 2026-11-14 with AC3 carried forward.** AC3 and T-014.2/T-014.4 are not passed here: they need the auction table. US-030 AC7, T-030.6 and T-030.7 prove them, and US-030's qa must check them.
-- [ ] T-014.4 [qa] *(Superseded, moved to US-030 T-030.7)* Editing a fee doesn't change an existing auction's fees
+- [x] T-014.4 [qa] *(Superseded, moved to US-030 T-030.7)* Editing a fee doesn't change an existing auction's fees — passed as T-030.7, `farmer-auctions.spec.ts:255-281`
 
 ### US-015 Admin edits auction settings · `done (evidence: packages/api/integration-tests/http/admin-settings.spec.ts:84-217; apps/admin-koi/src/components/SettingsForm.tsx; qa PASS)`
 As an **admin**, I want to change the platform limits so that rules can be tuned.
@@ -136,7 +136,7 @@ As an **admin**, I want to change the platform limits so that rules can be tuned
 - AC3: Settings are stored in a settings table in the database, not in env vars or config. *(D-010, answers mvp-Q3)*
 - [x] T-015.1 [backend] Settings table + `/admin` routes (D-010) — `src/modules/platform-settings/`, `src/api/admin/settings/route.ts`; `admin-settings.spec.ts:84-217`
 - [x] T-015.2 [admin] Settings section in `/pengaturan/biaya`, including the platform bank account — `apps/admin-koi/src/components/SettingsForm.tsx`
-- [ ] T-015.3 [qa] Live auctions keep their original extend window — superseded, moved to US-030 T-030.5, because it needs the auction table
+- [x] T-015.3 [qa] Live auctions keep their original extend window — superseded, moved to US-030 T-030.5, because it needs the auction table; passed as T-030.5, `farmer-auctions.spec.ts:255-281`
 
 ---
 
@@ -241,11 +241,15 @@ category, photos and fees are checked. *(Plan: Structure, Fees; D-020, D-031, D-
 - AC3: Admin can override the listing or join fee for this one auction, with a saved written reason. The listing-fee charge uses the overridden fee (D-020).
 - AC4: Rejecting needs a written reason. The auction moves `pending_approval → draft`, the farmer sees the reason, fixes it and resubmits. No rejected status (D-031).
 - AC5: Rejecting clears any fee override. The admin applies it again at approval if it's still wanted (D-032).
+- AC6: *(Follow-up, D-049.)* Approving an auction whose `start_at` is now or in the past is refused with a clear error. Nothing is charged and the auction stays `pending_approval`; the admin rejects it with a reason so the farmer picks new dates.
 - [x] T-032.1 [backend] Approve workflow + fee override with a reason + `/admin` routes — `admin-auction-approval.spec.ts:162-184,224-257`
 - [x] T-032.4 [backend] Reject workflow: saves the reason, clears the override, moves `pending_approval → draft` (D-031, D-032) + `/admin` route — `admin-auction-approval.spec.ts:259-305`
 - [x] T-032.2 [admin] `/lelang` approval queue (filters on `pending_approval`) with approve, override and reject-with-reason — `apps/admin-koi/src/components/AuctionQueue.tsx`; admin-koi `bun run check` clean; screenshots `/tmp/koi-qa/42-admin-queue.png`, `51-after-approve.png`, `61-after-reject.png`
 - [x] T-032.5 [storefront] Farmer area: show the rejection reason on the draft and let the farmer edit and resubmit — `EditAuction.tsx:76,226`; `admin-auction-approval.spec.ts:285-305`; screenshot `/tmp/koi-qa/21-draft-detail.png`
 - [x] T-032.3 [qa] An override or a rejection without a reason is refused; a rejected auction is `draft` with the reason visible to its farmer and no override; a `draft` auction never shows in the queue; no status outside the plan's enum is written — `admin-auction-approval.spec.ts:131-160,224-257,259-305`
+- [ ] T-032.6 [backend] *(Follow-up, AC6, D-049.)* In `approveAuctionWorkflow` (`packages/api/src/workflows/decide-auction.ts`), refuse when `start_at <= now`: `MedusaError` `INVALID_DATA` (400) with code `start_passed`, checked before the wallet lock and charge. Add `start_at` to what the approve path reads (`getPendingAuctionStep`, `steps/auction.ts:304-337`, is shared with reject; reject must keep working on a passed start). Spec in `admin-auction-approval.spec.ts`: a `pending_approval` auction with a past `start_at` → 400 `start_passed`, no `listing_fee` row, status still `pending_approval`; rejecting the same auction still works. No route shape change, no codegen.
+- [ ] T-032.7 [admin] *(Follow-up, AC6.)* `/lelang`: map code `start_passed` in `auctionApproveErrorMessage` (`apps/admin-koi/src/lib/helpers/auction-format.ts:49`) to a clear Indonesian message that tells the admin to reject with a reason so the farmer picks new dates; add a case to `auction-format.test.ts`. `bun run check` clean.
+**Follow-up (2026-11-15):** T-032.6 and T-032.7 were added after acceptance (`mvp-Q31` → D-049). US-032 stays `done`; qa verifies AC6 before the two tasks are ticked.
 
 ### US-033 Auctions start and farmers track them · `todo`
 As a **farmer**, I want to see my auctions and their status so that I know
@@ -256,9 +260,9 @@ what's live. *(Plan: Design rules, statuses)*
 - [ ] T-033.2 [storefront] Farmer area: my auctions list with status
 - [ ] T-033.3 [qa] Job is safe to run twice
 
-**Readiness (2026-11-15):** ready. No open question blocks it. AC1 is D-031's enum, which already exists (`packages/api/src/modules/auction/models/auction.ts:5-12`). AC2 is a plan Key flow. Non-blocking: `mvp-Q31` (an auction approved after its start time has passed). The job behaves the same whatever the answer.
+**Readiness (2026-11-15):** ready. No open question blocks it. AC1 is D-031's enum, which already exists (`packages/api/src/modules/auction/models/auction.ts:5-12`). AC2 is a plan Key flow. `mvp-Q31` is answered (D-049): approval refuses a passed `start_at` (US-032 T-032.6). The job is unchanged.
 **Lots: the job does not touch them.** Lots are created `open` with `end_time` = the auction's end (`packages/api/src/workflows/steps/auction.ts:207-226`). The plan's lot lifecycle starts at "Open for bids" and has no state before it. Closing (`open → unsold | won`) and `live → closed` belong to US-050 (T-050.1, T-050.2). Because a lot is `open` while its auction is still `scheduled`, the bid gate must check that the **auction** is `live`, not the lot's status (US-042).
-**Known gap, outside this story (US-030):** editing a draft's `end_at` doesn't update its existing lots' `end_time`. `updateDraftAuctionStep` (`steps/auction.ts:436-485`) updates only the auction. Those lots would close at the old time (US-050). Reported to the orchestrator as a US-030 fix. Not written into US-030 while qa verifies it.
+**Known gap, outside this story:** editing a draft's `end_at` doesn't update its existing lots' `end_time`. Tracked as US-030 T-030.8 (required before US-050).
 
 #### Briefs
 
@@ -296,7 +300,7 @@ CLAUDE.md §8/§9: every mutation is a workflow with compensation; jobs fetch by
 ## Do not touch
 - apps/** (no frontend in this task)
 - packages/api/src/workflows/{decide-auction,submit-auction,create-auction,update-draft-auction,draft-auction-lots}.ts,
-  src/workflows/steps/{auction,listing-fee}.ts, src/api/vendor/auctions/**, src/api/admin/auctions/** (US-030–032 under qa: import only, no edits)
+  src/workflows/steps/{auction,listing-fee}.ts, src/api/vendor/auctions/**, src/api/admin/auctions/** (import only, no edits)
 - docs/
 
 ## Spec
@@ -377,18 +381,19 @@ Report PASS/FAIL per AC with file:line and command output. Don't change app code
 
 ## Epic 4: Joining and bidding (Milestone 4)
 
-### US-040 Customer browses real auctions · `blocked (mvp-Q28)`
+### US-040 Customer browses real auctions · `todo`
 As a **customer**, I want to browse live and upcoming auctions and their lots so
 that I can choose what to bid on. *(Plan: Milestone 4)*
 - AC1: `lelang` and lot pages show API data. The demo constants are removed.
 - AC2: Each lot shows photos, OB, KB, current price and time left.
+- AC3: Lots of `scheduled`, `live` and `closed` auctions are public; `draft`, `pending_approval` and `cancelled` never are. A closed lot shows its final price and "Terjual" or "Tidak terjual", never who won: no winner field of any kind on a public route or page (D-046).
 - [ ] T-040.1 [backend] Public store routes `GET /store/lots` and `GET /store/lots/:id` (the storefront is lot-centric: `lelang` lists lots, and `/lelang/[id]` takes a lot id)
 - [ ] T-040.2a [storefront] `lib/data/lots.ts` + `lib/adapters/lot.ts` (+ test); the `lelang` feed on API data
 - [ ] T-040.2b [storefront] The lot page `/lelang/[id]` on API data (photos, OB, KB, current price, time left); remove the demo lots from `const/auctions.ts`
 - [ ] T-040.2c [storefront] Home page hero and lot strip on API data (`const/home.ts` demo lots link to ids `1…n`, which 404 once T-040.2b lands)
 - [ ] T-040.3 [qa] No demo data left in auction views
 
-**Readiness (2026-11-15):** blocked by `mvp-Q28`. The plan doesn't say which auction statuses are public. The story says "live and upcoming" (`live`, `scheduled`). Whether `closed` auctions stay visible, and so whether the "Selesai" tab stays, is undecided. The route filter and the feed tabs both depend on the answer. The briefs below assume option (a) (`scheduled` + `live`) and mark where (b) changes them.
+**Readiness (2026-11-15):** ready. `mvp-Q28` answered (D-046): public statuses are `scheduled`, `live` and `closed`; closed lots show final price and sold/unsold, never the winner; the "Selesai" tab stays. Lot cancel (D-035) can't happen before US-091, so `mvp-Q32` doesn't block this story.
 **Known interim:** the live room (`/live`) keeps its demo lots until US-046 T-046.2. Its tiles link to demo ids, which 404 once T-040.2b lands. Accepted until US-046 and recorded here so qa doesn't fail US-040 on it.
 **Interpretation of AC2, for qa:** the lot page shows all five (photos, OB, KB, current price, time left). The feed card keeps photo, current price and time left. OB and KB are on the lot page.
 **Out of this story:** bids, bid counts and bidder names (US-044), join (US-041), the live room's demo data (US-046 T-046.2), the cart demo (fixed-price cart is out of MVP scope).
@@ -402,26 +407,32 @@ Agent: backend   Expected: <=45 min
 ## Acceptance criteria
 - AC1: `lelang` and lot pages show API data. (Backend part: the routes those pages read.)
 - AC2: Each lot shows photos, OB, KB, current price and time left. (Backend part: the response carries them.)
+- AC3: Lots of `scheduled`, `live` and `closed` auctions are public; never `draft`, `pending_approval`, `cancelled`. A closed lot returns final price and sold/unsold, never any winner field (D-046).
 
 ## Decisions in force
 D-017: seller payment_details, professional_details and custom_fields (KTP, NIK) never appear on a /store route.
 D-039 / D-045: no one else's PII in a store response. A public route returns no phone, email, bank or NIK for anyone.
 D-044: the farmer's bank details reach only the winner, through US-051's reveal. Never here.
 D-032: the join fee shown is the final one: fee_override_join_fee ?? join_fee.
-mvp-Q28 (pending): public statuses. Build with PUBLIC_AUCTION_STATUSES = ["scheduled", "live"] in one constant;
-  if the owner picks (b), add "closed" there and expose final_price (never winner_customer_id).
+D-046: PUBLIC_AUCTION_STATUSES = ["scheduled", "live", "closed"] in one constant. A closed lot returns final_price and
+  sold; never winner_customer_id or any other winner field.
 
 ## Build (reads only, query.graph, no workflow)
 Response shape (the storefront brief pins it):
   StoreLot = {
     id, title: string|null, description: string|null, photos: string[],
-    ob, kb, current_price, end_time (ISO), status (lot status),
+    ob, kb, current_price, end_time (ISO),
+    final_price: number|null   (null while the lot is open),
+    sold: boolean|null         (null while open; true for won/paid/shipped/delivered/claimed; false for unsold),
     auction: { id, status, start_at, end_at, join_fee, delivery_method,
                category: { id, name } | null,
                seller: { id, name, handle } | null }
   }
-  GET /store/lots?limit&offset → { lots: StoreLot[], count, limit, offset }, ordered by end_time ASC, default limit 20, max 100
+  GET /store/lots?limit&offset&status → { lots: StoreLot[], count, limit, offset }, default limit 20, max 100.
+    status = auction status, one of PUBLIC_AUCTION_STATUSES (anything else → 400). No status → scheduled + live,
+    ordered by end_time ASC. status=closed → closed auctions' lots, ordered by end_time DESC (newest result first).
   GET /store/lots/:id → { lot: StoreLot }; 404 when the lot is missing OR its auction isn't public (a draft lot id must not leak)
+The raw lot status is not returned (won/paid/shipped would tell about the winner); `sold` is the only result field.
 Never selected: payer_customer_id, winner_customer_id, listing_fee, fee_override_*, rejection_reason,
   cancel_reason, extend_window_minutes, any seller field other than id/name/handle.
 Filtering lots by auction status: try a same-module relation filter on `lot` (filters: { auction: { status } }).
@@ -441,13 +452,16 @@ Write the mapper in the store route file. Don't import from src/api/vendor/** (d
 
 ## Do not touch
 - apps/**
-- src/api/vendor/auctions/**, src/api/admin/auctions/**, src/workflows/** (US-030–032 under qa)
 - src/modules/auction/models/** (no schema change in this task)
 
 ## Spec
 packages/api/integration-tests/http/store-lots.spec.ts:
-- a live and a scheduled auction's lots are listed, ordered by end_time; draft / pending_approval / cancelled lots are not
-- GET /store/lots/:id: 200 for a public lot; 404 for a draft auction's lot
+- a live and a scheduled auction's lots are listed, ordered by end_time; draft / pending_approval / cancelled / closed lots are not (no status)
+- status=closed lists a closed auction's lots: a won lot with final_price set and sold true, an unsold lot with sold false
+- status=cancelled or status=draft → 400
+- GET /store/lots/:id: 200 for a public lot, including a closed one; 404 for a draft and a cancelled auction's lot
+- a closed lot whose winner_customer_id is set: neither the list nor GET /store/lots/:id contains the substring "winner"
+  (no winner key of any kind) or the winner's customer id value
 - join_fee = the override when set
 - JSON.stringify(response) contains none of: payment_details, custom_fields, professional_details, phone, email,
   payer_customer_id, winner_customer_id, listing_fee, fee_override_reason
@@ -460,7 +474,7 @@ cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clea
 Report: standard header + API contract (method, path, query, response, errors).
 
 ## Open questions
-mvp-Q28 (owner). Build behind the one constant.
+none (mvp-Q28 answered, D-046)
 ```
 
 ```text
@@ -471,26 +485,29 @@ Starts after: T-040.1 has delivered its contract and codegen.
 ## Acceptance criteria
 - AC1: `lelang` and lot pages show API data. The demo constants are removed. (This task: the `lelang` feed.)
 - AC2: Each lot shows photos, OB, KB, current price and time left. (Card: photo, current price, time left.)
+- AC3: A closed lot shows final price and "Terjual" / "Tidak terjual" under "Selesai", never who won (D-046).
 
 ## Decisions in force
 D-005 @koi/ui; typed @mercurjs/client only; D-039 nothing beyond seller name/handle is shown; money id-ID via formatPrice.
-mvp-Q28: tabs follow the public statuses. Under (a), drop the "Selesai" tab; under (b), keep it.
+D-046: keep the "Selesai" tab. A closed lot shows final price and "Terjual" / "Tidak terjual", never the winner.
 
 ## Endpoint inventory
 | Method | Path | Exists? | Shape / owner |
 |---|---|---|---|
-| GET | /store/lots?limit&offset | no → T-040.1 (ordered first) | { lots: StoreLot[], count, limit, offset } |
+| GET | /store/lots?limit&offset&status | no → T-040.1 (ordered first) | { lots: StoreLot[], count, limit, offset }; no status = scheduled + live, status=closed = results |
 | GET | /store/lots/:id | no → T-040.1 | { lot: StoreLot } (used by T-040.2b) |
 
 ## Build
-- src/lib/data/lots.ts: listLots(limit = FEED_LIMIT) and getLot(id), both `cache: 'no-store'`. getLot returns null on 404.
-- src/lib/adapters/lot.ts: StoreLot → AuctionProduct. Status: auction scheduled → "upcoming", live → "live"
-  (closed → "ended" only under Q28 (b)). currentBid = current_price, endsAt = end_time,
+- src/lib/data/lots.ts: listLots({ limit = FEED_LIMIT, status? }) and getLot(id), both `cache: 'no-store'`. getLot returns null on 404.
+- src/lib/adapters/lot.ts: StoreLot → AuctionProduct. Status: sold !== null (lot closed) → "ended"; else auction
+  scheduled → "upcoming", live → "live". Ended: currentBid = final_price ?? current_price, plus a sold flag for the
+  "Terjual" / "Tidak terjual" label. Otherwise currentBid = current_price. endsAt = end_time,
   image = photos[0], listing = { seller: auction.seller.name, sellerKind: "farm",
   category: auction.category.name, note: description }.
   Leave bidCount and bids undefined (no bids until US-044). Add a node:test file next to it.
 - Add `openingBid` and `bidStep` (optional numbers) to AuctionState in src/types/product.ts, filled from ob/kb (T-040.2b renders them).
-- AuctionsPage (server) loads listLots() and passes `lots` down through AuctionsFeed → Auctions. Remove the
+- AuctionsPage (server) loads listLots() and listLots({ status: "closed" }) and passes both, joined, as `lots` down
+  through AuctionsFeed → Auctions; the "Selesai" tab shows the ended ones. Never render a winner. Remove the
   DEFAULT_AUCTION_LOTS default from Auctions.tsx. Keep client-side filterGoods over the first FEED_LIMIT lots,
   like CategoryPage, with a `ponytail:` note (ceiling 100 lots; upgrade: server-side filter params).
 
@@ -509,7 +526,7 @@ render-check skill on http://127.0.0.1:3001/lelang with a seeded live + schedule
 Report: standard header + screenshot path.
 
 ## Open questions
-mvp-Q28 (tabs).
+none
 ```
 
 ```text
@@ -520,6 +537,7 @@ Starts after: T-040.2a (shares lib/data/lots.ts and lib/adapters/lot.ts).
 ## Acceptance criteria
 - AC1: `lelang` and lot pages show API data. The demo constants are removed.
 - AC2: Each lot shows photos, OB, KB, current price and time left. (The lot page shows all five.)
+- AC3: A closed lot's page shows final price and "Terjual" / "Tidak terjual", never who won (D-046).
 
 ## Decisions in force
 Same as T-040.2a.
@@ -534,7 +552,8 @@ Same as T-040.2a.
 - app/(main)/lelang/[id]/page.tsx: generateMetadata uses getLot(id).
 - LotDetailsPage (server) loads getLot(id) (null → notFound()) and listLots(), and passes lot, lots and
   media = photos.map(src => ({ src, kind: "image" })) to LotDossier → LotPage. LotDossier stops reading demo data.
-- LotPage: render OB (openingBid) and KB (bidStep) with formatPrice next to the current price. Remove the
+- LotPage: render OB (openingBid) and KB (bidStep) with formatPrice next to the current price. A closed lot (D-046):
+  final price and "Terjual" / "Tidak terjual" in place of the current price and countdown; no winner shown. Remove the
   DEFAULT_AUCTION_LOT / DEFAULT_AUCTION_LOTS / DEFAULT_LIVE_MEDIA defaults for lot, lots and media.
 - const/auctions.ts keeps only UI config (DEFAULT_AUCTION_FILTER, _TABS, _SORTS, STATUS_LABEL). Delete DEFAULT_AUCTION_LOTS,
   DEFAULT_AUCTION_LOT, the demo bidders and bidsFor. Move what other screens still import:
@@ -556,7 +575,7 @@ render-check skill on http://127.0.0.1:3001/lelang/<seeded lot id> and on an unk
 Report: standard header + screenshot paths.
 
 ## Open questions
-none beyond mvp-Q28.
+none
 ```
 
 ```text
@@ -573,7 +592,7 @@ Same as T-040.2a.
 ## Endpoint inventory
 | Method | Path | Exists? | Shape / owner |
 |---|---|---|---|
-| GET | /store/lots?limit | no → T-040.1 | { lots: StoreLot[], count, limit, offset } |
+| GET | /store/lots?limit | no → T-040.1 | { lots: StoreLot[], count, limit, offset }; no status = scheduled + live only |
 
 ## Build
 HomePage (server) loads listLots(SHELF_LIMIT) once. featured = the lot whose end_time comes first; lots = the rest.
@@ -599,33 +618,34 @@ none
 Story: US-040 (task T-040.3)   Release: mvp
 Agent: qa   Expected: <=30 min
 
-Verify AC1, AC2. Decisions: D-017, D-039, D-044, D-045, D-032.
+Verify AC1, AC2, AC3. Decisions: D-017, D-039, D-044, D-045, D-032, D-046.
 Code under test: packages/api/src/api/store/lots/**, apps/storefront-koi/src/lib/{data/lots.ts,adapters/lot.ts}, AuctionsPage/**, LotDetailsPage/**, const/auctions.ts.
 Commands (alone): cd packages/api && bun run test:integration:http -- store-lots; cd apps/storefront-koi && bun run check.
 Browser (render-check): /lelang and /lelang/<id> signed out. Every lot is a seeded API lot; OB, KB, current price and countdown are on the lot page.
+A seeded closed auction: its lots are under "Selesai" with final price and Terjual / Tidak terjual; no winner on the card or lot page.
 Watch for: any PII or private field in /store/lots responses (curl it and grep for phone/email/payment_details/custom_fields/
-payer_customer_id/winner_customer_id); a draft or pending lot reachable by id; demo picsum images or "Sakai Fish Farm" left anywhere in /lelang.
+payer_customer_id/winner_customer_id, and "winner" at all on a closed lot); a draft, pending or cancelled lot reachable by id; demo picsum images or "Sakai Fish Farm" left anywhere in /lelang.
 Report PASS/FAIL per AC with file:line and command output. Don't change app code.
 ```
 
-### US-041 Customer joins an auction · `blocked (mvp-Q29, mvp-Q30)`
+### US-041 Customer joins an auction · `todo`
 As a **customer**, I want to join an auction by paying the join fee once so that
 I can bid on all its lots. *(Plan: Structure, Fair play, Strikes)*
 - AC1: Join fee recorded as `join_fee` (−) once per auction. The participant is added in the same workflow.
 - AC2: Short balance blocks joining with a "top up" prompt.
 - AC3: Joining is allowed any time until the auction ends, including after bidding starts.
-- AC4: A farmer can't join their own auction. A banned customer can't join.
+- AC4: A farmer can't join their own auction. A banned customer can't join. *(Ban clause delivered and verified by US-059 T-059.1, D-047; not checked in this story.)*
 - [ ] T-041.1a [backend] `auction_participant` model + migration (unique per auction + customer)
 - [ ] T-041.1b [backend] Join workflow + `POST`/`GET /store/auctions/:id/join` (balance check, charge, participant)
 - [ ] T-041.2 [storefront] Join button with the fee shown and a short-balance prompt
-- [ ] T-041.3 [qa] Joining twice charges once; own-auction and banned users are blocked
+- [ ] T-041.3 [qa] Joining twice charges once; own-auction users are blocked (banned users: US-059, D-047)
 
-**Readiness (2026-11-15):** blocked by `mvp-Q29` (bans) and `mvp-Q30` (when "the auction ends"). Where each rule comes from:
+**Readiness (2026-11-15):** ready. `mvp-Q29` answered (D-047) and `mvp-Q30` answered (D-048). Depends on US-040 (below). Where each rule comes from:
 - **Charge:** plan "How credit moves" step 4 and Key flows "Join auction". One workflow checks the balance, records `join_fee` (−) and adds the participant, all or nothing. The amount is the final join fee, `fee_override_join_fee ?? join_fee` (D-032). The balance is a sum of the ledger, never a stored number (CLAUDE.md §8). The wallet row is locked with the same `wallet:<id>` key as approval and adjustments. No wallet (profile incomplete, D-011) counts as Rp0 and gets the top-up prompt.
 - **Joining twice:** AC1 "once per auction". A database unique index on (auction_id, customer_id), plus a refusal before any charge (409 `already_joined`). Nothing is charged a second time.
 - **Own auction:** plan Fair play, "A farmer cannot join or bid on their own auction". Checked by comparing the caller's customer id with `auction.payer_customer_id`, the farmer's customer id saved at submit (D-033). Every `scheduled`/`live` auction passed submit, so the field is always set. No customer↔seller link is needed (D-003). ponytail: a farm with a second member isn't caught. Upgrade path: also match seller members, when a farm can have more than one.
-- **Closed auction:** AC3 / plan Structure, "any time until the auction ends". `draft`, `pending_approval`, `closed` and `cancelled` are refused. `scheduled` (before the start) and `live` are allowed. What "ends" means once a lot has been extended past `end_at` is `mvp-Q30`.
-- **Banned customer:** AC4. No ban exists in the code yet. Strikes and bans are US-059 (Milestone 5), whose T-059.1 already says "an active-strike check used by join". Which story delivers it is `mvp-Q29`.
+- **Closed auction:** AC3 / plan Structure, "any time until the auction ends". `draft`, `pending_approval`, `closed` and `cancelled` are refused. `scheduled` (before the start) and `live` are allowed, including while a lot runs past `end_at` on extends (D-048).
+- **Banned customer:** AC4. No ban exists in the code yet. US-041 ships without a ban check; US-059 T-059.1 adds it to join (and bid) and US-059's qa verifies it (D-047). **Dependency note for qa:** don't fail US-041 on the ban clause.
 - **No refund on leaving** (plan Cancellations): no leave route is built. Refunds on cancel are US-060 / US-091. They will find participants in this table and charges by `reference = auction_id`.
 - Depends on US-040 (the lot page the button sits on, and `GET /store/lots/:id`).
 
@@ -675,25 +695,26 @@ none
 ```text
 Story: US-041 (task T-041.1b)   Release: mvp
 Agent: backend   Expected: <=45 min
-Starts after: T-041.1a. Waits for mvp-Q29 and mvp-Q30.
+Starts after: T-041.1a.
 
 ## Acceptance criteria
 - AC1: Join fee recorded as `join_fee` (−) once per auction. The participant is added in the same workflow.
 - AC2: Short balance blocks joining with a "top up" prompt.
 - AC3: Joining is allowed any time until the auction ends, including after bidding starts.
-- AC4: A farmer can't join their own auction. A banned customer can't join. (Ban part: per mvp-Q29.)
+- AC4: A farmer can't join their own auction. (Ban part: delivered by US-059 T-059.1, D-047. Not in this task.)
 
 ## Decisions in force
 D-032: fee = fee_override_join_fee ?? join_fee.
 D-033: auction.payer_customer_id = the farmer's customer id (own-auction check).
+D-047: no ban check in this task. D-048: joinable while status is scheduled or live, also past end_at.
 D-011 / D-019 spirit: no wallet = Rp0. The balance never goes below Rp0 (check under the lock).
 CLAUDE.md §8: ledger append-only; balance = SUM; lock the wallet; every mutation in a workflow.
 
 ## Build
 src/workflows/join-auction.ts (input: auction_id, customer_id from req.auth_context.actor_id):
   1. acquireLockStep `auction-join:<auction_id>:<customer_id>`
-  2. guard step (read-only): the auction exists (404); its status is scheduled or live (409 code `auction_not_joinable`;
-     add the mvp-Q30 end_at rule if the owner picks (b)); payer_customer_id !== customer_id (403 code `own_auction`);
+  2. guard step (read-only): the auction exists (404); its status is scheduled or live, otherwise 409 code
+     `auction_not_joinable` (D-048: no end_at check); payer_customer_id !== customer_id (403 code `own_auction`);
      not already a participant (409 code `already_joined`). Returns the fee and the customer's wallet id.
   3. acquireLockStep `wallet:<wallet_id>` (same key as decide-auction.ts:57-62)
   4. balance check step: SUM via walletBalance(); short → 400 code `insufficient_balance`, message names the join fee
@@ -702,12 +723,12 @@ src/workflows/join-auction.ts (input: auction_id, customer_id from req.auth_cont
      no compensation (same reasoning as chargeListingFeeStep).
   7. release both locks
   Fee Rp0 (an admin override): still adds the participant. Write no Rp0 ledger row; say so in a comment.
-  New steps go in src/workflows/steps/join-fee.ts. Don't edit steps/listing-fee.ts (US-031/032 under qa); import walletBalance from api/store/wallet/route.ts.
+  New steps go in src/workflows/steps/join-fee.ts. Don't edit steps/listing-fee.ts; import walletBalance from api/store/wallet/route.ts.
 Routes: src/api/store/auctions/[id]/join/route.ts
   POST → 201 { participant: { auction_id, joined_at }, wallet_transaction_id }
   GET  → { joined: boolean, join_fee: number }
   Both: authenticate("customer", ["bearer","session"]) in middlewares.ts. Identity only from auth_context. No body (POST strict empty).
-Ban (mvp-Q29): option (a) → no ban step; leave a `ponytail:` naming US-059 T-059.1. Option (b) → wait for US-059.
+Ban (D-047): no ban step. Leave a `ponytail:` in the guard naming US-059 T-059.1 as the place the ban check lands.
 
 ## Start from
 - packages/api/src/workflows/decide-auction.ts:31-99 (lock order, balance check, last-mutation charge)
@@ -724,6 +745,7 @@ Ban (mvp-Q29): option (a) → no ban step; leave a `ponytail:` naming US-059 T-0
 packages/api/integration-tests/http/join-auction.spec.ts:
 - live auction, balance ≥ fee → 201; one `join_fee` row = −fee with reference = auction id; balance drops by fee
 - scheduled auction → allowed (AC3, before the start)
+- live auction with end_at in the past (a lot in extension) → allowed (D-048)
 - second POST → 409 already_joined; still one ledger row
 - two concurrent POSTs → exactly one 201, one ledger row
 - balance < fee → 400 insufficient_balance; no participant, no ledger row
@@ -742,7 +764,7 @@ cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clea
 Report: standard header + API contract (both routes, error codes).
 
 ## Open questions
-mvp-Q29, mvp-Q30 (owner); must be answered before dispatch.
+none (mvp-Q29 → D-047, mvp-Q30 → D-048)
 ```
 
 ```text
@@ -791,28 +813,29 @@ render-check skill: /lelang/<live lot> as a seeded customer with enough balance 
 Report: standard header + screenshot paths.
 
 ## Open questions
-none beyond mvp-Q29 / mvp-Q30.
+none
 ```
 
 ```text
 Story: US-041 (task T-041.3)   Release: mvp
 Agent: qa   Expected: <=30 min
 
-Verify AC1–AC4. Decisions: D-011, D-032, D-033, CLAUDE.md §8 (append-only, SUM, wallet lock).
+Verify AC1–AC4. Decisions: D-011, D-032, D-033, D-047, D-048, CLAUDE.md §8 (append-only, SUM, wallet lock).
 Code under test: src/modules/auction/models/auction-participant.ts, src/workflows/join-auction.ts, steps/join-fee.ts,
 src/api/store/auctions/[id]/join/route.ts, storefront lib/data/join.ts + the lot page CTA.
 Commands (alone, one Jest run at a time): cd packages/api && bun run test:integration:modules -- auction-participant;
 bun run test:integration:http -- join-auction; cd apps/storefront-koi && bun run check.
 Watch for: a double charge under concurrency; a charge without a participant or the reverse; balance read outside
 the wallet lock; a ledger row updated or deleted; join allowed on closed/cancelled/draft; the farmer joining their own auction;
-identity taken from the body. Ban part of AC4: verify per the mvp-Q29 answer.
+identity taken from the body; join refused on a live auction past end_at (D-048 allows it).
+Ban part of AC4: not in this story (D-047, delivered and verified by US-059). Don't fail US-041 on it.
 Report PASS/FAIL per AC with file:line and command output. Don't change app code.
 ```
 
 
 ### US-042 Customer places a bid on the website · `todo`
 As a **joined customer**, I want to bid on a lot so that I can win it. *(Plan: Bidding, Pricing per lot; D-023)*
-- AC1: Only joined customers can bid. Not the farmer, not banned users.
+- AC1: Only joined customers can bid. Not the farmer, not banned users. *(Ban clause delivered and verified by US-059 T-059.1, D-047; not checked in this story.)*
 - AC2: The first bid on a lot may equal OB. Every later bid must be at least current price + KB. A lower bid is rejected with the minimum allowed amount (D-023). "First" means no bid that isn't removed: once every bid is removed, the next may equal OB again (D-036).
 - AC3: The lot row is locked and the server's timestamp decides order. Of two equal bids, the first wins and the second is rejected with the new current price.
 - AC4: Bids can't be retracted.
@@ -963,9 +986,9 @@ offenders are banned. *(Plan: Strikes)*
 - AC2: 2 active strikes = ban. A banned winner can't join or bid. A banned farmer can't create auctions.
 - AC3: Strikes expire after 6 months. Admin can remove a strike with a reason.
 - AC4: Every ban and every suspend needs a written reason, the same rule as a farm rejection (D-041). admin-koi refuses the action without one.
-- [ ] T-059.1 [backend] `strike` model + give/remove workflows + an active-strike check used by join, bid and create; every suspend and ban passes `reason` (D-041)
+- [ ] T-059.1 [backend] `strike` model + give/remove workflows + an active-strike check used by join, bid and create; every suspend and ban passes `reason` (D-041). Adds the ban check into US-041's join workflow and US-042's place-bid workflow (D-047); those stories ship without it
 - [ ] T-059.2 [admin] Strike actions on reports and users
-- [ ] T-059.3 [qa] An expired strike no longer counts; the ban lifts when active strikes drop below 2
+- [ ] T-059.3 [qa] An expired strike no longer counts; the ban lifts when active strikes drop below 2; a banned customer's join and bid are refused (US-041 AC4 and US-042 AC1 ban clauses, D-047)
 
 ### US-060 Farmer cancels an auction · `todo`
 As a **farmer**, I want to cancel my auction before it starts so that I can
@@ -1019,13 +1042,14 @@ so that auctions stay fair. *(Plan: Bidding, Milestone 6; D-024, D-036)*
 - [ ] T-072.2 [admin] Live monitoring screen with remove-bid and a required reason
 - [ ] T-072.3 [qa] After removal: bid row still exists and is marked removed; price = highest remaining bid or OB; end time unchanged; removal on a closed lot refused; after removing every bid, a bid = OB is accepted
 
-### US-091 Admin cancels lots and live auctions · `todo`
+### US-091 Admin cancels lots and live auctions · `blocked (mvp-Q32)`
 **Depends on:** US-092 (masking of bidder details; the full value only through the logged reveal, D-042).
 As an **admin**, I want to cancel a lot that has bids, or a live auction, so that
 a broken listing can be stopped. *(Plan: Cancellations, Lot lifecycle; D-022, D-034, D-035)*
 - AC1: Only admin can cancel a lot: `open → cancelled`, with a saved reason and no winner (D-035).
 - AC2: Once an auction is `live`, only admin can cancel it (D-022).
 - AC3: An admin cancel of an auction refunds every participant's join fee as a `refund` (+), the same as a farmer cancel. The listing fee is not refunded (D-034).
+**Blocked by `mvp-Q32`:** whether a cancelled lot inside a public auction stays on `/store/lots` (US-040) decides what the cancel changes on the public pages.
 **PII (D-039, D-042):** bidder and participant details shown on the cancel and monitoring screens are masked, as on every admin route; the full value only through the logged reveal. US-092 delivers it.
 - [ ] T-091.1 [backend] Cancel-lot and cancel-live-auction workflows + `/admin` routes (moved from T-072.1)
 - [ ] T-091.2 [admin] Cancel actions with a required reason on the live monitoring screen
@@ -1160,14 +1184,14 @@ table complete.
 | Lot lifecycle and statuses (incl. `cancelled`, D-035) | US-033, US-050, US-052, US-053, US-054, US-091 |
 | Auction statuses (`pending_approval`, rejection back to `draft`, D-031) | US-030, US-031, US-032, US-033, US-060 |
 | Claim statuses (D-027, D-038) | US-054, US-055, US-056, US-061 |
-| Structure (20 lots, 1–7 days, approval, rejection) | US-015, US-030, US-032 |
+| Structure (20 lots, 1–7 days, approval, rejection, approval refused after start D-049, join while scheduled or live D-048, public statuses D-046) | US-015, US-030, US-032, US-040, US-041 |
 | Pricing per lot (OB, KB, first bid = OB, D-023) | US-030, US-042 |
 | Bidding (incl. bid removal, D-024, D-036) | US-042, US-044, US-072 |
 | Extend (anti-sniping) | US-043, US-015, US-030 |
-| Fair play (incl. shill-bidding table, D-028, D-037) | US-041, US-042, US-071 |
+| Fair play (incl. shill-bidding table, D-028, D-037; ban check on join and bid lands with strikes, D-047) | US-041, US-042, US-059, US-071 |
 | Closing and winners | US-050, US-051 |
 | Winner doesn't pay (second bidder off-platform, D-026) | US-058, US-059 |
-| Strikes | US-059 |
+| Strikes (incl. ban check on join and bid, D-047) | US-059 |
 | Delivery | US-030, US-052, US-053 |
 | Dead-on-arrival claims (on-site notices D-025, auto-confirm D-027) | US-054, US-055, US-056, US-061 |
 | Cancellations (farmer before start, admin once live, D-022, D-031, D-034, D-035) | US-060, US-091 |
@@ -1208,7 +1232,7 @@ is built. Record the answer here, in `plan.md`, and as a decision in `docs/produ
 | mvp-Q12 | **Answered in part 2026-11-15 (D-029):** stays with Qontak (not Meta Cloud API direct). **Remaining:** the owner's written Qontak quote (price, Bot + User tokens, webhook access, webhook retry/signature, rate limits, utility charging inside the window, onboarding time), tracked as T-080.5. Owner also starts Meta Business verification now (T-080.2). *(Earlier: capability confirmed by T-080.1 research, 2026-11-14.)* | US-080 – US-085 |
 | mvp-Q13 | **Answered 2026-11-15 (D-021):** option (b); rejection returns the auction to `draft` with a written reason the farmer sees; no new status. *(Was: add `rejected`, back to `draft`, or `cancelled`?)* | none (was US-032, US-033; see mvp-Q17) |
 | mvp-Q14 | **Answered 2026-11-15 (D-027):** enum approved as proposed; closed = `confirmed` or `rejected`; new rule: auto-confirm 3 days after `resolved` by the existing scheduled job. *(Was: what are the claim statuses, and which count as closed?)* | none (was US-054, US-055, US-056, US-061) |
-| mvp-Q15 | **Answered 2026-11-14 from a code reading, pending runtime verification in US-031:** option (a); the member token's `app_metadata` contains `customer_id`. *(Was: how does the listing-fee charge find the farmer's **customer** wallet? Wallets link to customers (`plan.md`, Custom modules), but farmer routes use a member token plus `x-seller-id` (D-003), and D-003 forbids a custom customer↔seller link. Options: (a) read `customer_id` from the shared auth identity's `app_metadata` (D-003 says it holds both ids; whether a member token exposes it is not verified); (b) the create-auction call also sends the farmer's customer token; (c) charge on a separate step from the storefront under the customer token.)* | none (was US-031) |
+| mvp-Q15 | **Answered 2026-11-14, verified at runtime in US-031** (`farmer-auctions.spec.ts:496`): option (a); the member token's `app_metadata` contains `customer_id`. *(Was: how does the listing-fee charge find the farmer's **customer** wallet? Wallets link to customers (`plan.md`, Custom modules), but farmer routes use a member token plus `x-seller-id` (D-003), and D-003 forbids a custom customer↔seller link. Options: (a) read `customer_id` from the shared auth identity's `app_metadata` (D-003 says it holds both ids; whether a member token exposes it is not verified); (b) the create-auction call also sends the farmer's customer token; (c) charge on a separate step from the storefront under the customer token.)* | none (was US-031) |
 | mvp-Q16 | **Answered 2026-11-15 (D-030, supersedes D-003's re-login bullet):** proposed text approved. *(Was: D-003 says re-login "after admin approves", but the code needs it right after registration.)* | none |
 | mvp-Q17 | **Answered 2026-11-15 (D-031):** add `pending_approval`: `draft → pending_approval → scheduled → live → closed \| cancelled`. Submit moves `draft → pending_approval` (with the D-020 check); rejection moves `pending_approval → draft` with a reason; the queue filters on `pending_approval`; farmer cancel also allowed there. Supersedes D-021. *(Was: no state for "submitted, awaiting approval".)* | none (was US-031, US-032) |
 | mvp-Q18 | **Answered 2026-11-15 (D-032):** fees recomputed at every submit (category's current fee × lots); an admin override is cleared on rejection and reapplied at approval if wanted. *(Was: which fees apply on resubmission, does an override survive rejection?)* | none (was US-031, US-032) |
@@ -1221,7 +1245,8 @@ is built. Record the answer here, in `plan.md`, and as a decision in `docs/produ
 | mvp-Q25 | **Answered 2026-11-15 (D-042):** admins see masked PII everywhere, admin-only routes and UI included; the full value only through an explicit reveal action logged with who, when, record and field. Covers KTP/NIK, bank account and phone. *(Was: how does an admin review PII that their screens now show masked? Options were (a) admins exempt, (b) masked plus a logged reveal, (c) masking only outside admin.)* | none (was US-021 AC1, US-092 T-092.2/T-092.5, US-070, US-091) |
 | mvp-Q26 | **Answered 2026-11-15 (D-043):** column-level encryption for NIK, bank account and phone, on top of whole-disk/storage encryption; the existing wallet and top-up tables are included in US-092, not a follow-up; existing plain values are migrated by a one-off script that encrypts in place, verifies and leaves no plaintext. US-010 – US-015 stay `done`. *(Was: whole-disk, column-level, or both; do the wallet/top-up tables need it now, and do accepted stories need a follow-up?)* | none (was US-092; US-010 – US-013) |
 | mvp-Q27 | **Answered 2026-11-15 (D-044):** the winner sees the farmer's full bank account, but only for the lot they won, through the same logged reveal as D-042. A narrow exception to D-039, coordinated with D-040. *(Was: full account to pay, or a masked account with another payment path?)* | none (was US-051) |
-| mvp-Q28 | **Which auction statuses are public on `/lelang` and the lot pages?** The plan doesn't say. US-040 says "live and upcoming". Options: (a) `scheduled` + `live` only; closed lots disappear and the "Selesai" tab goes. (b) Also `closed`, with final price and "terjual / tidak terjual", never the winner's identity. (c) (b), but only for N days after closing. `cancelled` is never public in any option. | US-040 |
-| mvp-Q29 | **Banned customers vs. join, before bans exist.** No ban or strike exists in the code. Strikes/bans are US-059 (Milestone 5), and its T-059.1 already adds "an active-strike check used by join, bid and create". The admin's manual ban (shill bidding, US-070) has no mechanism decided either. Options: (a) US-041 ships without a ban check; the "banned customer can't join" clause of US-041 AC4 (and US-042 AC1) is delivered and verified by US-059. (b) Build US-059's ban check before US-041. (c) A minimal manual ban flag now (US-070 scope pulled forward). | US-041 (AC4) |
-| mvp-Q30 | **When does an auction "end" for joining?** (plan Structure: "join at any time until the auction ends".) Lots extend one by one past the auction's `end_at`; the auction becomes `closed` only when every lot is closed (US-050 T-050.2). Options: (a) joinable while the auction is `scheduled` or `live`, so a customer may still join, and bid on, a lot that is in extension after `end_at`. (b) Joining closes at the auction's `end_at`, even while a lot is still extended. | US-041 |
-| mvp-Q31 | **Approving an auction whose start time has already passed.** Approval (US-032) doesn't check `start_at`. The start job (US-033) would move it to `live` within a minute, shorter than the farmer planned. Options: (a) allow it (it goes live at once). (b) Refuse approval when `start_at` is in the past; the admin rejects it and the farmer resubmits with new dates. (c) Allow it, and shorten or shift nothing. | none (US-033 works either way; (b) would be a US-032 follow-up) |
+| mvp-Q28 | **Answered 2026-11-15 (D-046):** option (b); `scheduled`, `live` and `closed` are public; a closed lot shows final price and sold/unsold, never who won; the "Selesai" tab stays. *(Was: which auction statuses are public on `/lelang` and the lot pages? Options were (a) `scheduled` + `live`, (b) also `closed`, (c) (b) for N days.)* | none (was US-040) |
+| mvp-Q29 | **Answered 2026-11-15 (D-047):** option (a); US-041 ships without a ban check; US-059 T-059.1 adds it to join and bid; the ban clauses of US-041 AC4 and US-042 AC1 are delivered and verified by US-059. *(Was: banned customers vs. join, before bans exist.)* | none (was US-041) |
+| mvp-Q30 | **Answered 2026-11-15 (D-048):** option (a); joinable while the auction is `scheduled` or `live`, including while a lot runs past `end_at` on extends; any other status → 409 `auction_not_joinable`. *(Was: when does an auction "end" for joining?)* | none (was US-041) |
+| mvp-Q31 | **Answered 2026-11-15 (D-049):** option (b); approval is refused when `start_at` is now or past (400 `start_passed`, nothing charged, stays `pending_approval`); the admin rejects it so the farmer picks new dates. Follow-up US-032 T-032.6, T-032.7. *(Was: approving an auction whose start time has already passed.)* | none |
+| mvp-Q32 | **Is a cancelled lot (D-035) in a public auction shown on the public pages?** D-046 makes `closed` auctions public and says `cancelled` auctions never are, but says nothing about a single cancelled lot inside a `live` or `closed` auction. Options: (a) hidden from `/store/lots` and the lot page (404). (b) Shown as "Dibatalkan" with no price and no winner. No lot can be cancelled before US-091, so US-040 doesn't wait for it. | US-091 (must be answered before it) |

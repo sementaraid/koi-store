@@ -524,3 +524,48 @@ record, with no reveal step. The scope is narrow:
 **Reason:** A person needs their own phone and account number to use the site;
 masking them to the owner adds friction and protects nothing.
 **Source:** Owner follow-up, 2026-11-15 (after D-042, D-044).
+
+### D-046: Public pages show scheduled, live and closed auctions; never the winner
+**Decision:** `/lelang`, the lot pages and the public store routes show lots of
+auctions whose status is `scheduled`, `live` or `closed`. `draft`,
+`pending_approval` and `cancelled` are never public.
+- A closed lot shows its final price and whether it sold or went unsold
+  ("terjual / tidak terjual"). It never shows who won: no winner id, name,
+  masked name or any other winner field on a public route or page.
+- The feed keeps its "Selesai" tab for closed lots.
+- Answered `mvp-Q28`, option (b) with no time limit; unblocks US-040.
+**Reason:** Past results show buyers real prices and build trust; the winner's
+identity is private.
+**Source:** Owner, answer to `mvp-Q28` (2026-11-15).
+
+### D-047: Join ships before bans; the ban check lands with strikes
+**Decision:** US-041 (join) ships without a ban check. US-059 T-059.1 adds the
+active-strike ban check to join, and to bid (US-042 AC1), when strikes exist.
+- The "a banned customer can't join" clause of US-041 AC4 and "not banned
+  users" in US-042 AC1 are delivered and verified by US-059, not by US-041 or
+  US-042.
+- Answered `mvp-Q29`, option (a); unblocks US-041.
+**Reason:** No ban exists yet, so there is nothing to check; building strikes
+first would hold back Milestone 4.
+**Source:** Owner, answer to `mvp-Q29` (2026-11-15).
+
+### D-048: Customers may join while the auction is scheduled or live
+**Decision:** "Until the auction ends" means: a customer can join while the
+auction's status is `scheduled` or `live`. That includes the time a lot runs
+past the auction's `end_at` because of extends; the auction is still `live`
+until every lot has closed (US-050). Any other status refuses the join.
+- Answered `mvp-Q30`, option (a); unblocks US-041.
+**Reason:** A lot in extension is still open for bids; joining follows the
+auction's status, not its planned end time.
+**Source:** Owner, answer to `mvp-Q30` (2026-11-15).
+
+### D-049: Approval is refused once the start time has passed
+**Decision:** The admin can't approve an auction whose `start_at` is now or in
+the past. Approval fails with a clear error, nothing is charged, and the auction
+stays `pending_approval`. The admin rejects it with a reason (D-031) so the
+farmer picks new dates and resubmits.
+- Answered `mvp-Q31`, option (b). Follow-up tasks T-032.6 and T-032.7; US-032
+  stays `done`.
+**Reason:** An auction that goes live at once runs shorter than the farmer
+planned and its bidders had no notice.
+**Source:** Owner, answer to `mvp-Q31` (2026-11-15).

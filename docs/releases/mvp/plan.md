@@ -106,11 +106,12 @@ An admin can cancel an open lot (`open → cancelled`, reason saved, no winner, 
 **Structure**
 
 - An **auction** is an event by one farmer with a start time, end time, one category and a join fee. It holds up to **20 lots**, one koi each, and runs **1 to 7 days**. Admin can change both limits.
-- Every auction needs **admin approval** before it is scheduled. Admin checks the category, photos and fees.
+- Every auction needs **admin approval** before it is scheduled. Admin checks the category, photos and fees. Approval is refused once the auction's start time has passed; the admin rejects it so the farmer picks new dates (D-049).
 - Submitting an auction moves it to `pending_approval`; the admin queue lists only those (D-031).
 - If the admin **rejects** an auction, it goes from `pending_approval` back to `draft` with a written reason the farmer sees. The farmer fixes it and resubmits. There is no rejected status (D-031).
 - The join fee is paid once per auction and covers all its lots (fees come from the fee table above).
-- Customers can join at any time until the auction ends, including after bidding has started.
+- Customers can join at any time until the auction ends, including after bidding has started: while the auction is `scheduled` or `live`, including while a lot runs past `end_at` on extends (D-048).
+- Public pages (`/lelang`, lot pages) show auctions that are `scheduled`, `live` or `closed`. A closed lot shows its final price and whether it sold, never who won (D-046).
 
 **Pricing per lot (set by the farmer)**
 
@@ -152,7 +153,7 @@ An admin can cancel an open lot (`open → cancelled`, reason saved, no winner, 
 
 - **Winners** get a strike for not paying within 1×24 hours.
 - **Farmers** get a strike for not shipping a paid lot, or for refusing an approved dead-on-arrival claim.
-- Admin gives every strike after checking the report. **2 active strikes = ban**: a banned winner can't join or bid; a banned farmer can't create auctions.
+- Admin gives every strike after checking the report. **2 active strikes = ban**: a banned winner can't join or bid; a banned farmer can't create auctions. The ban check on join and bid lands with strikes (US-059), not with join or bid (D-047).
 - Every ban or suspend needs a written reason, the same rule as a farm rejection (D-041). This covers Mercur's `POST /admin/sellers/:id/suspend` and every customer ban.
 - Strikes expire after **6 months**. Admin can remove a strike if there was a good reason.
 
@@ -314,6 +315,11 @@ Full text and options: `stories.md`, Open questions.
 - [x] Lot status `cancelled` (D-035, `mvp-Q20`).
 - [x] Bid removal only on open lots; OB rule after removals (D-036, `mvp-Q21`).
 - [x] Unpaid win = non-payment report, all time (D-037, `mvp-Q22`).
+- [x] Public statuses `scheduled`, `live`, `closed`; a closed lot shows final price and sold/unsold, never the winner (D-046, `mvp-Q28`).
+- [x] Join ships without a ban check; US-059 adds it to join and bid (D-047, `mvp-Q29`).
+- [x] Joining allowed while the auction is `scheduled` or `live`, extensions included (D-048, `mvp-Q30`).
+- [x] Approval refused once `start_at` has passed (D-049, `mvp-Q31`).
+- [ ] Is a cancelled lot inside a public auction shown on the public pages, or hidden? Blocks US-091 (`mvp-Q32`).
 - [x] Farmer-accepted claim is approved at once; clock starts at `approved` (D-038, `mvp-Q23`).
 - [x] Every seller suspend and every ban needs a written reason (D-041).
 
