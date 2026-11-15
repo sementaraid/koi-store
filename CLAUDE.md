@@ -42,6 +42,12 @@ it) → backend → `bun run codegen` → frontend → qa → product-owner (acc
 - After a qa FAIL, allow at most 2 fix rounds, then report the remaining bugs to
   the owner.
 - Never build a story that is `blocked`.
+- **One task per agent run.** Whoever spawns backend or frontend gives each
+  agent one task (T-xxx.n), not a whole story. Tasks that share files and
+  touch only a few of them can go together. The brief includes: the task and
+  the ACs it covers, the decisions that apply, the backend's API contract
+  (for frontend tasks), and the files to start from. Don't make the agent
+  rediscover what the spawner already knows.
 
 **Every agent's report starts with this header:**
 ```
@@ -120,6 +126,7 @@ other lockfiles.
 | Backend route types | `cd packages/api && bun run codegen` |
 | Backend tests | `cd packages/api && bun run test:unit` / `test:integration:http` / `test:integration:modules` |
 | Seed koi data | `cd packages/api && bun run seed` (runs `src/scripts/seed-koi.ts`) |
+| Koi app handoff check (tsc + tests + lint) | `cd apps/<storefront-koi\|admin-koi> && bun run check` |
 | Koi app tests | `cd apps/<storefront-koi\|admin-koi> && bun run test` |
 | Koi app type check | `cd apps/<storefront-koi\|admin-koi> && bun run tsc` |
 | UI kit type check | `cd packages/ui && bun run tsc` |

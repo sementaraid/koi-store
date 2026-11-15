@@ -64,10 +64,21 @@ build a screen.
 
 ## Verification
 
-Before you hand off, run:
-1. `bun run tsc`
-2. `bun run test`
-3. `bun run lint`
-4. For new screens: check that signing out and then opening the URL directly
-   redirects to `/masuk`, and that the screen's server actions refuse a request
-   with no session.
+Before you hand off, run `bun run check` once (tsc + tests + `next lint --quiet`).
+Lint has a baseline in `.eslintrc.json`. Don't add files to it.
+
+For new screens: check that signing out and then opening the URL directly
+redirects to `/masuk`, and that the screen's server actions refuse a request
+with no session.
+
+**Don't build while the dev server runs.** `next build` and the dev server share
+`.next`, and a build leaves every route returning 500. Before any `bun run build`,
+check:
+
+```bash
+curl -s -o /dev/null -w '%{http_code}' --max-time 3 http://localhost:3002
+```
+
+`000` means the dev server is down and building is safe. Anything else means it's
+up: don't build. If `.next` broke anyway, run `docker compose restart app` once
+and repeat the `curl`.
