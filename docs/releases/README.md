@@ -27,10 +27,11 @@ Future work that the MVP plan already names, kept here so it isn't lost. Each
 item becomes a release when the owner asks for it.
 
 - Xendit top-ups (invoice or payment link; a webhook adds credit)
-- Refunds beyond farmer cancellation
+- Refunds beyond auction cancellation (farmer or admin, D-034)
 - Fixed-price marketplace and checkout
 - Winner pays through the platform (Xendit, with xenPlatform for farmer payouts)
 - Proxy bidding and buy-it-now
+- WhatsApp claim notice template for the farmer and admin (MVP notices are on-site only, D-025)
 
 Source: `mvp/plan.md`, Path to beta. Its upgrade steps (backup, rehearse,
 deploy with no live auction, compare wallet totals) apply to every release.

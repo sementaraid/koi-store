@@ -10,7 +10,7 @@ The product-owner agent drafts entries. The owner approves them.
 |---|---|---|---|
 | D-001 | 2026-11-13 | Mercur is the backend only; every screen is custom | In force |
 | D-002 | 2026-11-14 | Admins use `apps/admin-koi` only, never `apps/admin` | In force |
-| D-003 | 2026-11-14 | Farmer auth uses Mercur's member login (option A) | In force |
+| D-003 | 2026-11-14 | Farmer auth uses Mercur's member login (option A) | In force; re-login bullet superseded by D-030 |
 | D-004 | 2026-11-13 | `apps/vendor` unused; `apps/storefront` reference only | In force |
 | D-005 | 2026-11-13 | One shared design system, `@koi/ui` | In force |
 | D-006 | 2026-11-13 | WhatsApp through Qontak, no unofficial libraries | In force |
@@ -27,6 +27,25 @@ The product-owner agent drafts entries. The owner approves them.
 | D-017 | 2026-11-14 | Farm registration collects KTP photo and NIK; both private | In force |
 | D-018 | 2026-11-14 | Transfer screenshots are private, admin-only | In force |
 | D-019 | 2026-11-15 | A balance correction never takes a balance below Rp0 | In force |
+| D-020 | 2026-11-15 | Listing fee is checked at submission and charged at admin approval | In force |
+| D-021 | 2026-11-15 | Auction rejection returns it to `draft` with a reason; no new status | Superseded by D-031 |
+| D-022 | 2026-11-15 | A farmer can cancel an auction only before it starts | In force; allowed statuses superseded by D-031 |
+| D-023 | 2026-11-15 | The first bid on a lot may equal OB | In force |
+| D-024 | 2026-11-15 | A removed bid is marked removed, never deleted; price restored, extend kept | In force |
+| D-025 | 2026-11-15 | Claim notices are on-site only in the MVP | In force |
+| D-026 | 2026-11-15 | Second-bidder offers stay fully off-platform | In force |
+| D-027 | 2026-11-15 | Claim status enum; closed = `confirmed` or `rejected`; 3-day auto-confirm | In force; enum superseded by D-038 |
+| D-028 | 2026-11-15 | Shill-bidding view: per-farmer bidder table with two flags | In force |
+| D-029 | 2026-11-15 | WhatsApp stays with Qontak; bot waits for a written quote | In force |
+| D-030 | 2026-11-15 | Farmer logs in as a member again right after farm registration (supersedes D-003 re-login bullet) | In force |
+| D-031 | 2026-11-15 | Auction status `pending_approval` added; submit, reject and cancel transitions (supersedes D-021) | In force |
+| D-032 | 2026-11-15 | Auction fees are recomputed on every submit; an admin fee override is cleared on rejection | In force |
+| D-033 | 2026-11-15 | The payer's `customer_id` is saved on the auction at submit; approval charges that wallet | In force |
+| D-034 | 2026-11-15 | An admin cancel refunds every join fee, like a farmer cancel | In force |
+| D-035 | 2026-11-15 | Lot status `cancelled` added: `open → cancelled`, admin only, with a reason | In force |
+| D-036 | 2026-11-15 | Bids can be removed only while the lot is open; first-bid rule applies again after removals | In force |
+| D-037 | 2026-11-15 | An "unpaid win" is a farmer's non-payment report, counted over all time | In force |
+| D-038 | 2026-11-15 | A claim the farmer accepts is `approved` at once; `accepted` dropped from the enum | In force |
 
 ---
 
@@ -61,6 +80,8 @@ the same credentials.
 **Reason:** It reuses Mercur's seller and approval model. It was tested in dev
 on 2026-11-14.
 **Source:** Owner, commit `863f81d`.
+**Superseded in part:** the bullet "After admin approves, the farmer logs in as
+a member again" is replaced by D-030 (2026-11-15). The rest stays in force.
 
 ### D-004: `apps/vendor` unused; `apps/storefront` reference only
 **Decision:** Don't build features in `apps/vendor` (Mercur's seller panel) or
@@ -198,3 +219,196 @@ clear error, and nothing is written.
 **Reason:** Credit only pays platform fees and can't be withdrawn (`plan.md`,
 Rules), so a negative balance would be a debt the platform can't collect.
 **Source:** Owner (2026-11-15).
+
+### D-020: Listing fee is checked at submission and charged at admin approval
+**Decision:** The listing fee is charged when the admin **approves** the
+auction, using the final fee (after any admin change on that auction).
+- When the farmer submits the auction for approval, the wallet balance is
+  checked against the listing fee. If it's too low, the submission is refused
+  with a "top up" prompt and nothing changes.
+- On approval the balance is checked again and the `listing_fee` is recorded in
+  the same workflow that schedules the auction. If the balance has dropped
+  below the final fee, approval fails and nothing is saved.
+- Nothing is charged before approval, so rejecting an auction or lowering its
+  fee never needs a refund. The MVP refund rule (farmer-cancel join fees only)
+  doesn't change.
+**Reason:** The farmer pays only for an auction the platform accepts, at the
+fee the admin settled on, without adding refunds to the MVP.
+**Source:** Owner, answers to `mvp-Q4` and `mvp-Q5` (2026-11-15). How the
+approval step finds the farmer's wallet: answered by D-033 (`mvp-Q24`).
+
+### D-021: Auction rejection returns it to `draft` with a reason
+**Decision:** When an admin rejects an auction, it goes back to `draft` with a
+written reason that the farmer sees. The farmer fixes it and resubmits. No new
+status is added: the auction enum stays `draft → scheduled → live → closed |
+cancelled`.
+**Reason:** The farmer can fix the auction and resubmit, and the approved
+status list stays unchanged.
+**Source:** Owner, answer to `mvp-Q13` (2026-11-15). How a submitted auction is
+told apart from one still being edited: answered by D-031 (`mvp-Q17`).
+**Superseded:** by D-031 (2026-11-15), which adds `pending_approval`.
+Rejection now moves `pending_approval → draft` with the reason.
+
+### D-022: A farmer can cancel an auction only before it starts
+**Decision:** A farmer may cancel their auction only while it is `draft` or
+`scheduled`. Once it is `live`, only an admin can cancel it. On a farmer
+cancel, every customer who joined gets their join fee back as a `refund`, and
+the listing fee is not refunded (as in `plan.md`, Cancellations).
+**Reason:** Resolves the plan's conflict between "farmer cancels with refunds"
+and "a lot with bids can only be cancelled by admin".
+**Source:** Owner, answer to `mvp-Q9` (2026-11-15). What an admin cancel of a
+live auction refunds: answered by D-034 (`mvp-Q19`).
+**Superseded in part:** by D-031 (2026-11-15). A farmer may cancel while
+`draft`, `pending_approval` or `scheduled`.
+
+### D-023: The first bid on a lot may equal OB
+**Decision:** The first bid on a lot may equal OB. Every later bid must be at
+least current price + KB.
+**Reason:** OB is the lot's starting price (`plan.md`, Pricing per lot).
+**Source:** Owner, answer to `mvp-Q6` (2026-11-15).
+
+### D-024: A removed bid is marked removed, never deleted
+**Decision:** When an admin removes a mistaken bid, the bid is marked removed,
+never deleted. The lot's current price goes back to the highest remaining bid,
+or to OB if no bid is left. Any extend the removed bid caused stays: the end
+time is never shortened.
+**Reason:** Bids stay auditable, and a lot's end time never moves earlier.
+**Source:** Owner, answer to `mvp-Q11` (2026-11-15). Removal after a lot
+closes, and the first-bid rule after every bid is removed: answered by D-036
+(`mvp-Q21`).
+
+### D-025: Claim notices are on-site only in the MVP
+**Decision:** The farmer and the admin learn about a dead-on-arrival claim on
+the site only: the Farmer area and the claim queue in `apps/admin-koi`. No
+WhatsApp message is sent. A WhatsApp claim template is a later idea.
+**Reason:** Owner's MVP scope choice.
+**Source:** Owner, answer to `mvp-Q7` (2026-11-15).
+
+### D-026: Second-bidder offers stay fully off-platform
+**Decision:** The platform records nothing about an offer to the second-highest
+bidder and never reassigns the lot. The farmer reports the non-payment, which
+can lead to a winner strike.
+**Reason:** The sale is arranged between the farmer and the bidder, outside the
+platform.
+**Source:** Owner, answer to `mvp-Q8` (2026-11-15).
+
+### D-027: Claim status enum and auto-confirm
+**Decision:** Claim statuses are `open → accepted | disputed → approved |
+rejected → resolved → confirmed`.
+- "Closed", for the 30-day video deletion, means `confirmed` or `rejected`.
+- New rule: if the winner doesn't confirm within 3 days of `resolved`, the claim
+  becomes `confirmed` automatically. The existing scheduled job (the one that
+  checks delivered and claim deadlines) does it.
+**Reason:** Every claim reaches a closed status, so its video can be deleted.
+**Source:** Owner, answer to `mvp-Q14` (2026-11-15).
+**Superseded in part:** the enum is replaced by D-038 (2026-11-15), which drops
+`accepted`. The closed definition and the auto-confirm stay in force.
+
+### D-028: Shill-bidding view
+**Decision:** For each farmer, the admin sees a bidder table: bidder, bid
+count, lots bid on, wins, unpaid wins. A bidder is flagged when at least 50% of
+their bids are on that farmer's lots, or when they have at least 2 unpaid wins
+from that farmer. Flags take no automatic action; the admin bans by hand.
+**Reason:** Gives the admin the patterns to spot shill bidding while keeping
+bans a human decision.
+**Source:** Owner, answer to `mvp-Q10` (2026-11-15). What counts as an "unpaid
+win": answered by D-037 (`mvp-Q22`).
+
+### D-029: WhatsApp stays with Qontak; the bot waits for a written quote
+**Decision:** The bot stays with Qontak (D-006); Meta Cloud API direct is not
+chosen. The owner gets a written Qontak quote covering price, Bot + User
+tokens, webhook access, webhook retry and signature, rate limits, utility
+charging inside the 24 h window, and onboarding time. The bot epic stays
+blocked until the quote arrives. Owner action now: start Meta Business
+verification (up to 14 business days).
+**Reason:** Qontak's capability is confirmed (T-080.1); price and terms are
+not.
+**Source:** Owner, answer to `mvp-Q12` (2026-11-15).
+
+### D-030: Farmer logs in as a member again right after farm registration
+**Decision:** Supersedes D-003's bullet "After admin approves, the farmer logs
+in as a member again". New wording: "After `POST /vendor/sellers`, the farmer
+logs in as a member again to get a token for the new seller. Farmer actions
+stay closed until the admin approves (`status === open`)."
+**Reason:** The first member token has an empty `actor_id`, so the code needs a
+fresh member login right after registration, not after approval.
+**Source:** Owner, answer to `mvp-Q16` (2026-11-15).
+
+### D-031: Auction status `pending_approval`
+**Decision:** The auction enum becomes `draft → pending_approval → scheduled →
+live → closed | cancelled`.
+- Submit moves `draft → pending_approval`, with the D-020 balance check.
+- Approval moves `pending_approval → scheduled` (D-020 charge in the same
+  workflow).
+- Rejection moves `pending_approval → draft` with a written reason the farmer
+  sees. The farmer fixes it and resubmits.
+- The admin approval queue lists only `pending_approval` auctions.
+- A farmer may cancel while the auction is `draft`, `pending_approval` or
+  `scheduled` (widens D-022). Once `live`, only the admin can cancel.
+**Reason:** Tells a submitted auction apart from one still being edited.
+**Source:** Owner, answer to `mvp-Q17` (2026-11-15). Supersedes D-021.
+
+### D-032: Fees are recomputed on every submit
+**Decision:** Each time the farmer submits an auction, its fees are recomputed
+from the current fee table: listing fee = the category's listing fee × number
+of lots; join fee = the category's join fee. The submit balance check uses the
+recomputed listing fee. An admin fee override is cleared when the auction is
+rejected; the admin applies it again at approval if it's still wanted.
+- This changes the snapshot point carried forward from US-014 AC3 (US-030
+  AC7): fees are fixed at the last submit, not at creation. A fee-table change
+  still never alters a `scheduled` or later auction.
+**Reason:** An auction fixed after rejection (new category or lot count)
+carries the fee for what is actually submitted.
+**Source:** Owner, answer to `mvp-Q18` (2026-11-15).
+
+### D-033: The payer's `customer_id` is saved on the auction at submit
+**Decision:** At submit, the farmer's `customer_id` is read from the member
+token's `app_metadata` (mvp-Q15) and saved on the auction. Approval charges the
+`listing_fee` to that customer's wallet.
+- This is a field on the auction, not a customer↔seller link. D-003 holds.
+**Reason:** The approve workflow runs under an admin token, which has no
+farmer `customer_id`.
+**Source:** Owner, answer to `mvp-Q24` (2026-11-15).
+
+### D-034: An admin cancel refunds every join fee
+**Decision:** When an admin cancels a `live` auction, every participant gets
+their join fee back as a `refund`, the same as on a farmer cancel. The listing
+fee is not refunded. The MVP refund rule widens to "a farmer or an admin
+cancels an auction".
+**Reason:** Owner's choice: an admin cancel treats joiners the same as a farmer cancel.
+**Source:** Owner, answer to `mvp-Q19` (2026-11-15).
+
+### D-035: Lot status `cancelled`
+**Decision:** The lot enum gains `cancelled`: `open → cancelled`. Only an
+admin can cancel a lot. The reason is saved, and the lot has no winner.
+**Reason:** The lot enum had no state for a lot an admin stops (`mvp-Q20`).
+**Source:** Owner, answer to `mvp-Q20` (2026-11-15).
+
+### D-036: Bids can be removed only while the lot is open
+**Decision:** An admin can remove a bid only while its lot is `open`. After
+close, the fix is a lot cancel (D-035). Once bids have been removed and none is
+left, the next bid may equal OB again (D-023 applies).
+**Reason:** Winner and final price are saved at close and never recomputed
+(CLAUDE.md §8).
+**Source:** Owner, answer to `mvp-Q21` (2026-11-15).
+
+### D-037: An "unpaid win" is a non-payment report
+**Decision:** In the shill-bidding table (D-028), an "unpaid win" is a farmer's
+non-payment report on that winner (US-058). Every count in the table covers all
+time.
+**Reason:** Owner's choice. The report is already recorded by US-058.
+**Source:** Owner, answer to `mvp-Q22` (2026-11-15).
+
+### D-038: A claim the farmer accepts is `approved` at once
+**Decision:** When the farmer accepts a claim, it moves straight to `approved`.
+`accepted` is dropped from the enum rather than kept as a transient state,
+because a status that is never stored adds nothing. The admin decides only
+disputed claims. The farmer's 3-day resolution clock starts at `approved` on
+both paths. New claim enum:
+`open → approved | disputed`, `disputed → approved | rejected`,
+`approved → resolved → confirmed`.
+- D-027's closed definition (`confirmed` or `rejected`) and the 3-day
+  auto-confirm stay.
+**Reason:** Admin time goes to disputes only, and one clock start serves both
+paths.
+**Source:** Owner, answer to `mvp-Q23` (2026-11-15). Supersedes D-027's enum.

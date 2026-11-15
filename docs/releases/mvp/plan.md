@@ -1,6 +1,6 @@
 # Koi Store — MVP Plan
 
-Nov 13, 2026 · @Herlina Sunaryanto
+Nov 13, 2026 · @Herlina Sunaryanto · updated 2026-11-15 with the owner's answers (D-020 – D-038)
 
 ## Summary
 
@@ -11,7 +11,7 @@ The MVP is a koi auction platform where farmers run auctions and registered cust
 - **Winners** see the farmer's WhatsApp and bank details and pay them directly. The farmer handles shipping.
 - **Built on Mercur** (the existing `koi-store` repo), used as the backend only. Every screen (storefront, Farmer area, admin app) is custom-built on one shared design system; auction and wallet are custom modules.
 
-**Out of scope for the MVP:** online payment gateway, refunds (except when a farmer cancels), fixed-price marketplace and cart, payment held by the platform, proxy bidding, buy-it-now, live video.
+**Out of scope for the MVP:** online payment gateway, refunds (except when a farmer or an admin cancels an auction, D-034), fixed-price marketplace and cart, payment held by the platform, proxy bidding, buy-it-now, live video.
 
 ## Users and roles
 
@@ -25,7 +25,7 @@ There are three roles; every farmer is also a customer with the same login.
 
 **Becoming a farmer:** a logged-in customer submits a farm registration: farm name, location, ID card (KTP photo and 16-digit NIK, stored privately and never public, D-017), farm photos, and a bank account in their own name for winners to pay into. The farm's WhatsApp number is the registration phone, copied to the seller and not editable (D-016). Admin approves it, and the account gains farmer access. Admin may instead reject it with a reason the farmer sees; rejection is final, with no resubmission (D-015).
 
-**Account link (settled, D-003):** a farmer is one auth identity whose `app_metadata` holds both `customer_id` and `member_id`. The storefront signs in as customer (for `/store/*`) and as member (for `/vendor/*` with `x-seller-id`) with the same credentials. Farm registration is a member login followed by `POST /vendor/sellers`, which creates the seller as `pending_approval`. No custom customer↔seller link.
+**Account link (settled, D-003):** a farmer is one auth identity whose `app_metadata` holds both `customer_id` and `member_id`. The storefront signs in as customer (for `/store/*`) and as member (for `/vendor/*` with `x-seller-id`) with the same credentials. Farm registration is a member login followed by `POST /vendor/sellers`, which creates the seller as `pending_approval`. Right after that, the farmer logs in as a member again to get a token for the new seller; farmer actions stay closed until the admin approves (`status === open`) (D-030). No custom customer↔seller link.
 
 ## Store credit wallet
 
@@ -36,7 +36,8 @@ Every customer has one rupiah wallet, created when their profile is complete (D-
 1. User transfers any amount (no minimum) to the platform's bank account. The account is an admin setting stored in the settings table and shown on the top-up page (D-009, D-010).
 2. User uploads the transfer screenshot on the site, which creates a pending top-up request, and also sends it to admin on WhatsApp.
 3. Admin checks the bank statement and approves the request (or rejects it with a reason). Approval records the top-up.
-4. Joining an auction (customer) or creating one (farmer) checks the balance and records a fee transaction. If the balance is short, the action is blocked with a "top up" prompt.
+4. Joining an auction (customer) checks the balance and records a `join_fee`. If the balance is short, joining is blocked with a "top up" prompt.
+5. A farmer submits an auction for approval (`draft → pending_approval`, D-031). Submit recomputes the fees from the current fee table (D-032), saves the farmer's `customer_id` from the member token on the auction (D-033), and checks the balance: if it is below the listing fee, submission is refused with a "top up" prompt. The `listing_fee` is recorded on that customer's wallet when the admin approves the auction, using the final fee (after any admin change). Approval checks the balance again and fails if it has dropped below the fee (D-020).
 
 **Transaction types**
 
@@ -44,16 +45,16 @@ Every customer has one rupiah wallet, created when their profile is complete (D-
 | --- | --- | --- |
 | `manual_topup` | + | Admin who recorded it, bank reference |
 | `join_fee` | − | Auction joined |
-| `listing_fee` | − | Auction created |
+| `listing_fee` | − | Auction approved (D-020) |
 | `adjustment` | + or − | Admin, reason (corrections only) |
-| `refund` | + | Auction cancelled by its farmer (join fees only) |
+| `refund` | + | Auction cancelled by its farmer or an admin (join fees only, D-034) |
 
 **Rules**
 
 - Money is stored as whole rupiah in integer columns. `wallet_transaction.amount` has no practical size cap (exact `numeric`, whole rupiah, D-012).
 - Transactions are never edited or deleted; a mistake is fixed with an `adjustment`.
 - Credit can only pay platform fees. It cannot pay farmers, be withdrawn, or be moved between users. This keeps it closed-loop, the lower-risk case under Bank Indonesia rules (to confirm with someone local).
-- **Refunds in the MVP:** only when a farmer cancels an auction. Every customer who joined gets a `refund` of their join fee. No refund when a customer leaves an auction, and the farmer's listing fee is not refunded.
+- **Refunds in the MVP:** only when a farmer or an admin cancels an auction (D-034). Every customer who joined gets a `refund` of their join fee. No refund when a customer leaves an auction, and the farmer's listing fee is not refunded. The listing fee is charged only on approval, so a rejected auction or a lowered fee never needs a refund (D-020).
 
 ### Fees
 
@@ -62,8 +63,8 @@ The platform sets every fee from a fee table that admins can edit; farmers and c
 - Each **auction has one category**, and every lot in it belongs to that category. The farmer picks it; admin checks it when approving. Mixed fish go in separate auctions, so a buyer never pays a premium fee for a cheap fish.
 - **Listing fee (farmer)** = the category's listing fee × the number of lots.
 - **Join fee (customer)** = the category's join fee, paid once per auction.
-- Admin can change either fee on a single auction when approving it, with a written reason that is saved. Typical reasons: a promotion for a new farm, or a goodwill discount after a problem.
-- Fee changes apply to auctions created after the change, never to ones already approved.
+- Admin can change either fee on a single auction when approving it, with a written reason that is saved. Typical reasons: a promotion for a new farm, or a goodwill discount after a problem. Rejecting the auction clears the override; the admin applies it again at approval if it's still wanted (D-032).
+- An auction's fees are recomputed from the current fee table every time the farmer submits it (D-032). A fee-table change never alters an auction that is already `scheduled` or later.
 
 **Starting fee table (approved; admins can edit)**
 
@@ -90,26 +91,28 @@ Open for bids --(timer ends)--> Any bids?
                                      Strike, offer to 2nd bidder
 ```
 
-Each late bid restarts the extend timer (5 minutes by default); a winner who misses the 1×24 hour deadline gets a strike; a winner whose fish arrives dead or sick can claim within 4 hours.
+An admin can cancel an open lot (`open → cancelled`, reason saved, no winner, D-035). Each late bid restarts the extend timer (5 minutes by default); a winner who misses the 1×24 hour deadline gets a strike; a winner whose fish arrives dead or sick can claim within 4 hours.
 
 **Structure**
 
 - An **auction** is an event by one farmer with a start time, end time, one category and a join fee. It holds up to **20 lots**, one koi each, and runs **1 to 7 days**. Admin can change both limits.
 - Every auction needs **admin approval** before it is scheduled. Admin checks the category, photos and fees.
+- Submitting an auction moves it to `pending_approval`; the admin queue lists only those (D-031).
+- If the admin **rejects** an auction, it goes from `pending_approval` back to `draft` with a written reason the farmer sees. The farmer fixes it and resubmits. There is no rejected status (D-031).
 - The join fee is paid once per auction and covers all its lots (fees come from the fee table above).
 - Customers can join at any time until the auction ends, including after bidding has started.
 
 **Pricing per lot (set by the farmer)**
 
 - **OB (open bid):** starting price.
-- **KB (kelipatan bid):** fixed bid step. Each bid must be at least current price + KB.
+- **KB (kelipatan bid):** fixed bid step. The first bid on a lot may equal OB; every later bid must be at least current price + KB (D-023).
 - No reserve price and no buy-it-now in the MVP.
 
 **Bidding**
 
 - Only customers who joined the auction can bid. Bids come from the website or WhatsApp into the same database.
 - The server's timestamp decides order. Of two equal bids, the first recorded wins; the second is rejected with the new current price.
-- Bids cannot be retracted. Admin may remove a bid only for an obvious error (such as an extra zero).
+- Bids cannot be retracted. Admin may remove a bid only for an obvious error (such as an extra zero). A removed bid is marked removed, never deleted. The lot's current price goes back to the highest remaining bid, or OB if none is left. Any extend the removed bid caused stays; the end time is never shortened (D-024). Bids can be removed only while the lot is `open`; after close, the fix is a lot cancel. Once no bid is left, the next bid may equal OB again (D-036).
 - Bidders are shown masked on the website, e.g. "Bud\*\*\*23".
 
 **Extend (anti-sniping)**
@@ -121,7 +124,7 @@ Each late bid restarts the extend timer (5 minutes by default); a winner who mis
 **Fair play**
 
 - A farmer cannot join or bid on their own auction.
-- Admin can see bid patterns per bidder and farmer to spot shill bidding, and can ban accounts.
+- Admin can see bid patterns per bidder and farmer to spot shill bidding, and can ban accounts. For each farmer, a bidder table shows bidder, bid count, lots bid on, wins and unpaid wins. A bidder is flagged when at least 50% of their bids are on that farmer's lots, or when they have at least 2 unpaid wins from that farmer. Flags take no automatic action; the admin bans by hand (D-028). An "unpaid win" is a farmer's non-payment report, and every count covers all time (D-037).
 
 **Closing and winners**
 
@@ -133,7 +136,7 @@ Each late bid restarts the extend timer (5 minutes by default); a winner who mis
 **Winner doesn't pay**
 
 - The farmer reports it. Admin checks and gives the winner a strike.
-- The farmer may offer the lot to the second-highest bidder at that bidder's price, arranged between them.
+- The farmer may offer the lot to the second-highest bidder at that bidder's price, arranged between them fully off-platform. The platform records nothing about the offer and never reassigns the lot (D-026).
 
 **Strikes (winners and farmers)**
 
@@ -151,17 +154,18 @@ Each late bid restarts the extend timer (5 minutes by default); a winner who mis
 
 1. Within **4 hours** of marking it delivered, the winner can open a claim if the fish is dead, sick or badly stressed. Admin can change the window.
 2. The claim needs an **unboxing video** uploaded to the site (up to **100 MB**, about 2 minutes) and the winner's choice of remedy: **full refund** or **replacement fish**.
-3. The farmer and admin are notified and both review the video. The farmer can accept or dispute; if they disagree, admin decides.
-4. If the claim is approved, the farmer has **3 days** to refund the winner directly or ship a replacement, then marks it done. The winner confirms.
+3. The farmer and admin are notified on the site only (the Farmer area and the admin-koi claim queue; no WhatsApp in the MVP, D-025) and both review the video. The farmer can accept (the claim is then approved at once) or dispute; on a dispute, admin approves or rejects (D-038).
+4. If the claim is approved, the farmer has **3 days** from approval (on both paths, D-038) to refund the winner directly or ship a replacement, then marks it done. The winner confirms. If the winner doesn't confirm within **3 days** of it being marked done, the claim confirms automatically (D-027).
 5. A farmer who misses the 3 days or refuses an approved claim gets a strike and can be rated badly.
 6. **Courier problems:** the farmer stays responsible to the winner even when a courier caused the death, and claims from the courier themselves.
-7. Videos are deleted 30 days after the claim is closed.
+7. Videos are deleted 30 days after the claim is closed. Closed means status `confirmed` or `rejected` (D-027).
 
 **Cancellations (MVP)**
 
 - Customer leaves an auction: no refund.
-- Farmer cancels an auction: every customer who joined gets their join fee back as a `refund`. The farmer's listing fee is not refunded.
-- A lot with bids can only be cancelled by admin.
+- Farmer cancels an auction: allowed only before it starts (status `draft`, `pending_approval` or `scheduled`, D-031). Every customer who joined gets their join fee back as a `refund`. The farmer's listing fee is not refunded (D-022).
+- Once an auction is `live`, only the admin can cancel it (D-022). Every participant gets their join fee back as a `refund`; the listing fee is not refunded (D-034).
+- A lot with bids can only be cancelled by admin: `open → cancelled`, with a saved reason and no winner (D-035).
 
 **Ratings**
 
@@ -183,7 +187,7 @@ One bot number serves every auction; each message names the lot, so there's no n
 
 **Constraints**
 
-- **Provider: Qontak (Mekari), an official Indonesian WhatsApp provider.** It gives the admin team a shared WhatsApp inbox for transfer proofs and customer chats, local support and IDR invoicing, on a monthly plan. Price is not settled: Qontak's official page shows Service Suite Plus at Rp2.000.000/month with a 5-user minimum, otherwise a quote (`mvp-Q12`). The bot connects through Qontak's API. Unofficial libraries are not used; they risk a ban mid-auction.
+- **Provider: Qontak (Mekari), an official Indonesian WhatsApp provider.** It gives the admin team a shared WhatsApp inbox for transfer proofs and customer chats, local support and IDR invoicing, on a monthly plan. Price is not settled: Qontak's official page shows Service Suite Plus at Rp2.000.000/month with a 5-user minimum, otherwise a quote. The owner stays with Qontak and gets a written quote; the bot waits for it (D-029, `mvp-Q12`). The bot connects through Qontak's API. Unofficial libraries are not used; they risk a ban mid-auction.
 - More than 24 hours after the user's last message, the bot can only send pre-approved template messages, charged per message. Outbid, win and join messages need utility templates. From 2026-10-01 Qontak charges per message (non-Lite): Service Rp356,65, Utility Rp366,65, Marketing Rp627,33; VAT not verified. Service messages, including bot replies inside the 24-hour window, are now charged too, with 1,000 free per number per month. Whether utility messages inside an open window are charged is unclear (Meta says yes, Qontak says no) ([Qontak rates](https://help-center.qontak.com/hc/en-us/articles/48430892733465), [Indonesia rate breakdown](https://chatmaxima.com/whatsapp-api-pricing/indonesia/)).
 - Needs a dedicated business phone number not used on the normal WhatsApp app, and a verified Meta Business account. Business verification takes up to 14 business days and template review up to 24 hours, so start early. Until verified, Meta allows 250 unique users per 24 hours outside the window (then 2,000), and at most 1 message per user every 6 seconds.
 - The website works without WhatsApp, so the bot can launch slightly after the web if approval is slow.
@@ -215,7 +219,7 @@ Mercur's vendor dashboard (`apps/vendor`) is not used in the MVP.
 | Module | Tables | Links to Mercur |
 | --- | --- | --- |
 | Wallet | `wallet` (one per customer, created when the profile is complete, D-011), `wallet_transaction` (type, uncapped whole-rupiah amount, reference, created by), topup\_request (amount, screenshot, status, reviewed by), fee\_category (name, listing fee, join fee) | Customer |
-| Auction | `auction` (farmer, start, end, join fee, status), `lot` (OB, KB, current price, end time, winner, final price, status), `bid` (bidder, amount, source web or WhatsApp, time), `auction_participant` (customer, joined at) | Seller, customer, product |
+| Auction | `auction` (farmer, start, end, join fee, listing fee, status, payer `customer_id` (D-033), fee override with reason (D-032), rejection reason (D-031)), `lot` (OB, KB, current price, end time, winner, final price, status, cancel reason (D-035)), `bid` (bidder, amount, source web or WhatsApp, time, removed with reason and admin (D-024)), `auction_participant` (customer, joined at) | Seller, customer, product |
 | Moderation | `strike` (user, lot, reason, admin), farmer\_rating (lot, winner, stars, comment), claim (lot, video, remedy, status, farmer and admin decisions) | Customer |
 
 **Settings:** every admin-editable platform value (extend window, max lots per auction, auction length, claim window, platform bank account) is stored in a settings table in the database, not in env vars or config (D-010).
@@ -223,18 +227,19 @@ Mercur's vendor dashboard (`apps/vendor`) is not used in the MVP.
 **Key flows**
 
 - **Join auction:** one workflow checks balance, records `join_fee`, adds the participant. All or nothing.
-- **Place bid:** locks the lot row, checks the bidder joined, amount ≥ current + KB, and not the farmer; saves the bid, updates current price, applies extend, emits an outbid event.
+- **Approve auction:** one workflow re-checks the balance of the `customer_id` saved on the auction, records `listing_fee` at the final fee, and moves the auction `pending_approval → scheduled`. All or nothing (D-020, D-031, D-033).
+- **Place bid:** locks the lot row, checks the bidder joined, amount ≥ OB for the first bid and ≥ current + KB after that (D-023), and not the farmer; saves the bid, updates current price, applies extend, emits an outbid event.
 - **Close lots:** a scheduled job every minute closes lots past their end time and saves winner and price.
 - **Outbid and win alerts:** event subscribers send WhatsApp messages.
 - **Live updates:** the lot page polls every few seconds in the MVP; server-sent events can replace it later.
   - **Live room:** a live bidding screen showing one lot at a time with its photo, current price, countdown and bid feed. No video system is built; a farmer can add a YouTube or Instagram live link that is shown on the page.
-  - **Claims:** unboxing videos are stored on the VPS (100 MB each, deleted 30 days after the claim closes); delivered and claim deadlines are checked by the same scheduled job.
+  - **Claims:** unboxing videos are stored on the VPS (100 MB each, deleted 30 days after the claim closes); delivered and claim deadlines, including the 3-day auto-confirm (D-027), are checked by the same scheduled job.
 
 **Design rules for the MVP**
 
 - Never change Mercur's or Medusa's own code; add around it.
 - Integer rupiah everywhere; wallet transactions never edited or deleted.
-- Clear statuses: auction `draft → scheduled → live → closed | cancelled`; lot `open → unsold | won → paid → shipped` → delivered | claimed.
+- Clear statuses: auction `draft → pending_approval → scheduled → live → closed | cancelled` (rejection returns `pending_approval → draft`, D-031); lot `open → unsold | won | cancelled` (D-035), `won → paid → shipped` → delivered | claimed; claim `open → approved | disputed`, `disputed → approved | rejected`, `approved → resolved → confirmed` (D-038, D-027).
 - Save results on the lot at close instead of recalculating from bids.
 
 ## Path to beta
@@ -268,13 +273,30 @@ Build in this order; each milestone ends with something usable. There is no fixe
 
 ## Open questions
 
+Full text and options: `stories.md`, Open questions.
+
 **Fees and money**
 
-- [ ] None open. Fee table approved; one category per auction.
+- [x] Listing fee is checked at submission and charged at approval; no refund on rejection or a lowered fee (D-020, `mvp-Q4`, `mvp-Q5`).
+- [x] Fees recomputed on every submit; override cleared on rejection (D-032, `mvp-Q18`).
+- [x] Admin cancel refunds every join fee (D-034, `mvp-Q19`).
+- [x] Payer `customer_id` saved on the auction at submit (D-033, `mvp-Q24`).
 
 **Auctions**
 
-- [ ] None open. Courier responsibility, the 3-day claim deadline and video limits are decided.
+- [x] Rejection returns the auction to `draft` with a reason (D-021, `mvp-Q13`).
+- [x] Farmer cancels only before the start (D-022, `mvp-Q9`).
+- [x] First bid may equal OB (D-023, `mvp-Q6`).
+- [x] Removed bids are marked removed; price restored; extend kept (D-024, `mvp-Q11`).
+- [x] Claim notices on-site only (D-025, `mvp-Q7`).
+- [x] Second-bidder offers off-platform (D-026, `mvp-Q8`).
+- [x] Claim statuses and 3-day auto-confirm (D-027, `mvp-Q14`).
+- [x] Shill-bidding view (D-028, `mvp-Q10`).
+- [x] `pending_approval` auction status (D-031, `mvp-Q17`).
+- [x] Lot status `cancelled` (D-035, `mvp-Q20`).
+- [x] Bid removal only on open lots; OB rule after removals (D-036, `mvp-Q21`).
+- [x] Unpaid win = non-payment report, all time (D-037, `mvp-Q22`).
+- [x] Farmer-accepted claim is approved at once; clock starts at `approved` (D-038, `mvp-Q23`).
 
 **Farmers**
 
@@ -288,4 +310,7 @@ Build in this order; each milestone ends with something usable. There is no fixe
 
 **Operations**
 
-- [ ] Confirm with Qontak that its API lets a custom bot receive incoming messages and send template messages, and which plan includes that.
+- [x] Qontak's API supports an inbound webhook, in-window bot replies and template sends (T-080.1 research, 2026-11-14). The owner stays with Qontak (D-029).
+- [ ] Owner: get a written Qontak quote (price, Bot + User tokens, webhook access, webhook retry and signature, rate limits, utility charging inside the window, onboarding time). The bot waits for it (`mvp-Q12`).
+- [ ] Owner: start Meta Business verification now (up to 14 business days) (D-029).
+- [x] Farmer member re-login right after registration (D-030, `mvp-Q16`).

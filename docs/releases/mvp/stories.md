@@ -139,9 +139,10 @@ As an **admin**, I want to change the platform limits so that rules can be tuned
 ## Epic 2: Becoming a farmer (Milestone 2)
 
 Uses option A from D-003 (`docs/product/decisions.md`): a member login, `POST /vendor/sellers`,
-the seller starts as `pending_approval`, and admin approval grants farmer access.
+the seller starts as `pending_approval`, a second member login right after registration
+(D-030), and admin approval grants farmer access.
 
-### US-020 Customer registers a farm · `in progress`
+### US-020 Customer registers a farm · `done (evidence: packages/api/integration-tests/http/farm-registration.spec.ts:182-505; packages/api/src/api/utils/farm-registration.ts:55-142; packages/api/src/workflows/hooks/seller-registration.ts:52-96; packages/api/src/api/middlewares.ts:110-122,277-290; apps/storefront-koi/src/lib/data/farm.ts:52-232; qa PASS)`
 As a **customer**, I want to submit a farm registration so that I can sell koi
 at auction. *(Plan: Becoming a farmer)*
 - AC1: The form requires farm name, location, KTP photo, KTP number (16-digit NIK), farm photos, and a bank account in my own name (D-017).
@@ -150,14 +151,14 @@ at auction. *(Plan: Becoming a farmer)*
 - AC6: The seller's `member_email` must match my signed-in auth identity's email; any other email is rejected.
 - AC2: Submitting creates the seller as `pending_approval` under my same email and password.
 - AC3: I can see my registration status.
-- [ ] T-020.1 [backend] Native seller fields cover name, description, address, `payment_details` (bank) and `phone`. Store KTP photo, NIK and farm photos as Mercur Custom Fields on `Seller` (`resources/best-practices/custom-fields`). List the doc pages used
-- [ ] T-020.5 [backend] Private upload route for the KTP photo. Mercur's `POST /vendor/uploads` needs an existing seller and stores files publicly, so it can't be used (D-017)
-- [ ] T-020.6 [backend] Middleware on public `/store/sellers` routes that strips `payment_details`, `professional_details` and `custom_fields` (KTP, NIK) (D-017)
-- [ ] T-020.7 [backend] Validate hook on `POST /vendor/sellers`: `member_email` from the body must match the caller's auth identity email (AC6)
-- [ ] T-020.8 [backend] Copy the customer's phone to `seller.phone` at registration (D-016)
-- [ ] T-020.2 [storefront] Member sign-in with the same credentials + `POST /vendor/sellers` flow, then member sign-in again right after registration (the code needs it then, not only after approval; see D-003 wording note in the Open questions)
-- [ ] T-020.3 [storefront] Farm registration form + status page in the Farmer area
-- [ ] T-020.4 [qa] KTP photo, NIK and bank data never appear on public pages or any `/store/*` response; a mismatched `member_email` is rejected
+- [x] T-020.1 [backend] Native seller fields cover name, description, address, `payment_details` (bank) and `phone`. Store KTP photo, NIK and farm photos as Mercur Custom Fields on `Seller` (`resources/best-practices/custom-fields`). List the doc pages used
+- [x] T-020.5 [backend] Private upload route for the KTP photo. Mercur's `POST /vendor/uploads` needs an existing seller and stores files publicly, so it can't be used (D-017)
+- [x] T-020.6 [backend] Middleware on public `/store/sellers` routes that strips `payment_details`, `professional_details` and `custom_fields` (KTP, NIK) (D-017)
+- [x] T-020.7 [backend] Validate hook on `POST /vendor/sellers`: `member_email` from the body must match the caller's auth identity email (AC6)
+- [x] T-020.8 [backend] Copy the customer's phone to `seller.phone` at registration (D-016)
+- [x] T-020.2 [storefront] Member sign-in with the same credentials + `POST /vendor/sellers` flow, then member sign-in again right after registration to get a token for the new seller (D-030)
+- [x] T-020.3 [storefront] Farm registration form + status page in the Farmer area
+- [x] T-020.4 [qa] KTP photo, NIK and bank data never appear on public pages or any `/store/*` response; a mismatched `member_email` is rejected
 
 ### US-021 Admin approves or rejects a farm · `todo`
 As an **admin**, I want to review farm registrations so that only real farmers
@@ -169,7 +170,7 @@ can create auctions. *(Plan: Becoming a farmer)*
 - [ ] T-021.1 [backend] `/admin` routes that use Mercur's seller approval workflow and, for rejection, the suspend workflow with a reason (D-015). Don't write new ones
 - [ ] T-021.5 [backend] Shared check that a farmer's seller is `open`, used by every custom `/vendor/*` route and workflow (AC4; also US-030)
 - [ ] T-021.2 [admin] `/kebun` queue screen
-- [ ] T-021.3 [storefront] Farmer area appears after approval and the next member login
+- [ ] T-021.3 [storefront] Farmer area appears once the seller is `open`. The member token comes from the re-login right after registration (D-030); whether approval needs yet another login is not verified, so check it at runtime
 - [ ] T-021.4 [qa] An unapproved or rejected (suspended) seller can't reach farmer actions; the rejection reason shows to the farmer; no unsuspend in admin-koi
 
 ---
@@ -179,7 +180,8 @@ can create auctions. *(Plan: Becoming a farmer)*
 **Release risk to US-030's qa — two accepted stories depend on it:**
 US-015 AC2 (extend window) and US-014 AC3 (fee table) were accepted as `done`
 with those criteria carried forward, because they need the auction table.
-US-030 AC6/AC7 and T-030.5/T-030.6/T-030.7 are what close them. If US-030 ships
+US-030 AC6/AC7 and T-030.5/T-030.6/T-030.7 are what close them (with US-031
+T-031.1 for the fee recompute at submit, D-032). If US-030 ships
 without storing the extend window and the fees on each auction, both those
 acceptances are void and no further check will catch it.
 
@@ -192,39 +194,53 @@ on my koi. *(Plan: Structure, Pricing per lot, Fees, Delivery)*
 - AC4: The join fee and listing fee come from the fee table. The farmer can't set fees.
 - AC5: A banned farmer can't create auctions. Only a seller with `status === open` can create one (US-021 AC4).
 - AC6: *(Carried forward from US-015 AC2.)* The auction stores the extend window (`extend_window_minutes`) it was created with. A later settings change never alters an auction that already exists.
-- AC7: *(Carried forward from US-014 AC3.)* The auction stores the listing and join fees it was created with. A later fee-table change never alters an auction that already exists or is already approved.
-- [ ] T-030.1 [backend] Auction module: `auction` (farmer, category, start, end, join fee, listing fee, delivery method, status, extend window snapshot (US-015 AC2), fee snapshot (US-014 AC3)), `lot` (OB, KB, current price, end time, winner, final price, status). Links to seller and product
+- AC7: *(Carried forward from US-014 AC3, changed by D-032.)* The auction stores its listing and join fees. They are computed from the fee table when the auction is created, and recomputed at every submit (US-031 AC2). A later fee-table change never alters an auction that is `scheduled` or later.
+- AC8: A new auction starts as `draft`. The farmer can edit it until submit (US-031) (D-031).
+- [ ] T-030.1 [backend] Auction module: `auction` (farmer, category, start, end, join fee, listing fee, delivery method, status enum `draft | pending_approval | scheduled | live | closed | cancelled` (D-031), payer `customer_id` (D-033), fee override with reason (D-032), rejection reason (D-031), extend window snapshot (US-015 AC2), fee snapshot (US-014 AC3)), `lot` (OB, KB, current price, end time, winner, final price, status enum incl. `cancelled` with cancel reason (D-035)). Links to seller and product
 - [ ] T-030.2 [backend] Create-auction workflow that checks the limits from US-015, snapshots the current extend window and the category's fees onto the auction
 - [ ] T-030.3 [storefront] Farmer area: create auction and add lots with photos
 - [ ] T-030.4 [qa] Limits enforced on the server, not only in the form
 - [ ] T-030.5 [qa] *(moved from T-015.3)* Changing the extend window doesn't change an existing auction's stored window
-- [ ] T-030.6 [backend] *(moved from T-014.2)* Auctions store the listing and join fees they were created with
-- [ ] T-030.7 [qa] *(moved from T-014.4)* Editing a fee doesn't change an existing auction's fees
+- [ ] T-030.6 [backend] *(moved from T-014.2)* Auctions store their listing and join fees (recomputed at submit in T-031.1, D-032)
+- [ ] T-030.7 [qa] *(moved from T-014.4)* Editing a fee doesn't change a `scheduled` or later auction's fees
 
-### US-031 Listing fee is charged · `blocked (mvp-Q4, mvp-Q5)`
-As the **platform**, I want the listing fee charged when an auction is created
-so that farmers pay to list. *(Plan: How credit moves 4, Fees)*
-- AC1: Listing fee = category listing fee × number of lots, recorded as `listing_fee` (−) on the farmer's customer wallet, found through `customer_id` in the member token's `app_metadata` (mvp-Q15 option a; verify at runtime in this story).
-- AC2: If the balance is short, creation is blocked with a "top up" prompt, and nothing is saved.
-- AC3: All or nothing: the charge and the auction are saved together, or neither is.
-- [ ] T-031.1 [backend] Charge step inside the create workflow, with compensation
-- [ ] T-031.2 [storefront] Short-balance prompt that links to top-up
-- [ ] T-031.3 [qa] A failure after the charge rolls the charge back. → **mvp-Q4, mvp-Q5**
+### US-031 Farmer submits an auction; listing fee charged at approval · `todo`
+As the **platform**, I want the listing fee checked when a farmer submits an
+auction and charged when the admin approves it, so that farmers pay only for
+auctions the platform accepts. *(Plan: How credit moves 5, Fees, Key flows: approve auction; D-020, D-031, D-032, D-033)*
+**Depends on:** US-030 (auction exists), US-032 (the charge runs inside its approve workflow).
+- AC1: Submit moves the auction `draft → pending_approval` (D-031).
+- AC2: Submit recomputes the fees from the current fee table: listing fee = the category's listing fee × number of lots; join fee = the category's join fee (D-032).
+- AC3: Submit saves the farmer's `customer_id`, read from the member token's `app_metadata` (mvp-Q15; verify at runtime in this story), on the auction (D-033).
+- AC4: At submit, a balance below the recomputed listing fee refuses the submission with a "top up" prompt, and nothing changes (status, fees and `customer_id` stay as they were).
+- AC5: Approval records one `listing_fee` (−) on the wallet of the `customer_id` saved on the auction, at the final fee: the recomputed fee, or the admin's override for this auction (US-032 AC3).
+- AC6: Approval re-checks that wallet's balance. If it's below the final fee, approval fails with a clear error, and nothing is saved (no charge, the auction stays `pending_approval`).
+- AC7: All or nothing: the charge and `pending_approval → scheduled` are saved together, or neither is.
+- AC8: Nothing is charged before approval, so rejecting an auction or lowering its fee never writes a refund (D-020).
+- [ ] T-031.1 [backend] Submit workflow (`draft → pending_approval`): recompute fees, save `customer_id`, balance check (AC1–AC4) + store/vendor route
+- [ ] T-031.4 [backend] Balance re-check + `listing_fee` charge steps inside US-032's approve workflow, with compensation (AC5–AC7)
+- [ ] T-031.2 [storefront] Submit action in the Farmer area; short-balance prompt that links to top-up
+- [ ] T-031.5 [admin] Clear error in the `/lelang` queue when approval fails on a short balance
+- [ ] T-031.3 [qa] A failure after the charge rolls it back; a short balance refuses submission and approval and writes nothing; resubmitting after a category or lot change recomputes the fees; the charge lands on the saved `customer_id`'s wallet; rejection and a lowered fee write no refund
 
-### US-032 Admin approves auctions · `blocked (mvp-Q5, mvp-Q13)`
+### US-032 Admin approves or rejects auctions · `todo`
 As an **admin**, I want to approve each auction before it's scheduled so that
-category, photos and fees are checked. *(Plan: Structure, Fees)*
-- AC1: The queue shows category, lots with photos, and fees.
-- AC2: Approving moves `draft → scheduled`. What rejecting does is open. → **mvp-Q13**
-- AC3: Admin can override the listing or join fee for this one auction, with a saved written reason.
+category, photos and fees are checked. *(Plan: Structure, Fees; D-020, D-031, D-032)*
+- AC1: The queue lists only `pending_approval` auctions, with category, lots with photos, and fees (D-031).
+- AC2: Approving moves `pending_approval → scheduled` and charges the listing fee in the same workflow (US-031).
+- AC3: Admin can override the listing or join fee for this one auction, with a saved written reason. The listing-fee charge uses the overridden fee (D-020).
+- AC4: Rejecting needs a written reason. The auction moves `pending_approval → draft`, the farmer sees the reason, fixes it and resubmits. No rejected status (D-031).
+- AC5: Rejecting clears any fee override. The admin applies it again at approval if it's still wanted (D-032).
 - [ ] T-032.1 [backend] Approve workflow + fee override with a reason + `/admin` routes
-- [ ] T-032.2 [admin] `/lelang` approval queue
-- [ ] T-032.3 [qa] An override without a reason is rejected. → **mvp-Q5**
+- [ ] T-032.4 [backend] Reject workflow: saves the reason, clears the override, moves `pending_approval → draft` (D-031, D-032) + `/admin` route
+- [ ] T-032.2 [admin] `/lelang` approval queue (filters on `pending_approval`) with approve, override and reject-with-reason
+- [ ] T-032.5 [storefront] Farmer area: show the rejection reason on the draft and let the farmer edit and resubmit
+- [ ] T-032.3 [qa] An override or a rejection without a reason is refused; a rejected auction is `draft` with the reason visible to its farmer and no override; a `draft` auction never shows in the queue; no status outside the plan's enum is written
 
-### US-033 Auctions start and farmers track them · `blocked (mvp-Q13)`
+### US-033 Auctions start and farmers track them · `todo`
 As a **farmer**, I want to see my auctions and their status so that I know
 what's live. *(Plan: Design rules, statuses)*
-- AC1: Statuses follow `draft → scheduled → live → closed | cancelled`. A rejected state may be added. → **mvp-Q13**
+- AC1: Statuses follow `draft → pending_approval → scheduled → live → closed | cancelled`. A rejected auction returns `pending_approval → draft`; there is no rejected status (D-031).
 - AC2: A scheduled auction becomes `live` at its start time automatically.
 - [ ] T-033.1 [backend] Scheduled job moves `scheduled → live` (idempotent, batched, logs a summary)
 - [ ] T-033.2 [storefront] Farmer area: my auctions list with status
@@ -254,10 +270,10 @@ I can bid on all its lots. *(Plan: Structure, Fair play, Strikes)*
 - [ ] T-041.2 [storefront] Join button with the fee shown and a short-balance prompt
 - [ ] T-041.3 [qa] Joining twice charges once; own-auction and banned users are blocked
 
-### US-042 Customer places a bid on the website · `blocked (mvp-Q6)`
-As a **joined customer**, I want to bid on a lot so that I can win it. *(Plan: Bidding)*
+### US-042 Customer places a bid on the website · `todo`
+As a **joined customer**, I want to bid on a lot so that I can win it. *(Plan: Bidding, Pricing per lot; D-023)*
 - AC1: Only joined customers can bid. Not the farmer, not banned users.
-- AC2: A bid must be at least current price + KB. → **mvp-Q6**
+- AC2: The first bid on a lot may equal OB. Every later bid must be at least current price + KB. A lower bid is rejected with the minimum allowed amount (D-023). "First" means no bid that isn't removed: once every bid is removed, the next may equal OB again (D-036).
 - AC3: The lot row is locked and the server's timestamp decides order. Of two equal bids, the first wins and the second is rejected with the new current price.
 - AC4: Bids can't be retracted.
 - AC5: Each bid saves bidder, amount, source (`web`) and time.
@@ -265,6 +281,7 @@ As a **joined customer**, I want to bid on a lot so that I can win it. *(Plan: B
 - [ ] T-042.2 [backend] Store route `POST` bid, identity from `auth_context`
 - [ ] T-042.3 [storefront] `BidTerminal` wired to the API, with rejection messages
 - [ ] T-042.4 [qa] Concurrent equal bids: exactly one accepted
+- [ ] T-042.5 [qa] First bid = OB accepted; first bid < OB rejected; a later bid < current + KB rejected
 
 ### US-043 Late bids extend the lot · `todo`
 As a **bidder**, I want late bids to extend the lot so that nobody wins by sniping.
@@ -308,10 +325,10 @@ feels like a live event. *(Plan: Live room)*
 As the **platform**, I want lots closed when their time ends so that winners are
 fixed. *(Plan: Closing and winners, Key flows)*
 - AC1: A job every minute closes lots past their end time.
-- AC2: Highest bid wins (`won`). No bids gives `unsold`.
+- AC2: Highest bid that isn't removed wins (`won`). No such bid gives `unsold`. A `cancelled` lot is never closed (D-035).
 - AC3: Winner, final price and close time are saved on the lot, never recomputed from bids.
 - [ ] T-050.1 [backend] Close-lots job running a close workflow (idempotent, batched)
-- [ ] T-050.2 [backend] The auction becomes `closed` when all its lots are closed
+- [ ] T-050.2 [backend] The auction becomes `closed` when all its lots are closed (`unsold`, `won` or later, or `cancelled`)
 - [ ] T-050.3 [qa] Running the job twice changes nothing; an extended lot isn't closed early
 
 ### US-051 Winner and farmer see each other's contact details · `todo`
@@ -339,34 +356,39 @@ the claim window starts. *(Plan: Delivery)*
 - [ ] T-053.1 [backend] Delivered workflow + route
 - [ ] T-053.2 [storefront] Button on the won lot
 
-### US-054 Winner opens a dead-on-arrival claim · `blocked (mvp-Q7, mvp-Q14)`
+### US-054 Winner opens a dead-on-arrival claim · `todo`
 As a **winner**, I want to claim within 4 hours if the fish arrives dead or sick
-so that I get a refund or a replacement. *(Plan: Dead-on-arrival claims 1–2)*
+so that I get a refund or a replacement. *(Plan: Dead-on-arrival claims 1–3, Design rules; D-025, D-027)*
 - AC1: A claim is allowed only within the claim window (4 h, a setting) after delivered.
 - AC2: It needs an unboxing video (up to 100 MB) and a remedy choice: full refund or replacement.
-- AC3: The farmer and admin are notified. → **mvp-Q7**
-- [ ] T-054.1 [backend] Moderation module: `claim` model + open-claim workflow; video stored on the VPS file provider. Claim status enum → **mvp-Q14**
-- [ ] T-054.2 [storefront] Claim form with video upload and size limit
-- [ ] T-054.3 [qa] Late claims and oversized videos are rejected on the server
+- AC3: The farmer and admin are notified on the site only: the claim appears in the Farmer area and in the admin-koi claim queue. No WhatsApp message is sent (D-025).
+- AC4: A new claim has status `open`. The claim enum is `open → approved | disputed`, `disputed → approved | rejected`, `approved → resolved → confirmed` (D-038).
+- [ ] T-054.1 [backend] Moderation module: `claim` model with the D-038 status enum + open-claim workflow; video stored on the VPS file provider
+- [ ] T-054.2 [storefront] Claim form with video upload and size limit; open claims listed in the Farmer area
+- [ ] T-054.4 [admin] `/klaim` queue lists open claims
+- [ ] T-054.3 [qa] Late claims and oversized videos are rejected on the server; a new claim is `open` and shows in the Farmer area and the admin queue
 
-### US-055 Farmer responds and admin decides disputes · `blocked (mvp-Q14)`
+### US-055 Farmer responds and admin decides disputes · `todo`
 As a **farmer**, I want to accept or dispute a claim, and as an **admin**, I want
-to decide disputes, so that claims are fair. *(Plan: Dead-on-arrival claims 3)*
-- AC1: The farmer can accept or dispute.
-- AC2: A disputed claim goes to admin, whose decision is final and saved with a reason.
-- [ ] T-055.1 [backend] Claim decision workflows + routes (store for the farmer, admin for disputes)
+to decide disputes, so that claims are fair. *(Plan: Dead-on-arrival claims 3; D-038)*
+- AC1: The farmer can accept, which moves the claim straight to `approved` with no admin step, or dispute (`open → disputed`) (D-038).
+- AC2: Only a disputed claim goes to admin, whose decision (`approved` or `rejected`) is final and saved with a reason.
+- [ ] T-055.1 [backend] Claim decision workflows + routes (store for the farmer, admin for disputes); transitions follow D-038 only; `approved_at` saved on both paths
 - [ ] T-055.2 [storefront] Farmer area claim review with the video
 - [ ] T-055.3 [admin] `/klaim` dispute screen
+- [ ] T-055.4 [qa] Farmer accept gives `approved` directly; admin can't decide a claim that isn't `disputed`
 
-### US-056 Approved claims are resolved · `blocked (mvp-Q14)`
+### US-056 Approved claims are resolved · `todo`
 As a **winner**, I want an approved claim settled within 3 days so that I'm made
-whole. *(Plan: Dead-on-arrival claims 4–6)*
-- AC1: The farmer has 3 days to refund directly or ship a replacement, then marks it done. The winner confirms.
+whole. *(Plan: Dead-on-arrival claims 4–6; D-027, D-038)*
+- AC1: The farmer has 3 days to refund directly or ship a replacement, then marks it done (`approved → resolved`). The winner confirms (`resolved → confirmed`). The 3 days start when the claim becomes `approved`, on both paths (D-038).
 - AC2: Missing the 3 days, or refusing an approved claim, makes the farmer eligible for a strike (US-059).
 - AC3: The farmer stays responsible even if a courier caused the death.
-- [ ] T-056.1 [backend] Claim resolution states + a deadline check in the scheduled job
+- AC4: If the winner doesn't confirm within 3 days of `resolved`, the existing scheduled job sets the claim to `confirmed` (D-027).
+- [ ] T-056.1 [backend] Claim resolution states + the farmer deadline check and the 3-day auto-confirm in the existing scheduled job (idempotent, batched)
 - [ ] T-056.2 [storefront] Mark done (farmer) and confirm (winner)
 - [ ] T-056.3 [admin] Overdue claims are flagged for a strike
+- [ ] T-056.4 [qa] A `resolved` claim older than 3 days becomes `confirmed` once; running the job twice changes nothing
 
 ### US-057 Winner rates the farmer · `todo`
 As a **winner**, I want to rate the farmer after shipping so that other buyers
@@ -376,11 +398,11 @@ can judge farms. *(Plan: Ratings)*
 - [ ] T-057.1 [backend] `farmer_rating` model + workflow + routes
 - [ ] T-057.2 [storefront] Rating form + display on the partner page
 
-### US-058 Farmer reports a winner who didn't pay · `blocked (mvp-Q8)`
+### US-058 Farmer reports a winner who didn't pay · `todo`
 As a **farmer**, I want to report a winner who didn't pay within 1×24 h so that
-admin can act. *(Plan: Winner doesn't pay)*
+admin can act. *(Plan: Winner doesn't pay; D-026)*
 - AC1: The farmer can report after the deadline. The admin reviews it and may give a strike.
-- AC2: The farmer may offer the lot to the second-highest bidder at that bidder's price. This is arranged between them, off platform. → **mvp-Q8**
+- AC2: Any offer to the second-highest bidder is fully off-platform. The platform records nothing about it and never reassigns the lot; winner and final price stay as saved at close (D-026).
 - [ ] T-058.1 [backend] Report model/state + routes
 - [ ] T-058.2 [storefront] Report button after the deadline
 - [ ] T-058.3 [admin] Report review that leads to a strike
@@ -395,21 +417,22 @@ offenders are banned. *(Plan: Strikes)*
 - [ ] T-059.2 [admin] Strike actions on reports and users
 - [ ] T-059.3 [qa] An expired strike no longer counts; the ban lifts when active strikes drop below 2
 
-### US-060 Farmer cancels an auction · `blocked (mvp-Q9)`
-As a **farmer**, I want to cancel my auction so that I can withdraw it, with
-joiners refunded. *(Plan: Cancellations, Refunds in the MVP)*
+### US-060 Farmer cancels an auction · `todo`
+As a **farmer**, I want to cancel my auction before it starts so that I can
+withdraw it, with joiners refunded. *(Plan: Cancellations, Refunds in the MVP; D-022, D-031)*
 - AC1: Every customer who joined gets a `refund` (+) of their join fee.
 - AC2: The farmer's listing fee isn't refunded.
-- AC3: A lot that has bids can be cancelled only by admin. → **mvp-Q9**
-- [ ] T-060.1 [backend] Cancel workflow: refund each participant, set status `cancelled`
-- [ ] T-060.2 [storefront] Cancel action in the Farmer area
-- [ ] T-060.3 [qa] Refunds total exactly the join fees collected
+- AC3: The farmer can cancel only while the auction is `draft`, `pending_approval` or `scheduled`. Once it is `live`, the farmer's cancel is refused; only an admin can cancel it (D-022, D-031, US-091).
+- [ ] T-060.1 [backend] Cancel workflow: refuse unless `draft`, `pending_approval` or `scheduled`, refund each participant, set status `cancelled`
+- [ ] T-060.2 [storefront] Cancel action in the Farmer area, hidden once the auction is `live`
+- [ ] T-060.3 [qa] Refunds total exactly the join fees collected; no `listing_fee` refund is written; a farmer cancel on a `live` auction is refused on the server
 
-### US-061 Claim videos are cleaned up · `blocked (mvp-Q14)`
+### US-061 Claim videos are cleaned up · `todo`
 As the **platform**, I want claim videos deleted 30 days after a claim closes so
-that storage stays bounded. *(Plan: Dead-on-arrival claims 7)*
+that storage stays bounded. *(Plan: Dead-on-arrival claims 7; D-027)*
+- AC1: A claim is closed when its status is `confirmed` or `rejected` (D-027). Its video is deleted 30 days after it closed; the claim record stays.
 - [ ] T-061.1 [backend] The scheduled job deletes the files and keeps the claim record
-- [ ] T-061.2 [qa] Only closed claims older than 30 days are affected. Which statuses count as closed → **mvp-Q14**
+- [ ] T-061.2 [qa] Only `confirmed` or `rejected` claims closed more than 30 days ago are affected
 
 ---
 
@@ -421,19 +444,38 @@ act on bad actors. *(Plan: Users and roles, Strikes)*
 - [ ] T-070.1 [backend] `/admin` user list and detail with wallet, strikes and ban status
 - [ ] T-070.2 [admin] `/pengguna` screens
 
-### US-071 Admin spots shill bidding · `blocked (mvp-Q10)`
+### US-071 Admin spots shill bidding · `todo`
 As an **admin**, I want to see bid patterns per bidder and farmer so that I can
-spot shill bidding. *(Plan: Fair play)*
-- [ ] T-071.1 [backend] `/admin` read route: bids grouped by bidder × farmer. → **mvp-Q10**
-- [ ] T-071.2 [admin] Pattern view on the user and auction pages
+spot shill bidding. *(Plan: Fair play; D-028, D-037)*
+**Depends on:** US-058 (non-payment reports).
+- AC1: For each farmer, a bidder table shows bidder, bid count, lots bid on, wins and unpaid wins. An unpaid win is a non-payment report from that farmer on that bidder (US-058). Every count covers all time (D-037).
+- AC2: A bidder is flagged when at least 50% of their bids are on that farmer's lots, or when they have at least 2 unpaid wins from that farmer.
+- AC3: Flags take no automatic action. The admin bans by hand (US-059, US-070).
+- [ ] T-071.1 [backend] `/admin` read route: per-farmer bidder table with the two flags (read only, `query.graph`)
+- [ ] T-071.2 [admin] Bidder table on the farmer page, flagged rows marked
+- [ ] T-071.3 [qa] Flag thresholds at exactly 50% and exactly 2 unpaid wins; a flag changes no account
 
-### US-072 Admin monitors live auctions · `blocked (mvp-Q11)`
-As an **admin**, I want to watch live auctions, remove obviously wrong bids and
-cancel lots so that auctions stay fair. *(Plan: Bidding, Cancellations, Milestone 6)*
-- AC1: Removing a bid is allowed only for an obvious error, and needs a reason. → **mvp-Q11**
-- AC2: Only admin can cancel a lot that has bids.
-- [ ] T-072.1 [backend] Remove-bid and cancel-lot workflows + `/admin` routes
-- [ ] T-072.2 [admin] Live monitoring screen
+### US-072 Admin monitors live auctions and removes wrong bids · `todo`
+As an **admin**, I want to watch live auctions and remove obviously wrong bids
+so that auctions stay fair. *(Plan: Bidding, Milestone 6; D-024, D-036)*
+- AC1: Removing a bid is allowed only for an obvious error, and needs a reason.
+- AC2: A removed bid is marked removed (with reason, admin and time), never deleted. Removed bids don't count for the current price, the winner or the bid history shown to customers.
+- AC3: The lot's current price goes back to the highest remaining bid, or OB if none is left (D-024).
+- AC4: Any extend the removed bid caused stays. The lot's end time is never shortened (D-024).
+- AC5: A bid can be removed only while its lot is `open`. After close, removal is refused; the fix is a lot cancel (US-091). Once every bid is removed, the next bid may equal OB again (D-036, D-023).
+- [ ] T-072.1 [backend] Remove-bid workflow (row lock on the lot, mark removed, recompute current price) + `/admin` route
+- [ ] T-072.2 [admin] Live monitoring screen with remove-bid and a required reason
+- [ ] T-072.3 [qa] After removal: bid row still exists and is marked removed; price = highest remaining bid or OB; end time unchanged; removal on a closed lot refused; after removing every bid, a bid = OB is accepted
+
+### US-091 Admin cancels lots and live auctions · `todo`
+As an **admin**, I want to cancel a lot that has bids, or a live auction, so that
+a broken listing can be stopped. *(Plan: Cancellations, Lot lifecycle; D-022, D-034, D-035)*
+- AC1: Only admin can cancel a lot: `open → cancelled`, with a saved reason and no winner (D-035).
+- AC2: Once an auction is `live`, only admin can cancel it (D-022).
+- AC3: An admin cancel of an auction refunds every participant's join fee as a `refund` (+), the same as a farmer cancel. The listing fee is not refunded (D-034).
+- [ ] T-091.1 [backend] Cancel-lot and cancel-live-auction workflows + `/admin` routes (moved from T-072.1)
+- [ ] T-091.2 [admin] Cancel actions with a required reason on the live monitoring screen
+- [ ] T-091.3 [qa] A farmer can't reach either cancel; a cancelled lot has no winner and is skipped by the close job; refunds total exactly the join fees collected; no `listing_fee` refund; statuses follow the plan's enums only
 
 ---
 
@@ -449,7 +491,8 @@ bid by WhatsApp. *(Plan: WhatsApp bot: Identity)*
 - AC5: A bid's server time is recorded when the webhook receives it, not when it is processed.
 - AC6: Non-command messages and messages in rooms assigned to an agent are ignored by the bot.
 - [ ] T-080.1 [ops] Confirm the Qontak API supports incoming messages and template sends, and which plan includes it
-- [ ] T-080.2 [ops] Dedicated business number + verified Meta Business account (start early; it can take weeks)
+- [ ] T-080.2 [ops] Dedicated business number + verified Meta Business account. Owner starts Meta Business verification now (up to 14 business days; D-029)
+- [ ] T-080.5 [ops] Owner gets the written Qontak quote: price, Bot + User tokens, webhook access, webhook retry and signature, rate limits, utility charging inside the window, onboarding time (D-029; the bot epic waits for it)
 - [ ] T-080.3 [backend] Qontak webhook route (`message_interactions`) + number-to-account lookup. Store both the Bot token (bot replies) and the User token (template sends), refresh them, and keep the API base URL in config (Qontak announced an undated move to `api.mekari.com` with HMAC auth)
 - [ ] T-080.4 [qa] Webhook acknowledges within 5 s, drops a duplicate message `id`, ignores non-command and agent-assigned messages
 
@@ -486,7 +529,7 @@ The website must work without WhatsApp. The bot can launch after the web.
 - Per message from 2026-10-01 (Qontak, non-Lite): Service Rp356,65, Utility Rp366,65, Marketing Rp627,33. Service messages, including bot replies, are now charged, with 1,000 free per number per month. Meta says utility messages inside an open window are charged; Qontak's article says otherwise. VAT not verified.
 - Webhook: answer within 5 s; no signature or retry policy documented; dedupe on message `id`.
 - Meta: 1 message per 6 s per user; 250 unique users per 24 h outside the window until business verification (then 2,000). Business verification up to 14 business days. Template review up to 24 h.
-- Alternative: Meta Cloud API direct, with the same capabilities, signed webhooks (`X-Hub-Signature-256`), retries and no platform fee. Twilio bills in USD. Fonnte and Wablas are unofficial (ruled out by D-006).
+- Alternative (not chosen, D-029): Meta Cloud API direct, with the same capabilities, signed webhooks (`X-Hub-Signature-256`), retries and no platform fee. Twilio bills in USD. Fonnte and Wablas are unofficial (ruled out by D-006).
 
 ---
 
@@ -519,23 +562,28 @@ table complete.
 |---|---|
 | Users and roles | US-002, US-020, US-021, US-070 |
 | Becoming a farmer | US-020, US-021 |
-| Store credit wallet: how credit moves | US-010, US-011, US-012, US-015, US-031, US-041 |
-| Transaction types (`manual_topup`, `join_fee`, `listing_fee`, `adjustment`, `refund`) | US-012, US-041, US-031, US-013, US-060 |
+| Store credit wallet: how credit moves (4 join, 5 submit/approve, D-020, D-031–D-033) | US-010, US-011, US-012, US-015, US-031, US-032, US-041 |
+| Transaction types (`manual_topup`, `join_fee`, `listing_fee`, `adjustment`, `refund`) | US-012, US-041, US-031, US-013, US-060, US-091 |
 | Wallet rules (integer, append-only, closed loop) | Epic 1 rules, US-010, US-013 |
-| Refunds in the MVP | US-060 |
-| Fees and fee table | US-014, US-031, US-032, US-041 |
-| Lot lifecycle and statuses | US-033, US-050, US-052, US-053, US-054 |
-| Structure (20 lots, 1–7 days, approval) | US-015, US-030, US-032 |
-| Pricing per lot (OB, KB) | US-030, US-042 |
-| Bidding | US-042, US-044, US-072 |
+| Refunds in the MVP (farmer or admin cancel, D-034; none on rejection or lowered fee, D-020) | US-060, US-091, US-031 |
+| Fees and fee table (recomputed at submit, override cleared on rejection, D-032) | US-014, US-030, US-031, US-032, US-041 |
+| Lot lifecycle and statuses (incl. `cancelled`, D-035) | US-033, US-050, US-052, US-053, US-054, US-091 |
+| Auction statuses (`pending_approval`, rejection back to `draft`, D-031) | US-030, US-031, US-032, US-033, US-060 |
+| Claim statuses (D-027, D-038) | US-054, US-055, US-056, US-061 |
+| Structure (20 lots, 1–7 days, approval, rejection) | US-015, US-030, US-032 |
+| Pricing per lot (OB, KB, first bid = OB, D-023) | US-030, US-042 |
+| Bidding (incl. bid removal, D-024, D-036) | US-042, US-044, US-072 |
 | Extend (anti-sniping) | US-043, US-015 |
-| Fair play | US-041, US-042, US-071 |
+| Fair play (incl. shill-bidding table, D-028, D-037) | US-041, US-042, US-071 |
 | Closing and winners | US-050, US-051 |
-| Winner doesn't pay | US-058, US-059 |
+| Winner doesn't pay (second bidder off-platform, D-026) | US-058, US-059 |
 | Strikes | US-059 |
 | Delivery | US-030, US-052, US-053 |
-| Dead-on-arrival claims | US-054, US-055, US-056, US-061 |
-| Cancellations | US-060, US-072 |
+| Dead-on-arrival claims (on-site notices D-025, auto-confirm D-027) | US-054, US-055, US-056, US-061 |
+| Cancellations (farmer before start, admin once live, D-022, D-031, D-034, D-035) | US-060, US-091 |
+| Key flows: approve auction (D-033) | US-031, US-032 |
+| Key flows: place bid | US-042, US-043 |
+| Open questions: owner actions (Qontak quote, Meta verification, D-029) | US-080 (T-080.2, T-080.5) |
 | Ratings | US-057 |
 | WhatsApp bot | US-080 – US-085 |
 | Technical approach: frontends, shared UI | US-001, US-003 |
@@ -545,7 +593,7 @@ table complete.
 ## Out of scope for the MVP (from the plan)
 
 Don't build these, and reject stories that need them: online payment gateway,
-refunds (except farmer cancel), fixed-price marketplace and cart checkout,
+refunds (except when a farmer or an admin cancels an auction, D-034), fixed-price marketplace and cart checkout,
 payment held by the platform, proxy bidding, buy-it-now, live video hosting,
 withdrawals or transfers of credit.
 
@@ -559,16 +607,24 @@ is built. Record the answer here, in `plan.md`, and as a decision in `docs/produ
 | mvp-Q1 | **Answered 2026-11-14 (D-008):** yes, the registration phone is the WhatsApp number, and it's required. *(Was: is the registration phone the bot's WhatsApp number, and is it required?)* | none (was US-002, US-080) |
 | mvp-Q2 | **Answered 2026-11-14 (D-009):** an admin setting. *(Was: env var, admin setting or constant?)* | none (was US-011) |
 | mvp-Q3 | **Answered 2026-11-14 (D-010):** a settings table. *(Was: settings table, or env/config?)* | none (was US-015) |
-| mvp-Q4 | Is the listing fee charged at creation (draft) or at submission for approval? The plan says "creating one". | US-031 |
-| mvp-Q5 | If admin **rejects** an auction, or **lowers its fee** at approval after the listing fee was charged, is the difference refunded? The plan only allows refunds for farmer cancels. | US-031, US-032 |
-| mvp-Q6 | Can the **first** bid equal OB, or must it be OB + KB? | US-042 |
-| mvp-Q7 | How are the farmer and admin notified of a claim: WhatsApp, on-site only, or both? | US-054 |
-| mvp-Q8 | Does the platform record the second-bidder offer at all, or is it fully off-platform? | US-058 |
-| mvp-Q9 | Can a farmer cancel an auction after bidding has started (some lots have bids)? Cancellations say yes with refunds, but a lot with bids "can only be cancelled by admin". | US-060 |
-| mvp-Q10 | What exactly should the shill-bidding view show (fields and thresholds)? | US-071 |
-| mvp-Q11 | When admin removes a bid, how is the lot's current price restored (previous highest bid)? Does extend still apply? | US-072 |
-| mvp-Q12 | **Partly answered 2026-11-14 (T-080.1 research):** capability yes; inbound webhook, in-window bot replies and template sends exist on all plans with a WhatsApp channel. **Remaining:** Owner to obtain a written Qontak quote confirming the package price, Bot + User tokens and webhook access, webhook retry/signature, rate limits, in-window utility charging and onboarding time — or choose Meta Cloud API direct. | US-080 – US-085 |
-| mvp-Q13 | What happens when admin **rejects** an auction? The status list (`plan.md`, Design rules) is `draft → scheduled → live → closed \| cancelled`, with no rejected state. Options: (a) add `rejected` as a final state; (b) send it back to `draft` with a reason so the farmer can fix and resubmit; (c) use `cancelled`. Linked to mvp-Q5 (listing fee refund on rejection). | US-032, US-033 |
-| mvp-Q14 | What are the claim statuses and transitions? The plan describes steps (opened, farmer accepts or disputes, admin decides, approved, resolved within 3 days, winner confirms, closed) but no status enum. The lot enum only has `claimed`. Proposed for approval: `open → accepted \| disputed → approved \| rejected → resolved → confirmed`. Also: which statuses count as "closed" for the 30-day video deletion? | US-054, US-055, US-056, US-061 |
+| mvp-Q4 | **Answered 2026-11-15 (D-020):** charged when the admin approves, at the final fee; balance checked at submission (refused if short) and again at approval (fails if short). *(Was: is the listing fee charged at creation (draft) or at submission for approval? The plan says "creating one".)* | none (was US-031) |
+| mvp-Q5 | **Answered 2026-11-15 (D-020):** moot; nothing is charged before approval, so no refund is ever needed. The refund rule doesn't change. *(Was: if admin rejects an auction, or lowers its fee at approval after the listing fee was charged, is the difference refunded?)* | none (was US-031, US-032) |
+| mvp-Q6 | **Answered 2026-11-15 (D-023):** the first bid may equal OB; every later bid ≥ current + KB. *(Was: can the first bid equal OB, or must it be OB + KB?)* | none (was US-042) |
+| mvp-Q7 | **Answered 2026-11-15 (D-025):** on-site only (Farmer area and admin-koi queue). WhatsApp claim template is a later idea (`docs/releases/README.md`). *(Was: WhatsApp, on-site only, or both?)* | none (was US-054) |
+| mvp-Q8 | **Answered 2026-11-15 (D-026):** fully off-platform; the farmer reports non-payment; the lot is never reassigned. *(Was: does the platform record the second-bidder offer at all?)* | none (was US-058) |
+| mvp-Q9 | **Answered 2026-11-15 (D-022):** a farmer may cancel only before the start (`draft` or `scheduled`); once `live`, only the admin. Join-fee refunds on farmer cancel stay; listing fee not refunded. *(Was: can a farmer cancel after bidding has started?)* | none (was US-060) |
+| mvp-Q10 | **Answered 2026-11-15 (D-028):** per-farmer bidder table (bidder, bid count, lots bid on, wins, unpaid wins); flag at ≥50% of bids on one farmer or ≥2 unpaid wins from that farmer; no automatic action. *(Was: fields and thresholds?)* | none (was US-071; now blocked by mvp-Q22) |
+| mvp-Q11 | **Answered 2026-11-15 (D-024):** bid marked removed, never deleted; price back to highest remaining bid or OB; extend stays. *(Was: how is the price restored, does extend still apply?)* | none (was US-072; now blocked by mvp-Q21) |
+| mvp-Q12 | **Answered in part 2026-11-15 (D-029):** stays with Qontak (not Meta Cloud API direct). **Remaining:** the owner's written Qontak quote (price, Bot + User tokens, webhook access, webhook retry/signature, rate limits, utility charging inside the window, onboarding time), tracked as T-080.5. Owner also starts Meta Business verification now (T-080.2). *(Earlier: capability confirmed by T-080.1 research, 2026-11-14.)* | US-080 – US-085 |
+| mvp-Q13 | **Answered 2026-11-15 (D-021):** option (b); rejection returns the auction to `draft` with a written reason the farmer sees; no new status. *(Was: add `rejected`, back to `draft`, or `cancelled`?)* | none (was US-032, US-033; see mvp-Q17) |
+| mvp-Q14 | **Answered 2026-11-15 (D-027):** enum approved as proposed; closed = `confirmed` or `rejected`; new rule: auto-confirm 3 days after `resolved` by the existing scheduled job. *(Was: what are the claim statuses, and which count as closed?)* | none (was US-054, US-055, US-056, US-061) |
 | mvp-Q15 | **Answered 2026-11-14 from a code reading, pending runtime verification in US-031:** option (a); the member token's `app_metadata` contains `customer_id`. *(Was: how does the listing-fee charge find the farmer's **customer** wallet? Wallets link to customers (`plan.md`, Custom modules), but farmer routes use a member token plus `x-seller-id` (D-003), and D-003 forbids a custom customer↔seller link. Options: (a) read `customer_id` from the shared auth identity's `app_metadata` (D-003 says it holds both ids; whether a member token exposes it is not verified); (b) the create-auction call also sends the farmer's customer token; (c) charge on a separate step from the storefront under the customer token.)* | none (was US-031) |
-| mvp-Q16 | D-003 wording: it says the farmer logs in as a member again "after admin approves", but the code needs a fresh member login right after registration (the first token has an empty `actor_id`). Proposed D-003 text: "After `POST /vendor/sellers`, the farmer logs in as a member again to get a token for the new seller. Farmer actions stay closed until admin approves (`status === open`)." Owner to approve the correction (a superseding decision). | none (docs only; US-020 T-020.2 already follows the code) |
+| mvp-Q16 | **Answered 2026-11-15 (D-030, supersedes D-003's re-login bullet):** proposed text approved. *(Was: D-003 says re-login "after admin approves", but the code needs it right after registration.)* | none |
+| mvp-Q17 | **Answered 2026-11-15 (D-031):** add `pending_approval`: `draft → pending_approval → scheduled → live → closed \| cancelled`. Submit moves `draft → pending_approval` (with the D-020 check); rejection moves `pending_approval → draft` with a reason; the queue filters on `pending_approval`; farmer cancel also allowed there. Supersedes D-021. *(Was: no state for "submitted, awaiting approval".)* | none (was US-031, US-032) |
+| mvp-Q18 | **Answered 2026-11-15 (D-032):** fees recomputed at every submit (category's current fee × lots); an admin override is cleared on rejection and reapplied at approval if wanted. *(Was: which fees apply on resubmission, does an override survive rejection?)* | none (was US-031, US-032) |
+| mvp-Q19 | **Answered 2026-11-15 (D-034):** option (a); an admin cancel refunds every participant's join fee, like a farmer cancel; listing fee not refunded. Refund rule and out-of-scope line widened. *(Was: what does an admin cancel refund?)* | none (was US-091) |
+| mvp-Q20 | **Answered 2026-11-15 (D-035):** option (a); lot `open → cancelled`, admin only, reason saved, no winner. *(Was: no status for a cancelled lot.)* | none (was US-091) |
+| mvp-Q21 | **Answered 2026-11-15 (D-036):** (1) option (a), only while the lot is `open`; after close, the fix is a lot cancel. (2) option (a), once every bid is removed, the next may equal OB. *(Was: removal after close; OB rule after removals.)* | none (was US-072) |
+| mvp-Q22 | **Answered 2026-11-15 (D-037):** option (b), a farmer's non-payment report (US-058); counts cover all time. *(Was: what is an unpaid win, which period?)* | none (was US-071) |
+| mvp-Q23 | **Answered 2026-11-15 (D-038):** farmer accept moves the claim straight to `approved`; `accepted` dropped from the enum; admin decides only disputes; 3-day clock starts at `approved` on both paths. *(Was: does an accepted claim need admin approval, when does the clock start?)* | none (was US-055, US-056) |
+| mvp-Q24 | **Answered 2026-11-15 (D-033):** option (a); the payer's `customer_id` (from the member token, mvp-Q15) is saved on the auction at submit; approval charges that wallet. A field on the auction, not a customer↔seller link; D-003 holds. *(Was: how the admin-token approve step finds the farmer's wallet.)* | none (was US-031) |
