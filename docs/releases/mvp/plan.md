@@ -19,21 +19,21 @@ There are three roles; every farmer is also a customer with the same login.
 
 | Role | Can do | Where |
 | --- | --- | --- |
-| Customer | Register, see balance and history, join auctions, bid, see won lots and farmer contact | Storefront, WhatsApp |
+| Customer | Register (phone required; it is the account's WhatsApp number, D-008), see balance and history, join auctions, bid, see won lots and farmer contact | Storefront, WhatsApp |
 | Farmer | Everything a customer can, plus register a farm, create auctions and lots, see bidders and winners, mark lots paid and shipped | Farmer area in the storefront |
-| Admin | Approve farms and auctions, approve top-ups, adjust balances, edit the fee table and extend window, moderate bids, issue strikes and bans | Custom admin app |
+| Admin | Approve farms and auctions, approve top-ups, adjust balances, edit the fee table and settings (extend window, limits, claim window, platform bank account), moderate bids, issue strikes and bans | Custom admin app |
 
-**Becoming a farmer:** a logged-in customer submits a farm registration: farm name, location, WhatsApp number, ID card (KTP), farm photos, and a bank account in their own name for winners to pay into. Admin approves it, and the account gains farmer access.
+**Becoming a farmer:** a logged-in customer submits a farm registration: farm name, location, ID card (KTP photo and 16-digit NIK, stored privately and never public, D-017), farm photos, and a bank account in their own name for winners to pay into. The farm's WhatsApp number is the registration phone, copied to the seller and not editable (D-016). Admin approves it, and the account gains farmer access. Admin may instead reject it with a reason the farmer sees; rejection is final, with no resubmission (D-015).
 
-**To verify early:** Mercur treats customers and sellers as separate logins. Linking one person's customer account to their farm needs a check in the Mercur docs before building.
+**Account link (settled, D-003):** a farmer is one auth identity whose `app_metadata` holds both `customer_id` and `member_id`. The storefront signs in as customer (for `/store/*`) and as member (for `/vendor/*` with `x-seller-id`) with the same credentials. Farm registration is a member login followed by `POST /vendor/sellers`, which creates the seller as `pending_approval`. No custom customer↔seller link.
 
 ## Store credit wallet
 
-Every account has one rupiah wallet whose balance is the sum of its transactions; no balance number is ever overwritten.
+Every customer has one rupiah wallet, created when their profile is complete (D-011), whose balance is the sum of its transactions; no balance number is ever overwritten. One wallet per customer is enforced by a database unique constraint.
 
 **How credit moves**
 
-1. User transfers any amount (no minimum) to the platform's bank account.
+1. User transfers any amount (no minimum) to the platform's bank account. The account is an admin setting stored in the settings table and shown on the top-up page (D-009, D-010).
 2. User uploads the transfer screenshot on the site, which creates a pending top-up request, and also sends it to admin on WhatsApp.
 3. Admin checks the bank statement and approves the request (or rejects it with a reason). Approval records the top-up.
 4. Joining an auction (customer) or creating one (farmer) checks the balance and records a fee transaction. If the balance is short, the action is blocked with a "top up" prompt.
@@ -50,7 +50,7 @@ Every account has one rupiah wallet whose balance is the sum of its transactions
 
 **Rules**
 
-- Money is stored as whole rupiah in integer columns.
+- Money is stored as whole rupiah in integer columns. `wallet_transaction.amount` has no practical size cap (exact `numeric`, whole rupiah, D-012).
 - Transactions are never edited or deleted; a mistake is fixed with an `adjustment`.
 - Credit can only pay platform fees. It cannot pay farmers, be withdrawn, or be moved between users. This keeps it closed-loop, the lower-risk case under Bank Indonesia rules (to confirm with someone local).
 - **Refunds in the MVP:** only when a farmer cancels an auction. Every customer who joined gets a `refund` of their join fee. No refund when a customer leaves an auction, and the farmer's listing fee is not refunded.
@@ -179,13 +179,13 @@ One bot number serves every auction; each message names the lot, so there's no n
 - **Info:** `STATUS A3` returns current price and time left.
 - **Win:** sends the farmer's WhatsApp and bank details and the 1×24 hour deadline.
 
-**Identity:** a WhatsApp number is linked to one account. Bids from unknown numbers get a registration link.
+**Identity:** a WhatsApp number is linked to one account. It is the phone number given at registration, which is required (D-008). Bids from unknown numbers get a registration link.
 
 **Constraints**
 
-- **Provider: Qontak (Mekari), an official Indonesian WhatsApp provider.** It gives the admin team a shared WhatsApp inbox for transfer proofs and customer chats, local support and IDR invoicing, on a monthly plan (one guide cites from about Rp599.000/month). The bot connects through Qontak's API. Unofficial libraries are not used; they risk a ban mid-auction.
-- More than 24 hours after the user's last message, the bot can only send pre-approved template messages, charged per message. Outbid and win alerts need utility templates, about Rp357 per message plus VAT in Indonesia per third-party rate tables. They are free while the user's 24-hour window is open, which covers most active WhatsApp bidders ([Qontak rates](https://help-center.qontak.com/hc/en-us/articles/48430892733465), [Indonesia rate breakdown](https://chatmaxima.com/whatsapp-api-pricing/indonesia/)).
-- Needs a dedicated business phone number not used on the normal WhatsApp app, and a verified Meta Business account. Verification can take days to weeks, so start early.
+- **Provider: Qontak (Mekari), an official Indonesian WhatsApp provider.** It gives the admin team a shared WhatsApp inbox for transfer proofs and customer chats, local support and IDR invoicing, on a monthly plan. Price is not settled: Qontak's official page shows Service Suite Plus at Rp2.000.000/month with a 5-user minimum, otherwise a quote (`mvp-Q12`). The bot connects through Qontak's API. Unofficial libraries are not used; they risk a ban mid-auction.
+- More than 24 hours after the user's last message, the bot can only send pre-approved template messages, charged per message. Outbid, win and join messages need utility templates. From 2026-10-01 Qontak charges per message (non-Lite): Service Rp356,65, Utility Rp366,65, Marketing Rp627,33; VAT not verified. Service messages, including bot replies inside the 24-hour window, are now charged too, with 1,000 free per number per month. Whether utility messages inside an open window are charged is unclear (Meta says yes, Qontak says no) ([Qontak rates](https://help-center.qontak.com/hc/en-us/articles/48430892733465), [Indonesia rate breakdown](https://chatmaxima.com/whatsapp-api-pricing/indonesia/)).
+- Needs a dedicated business phone number not used on the normal WhatsApp app, and a verified Meta Business account. Business verification takes up to 14 business days and template review up to 24 hours, so start early. Until verified, Meta allows 250 unique users per 24 hours outside the window (then 2,000), and at most 1 message per user every 6 seconds.
 - The website works without WhatsApp, so the bot can launch slightly after the web if approval is slow.
 
 ## Technical approach on Mercur
@@ -214,9 +214,11 @@ Mercur's vendor dashboard (`apps/vendor`) is not used in the MVP.
 
 | Module | Tables | Links to Mercur |
 | --- | --- | --- |
-| Wallet | `wallet` (one per account), `wallet_transaction` (type, amount, reference, created by), topup\_request (amount, screenshot, status, reviewed by), fee\_category (name, listing fee, join fee) | Customer |
+| Wallet | `wallet` (one per customer, created when the profile is complete, D-011), `wallet_transaction` (type, uncapped whole-rupiah amount, reference, created by), topup\_request (amount, screenshot, status, reviewed by), fee\_category (name, listing fee, join fee) | Customer |
 | Auction | `auction` (farmer, start, end, join fee, status), `lot` (OB, KB, current price, end time, winner, final price, status), `bid` (bidder, amount, source web or WhatsApp, time), `auction_participant` (customer, joined at) | Seller, customer, product |
 | Moderation | `strike` (user, lot, reason, admin), farmer\_rating (lot, winner, stars, comment), claim (lot, video, remedy, status, farmer and admin decisions) | Customer |
+
+**Settings:** every admin-editable platform value (extend window, max lots per auction, auction length, claim window, platform bank account) is stored in a settings table in the database, not in env vars or config (D-010).
 
 **Key flows**
 
@@ -255,8 +257,8 @@ Beta v1 is an upgrade of the same Mercur system, not a data migration: same data
 
 Build in this order; each milestone ends with something usable. There is no fixed launch date; the developer works on it full time.
 
-1. **Foundations:** move storefront components into `packages/ui`; set up `apps/admin-koi` with admin login; confirm the customer-to-farmer account link in Mercur.
-2. **Farmers and wallet:** farm registration in the Farmer area; wallet module; top-up requests with screenshot upload; admin screens for farm approval, top-up approval, adjustments, fee table and settings; balance and history page for users.
+1. **Foundations:** move storefront components into `packages/ui`; set up `apps/admin-koi` with admin login. The customer-to-farmer account link is settled (D-003).
+2. **Farmers and wallet:** farm registration in the Farmer area; wallet module; settings table (D-010), before top-ups because it holds the platform bank account; top-up requests with screenshot upload; admin screens for farm approval, top-up approval, adjustments, fee table and settings; balance and history page for users.
 3. **Auctions for farmers:** auction and lot module, categories, listing fee charge, create auctions in the Farmer area, admin approval queue.
 4. **Joining and bidding on the web:** join fee charge, bid rules with row locking, extend, storefront pages switched from demo data to the API, polling for live prices, live bidding screen.
 5. **Closing and after-sale:** close job, winner and farmer contact pages, paid and shipped marks, delivery method and delivered mark, dead-on-arrival claims, ratings, strikes and bans, farmer-cancel refunds.
@@ -277,6 +279,12 @@ Build in this order; each milestone ends with something usable. There is no fixe
 **Farmers**
 
 - [ ] None open. Farmers use the same strike system as winners.
+
+**Accounts and settings**
+
+- [x] Registration phone is required and is the WhatsApp number (D-008, `mvp-Q1`).
+- [x] Platform bank account is an admin setting (D-009, `mvp-Q2`).
+- [x] Settings are stored in a settings table (D-010, `mvp-Q3`).
 
 **Operations**
 

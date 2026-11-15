@@ -26,15 +26,18 @@ can reach admin screens.
 - [x] T-001.1 [admin] Login form, httpOnly cookie `_koi_admin_jwt`, `requireAdmin()` guard
 - [x] T-001.2 [admin] Tests for `actor-id` and `safe-redirect`
 
-### US-002 Customer registers and signs in · `in progress`
+### US-002 Customer registers and signs in · `done (evidence: packages/api/integration-tests/http/register-e2e.spec.ts:25-68; password-reset-smtp.spec.ts:119-185; password-reset.spec.ts:53-73; customer-phone.spec.ts:46-99; qa PASS)`
 As a **visitor**, I want to register and sign in so that I can top up, join
 auctions and bid. *(Plan: Users and roles)*
 - AC1: Registering with name, email, phone and password creates a customer account.
-- AC2: Sign in, sign out, forgotten password and setting a new password all work.
-- AC3: The phone number is stored on the customer, so WhatsApp can be linked later (US-080). → **mvp-Q1**
+- AC2: Sign in, sign out, forgotten password and setting a new password all work. The reset email is actually delivered (D-013: SMTP via `nodemailer`; Mailpit in dev).
+- AC3: The phone number is required and is stored on the customer as the account's WhatsApp number (US-080). *(D-008, answers mvp-Q1)* The backend enforces it too: `POST /store/customers` without a phone is rejected (D-014).
 - [x] T-002.1 [storefront] Pages `daftar`, `masuk`, `lupa-sandi`, `atur-sandi`, `keluar` exist
-- [ ] T-002.2 [qa] Verify AC1–AC2 end to end against the backend
-- [ ] T-002.3 [storefront] Depends on mvp-Q1: confirm the phone format and that it's saved as the WhatsApp number
+- [x] T-002.2 [qa] Verify AC1–AC2 end to end against the backend — `register-e2e.spec.ts:25-68` (register, phone saved normalised, sign-in, exactly one wallet); `password-reset-smtp.spec.ts:119-160` (real SMTP send, reset link, new password signs in); `:162-185` (redelivered event sends one email)
+- [x] T-002.3 [qa] Verify AC3: registering without a phone is refused, by the form and by `POST /store/customers` directly, and the phone is saved on the customer — `customer-phone.spec.ts:46-99` (missing/empty/malformed refused; `/me` can't clear it; valid phone normalised)
+- [x] T-002.4 [backend] Password-reset email delivery over SMTP with `nodemailer` (D-013); `SMTP_*` vars in `.env.template`; Mailpit for dev — `src/subscribers/password-reset.ts`, `src/modules/smtp-notification/service.ts`, `medusa-config.ts:57-81`, `.env.template:12-21`
+- [x] T-002.5 [backend] Reject `POST /store/customers` without a phone (D-014) — `src/api/middlewares.ts:51-91`, `src/api/store/customers/validators.ts:3-16`; `customer-phone.spec.ts:46-99`
+- **Accepted 2026-11-14.** AC2's Mailpit caveat doesn't block: `password-reset-smtp.spec.ts:119-160` boots the real SMTP provider and asserts delivery through `nodemailer`, which is the code path. Mailpit is only the SMTP endpoint, and the missing env vars are container config, not code. qa's copy bug (`NewPasswordForm.tsx:92`, 15 minutes) is fixed. Phone uniqueness across accounts is not enforced; that belongs to US-080, not this story.
 
 ### US-003 One shared design system · `done`
 As the **owner**, I want the storefront and the admin app to share one UI kit so
@@ -50,99 +53,135 @@ Rules for every story in this epic: money is whole rupiah in integer columns;
 transactions are append-only; balance = sum of transactions; credit only pays
 platform fees (no withdrawals, no transfers, no paying farmers).
 
-### US-010 Customer sees balance and history · `todo`
+### US-010 Customer sees balance and history · `done (evidence: packages/api/integration-tests/http/wallet.spec.ts:86-161; packages/api/integration-tests/http/customer-wallet.spec.ts:33-171; packages/api/src/modules/wallet/__tests__/wallet.spec.ts:15-53; qa PASS)`
 As a **customer**, I want to see my balance and every transaction so that I
 know what I can spend. *(Plan: Store credit wallet)*
 - AC1: Balance equals the sum of my transactions.
 - AC2: History lists type, signed amount, reference and date, newest first.
-- AC3: Each account has exactly one wallet, created when it's first needed.
-- [ ] T-010.1 [backend] Wallet module: `wallet`, `wallet_transaction` (type, integer amount, reference, created_by). Link wallet ↔ customer
-- [ ] T-010.2 [backend] Store route `GET /store/wallet` (balance + paginated transactions), identity from `auth_context`
-- [ ] T-010.3 [storefront] Balance and history page under `akun`
-- [ ] T-010.4 [qa] Balance = sum; no update or delete path exists on transactions
+- AC3: The wallet is created when the profile is complete (D-011). Each customer has exactly one wallet, enforced by a unique constraint.
+- [x] T-010.1 [backend] Wallet module: `wallet`, `wallet_transaction` (type, amount as whole rupiah with no size cap (D-012), reference, created_by). Link wallet ↔ customer, with a unique constraint so there is one wallet per customer (D-011) — `src/modules/wallet/`, `src/links/customer-wallet.ts`, `src/migration-scripts/customer-wallet-unique-customer.ts`
+- [x] T-010.2 [backend] Store route `GET /store/wallet` (balance + paginated transactions), identity from `auth_context` — `src/api/store/wallet/route.ts:28-75`; `wallet.spec.ts:86-161`
+- [x] T-010.3 [storefront] Balance and history page under `akun` — `akun/saldo/page.tsx`; `AccountPage/components/Wallet.tsx`
+- [x] T-010.4 [qa] Balance = sum; no update or delete path exists on transactions; a customer with an incomplete profile has no wallet, and completing the profile creates exactly one (also when the event fires twice) — `wallet.spec.ts:86`; `wallet.spec.ts` (module) `:36`; `customer-wallet.spec.ts:33-65,153-171`
+- [x] T-010.5 [backend] Subscriber on `customer.created` and `customer.updated` runs an idempotent create-wallet workflow when the profile is complete (D-011) and no wallet exists — `src/subscribers/customer-wallet.ts`, `src/workflows/create-customer-wallet.ts`
 
-### US-011 Customer requests a top-up · `todo`
+### US-011 Customer requests a top-up · `done (evidence: packages/api/integration-tests/http/topup-requests.spec.ts:102-354; packages/api/src/api/store/topup-requests/route.ts:14-42; apps/storefront-koi/src/lib/data/topups.ts:65-88; qa PASS fix round 1)`
 As a **customer**, I want to upload my transfer screenshot so that admin can
 credit my wallet. *(Plan: How credit moves 1–2)*
+**Depends on:** US-015 (the platform bank account is a setting in the settings table, D-009, D-010)
+**Note:** the bank account lives in the settings table (D-009, D-010). Its admin
+surface stays admin-only; the storefront reads the three bank fields from the
+customer-facing `GET /store/platform-bank-account`, added by this story. That
+route was the agreed way to keep the settings surface off `/store/*`.
+
+**Screenshots are private (fix round 1, backend):** files go to a non-public
+directory. The customer API returns `has_screenshot: boolean` instead of a
+`screenshot_url`, so no customer ever receives a link to anyone's transfer
+proof. Admins fetch the image through `GET /admin/topup-requests/:id/screenshot`
+(admin token; D-018).
 - AC1: Any amount is accepted (no minimum), as an integer.
 - AC2: Uploading a screenshot creates a `pending` top-up request. The balance doesn't change yet.
-- AC3: The page shows the platform's bank account to transfer to. → **mvp-Q2**
+- AC3: The page shows the platform's bank account to transfer to, read from the admin setting. *(D-009, answers mvp-Q2)*
 - AC4: I can see my requests and their status (pending, approved, rejected with reason).
-- [ ] T-011.1 [backend] `topup_request` model (amount, screenshot file, status, reviewed_by, reason) + create workflow
-- [ ] T-011.2 [backend] Store routes: create request (with file upload), list my requests
-- [ ] T-011.3 [storefront] Top-up form and request list
-- [ ] T-011.4 [qa] Pending requests never change the balance
+- [x] T-011.1 [backend] `topup_request` model (amount, screenshot file, status, reviewed_by, reason) + create workflow — `src/modules/wallet/models/topup-request.ts`; `topup-requests.spec.ts:102,126,131,138,165`
+- [x] T-011.2 [backend] Store routes: create request (with file upload), list my requests, read the platform bank account from settings (US-015) — `src/api/store/topup-requests/route.ts`, `src/api/store/platform-bank-account/route.ts`; `topup-requests.spec.ts:180,222,231,264-354`; private files at `medusa-config.ts:84-105`
+- [x] T-011.3 [storefront] Top-up form with the platform bank account, and the request list — `apps/storefront-koi/src/lib/data/topups.ts:65-88` (auth headers, `no-store`); TopupPage
+- [x] T-011.4 [qa] Pending requests never change the balance — `topup-requests.spec.ts:102` (pending, 0 ledger rows)
 
-### US-012 Admin approves or rejects a top-up · `todo`
+### US-012 Admin approves or rejects a top-up · `done (evidence: packages/api/integration-tests/http/admin-topup-requests.spec.ts:102-309; admin-topup-requests-compensation.spec.ts:43-80; topup-requests.spec.ts:314-349; qa PASS)`
 As an **admin**, I want to approve a top-up after checking the bank statement so
 that credit only exists for real transfers. *(Plan: How credit moves 3)*
 - AC1: Approving records one `manual_topup` (+) with the admin and a bank reference.
 - AC2: Rejecting needs a reason that the customer can see. No transaction is recorded.
 - AC3: A request can be decided only once.
-- [ ] T-012.1 [backend] Approve/reject workflow (one mutation per step, compensation) + `/admin` routes
-- [ ] T-012.2 [admin] Top-up queue `/saldo/topup`: screenshot, amount, approve/reject with reason
-- [ ] T-012.3 [qa] Double approval impossible; audit fields saved
+- AC4: The screenshot is shown only to an admin, fetched through `GET /admin/topup-requests/:id/screenshot` (admin token), never from a stored public URL (D-018).
+- [x] T-012.1 [backend] Approve/reject workflow (one mutation per step, compensation) + `/admin` routes — `src/workflows/decide-topup-request.ts:28-73`, `src/workflows/steps/decide-topup-request.ts:21-95`, `src/api/admin/topup-requests/`; `admin-topup-requests.spec.ts:196-309`, `admin-topup-requests-compensation.spec.ts:43-80`
+- [x] T-012.2 [admin] Top-up queue `/saldo/topup`: screenshot via the admin route (not a stored URL), amount, approve/reject with reason — `apps/admin-koi/src/lib/data/topups.ts:91,112,142` (`requireAdmin` on each action)
+- [x] T-012.3 [qa] Double approval impossible; audit fields saved; the screenshot route answers 200 with an admin token and 401 with a customer token or none — `admin-topup-requests.spec.ts:255-272,292-309`; `topup-requests.spec.ts:314-349`
+- **Accepted 2026-11-14.** Known limits, not AC failures: a double decision shows a generic toast because Medusa replaces the 409 text; the lock is in-memory (see US-090 T-090.4); the confirm/busy UI and screenshot render were read in code, not driven in a browser.
 
-### US-013 Admin adjusts a balance · `todo`
+### US-013 Admin adjusts a balance · `done (evidence: packages/api/integration-tests/http/admin-wallet-adjustments.spec.ts:91-207; qa-wallet-adjustments-concurrency.spec.ts:66-125; packages/api/src/modules/wallet/service.ts:8-25; qa PASS fix round 1)`
 As an **admin**, I want to correct a balance with a written reason so that
 mistakes are fixed without editing history. *(Plan: Transaction types, Rules)*
 - AC1: An adjustment can be + or −, and needs a reason. The admin is recorded.
 - AC2: Existing transactions are never changed.
-- [ ] T-013.1 [backend] Adjustment workflow + `/admin` route
-- [ ] T-013.2 [admin] `/saldo/koreksi` screen
-- [ ] T-013.3 [qa] Reason required; append-only holds
+- AC3: A correction that would make the balance negative is refused with a clear error, and nothing is written (D-019).
+**Note:** admin-koi shows Indonesian copy for the no-wallet error and the below-zero error.
+- [x] T-013.1 [backend] Adjustment workflow + `/admin` route — `src/workflows/create-wallet-adjustment.ts:27-57`, `src/workflows/steps/create-wallet-adjustment.ts:25-59`; `admin-wallet-adjustments.spec.ts:91-207`
+- [x] T-013.2 [admin] `/saldo/koreksi` screen — `apps/admin-koi/src/lib/data/wallet-adjustments.ts:60,86,120` (`requireAdmin`; signed amount built server-side from direction + magnitude), `src/lib/helpers/wallet-error.ts` (Indonesian copy, tested)
+- [x] T-013.3 [qa] Reason required; append-only holds; a correction below Rp0 is refused and writes nothing (AC3) — `admin-wallet-adjustments.spec.ts:116-146,180-207`; `qa-wallet-adjustments-concurrency.spec.ts:104-125` (lock released on the refused path)
+- **Accepted 2026-11-15.** Not AC failures: the history doesn't show `created_by` after a reload (the GET route omits it; the DB stores it); a signed-out redirect loses the deep link (pre-existing); the UI wasn't driven in a browser.
 
-### US-014 Admin edits the fee table · `todo`
+### US-014 Admin edits the fee table · `done (evidence: packages/api/integration-tests/http/fee-categories.spec.ts:50-172; packages/api/src/modules/platform-settings/models/fee-category.ts:7-17; apps/admin-koi/src/components/FeeTable.tsx; qa PASS; AC3 carried forward to US-030 AC7)`
 As an **admin**, I want to edit each category's listing and join fees so that
 pricing can change without code. *(Plan: Fees)*
 - AC1: The fee table holds category name, listing fee per lot and join fee per auction (integers).
 - AC2: It's seeded with the four approved categories and fees (Lokal no cert 50.000/100.000, Lokal cert 100.000/250.000, Import cert 200.000/500.000, Premium 400.000/1.000.000).
-- AC3: A change applies only to auctions created after it, never to approved ones.
-- [ ] T-014.1 [backend] `fee_category` model, seed, `/admin` CRUD routes
-- [ ] T-014.2 [backend] Auctions store the fees they were created with (snapshot)
-- [ ] T-014.3 [admin] `/pengaturan/biaya` screen
-- [ ] T-014.4 [qa] Editing a fee doesn't change an existing auction's fees
+- AC3: *(Carried forward to US-030 AC7.)* A change applies only to auctions created after it, never to approved ones. It needs the auction table, which US-030 builds, so this story can't prove it.
+- [x] T-014.1 [backend] `fee_category` model, seed, `/admin` CRUD routes — `src/modules/platform-settings/models/fee-category.ts:7-17`, `src/scripts/seed-fee-categories.ts:6-30`, `src/api/admin/fee-categories/`; `fee-categories.spec.ts:50-172`
+- [ ] T-014.2 [backend] *(Superseded, moved to US-030 T-030.6)* Auctions store the fees they were created with (snapshot)
+- [x] T-014.3 [admin] `/pengaturan/biaya` screen — `apps/admin-koi/src/components/FeeTable.tsx`, `src/lib/data/fee-categories.ts`
+- **Accepted 2026-11-14 with AC3 carried forward.** AC3 and T-014.2/T-014.4 are not passed here: they need the auction table. US-030 AC7, T-030.6 and T-030.7 prove them, and US-030's qa must check them.
+- [ ] T-014.4 [qa] *(Superseded, moved to US-030 T-030.7)* Editing a fee doesn't change an existing auction's fees
 
-### US-015 Admin edits auction settings · `todo`
+### US-015 Admin edits auction settings · `done (evidence: packages/api/integration-tests/http/admin-settings.spec.ts:84-217; apps/admin-koi/src/components/SettingsForm.tsx; qa PASS)`
 As an **admin**, I want to change the platform limits so that rules can be tuned.
-*(Plan: Structure, Extend, Dead-on-arrival claims)*
-- AC1: Editable values: extend window (default 5 min), max lots per auction (20), auction length (1–7 days), claim window (4 h).
-- AC2: An extend-window change applies only to auctions that haven't started.
-- [ ] T-015.1 [backend] Settings storage + `/admin` routes. → **mvp-Q3**
-- [ ] T-015.2 [admin] Settings section in `/pengaturan/biaya`
-- [ ] T-015.3 [qa] Live auctions keep their original extend window
+*(Plan: Structure, Extend, Dead-on-arrival claims, How credit moves 1)*
+- AC1: Editable values: extend window (default 5 min), max lots per auction (20), auction length (1–7 days), claim window (4 h), platform bank account (D-009).
+- AC2: *(Carried forward to US-030 AC6.)* An extend-window change applies only to auctions that haven't started. It needs the auction table, which US-030 builds; no auction exists yet, so this story can't prove it.
+- AC3: Settings are stored in a settings table in the database, not in env vars or config. *(D-010, answers mvp-Q3)*
+- [x] T-015.1 [backend] Settings table + `/admin` routes (D-010) — `src/modules/platform-settings/`, `src/api/admin/settings/route.ts`; `admin-settings.spec.ts:84-217`
+- [x] T-015.2 [admin] Settings section in `/pengaturan/biaya`, including the platform bank account — `apps/admin-koi/src/components/SettingsForm.tsx`
+- [ ] T-015.3 [qa] Live auctions keep their original extend window — superseded, moved to US-030 T-030.5, because it needs the auction table
 
 ---
 
 ## Epic 2: Becoming a farmer (Milestone 2)
 
-Uses option A from the root `CLAUDE.md`: a member login, `POST /vendor/sellers`,
+Uses option A from D-003 (`docs/product/decisions.md`): a member login, `POST /vendor/sellers`,
 the seller starts as `pending_approval`, and admin approval grants farmer access.
 
-### US-020 Customer registers a farm · `todo`
+### US-020 Customer registers a farm · `in progress`
 As a **customer**, I want to submit a farm registration so that I can sell koi
 at auction. *(Plan: Becoming a farmer)*
-- AC1: The form requires farm name, location, WhatsApp number, KTP photo, farm photos, and a bank account in my own name.
+- AC1: The form requires farm name, location, KTP photo, KTP number (16-digit NIK), farm photos, and a bank account in my own name (D-017).
+- AC4: The farm WhatsApp number is my registration phone, copied to `seller.phone`. The form shows it prefilled and not editable (D-016).
+- AC5: KTP photo, NIK and bank details are stored privately and never appear on a public route, including `/store/sellers` (D-017).
+- AC6: The seller's `member_email` must match my signed-in auth identity's email; any other email is rejected.
 - AC2: Submitting creates the seller as `pending_approval` under my same email and password.
 - AC3: I can see my registration status.
-- [ ] T-020.1 [backend] Check which fields Mercur's seller already has, and store the rest (KTP, photos, bank) with a link or custom fields per Mercur docs. List the doc pages used
-- [ ] T-020.2 [storefront] Member sign-in with the same credentials + `POST /vendor/sellers` flow
+- [ ] T-020.1 [backend] Native seller fields cover name, description, address, `payment_details` (bank) and `phone`. Store KTP photo, NIK and farm photos as Mercur Custom Fields on `Seller` (`resources/best-practices/custom-fields`). List the doc pages used
+- [ ] T-020.5 [backend] Private upload route for the KTP photo. Mercur's `POST /vendor/uploads` needs an existing seller and stores files publicly, so it can't be used (D-017)
+- [ ] T-020.6 [backend] Middleware on public `/store/sellers` routes that strips `payment_details`, `professional_details` and `custom_fields` (KTP, NIK) (D-017)
+- [ ] T-020.7 [backend] Validate hook on `POST /vendor/sellers`: `member_email` from the body must match the caller's auth identity email (AC6)
+- [ ] T-020.8 [backend] Copy the customer's phone to `seller.phone` at registration (D-016)
+- [ ] T-020.2 [storefront] Member sign-in with the same credentials + `POST /vendor/sellers` flow, then member sign-in again right after registration (the code needs it then, not only after approval; see D-003 wording note in the Open questions)
 - [ ] T-020.3 [storefront] Farm registration form + status page in the Farmer area
-- [ ] T-020.4 [qa] KTP and bank data never appear on public pages
+- [ ] T-020.4 [qa] KTP photo, NIK and bank data never appear on public pages or any `/store/*` response; a mismatched `member_email` is rejected
 
 ### US-021 Admin approves or rejects a farm · `todo`
 As an **admin**, I want to review farm registrations so that only real farmers
 can create auctions. *(Plan: Becoming a farmer)*
 - AC1: The queue shows KTP, farm photos, bank account name vs the account holder's name.
 - AC2: Approving gives farmer access. Rejecting needs a reason the applicant sees.
-- [ ] T-021.1 [backend] `/admin` routes that use Mercur's seller approval workflow (don't write a new one)
+- AC3: Rejection is final, with no resubmission. It uses Mercur's `POST /admin/sellers/:id/suspend` with `reason` (sets `status_reason`, `rejected_at`). admin-koi never offers unsuspend for a rejected farm, because unsuspend goes straight to `open` (D-015).
+- AC4: Farmer actions require `seller.status === open`. Mercur's `/vendor/*` doesn't check status, so our routes and workflows must.
+- [ ] T-021.1 [backend] `/admin` routes that use Mercur's seller approval workflow and, for rejection, the suspend workflow with a reason (D-015). Don't write new ones
+- [ ] T-021.5 [backend] Shared check that a farmer's seller is `open`, used by every custom `/vendor/*` route and workflow (AC4; also US-030)
 - [ ] T-021.2 [admin] `/kebun` queue screen
 - [ ] T-021.3 [storefront] Farmer area appears after approval and the next member login
-- [ ] T-021.4 [qa] An unapproved seller can't reach farmer actions
+- [ ] T-021.4 [qa] An unapproved or rejected (suspended) seller can't reach farmer actions; the rejection reason shows to the farmer; no unsuspend in admin-koi
 
 ---
 
 ## Epic 3: Auctions for farmers (Milestone 3)
+
+**Release risk to US-030's qa — two accepted stories depend on it:**
+US-015 AC2 (extend window) and US-014 AC3 (fee table) were accepted as `done`
+with those criteria carried forward, because they need the auction table.
+US-030 AC6/AC7 and T-030.5/T-030.6/T-030.7 are what close them. If US-030 ships
+without storing the extend window and the fees on each auction, both those
+acceptances are void and no further check will catch it.
 
 ### US-030 Farmer creates an auction · `todo`
 As a **farmer**, I want to create an auction with lots so that customers can bid
@@ -151,36 +190,41 @@ on my koi. *(Plan: Structure, Pricing per lot, Fees, Delivery)*
 - AC2: Up to 20 lots. Each lot is one koi, with photos, OB (starting price) and KB (bid step), as integers. No reserve, no buy-it-now.
 - AC3: Every lot belongs to the auction's category.
 - AC4: The join fee and listing fee come from the fee table. The farmer can't set fees.
-- AC5: A banned farmer can't create auctions.
-- [ ] T-030.1 [backend] Auction module: `auction` (farmer, category, start, end, join fee, listing fee, delivery method, status), `lot` (OB, KB, current price, end time, winner, final price, status). Links to seller and product
-- [ ] T-030.2 [backend] Create-auction workflow that checks the limits from US-015
+- AC5: A banned farmer can't create auctions. Only a seller with `status === open` can create one (US-021 AC4).
+- AC6: *(Carried forward from US-015 AC2.)* The auction stores the extend window (`extend_window_minutes`) it was created with. A later settings change never alters an auction that already exists.
+- AC7: *(Carried forward from US-014 AC3.)* The auction stores the listing and join fees it was created with. A later fee-table change never alters an auction that already exists or is already approved.
+- [ ] T-030.1 [backend] Auction module: `auction` (farmer, category, start, end, join fee, listing fee, delivery method, status, extend window snapshot (US-015 AC2), fee snapshot (US-014 AC3)), `lot` (OB, KB, current price, end time, winner, final price, status). Links to seller and product
+- [ ] T-030.2 [backend] Create-auction workflow that checks the limits from US-015, snapshots the current extend window and the category's fees onto the auction
 - [ ] T-030.3 [storefront] Farmer area: create auction and add lots with photos
 - [ ] T-030.4 [qa] Limits enforced on the server, not only in the form
+- [ ] T-030.5 [qa] *(moved from T-015.3)* Changing the extend window doesn't change an existing auction's stored window
+- [ ] T-030.6 [backend] *(moved from T-014.2)* Auctions store the listing and join fees they were created with
+- [ ] T-030.7 [qa] *(moved from T-014.4)* Editing a fee doesn't change an existing auction's fees
 
-### US-031 Listing fee is charged · `todo`
+### US-031 Listing fee is charged · `blocked (mvp-Q4, mvp-Q5)`
 As the **platform**, I want the listing fee charged when an auction is created
 so that farmers pay to list. *(Plan: How credit moves 4, Fees)*
-- AC1: Listing fee = category listing fee × number of lots, recorded as `listing_fee` (−).
+- AC1: Listing fee = category listing fee × number of lots, recorded as `listing_fee` (−) on the farmer's customer wallet, found through `customer_id` in the member token's `app_metadata` (mvp-Q15 option a; verify at runtime in this story).
 - AC2: If the balance is short, creation is blocked with a "top up" prompt, and nothing is saved.
 - AC3: All or nothing: the charge and the auction are saved together, or neither is.
 - [ ] T-031.1 [backend] Charge step inside the create workflow, with compensation
 - [ ] T-031.2 [storefront] Short-balance prompt that links to top-up
 - [ ] T-031.3 [qa] A failure after the charge rolls the charge back. → **mvp-Q4, mvp-Q5**
 
-### US-032 Admin approves auctions · `todo`
+### US-032 Admin approves auctions · `blocked (mvp-Q5, mvp-Q13)`
 As an **admin**, I want to approve each auction before it's scheduled so that
 category, photos and fees are checked. *(Plan: Structure, Fees)*
 - AC1: The queue shows category, lots with photos, and fees.
-- AC2: Approving moves `draft → scheduled`.
+- AC2: Approving moves `draft → scheduled`. What rejecting does is open. → **mvp-Q13**
 - AC3: Admin can override the listing or join fee for this one auction, with a saved written reason.
 - [ ] T-032.1 [backend] Approve workflow + fee override with a reason + `/admin` routes
 - [ ] T-032.2 [admin] `/lelang` approval queue
 - [ ] T-032.3 [qa] An override without a reason is rejected. → **mvp-Q5**
 
-### US-033 Auctions start and farmers track them · `todo`
+### US-033 Auctions start and farmers track them · `blocked (mvp-Q13)`
 As a **farmer**, I want to see my auctions and their status so that I know
 what's live. *(Plan: Design rules, statuses)*
-- AC1: Statuses follow `draft → scheduled → live → closed | cancelled`.
+- AC1: Statuses follow `draft → scheduled → live → closed | cancelled`. A rejected state may be added. → **mvp-Q13**
 - AC2: A scheduled auction becomes `live` at its start time automatically.
 - [ ] T-033.1 [backend] Scheduled job moves `scheduled → live` (idempotent, batched, logs a summary)
 - [ ] T-033.2 [storefront] Farmer area: my auctions list with status
@@ -210,7 +254,7 @@ I can bid on all its lots. *(Plan: Structure, Fair play, Strikes)*
 - [ ] T-041.2 [storefront] Join button with the fee shown and a short-balance prompt
 - [ ] T-041.3 [qa] Joining twice charges once; own-auction and banned users are blocked
 
-### US-042 Customer places a bid on the website · `todo`
+### US-042 Customer places a bid on the website · `blocked (mvp-Q6)`
 As a **joined customer**, I want to bid on a lot so that I can win it. *(Plan: Bidding)*
 - AC1: Only joined customers can bid. Not the farmer, not banned users.
 - AC2: A bid must be at least current price + KB. → **mvp-Q6**
@@ -295,17 +339,17 @@ the claim window starts. *(Plan: Delivery)*
 - [ ] T-053.1 [backend] Delivered workflow + route
 - [ ] T-053.2 [storefront] Button on the won lot
 
-### US-054 Winner opens a dead-on-arrival claim · `todo`
+### US-054 Winner opens a dead-on-arrival claim · `blocked (mvp-Q7, mvp-Q14)`
 As a **winner**, I want to claim within 4 hours if the fish arrives dead or sick
 so that I get a refund or a replacement. *(Plan: Dead-on-arrival claims 1–2)*
 - AC1: A claim is allowed only within the claim window (4 h, a setting) after delivered.
 - AC2: It needs an unboxing video (up to 100 MB) and a remedy choice: full refund or replacement.
 - AC3: The farmer and admin are notified. → **mvp-Q7**
-- [ ] T-054.1 [backend] Moderation module: `claim` model + open-claim workflow; video stored on the VPS file provider
+- [ ] T-054.1 [backend] Moderation module: `claim` model + open-claim workflow; video stored on the VPS file provider. Claim status enum → **mvp-Q14**
 - [ ] T-054.2 [storefront] Claim form with video upload and size limit
 - [ ] T-054.3 [qa] Late claims and oversized videos are rejected on the server
 
-### US-055 Farmer responds and admin decides disputes · `todo`
+### US-055 Farmer responds and admin decides disputes · `blocked (mvp-Q14)`
 As a **farmer**, I want to accept or dispute a claim, and as an **admin**, I want
 to decide disputes, so that claims are fair. *(Plan: Dead-on-arrival claims 3)*
 - AC1: The farmer can accept or dispute.
@@ -314,7 +358,7 @@ to decide disputes, so that claims are fair. *(Plan: Dead-on-arrival claims 3)*
 - [ ] T-055.2 [storefront] Farmer area claim review with the video
 - [ ] T-055.3 [admin] `/klaim` dispute screen
 
-### US-056 Approved claims are resolved · `todo`
+### US-056 Approved claims are resolved · `blocked (mvp-Q14)`
 As a **winner**, I want an approved claim settled within 3 days so that I'm made
 whole. *(Plan: Dead-on-arrival claims 4–6)*
 - AC1: The farmer has 3 days to refund directly or ship a replacement, then marks it done. The winner confirms.
@@ -332,7 +376,7 @@ can judge farms. *(Plan: Ratings)*
 - [ ] T-057.1 [backend] `farmer_rating` model + workflow + routes
 - [ ] T-057.2 [storefront] Rating form + display on the partner page
 
-### US-058 Farmer reports a winner who didn't pay · `todo`
+### US-058 Farmer reports a winner who didn't pay · `blocked (mvp-Q8)`
 As a **farmer**, I want to report a winner who didn't pay within 1×24 h so that
 admin can act. *(Plan: Winner doesn't pay)*
 - AC1: The farmer can report after the deadline. The admin reviews it and may give a strike.
@@ -351,7 +395,7 @@ offenders are banned. *(Plan: Strikes)*
 - [ ] T-059.2 [admin] Strike actions on reports and users
 - [ ] T-059.3 [qa] An expired strike no longer counts; the ban lifts when active strikes drop below 2
 
-### US-060 Farmer cancels an auction · `todo`
+### US-060 Farmer cancels an auction · `blocked (mvp-Q9)`
 As a **farmer**, I want to cancel my auction so that I can withdraw it, with
 joiners refunded. *(Plan: Cancellations, Refunds in the MVP)*
 - AC1: Every customer who joined gets a `refund` (+) of their join fee.
@@ -361,11 +405,11 @@ joiners refunded. *(Plan: Cancellations, Refunds in the MVP)*
 - [ ] T-060.2 [storefront] Cancel action in the Farmer area
 - [ ] T-060.3 [qa] Refunds total exactly the join fees collected
 
-### US-061 Claim videos are cleaned up · `todo`
+### US-061 Claim videos are cleaned up · `blocked (mvp-Q14)`
 As the **platform**, I want claim videos deleted 30 days after a claim closes so
 that storage stays bounded. *(Plan: Dead-on-arrival claims 7)*
 - [ ] T-061.1 [backend] The scheduled job deletes the files and keeps the claim record
-- [ ] T-061.2 [qa] Only closed claims older than 30 days are affected
+- [ ] T-061.2 [qa] Only closed claims older than 30 days are affected. Which statuses count as closed → **mvp-Q14**
 
 ---
 
@@ -377,13 +421,13 @@ act on bad actors. *(Plan: Users and roles, Strikes)*
 - [ ] T-070.1 [backend] `/admin` user list and detail with wallet, strikes and ban status
 - [ ] T-070.2 [admin] `/pengguna` screens
 
-### US-071 Admin spots shill bidding · `todo`
+### US-071 Admin spots shill bidding · `blocked (mvp-Q10)`
 As an **admin**, I want to see bid patterns per bidder and farmer so that I can
 spot shill bidding. *(Plan: Fair play)*
 - [ ] T-071.1 [backend] `/admin` read route: bids grouped by bidder × farmer. → **mvp-Q10**
 - [ ] T-071.2 [admin] Pattern view on the user and auction pages
 
-### US-072 Admin monitors live auctions · `todo`
+### US-072 Admin monitors live auctions · `blocked (mvp-Q11)`
 As an **admin**, I want to watch live auctions, remove obviously wrong bids and
 cancel lots so that auctions stay fair. *(Plan: Bidding, Cancellations, Milestone 6)*
 - AC1: Removing a bid is allowed only for an obvious error, and needs a reason. → **mvp-Q11**
@@ -398,35 +442,51 @@ cancel lots so that auctions stay fair. *(Plan: Bidding, Cancellations, Mileston
 ### US-080 WhatsApp number linked to an account · `blocked (mvp-Q12)`
 As a **customer**, I want my WhatsApp number linked to my account so that I can
 bid by WhatsApp. *(Plan: WhatsApp bot: Identity)*
-- AC1: One number links to one account.
+- AC1: One number links to one account. The number is the phone given at registration (D-008, US-002 AC3).
 - AC2: Messages from unknown numbers get a registration link.
+- AC3: The webhook answers within 5 s. Slow work runs after the acknowledgement.
+- AC4: Each incoming message is processed once: duplicates are dropped by message `id`.
+- AC5: A bid's server time is recorded when the webhook receives it, not when it is processed.
+- AC6: Non-command messages and messages in rooms assigned to an agent are ignored by the bot.
 - [ ] T-080.1 [ops] Confirm the Qontak API supports incoming messages and template sends, and which plan includes it
 - [ ] T-080.2 [ops] Dedicated business number + verified Meta Business account (start early; it can take weeks)
-- [ ] T-080.3 [backend] Qontak webhook route + number-to-account lookup
+- [ ] T-080.3 [backend] Qontak webhook route (`message_interactions`) + number-to-account lookup. Store both the Bot token (bot replies) and the User token (template sends), refresh them, and keep the API base URL in config (Qontak announced an undated move to `api.mekari.com` with HMAC auth)
+- [ ] T-080.4 [qa] Webhook acknowledges within 5 s, drops a duplicate message `id`, ignores non-command and agent-assigned messages
 
-### US-081 Bot sends lot codes on join · `todo`
+### US-081 Bot sends lot codes on join · `blocked (mvp-Q12)`
 - AC1: After joining, the user gets the auction's lots with codes and how to bid (`BID A3 5000000`).
-- [ ] T-081.1 [backend] Subscriber on join sends the message
+- AC2: The message is an approved utility template, because joining happens on the website, so no 24 h window is open.
+- [ ] T-081.1 [backend] Subscriber on join sends the template
+- [ ] T-081.2 [ops] Submit the lot-codes utility template to Meta for review (up to 24 h; can't be edited after submission; Meta may reclassify it as marketing)
 
-### US-082 Bid by WhatsApp · `todo`
+### US-082 Bid by WhatsApp · `blocked (mvp-Q12)`
 - AC1: `BID <lot> <amount>` goes through the same place-bid workflow as the web, with source `whatsapp`.
 - AC2: The bot replies "accepted", or "rejected" with the current price.
 - [ ] T-082.1 [backend] Command parser that calls the existing workflow (no second rule set)
 - [ ] T-082.2 [qa] Web and WhatsApp bids follow identical rules
 
-### US-083 Outbid alert · `todo`
+### US-083 Outbid alert · `blocked (mvp-Q12)`
 - AC1: When outbid, the user gets the lot, the new price and a ready-to-send `BID` command.
+- AC2: Alerts respect Meta's limits: at most 1 message per user every 6 s, and 250 unique users per 24 h outside the window until business verification (then 2,000). Several outbids for one user inside that gap are coalesced into one alert with the latest price.
 - [ ] T-083.1 [backend] Subscriber on the outbid event + utility template
 
-### US-084 Status command · `todo`
+### US-084 Status command · `blocked (mvp-Q12)`
 - AC1: `STATUS <lot>` returns the current price and time left.
 - [ ] T-084.1 [backend] Command handler (read only)
 
-### US-085 Win message · `todo`
+### US-085 Win message · `blocked (mvp-Q12)`
 - AC1: The winner gets the farmer's WhatsApp and bank details and the 1×24 h deadline.
 - [ ] T-085.1 [backend] Subscriber on lot won + utility template
 
 The website must work without WhatsApp. The bot can launch after the web.
+
+**Qontak research (T-080.1, 2026-11-14, official sources).**
+- Capability: inbound webhook `message_interactions`; free-form bot replies inside the 24 h window via `POST /v1/messages/whatsapp/bot` (Bot token); template sends via `POST /v1/broadcasts/whatsapp/direct` (User token). On all plans with a WhatsApp channel.
+- Price not settled: the official page shows Service Suite Plus at Rp2.000.000/month with a 5-user minimum, otherwise a quote. The plan's "about Rp599.000/month" isn't on Qontak's official pricing page.
+- Per message from 2026-10-01 (Qontak, non-Lite): Service Rp356,65, Utility Rp366,65, Marketing Rp627,33. Service messages, including bot replies, are now charged, with 1,000 free per number per month. Meta says utility messages inside an open window are charged; Qontak's article says otherwise. VAT not verified.
+- Webhook: answer within 5 s; no signature or retry policy documented; dedupe on message `id`.
+- Meta: 1 message per 6 s per user; 250 unique users per 24 h outside the window until business verification (then 2,000). Business verification up to 14 business days. Template review up to 24 h.
+- Alternative: Meta Cloud API direct, with the same capabilities, signed webhooks (`X-Hub-Signature-256`), retries and no platform fee. Twilio bills in USD. Fonnte and Wablas are unofficial (ruled out by D-006).
 
 ---
 
@@ -436,13 +496,19 @@ The website must work without WhatsApp. The bot can launch after the web.
 - AC1: One or two farmers run real auctions end to end before public launch.
 - [ ] T-090.1 [ops] Pilot checklist: register, top up, farm approval, auction, bids, close, pay, ship, deliver
 - [ ] T-090.2 [ops] Upgrade routine from the plan: backup, rehearse on a copy, deploy with no live auction, compare wallet totals
+- [ ] T-090.3 [ops] Private-access file provider in production for KTP photos and top-up screenshots (D-017, D-018). The local dev provider has no real access control; choose the provider and configure it before launch
+- [ ] T-090.4 [ops] Shared locking provider (e.g. redis) in production if more than one backend instance runs. Today's lock is in-memory and only serialises within one process (top-up decisions US-012, wallet creation, settings)
+- [ ] T-090.5 [ops] Before launch, check for wallets whose balance went below Rp0 before D-019 (dev data only, if any). D-019 lets such a wallet receive only positive corrections, so fix or reset them before real money flows
 
 ---
 
 ## Unplanned
 
 Fixes and small changes made during this release that aren't in the plan.
-None yet.
+
+**Pending cleanup (no story):** `apps/admin-koi/src/app/layout.tsx` has a
+formatting-only diff (import order, a split `robots` object) that isn't part of
+any story. Revert it when the owner approves; the classifier blocked the attempt.
 
 ## Coverage matrix
 
@@ -453,7 +519,7 @@ table complete.
 |---|---|
 | Users and roles | US-002, US-020, US-021, US-070 |
 | Becoming a farmer | US-020, US-021 |
-| Store credit wallet: how credit moves | US-010, US-011, US-012, US-031, US-041 |
+| Store credit wallet: how credit moves | US-010, US-011, US-012, US-015, US-031, US-041 |
 | Transaction types (`manual_topup`, `join_fee`, `listing_fee`, `adjustment`, `refund`) | US-012, US-041, US-031, US-013, US-060 |
 | Wallet rules (integer, append-only, closed loop) | Epic 1 rules, US-010, US-013 |
 | Refunds in the MVP | US-060 |
@@ -490,9 +556,9 @@ is built. Record the answer here, in `plan.md`, and as a decision in `docs/produ
 
 | ID | Question | Blocks |
 |---|---|---|
-| mvp-Q1 | Is the phone number given at registration the WhatsApp number used by the bot, and is it required? | US-002, US-080 |
-| mvp-Q2 | Where is the platform's bank account (shown on the top-up page) stored: env var, admin setting or constant? | US-011 |
-| mvp-Q3 | Where are settings stored: a settings module/table, or env/config? | US-015 |
+| mvp-Q1 | **Answered 2026-11-14 (D-008):** yes, the registration phone is the WhatsApp number, and it's required. *(Was: is the registration phone the bot's WhatsApp number, and is it required?)* | none (was US-002, US-080) |
+| mvp-Q2 | **Answered 2026-11-14 (D-009):** an admin setting. *(Was: env var, admin setting or constant?)* | none (was US-011) |
+| mvp-Q3 | **Answered 2026-11-14 (D-010):** a settings table. *(Was: settings table, or env/config?)* | none (was US-015) |
 | mvp-Q4 | Is the listing fee charged at creation (draft) or at submission for approval? The plan says "creating one". | US-031 |
 | mvp-Q5 | If admin **rejects** an auction, or **lowers its fee** at approval after the listing fee was charged, is the difference refunded? The plan only allows refunds for farmer cancels. | US-031, US-032 |
 | mvp-Q6 | Can the **first** bid equal OB, or must it be OB + KB? | US-042 |
@@ -501,4 +567,8 @@ is built. Record the answer here, in `plan.md`, and as a decision in `docs/produ
 | mvp-Q9 | Can a farmer cancel an auction after bidding has started (some lots have bids)? Cancellations say yes with refunds, but a lot with bids "can only be cancelled by admin". | US-060 |
 | mvp-Q10 | What exactly should the shill-bidding view show (fields and thresholds)? | US-071 |
 | mvp-Q11 | When admin removes a bid, how is the lot's current price restored (previous highest bid)? Does extend still apply? | US-072 |
-| mvp-Q12 | Qontak API capability and plan (already an open question in the plan). | US-080 – US-085 |
+| mvp-Q12 | **Partly answered 2026-11-14 (T-080.1 research):** capability yes; inbound webhook, in-window bot replies and template sends exist on all plans with a WhatsApp channel. **Remaining:** Owner to obtain a written Qontak quote confirming the package price, Bot + User tokens and webhook access, webhook retry/signature, rate limits, in-window utility charging and onboarding time — or choose Meta Cloud API direct. | US-080 – US-085 |
+| mvp-Q13 | What happens when admin **rejects** an auction? The status list (`plan.md`, Design rules) is `draft → scheduled → live → closed \| cancelled`, with no rejected state. Options: (a) add `rejected` as a final state; (b) send it back to `draft` with a reason so the farmer can fix and resubmit; (c) use `cancelled`. Linked to mvp-Q5 (listing fee refund on rejection). | US-032, US-033 |
+| mvp-Q14 | What are the claim statuses and transitions? The plan describes steps (opened, farmer accepts or disputes, admin decides, approved, resolved within 3 days, winner confirms, closed) but no status enum. The lot enum only has `claimed`. Proposed for approval: `open → accepted \| disputed → approved \| rejected → resolved → confirmed`. Also: which statuses count as "closed" for the 30-day video deletion? | US-054, US-055, US-056, US-061 |
+| mvp-Q15 | **Answered 2026-11-14 from a code reading, pending runtime verification in US-031:** option (a); the member token's `app_metadata` contains `customer_id`. *(Was: how does the listing-fee charge find the farmer's **customer** wallet? Wallets link to customers (`plan.md`, Custom modules), but farmer routes use a member token plus `x-seller-id` (D-003), and D-003 forbids a custom customer↔seller link. Options: (a) read `customer_id` from the shared auth identity's `app_metadata` (D-003 says it holds both ids; whether a member token exposes it is not verified); (b) the create-auction call also sends the farmer's customer token; (c) charge on a separate step from the storefront under the customer token.)* | none (was US-031) |
+| mvp-Q16 | D-003 wording: it says the farmer logs in as a member again "after admin approves", but the code needs a fresh member login right after registration (the first token has an empty `actor_id`). Proposed D-003 text: "After `POST /vendor/sellers`, the farmer logs in as a member again to get a token for the new seller. Farmer actions stay closed until admin approves (`status === open`)." Owner to approve the correction (a superseding decision). | none (docs only; US-020 T-020.2 already follows the code) |

@@ -2,13 +2,16 @@
 
 import type { LucideIcon } from 'lucide-react';
 import {
+  Banknote,
   LayoutDashboard,
   LogOut,
   MapPin,
   MessageSquareText,
   MessagesSquare,
   Package,
-  Settings
+  Settings,
+  Sprout,
+  Wallet
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from 'cn';
@@ -50,9 +53,12 @@ const SIGN_OUT_FORM_ID = 'akun-nav-keluar';
 const ICONS: Record<string, LucideIcon> = {
   [ROUTES.account]: LayoutDashboard,
   [ROUTES.orders]: Package,
+  [ROUTES.wallet]: Wallet,
+  [ROUTES.topup]: Banknote,
   [ROUTES.addresses]: MapPin,
   [ROUTES.reviews]: MessageSquareText,
   [ROUTES.messages]: MessagesSquare,
+  [ROUTES.farm]: Sprout,
   [ROUTES.settings]: Settings,
   [ROUTES.signout]: LogOut
 };

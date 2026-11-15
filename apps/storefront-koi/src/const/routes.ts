@@ -38,8 +38,17 @@ export const ROUTES = {
   addresses: "/akun/alamat",
   /** What they have said about the farms they bought from. */
   reviews: "/akun/ulasan",
+  /** Their wallet: balance and every transaction. */
+  wallet: "/akun/saldo",
+  /** Where they transfer to the house, and check on what they've sent. */
+  topup: "/akun/topup",
   /** Every conversation they have with the shops. */
   messages: "/akun/pesan",
+  /** The Farmer area's front door: register a farm, or read where the
+      registration stands. */
+  farm: "/akun/kebun",
+  /** The Farmer area home. A placeholder until the auction screens land. */
+  farmHome: "/akun/kebun/beranda",
   /** Name, contact, password. */
   settings: "/akun/pengaturan",
   /** Sign in. */

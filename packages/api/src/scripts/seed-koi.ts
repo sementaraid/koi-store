@@ -41,6 +41,7 @@ import {
   updateStoresStep,
   updateStoresWorkflow,
 } from "@medusajs/medusa/core-flows";
+import { seedFeeCategories } from "./seed-fee-categories";
 
 /*
  * Koi marketplace seed — the catalog the `storefront-koi` app renders.
@@ -890,6 +891,9 @@ export default async function seedKoiData({ container }: ExecArgs) {
       },
     },
   });
+
+  const createdFees = await seedFeeCategories(container);
+  logger.info(`Seeded ${createdFees} fee categories (existing ones kept).`);
 
   logger.info("Seeding Indonesia region...");
   const regionModuleService = container.resolve(Modules.REGION);

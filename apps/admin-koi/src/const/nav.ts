@@ -33,7 +33,7 @@ export const NAV: NavGroup[] = [
         href: ROUTES.topups,
         label: 'Permintaan top-up',
         hint: 'Cocokkan bukti transfer dengan mutasi bank.',
-        ready: false
+        ready: true
       },
       {
         href: ROUTES.auctions,
@@ -56,7 +56,7 @@ export const NAV: NavGroup[] = [
         href: ROUTES.adjustments,
         label: 'Koreksi saldo',
         hint: 'Perbaiki kesalahan dengan transaksi penyesuaian.',
-        ready: false
+        ready: true
       }
     ]
   },
@@ -67,7 +67,7 @@ export const NAV: NavGroup[] = [
         href: ROUTES.fees,
         label: 'Tabel biaya',
         hint: 'Biaya listing dan join per kategori, plus jendela extend.',
-        ready: false
+        ready: true
       },
       {
         href: ROUTES.users,

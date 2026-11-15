@@ -89,7 +89,7 @@ export function NewPasswordForm({
         }
       >
         <p className="text-sm text-muted-foreground">
-          Tautan dari email berlaku satu jam. Jika sudah lewat, minta yang baru.
+          Tautan dari email berlaku 15 menit. Jika sudah lewat, minta yang baru.
         </p>
       </AuthFrame>
     );

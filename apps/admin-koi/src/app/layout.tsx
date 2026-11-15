@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
-
-import './globals.css';
-
 import { Toaster } from 'sonner';
+import './globals.css';
 
 export const metadata: Metadata = {
   title: {
@@ -11,7 +9,10 @@ export const metadata: Metadata = {
   },
   /* A back office has nothing to say to a search engine, and `next.config.ts`
      sends `X-Robots-Tag: noindex` besides. */
-  robots: { index: false, follow: false }
+  robots: { 
+    index: false, 
+    follow: false 
+  }
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

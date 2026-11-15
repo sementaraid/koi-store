@@ -4,11 +4,15 @@
 
 export { AccountPage } from './AccountPage/AccountPage';
 export { AddressesPage } from './AccountPage/AddressesPage';
+export { FarmHomePage } from './AccountPage/FarmHomePage';
+export { FarmPage } from './AccountPage/FarmPage';
 export { MessagesPage } from './AccountPage/MessagesPage';
 export { OrderDetailPage } from './AccountPage/OrderDetailPage';
 export { OrdersPage } from './AccountPage/OrdersPage';
 export { ReviewsPage } from './AccountPage/ReviewsPage';
 export { SettingsPage } from './AccountPage/SettingsPage';
+export { TopupPage } from './AccountPage/TopupPage';
+export { WalletPage } from './AccountPage/WalletPage';
 export { AuctionsPage } from './AuctionsPage/AuctionsPage';
 export { ForgotPasswordPage } from './AuthPage/ForgotPasswordPage';
 export { LoginPage } from './AuthPage/LoginPage';

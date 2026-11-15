@@ -7,6 +7,7 @@ import {
   Package,
   Settings,
   ShoppingBag,
+  Sprout,
 } from "lucide-react"
 
 import { ROUTES } from "@/const/routes"
@@ -65,6 +66,7 @@ export const DEFAULT_ACCOUNT_LINKS: HeaderAccountLink[] = [
     icon: MessageSquareText,
     group: "Akun",
   },
+  { label: "Kebun", href: ROUTES.farm, icon: Sprout, group: "Akun" },
   {
     label: "Pengaturan",
     href: ROUTES.settings,

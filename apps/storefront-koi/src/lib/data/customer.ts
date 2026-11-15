@@ -12,8 +12,11 @@ import {
   getCartId,
   removeAuthToken,
   removeCartId,
-  setAuthToken
+  removeMemberToken,
+  setAuthToken,
+  setMemberToken
 } from './cookies';
+import { memberSignIn } from './member';
 
 export const retrieveCustomer = async (): Promise<HttpTypes.StoreCustomer | null> => {
   const authHeaders = await getAuthHeaders();
@@ -124,6 +127,14 @@ export async function login(formData: FormData) {
       .mutate({ $actorType: 'customer', $authProvider: 'emailpass', email, password } as never) as unknown as Promise<{ token: string }>)
       .then(({ token }) => token);
     await setAuthToken(token as string);
+
+    /* D-003: the same person also has a member face, and the Farmer area
+       reads the farm through it. Opened here, best effort, so a farmer who
+       signs in after both tokens expired still sees the farm status instead
+       of the registration form. A customer with no member yet gets an
+       actorless token, which `/vendor/*` answers 401 to — harmless. */
+    await memberSignIn(email, password).then(setMemberToken).catch(() => undefined);
+
     const customerCacheTag = await getCacheTag('customers');
     revalidateTag(customerCacheTag);
 
@@ -138,6 +149,10 @@ export async function login(formData: FormData) {
 
 export async function signout() {
   await removeAuthToken();
+  /* The farmer's member token belongs to the same person (D-003); leaving it
+     behind would leave the next visitor on this browser holding a `/vendor/*`
+     session. */
+  await removeMemberToken();
 
   const customerCacheTag = await getCacheTag('customers');
   revalidateTag(customerCacheTag);

@@ -68,9 +68,29 @@ export const reviewSchema = z.object({
   note: z.string().trim().max(300, 'Ulasan maksimal 300 karakter').optional()
 });
 
+/* `screenshot` is `unknown` rather than `z.instanceof(File)`: this schema is
+   imported by a client form, and the `File` global the schema would check
+   against differs between the browser's and (if this file were ever pulled
+   into a server bundle) Node's — `screenshotError` in `lib/helpers` does the
+   real check on the value react-hook-form actually holds. */
+export const topupSchema = z.object({
+  /* Same shape the backend accepts (`StoreCreateTopupRequest`): whole rupiah,
+     no leading zeroes. The submit handler re-checks with `parseTopupAmount`
+     before spending the upload. */
+  amount: z
+    .string()
+    .trim()
+    .regex(/^[1-9]\d*$/, 'Masukkan angka rupiah tanpa titik, koma, atau nol di depan'),
+  screenshot: z
+    .custom<FileList>((value) => value instanceof FileList && value.length === 1, {
+      message: 'Unggah bukti transfer'
+    })
+});
+
 export type AddressData = z.infer<typeof addressSchema>;
 export type ProfileData = z.infer<typeof profileSchema>;
 export type ReviewData = z.infer<typeof reviewSchema>;
+export type TopupFormData = z.infer<typeof topupSchema>;
 
 /** A blank address form — the "tambah alamat" state. `id` defaults to Indonesia
     because that is where every fish the house sells is going. */

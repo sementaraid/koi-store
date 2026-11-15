@@ -11,6 +11,16 @@ const nextConfig: NextConfig = {
   },
   /* `@koi/ui` ships as source, so it is compiled as part of this app. */
   transpilePackages: ['@koi/ui'],
+  experimental: {
+    serverActions: {
+      /* A farm registration sends a KTP scan plus up to six farm photos to a
+         server action, which goes through one POST — Next's 1 MB default
+         refused it. Each file is capped at 5 MB by the form and the upload
+         route (`MAX_FARM_FILE_BYTES`); the payload is the seven of them at
+         most. Same ceiling as the API's own upload limit per file. */
+      bodySizeLimit: '40mb'
+    }
+  },
   images: {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',

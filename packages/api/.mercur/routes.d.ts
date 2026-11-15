@@ -63,6 +63,8 @@ export type Routes = {
                     $addressId: typeof import("@medusajs/medusa/api/admin/customers/[id]/addresses/[address_id]/route");
                 };
                 customerGroups: typeof import("@medusajs/medusa/api/admin/customers/[id]/customer-groups/route");
+                walletAdjustments: typeof import("../src/api/admin/customers/[id]/wallet-adjustments/route");
+                wallet: typeof import("../src/api/admin/customers/[id]/wallet/route");
             };
         };
         draftOrders: typeof import("@medusajs/medusa/api/admin/draft-orders/route") & {
@@ -510,6 +512,17 @@ export type Routes = {
             };
         };
         custom: typeof import("../src/api/admin/custom/route");
+        feeCategories: typeof import("../src/api/admin/fee-categories/route") & {
+            $id: typeof import("../src/api/admin/fee-categories/[id]/route");
+        };
+        settings: typeof import("../src/api/admin/settings/route");
+        topupRequests: typeof import("../src/api/admin/topup-requests/route") & {
+            $id: {
+                approve: typeof import("../src/api/admin/topup-requests/[id]/approve/route");
+                reject: typeof import("../src/api/admin/topup-requests/[id]/reject/route");
+                screenshot: typeof import("../src/api/admin/topup-requests/[id]/screenshot/route");
+            };
+        };
     };
     auth: {
         $actorType: {
@@ -639,6 +652,10 @@ export type Routes = {
             };
         };
         custom: typeof import("../src/api/store/custom/route");
+        farmUploads: typeof import("../src/api/store/farm-uploads/route");
+        platformBankAccount: typeof import("../src/api/store/platform-bank-account/route");
+        topupRequests: typeof import("../src/api/store/topup-requests/route");
+        wallet: typeof import("../src/api/store/wallet/route");
     };
     vendor: {
         campaigns: typeof import("@mercurjs/core/api/vendor/campaigns/route") & {

@@ -47,6 +47,56 @@ module.exports = withMercur({
       }
     },
     {
+      resolve: './src/modules/wallet',
+    },
+
+    {
+      resolve: './src/modules/platform-settings',
+    },
+
+    // US-020 (T-020.1). Farm registration data that Mercur's seller has no
+    // column for. D-017: the KTP photo key and NIK are private; the farm photos
+    // are public and will show on auction pages. The module creates the linked
+    // `seller_custom_fields` side table on `medusa db:migrate` (Mercur custom
+    // fields doc), so no hand-written migration is added for it.
+    {
+      resolve: '@mercurjs/core/modules/custom-fields',
+      options: {
+        customFields: {
+          Seller: {
+            ktp_photo_key: { type: 'string', nullable: true },
+            ktp_nik: { type: 'string', nullable: true },
+            farm_photo_urls: { type: 'array', nullable: true },
+          },
+        },
+      },
+    },
+
+    // Email over SMTP (Mailpit in dev, compose.yaml). US-002 password reset.
+    // Registered only when SMTP_HOST is set, so a backend without mail config
+    // still boots; the reset subscriber then logs that it couldn't send.
+    ...(process.env.SMTP_HOST ? [{
+      resolve: '@medusajs/medusa/notification',
+      options: {
+        providers: [
+          {
+            resolve: './src/modules/smtp-notification',
+            id: 'smtp',
+            options: {
+              channels: ['email'],
+              host: process.env.SMTP_HOST,
+              port: Number(process.env.SMTP_PORT || 1025),
+              secure: process.env.SMTP_SECURE === 'true',
+              user: process.env.SMTP_USER || undefined,
+              pass: process.env.SMTP_PASS || undefined,
+              from: process.env.SMTP_FROM,
+            },
+          },
+        ],
+      },
+    }] : []),
+
+    {
       resolve: '@medusajs/medusa/file',
       options: {
         providers: [
@@ -58,6 +108,12 @@ module.exports = withMercur({
               // It must be the publicly reachable origin in production, or
               // images resolve to localhost and render broken.
               backend_url: process.env.FILE_BACKEND_URL || 'http://localhost:9000/static',
+              // Private files go OUTSIDE `static`, which is the only directory
+              // Medusa serves at /static. Without this the local provider keeps
+              // them under static/ and anyone who knows the name can fetch a
+              // top-up screenshot (US-011 fix). Still not a private store: use
+              // a real private-access provider (e.g. S3) in production.
+              private_upload_dir: path.join(process.cwd(), 'private-uploads'),
             },
           },
         ],

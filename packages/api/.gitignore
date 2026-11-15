@@ -2,6 +2,10 @@
 .env
 .DS_Store
 /uploads
+# Local File Module provider output (customer transfer screenshots, US-011).
+# `private-uploads` holds the same screenshots, uploaded as private files.
+/static
+/private-uploads
 /node_modules
 yarn-error.log
 

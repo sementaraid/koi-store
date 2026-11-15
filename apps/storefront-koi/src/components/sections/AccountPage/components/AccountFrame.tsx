@@ -49,9 +49,12 @@ export type AccountFrameProps = {
 const NAV_ITEMS: Omit<AccountNavItem, 'count'>[] = [
   { label: 'Beranda akun', href: ROUTES.account },
   { label: 'Pesanan', href: ROUTES.orders },
+  { label: 'Saldo', href: ROUTES.wallet },
+  { label: 'Top-up', href: ROUTES.topup },
   { label: 'Alamat', href: ROUTES.addresses },
   { label: 'Ulasan', href: ROUTES.reviews },
-  { label: 'Pesan', href: ROUTES.messages }
+  { label: 'Pesan', href: ROUTES.messages },
+  { label: 'Kebun', href: ROUTES.farm }
 ];
 
 /** Below the rule: how the account is kept, and the way out. */

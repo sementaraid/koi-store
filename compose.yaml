@@ -28,10 +28,21 @@ services:
       timeout: 5s
       retries: 20
 
+  # Dev mail catcher: the app sends SMTP to `mailpit:1025` on the project
+  # network (no host port needed). The inbox UI is loopback-only, like the
+  # other ports: http://127.0.0.1:8025
+  mailpit:
+    image: axllent/mailpit:v1.27.0
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8025:8025"
+
   app:
     depends_on:
       postgres:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     build:
       context: .
       args:
@@ -64,7 +75,18 @@ services:
       # .env keeps `localhost` for host-side `bun run dev`; on the bridge the DB
       # is another container. Must also be in turbo.json passThroughEnv or turbo
       # strips it before medusa sees it.
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/koi-store
+      # sslmode=disable: Medusa CLI defaults to SSL for non-localhost hosts; dev Postgres has ssl=off.
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/koi-store?sslmode=disable
+      # Password-reset email (US-002) goes to Mailpit above. Also listed in
+      # turbo.json passThroughEnv.
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_SECURE: "false"
+      SMTP_USER: ""
+      SMTP_PASS: ""
+      SMTP_FROM: "Koi Store <no-reply@koi.dev>"
+      # Base of the reset link (storefront-koi /atur-sandi). Host browser URL.
+      STOREFRONT_URL: http://localhost:3001
     volumes:
       - .:/workspace
       # Overlay volumes: bun's workspace install hoists to the root, but each
