@@ -1,0 +1,15 @@
+{
+  // `next lint` asks an interactive setup question when no config exists,
+  // which an agent cannot answer. This file is what makes lint runnable.
+  "extends": ["next/core-web-vitals", "next/typescript"],
+  "overrides": [
+    {
+      // Lint baseline: failed this rule on the day lint was first switched on.
+      // When you fix it, remove this override.
+      "files": ["src/lib/cookies.ts"],
+      "rules": {
+        "@typescript-eslint/no-empty-object-type": "warn"
+      }
+    }
+  ]
+}

@@ -97,11 +97,54 @@ Plan rules that affect this app:
 - The farmer's WhatsApp and bank details are shown **only to the winner** of that
   lot. The farmer sees only the winner's name and WhatsApp.
 
+## Where things already are (look here before searching)
+
+| Need | Use |
+|---|---|
+| Typed client | `sdk` from `src/lib/client.ts`, typed by `@acme/api/_generated` |
+| A route's request/response shape | Find the sdk name in `packages/api/.mercur/routes.d.ts`; it points at the route file to read |
+| Customer auth headers | `getAuthHeaders()` in `lib/data/cookies.ts` (cookie `_medusa_jwt`) |
+| Farmer (member) auth, D-003 | `getMemberAuthHeaders()`, `setMemberToken()` in `lib/data/cookies.ts` (cookie `_medusa_member_jwt`); `memberSignIn()` in `lib/data/member.ts`; `isTokenExpired()`, `tokenActorId()` in `lib/helpers/token.ts` |
+| Seller-scoped farmer calls | Every `/vendor/*` call except `/vendor/sellers`, `/vendor/sellers/select`, `/vendor/stores`, `/vendor/feature-flags` and `/vendor/members/invites/accept` also needs the header `x-seller-id: <seller.id>` (from `getMyFarm()`). Without it, Mercur rejects the request with "x-seller-id header is required for vendor routes" (`ensureSellerMiddleware` in `@mercurjs/core`) |
+| Passing headers to a call | `sdk.vendor.sellers.query({ fetchOptions: { headers, cache: 'no-store' } })`, as in `lib/data/farm.ts` |
+| Guard an account page | `requireCustomer(from)` in `lib/guard.ts` |
+| Money | `formatPrice()`, `formatPriceCompact()` in `lib/helpers/format-price.ts` |
+| Time | `formatAgo()`, `formatDeadline()`, `formatRemaining()`, `formatClock()` in `lib/helpers/`; `date-fns` 4 is installed |
+| Auth error copy | `authErrorMessage(error, fallback)` in `lib/helpers/auth-error.ts` |
+| `@koi/ui` exports | `Badge`, `Button`, `Card`, `FormField`, `Input`, `Label`, `RenderIf`, plus `@koi/ui/primitives/*` (avatar, breadcrumb, dropdown-menu, empty, native-select, pagination, scroll-area, separator, sheet, tabs) |
+| Multi-line text field | No primitive. Copy the bare `<textarea>` in `components/sections/AccountPage/components/ReviewForm.tsx` |
+| Icons | `lucide-react` 1.55. Check a name with `ls node_modules/lucide-react/dist/esm/icons \| grep <name>` |
+| Upload size | Server actions accept 40 MB (`next.config.ts`, `serverActions.bodySizeLimit`) |
+| Farmer area so far | `lib/data/farm.ts`, `lib/helpers/farm-*.ts`, `components/sections/AccountPage/components/Farm.tsx`, routes `farm` and `farmHome` in `const/routes.ts` |
+
+## Dev server and builds
+
+The dev server and `next build` both write to `.next`. Building while the dev
+server runs leaves `.next` half-built and every route returns 500.
+
+- `bun run check` (tsc + tests + lint) is the handoff check. It doesn't need a
+  build. A build adds little anyway: `next.config.ts` sets
+  `typescript.ignoreBuildErrors`.
+- If you do need `bun run build`, first check whether the dev server is up:
+  ```bash
+  curl -s -o /dev/null -w '%{http_code}' --max-time 3 http://localhost:3001
+  ```
+  `000` means nothing is listening, so building is safe. Any other code means
+  the dev server is running: don't build.
+- To look at a route, use the same `curl` with the route path. `200` or a `307`
+  redirect (to sign-in) means it renders.
+- If `.next` got broken anyway, restart the container once with
+  `docker compose restart app`, then repeat the `curl` until it answers. Don't
+  hunt for processes or touch config files to force a reload.
+
 ## Verification
 
-Before you hand off, run:
-1. `bun run tsc`
-2. `bun run test`
-3. `bun run lint`
-4. For UI changes, open the route on http://localhost:3001 and check the loading,
-   empty and error states.
+Before you hand off, run `bun run check` once. It runs `tsc`, the tests and
+`next lint --quiet`, and fails on the first error. Use the individual scripts
+only while fixing one kind of failure.
+
+Lint has a baseline in `.eslintrc.json`: inherited files that report warnings
+instead of errors. Don't add files to it. Take a file off when you fix it.
+
+For UI changes, check the route answers with `curl` (above). If you didn't look
+at the page in a browser, say so.

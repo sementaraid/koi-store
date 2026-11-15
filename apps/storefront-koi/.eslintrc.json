@@ -1,0 +1,29 @@
+{
+  // `next lint` asks an interactive setup question when no config exists,
+  // which an agent cannot answer. This file is what makes lint runnable.
+  "extends": ["next/core-web-vitals", "next/typescript"],
+  "overrides": [
+    {
+      // Lint baseline: files inherited from the Mercur storefront starter that
+      // failed these rules on the day lint was first switched on. They report
+      // warnings so lint can pass. Everything else, including new code, is held
+      // to the rules. When you fix a file, take it off this list.
+      "files": [
+        "src/lib/data/cart.ts",
+        "src/lib/data/cookies.ts",
+        "src/lib/data/customer.ts",
+        "src/lib/helpers/get-product-price.ts",
+        "src/lib/helpers/get-seller-product-price.ts",
+        "src/lib/helpers/isEmpty.ts",
+        "src/lib/helpers/medusa-error.ts",
+        "src/lib/helpers/order-error-formatter.ts"
+      ],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "warn",
+        "@typescript-eslint/no-empty-object-type": "warn",
+        "@typescript-eslint/ban-ts-comment": "warn",
+        "prefer-const": "warn"
+      }
+    }
+  ]
+}

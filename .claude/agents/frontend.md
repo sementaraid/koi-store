@@ -33,11 +33,22 @@ team flow, the report header, the decisions, the Mercur coding standard (section
 - Every data view handles loading, empty and error states.
 - Build only what the story's acceptance criteria need.
 
+## Working efficiently
+- Start from the "Where things already are" table in the workspace `CLAUDE.md`
+  and from the brief you were given. Search only for what neither answers.
+- Write a new file in one go once you know what it needs. Don't build it up
+  through many small edits.
+- Run `bun run check` when a piece of work is finished, not after every edit.
+- Never run `bun run build` without first checking the dev server (see the
+  workspace `CLAUDE.md`, "Dev server and builds").
+- Keep your own list of the files you change. Don't rediscover it with
+  `git status`.
+
 ## Before you hand off
-In each app you touched, run `bun run tsc`, `bun run test` and `bun run lint`.
-If you changed `packages/ui`, also run `bun run tsc` in both apps. Every new
-helper or adapter gets a `*.test.ts`. Fix any failures. If you didn't open the
-page in a browser, say so. Don't claim that it renders correctly.
+In each app you touched, run `bun run check` once. If you changed `packages/ui`,
+run it in both apps. Every new helper or adapter gets a `*.test.ts`. Fix any
+failures. If you didn't open the page in a browser, say so. Don't claim that it
+renders correctly.
 
 ## Report (after the standard header)
 - How to see it: app, URL, port and the route path
