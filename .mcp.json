@@ -1,6 +1,23 @@
 {
   "mcpServers": {
     "mercur": { "type": "http", "url": "https://docs.mercurjs.com/mcp" },
-    "medusa": { "type": "http", "url": "https://docs.medusajs.com/mcp" }
+    "medusa": { "type": "http", "url": "https://docs.medusajs.com/mcp" },
+    "playwright": {
+      "type": "stdio",
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm", "--init",
+        "--network=host", "--ipc=host",
+        "--user", "1001:1001",
+        "-e", "HOME=/tmp",
+        "-v", "/home/sunar/apps/koi-store:/workspace",
+        "-w", "/workspace",
+        "mcr.microsoft.com/playwright/mcp:latest",
+        "--headless", "--no-sandbox", "--isolated",
+        "--output-dir", "/workspace/.playwright-mcp",
+        "--allowed-hosts", "127.0.0.1:3001,127.0.0.1:3002,127.0.0.1:9000,localhost:3001,localhost:3002,localhost:9000",
+        "--ignore-https-errors"
+      ]
+    }
   }
 }

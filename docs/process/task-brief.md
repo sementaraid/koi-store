@@ -1,0 +1,78 @@
+# Task brief template
+
+Copy this into the agent prompt for every `[backend]`, `[frontend]` and `[qa]`
+task. A brief that fits this shape takes an agent ~45 minutes. A brief that
+doesn't is two tasks.
+
+Why: in the first ~14 agent-hours, ~30% went to rework caused by thin briefs —
+a missing prerequisite route, a policy AC added after the code was built, and
+types that never reached the Koi apps' `tsc`. Every section below exists because
+that failure happened once.
+
+## The brief
+
+```
+Story: US-xxx (tasks T-xxx.n)   Release: <slug>
+Agent: <backend | frontend | qa>   Expected: <=45 min
+
+## Acceptance criteria (quote verbatim from stories.md)
+- ACn: …
+
+## Decisions in force
+D-xxx (one line each, why it constrains this task)
+
+## Endpoint inventory  (frontend briefs: fill every row)
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+Rule: an "Exists? no" row becomes a backend task in the SAME story, ordered
+first. Never let a frontend task discover a missing route at runtime.
+
+## Start from
+- file:line (the pattern to copy)
+- file (the file to extend)
+
+## Do not touch
+- paths, workspaces, other stories' files
+
+## Definition of done
+- exact commands + expected output
+- report: standard header + role section
+
+## Open questions
+(one numbered block, before starting — never mid-task)
+```
+
+## Cross-cutting checklist
+
+Tick before handing off. These apply to every task, so they belong in the
+brief, not in the agent's memory:
+
+- [ ] PII: mask anyone else's NIK/bank/phone; self-view stays full (D-045);
+      admins are not exempt (D-042)
+- [ ] Every custom `/vendor/*` mutation starts with `validateSellerOpenStep`
+- [ ] Money: whole-rupiah integers, `id-ID` formatting, never floats
+- [ ] Ledgers append-only; balances are sums, never stored counters
+- [ ] Every mutation is a workflow with compensation; routes stay thin
+- [ ] New/changed route → `bun run codegen`
+- [ ] A route file reading `req.seller_context` imports
+      `…/types/seller-context` (otherwise the Koi apps' `tsc` fails)
+- [ ] `bun run tsc` passes in **both** Koi apps when `packages/api/src` changed
+- [ ] UI task: render it once in a browser with the `playwright` MCP (or state
+      plainly that it wasn't). Dev servers run on 3001 (storefront), 3002
+      (admin) and 9000 (backend); the MCP container reaches them on
+      `127.0.0.1`. Screenshots and page snapshots land in `.playwright-mcp/`
+      (gitignored).
+
+## Dispatch rules
+
+- One surface per run (form, list, edit). A brief expected to exceed 45 min is
+  two briefs.
+- One Jest suite at a time in `packages/api`. Never dispatch QA while a backend
+  agent is running its specs.
+- Backend changes that a frontend task consumes ship `codegen` output in the
+  same run; the frontend brief pins the response shape.
+- Commit when the product-owner accepts a story. Uncommitted trees make
+  parallel work unsafe and lose a day's work to one bad edit.
+- Settle policy questions (masking, reveal, refunds, statuses) **before** the
+  story that touches them is dispatched. A policy added later reopens an
+  accepted AC.
