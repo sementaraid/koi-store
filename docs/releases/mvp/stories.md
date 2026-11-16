@@ -14,6 +14,55 @@ are defined in `docs/product/overview.md`.
 
 ---
 
+## Status as of 2026-11-16
+
+**Last accepted story:** US-033 (tasks T-033.1/.2/.3), committed `c323956`.
+T-030.8, T-032.6, T-032.7 and T-020.9 (seed fix) were accepted in the same pass.
+Every story above Epic 4 is `done`. Nothing in Epic 4 has passed qa yet.
+
+**Built, awaiting qa.** Tasks stay `[ ]` until qa reports PASS and the evidence
+is spot-checked:
+- US-041 T-041.1a, T-041.1b — committed (`auction_participant` + unique index,
+  join-auction workflow, `POST`/`GET /store/auctions/:id/join`). Specs exist
+  (3 module, 12 http), not yet qa-run.
+- US-040 T-040.1 — committed (`GET /store/lots`, `GET /store/lots/:id`). 8 specs.
+- US-042 T-042.1, T-042.2 — **uncommitted** (`bid` model,
+  `Migration20261116050149`, place-bid workflow, `POST /store/bids`). 10 specs.
+- US-040 T-040.2a — **uncommitted** (`lib/data/lots.ts`,
+  `lib/adapters/lot.ts` + test, `lelang` feed on the API). Browser render NOT
+  verified: the app container can't launch chromium, only `curl` was checked.
+
+**Counts** (computed from this file, 2026-11-16):
+
+| Epic | Stories done | In progress | Todo | Blocked | Tasks done | Tasks open |
+|---|---|---|---|---|---|---|
+| 0 Foundations | 3 | 0 | 0 | 0 | 9 | 0 |
+| 1 Wallet | 6 | 0 | 0 | 0 | 22 | 0 |
+| 2 Becoming a farmer | 2 | 0 | 0 | 0 | 11 | 5 |
+| 3 Auctions for farmers | 4 | 0 | 0 | 0 | 23 | 0 |
+| 4 Joining and bidding | 0 | 3 | 3 | 1 | 0 | 25 |
+| 5 Closing and after-sale | 0 | 0 | 12 | 0 | 0 | 37 |
+| 6 Admin operations | 0 | 0 | 6 | 0 | 0 | 22 |
+| 7 WhatsApp bot | 0 | 0 | 0 | 6 | 0 | 12 |
+| 8 Pilot | 0 | 0 | 1 | 0 | 0 | 5 |
+| **Total** | **15** | **3** | **22** | **7** | **65** | **106** |
+
+In progress = built work awaiting qa: US-040, US-041, US-042.
+
+Epic 2's open tasks are US-021's T-021.2/.3/.4/.6 (follow-ups on a `done` story)
+and the new T-020.10 (seed an admin user). Blocked: US-044 (mvp-Q33), US-080 –
+US-085 (mvp-Q12).
+
+**Next in milestone order:**
+1. US-040: qa on T-040.1 + T-040.2a (incl. the browser render check not yet run), then T-040.2b, T-040.2c, T-040.3.
+2. US-041: qa on T-041.1a/.1b, then T-041.2 (join CTA on the lot page, needs T-040.2b), T-041.3.
+3. US-042: qa T-042.4/.5 on the built backend, then T-042.3 (bid control, needs T-040.2b + T-041.2).
+
+Then US-043 (T-043.1 hooks into the place-bid workflow). US-044 waits for mvp-Q33.
+T-020.10 can run any time; qa's admin browser checks need it.
+
+---
+
 ## Epic 0: Foundations (Milestone 1)
 
 ### US-001 Admin signs in to the admin app · `done`
@@ -165,6 +214,7 @@ at auction. *(Plan: Becoming a farmer)*
 - [x] T-020.3 [storefront] Farm registration form + status page in the Farmer area
 - [x] T-020.4 [qa] KTP photo, NIK and bank data never appear on public pages or any `/store/*` response; a mismatched `member_email` is rejected
 - [x] T-020.9 [backend] *(Seed fix, not an AC. Found during the T-033.2 render check.)* Seed one dual-actor demo farmer: a customer row, its wallet and balance (D-011), the member login and an `open` seller under the same email, so the Farmer area (`/akun/kebun*`) and top-up work for that account. Today `sakura.koi.farm@koi.dev` exists only as member + seller: no customer row, no wallet, so no seeded farmer can use the Farmer area, while US-020 assumes a farmer is a customer. Extend `src/scripts/seed-koi.ts`; keep the existing logins. The `docs/process/flow.md` credential line for the Farmer area is only accurate once this lands. — commit `1dc43de`, `packages/api/src/scripts/seed-koi.ts:701-710,911-981` (customer + wallet Rp500.000 + member + `open` seller; idempotent re-run); Farmer area signed in as that login in the US-033 render check
+- [ ] T-020.10 [backend] *(Seed fix, not an AC. Found during the 2026-11-16 acceptance.)* The seed creates **no admin user**. Add a seeded admin to `src/scripts/seed-koi.ts` so `apps/admin-koi` (`/masuk`) and the `[qa]` browser checks have a login. Read `ADMIN_EMAIL` and `ADMIN_PASSWORD` from env, defaulting to `admin@koi.dev` / `supersecret`; add both to `packages/api/.env.template` with the safe placeholder (never commit a real password). Idempotent re-run: an existing identity is reused, not duplicated. Document the pair in `docs/process/flow.md`'s accounts table (Admin row currently says "Seeded admin user" with no address). — not started
 
 ### US-021 Admin approves or rejects a farm · `done (evidence: packages/api/src/api/admin/farms/route.ts:120-128,194-219; packages/api/src/workflows/reveal-farm-pii.ts:19-27; packages/api/src/workflows/steps/pii-reveal.ts:15-71; packages/api/src/modules/pii-audit/service.ts:6-24; packages/api/src/workflows/steps/validate-seller-open.ts:28-33; packages/api/src/api/middlewares.ts:176-215; apps/admin-koi/src/components/FarmQueue.tsx:120-183,205-321,357-421; apps/storefront-koi/src/components/sections/AccountPage/FarmHomePage.tsx:34-44; packages/api/integration-tests/http/admin-farms.spec.ts:139-335; packages/api/integration-tests/http/pii-reveal.spec.ts:126-208; packages/api/integration-tests/http/farmer-auctions.spec.ts:283-315,604-630; qa PASS)`
 **Depends on:** US-092 (masking and the logged reveal delivered here; column encryption stays open in US-092).
@@ -250,7 +300,7 @@ category, photos and fees are checked. *(Plan: Structure, Fees; D-020, D-031, D-
 - [x] T-032.3 [qa] An override or a rejection without a reason is refused; a rejected auction is `draft` with the reason visible to its farmer and no override; a `draft` auction never shows in the queue; no status outside the plan's enum is written — `admin-auction-approval.spec.ts:131-160,224-257,259-305`
 - [x] T-032.6 [backend] *(Follow-up, AC6, D-049.)* In `approveAuctionWorkflow` (`packages/api/src/workflows/decide-auction.ts`), refuse when `start_at <= now`: `MedusaError` `INVALID_DATA` (400) with code `start_passed`, checked before the wallet lock and charge. Add `start_at` to what the approve path reads (`getPendingAuctionStep`, `steps/auction.ts:304-337`, is shared with reject; reject must keep working on a passed start). Spec in `admin-auction-approval.spec.ts`: a `pending_approval` auction with a past `start_at` → 400 `start_passed`, no `listing_fee` row, status still `pending_approval`; rejecting the same auction still works. No route shape change, no codegen. — `steps/auction.ts:340-348` (`refuse_started`), `decide-auction.ts` approve passes it before the payer read, wallet lock and charge; `admin-auction-approval.spec.ts:203-223`; browser: past-start approve → 400, 0 `listing_fee` rows, still `pending_approval`, reject works
 - [x] T-032.7 [admin] *(Follow-up, AC6.)* `/lelang`: map code `start_passed` in `auctionApproveErrorMessage` (`apps/admin-koi/src/lib/helpers/auction-format.ts:49`) to a clear Indonesian message that tells the admin to reject with a reason so the farmer picks new dates; add a case to `auction-format.test.ts`. `bun run check` clean. — `auction-format.ts:54-56`, `auction-format.test.ts:61-66`; admin-koi `bun run check` (29 tests) clean; browser toast shows the Indonesian message
-**Follow-up (2026-11-15):** T-032.6 and T-032.7 were added after acceptance (`mvp-Q31` → D-049). US-032 stays `done`; qa verifies AC6 before the two tasks are ticked.
+**Follow-up (2026-11-15):** T-032.6 and T-032.7 were added after acceptance (`mvp-Q31` → D-049). US-032 stays `done`. Both were qa-verified and product-owner-accepted on 2026-11-16 (commit `c323956`); AC6 is now proven (`admin-auction-approval.spec.ts:203-223` 400 `start_passed`, no fee row, still `pending_approval`; reject path still works; admin-koi toast).
 
 ### US-033 Auctions start and farmers track them · `done (evidence: packages/api/src/modules/auction/models/auction.ts:6-13; packages/api/src/jobs/start-auctions.ts; packages/api/src/workflows/start-auction.ts; packages/api/integration-tests/http/auction-start-job.spec.ts:83-105; packages/api/integration-tests/http/admin-auction-approval.spec.ts:203-223,282-305; apps/storefront-koi/src/components/sections/AccountPage/FarmHomePage.tsx:212-241; apps/storefront-koi/src/lib/helpers/auction-status.ts:16-28,33-40; live job tick in dev DB scheduled → live, log "found 1, started 1"; screenshot .playwright-mcp/qa-us033-farm-beranda-tabs.png; qa PASS)`
 As a **farmer**, I want to see my auctions and their status so that I know
@@ -263,7 +313,7 @@ what's live. *(Plan: Design rules, statuses)*
 
 **Readiness (2026-11-15):** ready. No open question blocks it. AC1 is D-031's enum, which already exists (`packages/api/src/modules/auction/models/auction.ts:5-12`). AC2 is a plan Key flow. `mvp-Q31` is answered (D-049): approval refuses a passed `start_at` (US-032 T-032.6). The job is unchanged.
 **Lots: the job does not touch them.** Lots are created `open` with `end_time` = the auction's end (`packages/api/src/workflows/steps/auction.ts:207-226`). The plan's lot lifecycle starts at "Open for bids" and has no state before it. Closing (`open → unsold | won`) and `live → closed` belong to US-050 (T-050.1, T-050.2). Because a lot is `open` while its auction is still `scheduled`, the bid gate must check that the **auction** is `live`, not the lot's status (US-042).
-**Known gap, outside this story:** editing a draft's `end_at` doesn't update its existing lots' `end_time`. Tracked as US-030 T-030.8 (required before US-050).
+**Was a gap; now closed.** Editing a draft's `end_at` didn't update its existing lots' `end_time`. T-030.8 fixed it (commit `c323956`, `farmer-auctions.spec.ts:392-408,483-528`): lots follow the auction's new `end_at`, with compensation. US-050 can rely on `lot.end_time`.
 
 #### Briefs
 
@@ -358,7 +408,7 @@ Keep the existing Ubah/Lihat links and the draft submit button as they are.
 ## Definition of done
 cd apps/storefront-koi && bun run check                            → pass
 Browser check (render-check skill / playwright MCP): http://127.0.0.1:3001/akun/kebun/beranda signed in as sakura.koi.farm@koi.dev; filter to one status, then page
-Note: that login has no customer row or wallet yet (MVP T-020.9 seeds it). Until T-020.9 lands, verify this screen with a farmer account you register and get approved by hand, and say so in the report.
+Note: that login is now a full dual-actor demo farmer — customer row, wallet (Rp500.000), member and `open` seller (`seed-koi.ts:701-710,911-981`, T-020.9, commit `1dc43de`). Sign in with it directly; no hand-made farmer account needed.
 Report: standard header + screenshot path.
 
 ## Open questions
@@ -383,14 +433,14 @@ Report PASS/FAIL per AC with file:line and command output. Don't change app code
 
 ## Epic 4: Joining and bidding (Milestone 4)
 
-### US-040 Customer browses real auctions · `todo`
+### US-040 Customer browses real auctions · `in progress`
 As a **customer**, I want to browse live and upcoming auctions and their lots so
 that I can choose what to bid on. *(Plan: Milestone 4)*
 - AC1: `lelang` and lot pages show API data. The demo constants are removed.
 - AC2: Each lot shows photos, OB, KB, current price and time left.
 - AC3: Lots of `scheduled`, `live` and `closed` auctions are public; `draft`, `pending_approval` and `cancelled` auctions never are. A closed lot shows its final price and "Terjual" or "Tidak terjual", never who won: no winner field of any kind on a public route or page (D-046). A cancelled lot inside a public auction stays visible, labelled "Dibatalkan", with no price, no final price, no sold label, no winner and no bids (D-050).
-- [ ] T-040.1 [backend] Public store routes `GET /store/lots` and `GET /store/lots/:id` (the storefront is lot-centric: `lelang` lists lots, and `/lelang/[id]` takes a lot id)
-- [ ] T-040.2a [storefront] `lib/data/lots.ts` + `lib/adapters/lot.ts` (+ test); the `lelang` feed on API data
+- [ ] T-040.1 [backend] Public store routes `GET /store/lots` and `GET /store/lots/:id` (the storefront is lot-centric: `lelang` lists lots, and `/lelang/[id]` takes a lot id) — built 2026-11-16, awaiting qa (committed in `c323956`; `store-lots.spec.ts` 8 specs pass per backend report)
+- [ ] T-040.2a [storefront] `lib/data/lots.ts` + `lib/adapters/lot.ts` (+ test); the `lelang` feed on API data — built 2026-11-16, awaiting qa (uncommitted; `lot.test.ts` 5 cases, cancelled-lot card). **Browser render NOT verified**: the app container can't launch chromium; only `curl` was run. qa must run the render check on `/lelang`.
 - [ ] T-040.2b [storefront] The lot page `/lelang/[id]` on API data (photos, OB, KB, current price, time left); remove the demo lots from `const/auctions.ts`
 - [ ] T-040.2c [storefront] Home page hero and lot strip on API data (`const/home.ts` demo lots link to ids `1…n`, which 404 once T-040.2b lands)
 - [ ] T-040.3 [qa] No demo data left in auction views
@@ -660,15 +710,15 @@ payer_customer_id/winner_customer_id/cancel_reason, and "winner" at all on a clo
 Report PASS/FAIL per AC with file:line and command output. Don't change app code.
 ```
 
-### US-041 Customer joins an auction · `todo`
+### US-041 Customer joins an auction · `in progress`
 As a **customer**, I want to join an auction by paying the join fee once so that
 I can bid on all its lots. *(Plan: Structure, Fair play, Strikes)*
 - AC1: Join fee recorded as `join_fee` (−) once per auction. The participant is added in the same workflow.
 - AC2: Short balance blocks joining with a "top up" prompt.
 - AC3: Joining is allowed any time until the auction ends, including after bidding starts.
 - AC4: A farmer can't join their own auction. A banned customer can't join. *(Ban clause delivered and verified by US-059 T-059.1, D-047; not checked in this story.)*
-- [ ] T-041.1a [backend] `auction_participant` model + migration (unique per auction + customer)
-- [ ] T-041.1b [backend] Join workflow + `POST`/`GET /store/auctions/:id/join` (balance check, charge, participant)
+- [ ] T-041.1a [backend] `auction_participant` model + migration (unique per auction + customer) — built 2026-11-16, awaiting qa (committed in `c323956`; `Migration20261115211617.ts:10` unique index; `auction-participant.spec.ts` 3 cases)
+- [ ] T-041.1b [backend] Join workflow + `POST`/`GET /store/auctions/:id/join` (balance check, charge, participant) — built 2026-11-16, awaiting qa (committed in `c323956`; `join-auction.spec.ts` 12 specs pass per backend report)
 - [ ] T-041.2 [storefront] Join button with the fee shown and a short-balance prompt
 - [ ] T-041.3 [qa] Joining twice charges once; own-auction users are blocked (banned users: US-059, D-047)
 
@@ -865,18 +915,215 @@ Report PASS/FAIL per AC with file:line and command output. Don't change app code
 ```
 
 
-### US-042 Customer places a bid on the website · `todo`
+### US-042 Customer places a bid on the website · `in progress`
 As a **joined customer**, I want to bid on a lot so that I can win it. *(Plan: Bidding, Pricing per lot; D-023)*
 - AC1: Only joined customers can bid. Not the farmer, not banned users. *(Ban clause delivered and verified by US-059 T-059.1, D-047; not checked in this story.)*
 - AC2: The first bid on a lot may equal OB. Every later bid must be at least current price + KB. A lower bid is rejected with the minimum allowed amount (D-023). "First" means no bid that isn't removed: once every bid is removed, the next may equal OB again (D-036).
 - AC3: The lot row is locked and the server's timestamp decides order. Of two equal bids, the first wins and the second is rejected with the new current price.
 - AC4: Bids can't be retracted.
 - AC5: Each bid saves bidder, amount, source (`web`) and time.
-- [ ] T-042.1 [backend] `bid` model + place-bid workflow with row lock
-- [ ] T-042.2 [backend] Store route `POST` bid, identity from `auth_context`
-- [ ] T-042.3 [storefront] `BidTerminal` wired to the API, with rejection messages
+- [ ] T-042.1 [backend] `bid` model + place-bid workflow with row lock — built 2026-11-16, awaiting qa (**uncommitted**: `models/bid.ts`, `Migration20261116050149.ts`, `workflows/place-bid.ts`, `workflows/steps/bid.ts`; lock key `lot:<id>`; `place-bid.spec.ts` 10 specs pass per backend report)
+- [ ] T-042.2 [backend] Store route `POST` bid, identity from `auth_context` — built 2026-11-16, awaiting qa (**uncommitted**: `api/store/bids/{route,validators}.ts`, `middlewares.ts` `/store/bids` entry, `routes.d.ts` `store.bids`; rules: first bid = OB, later ≥ current + KB, lot lock, concurrency)
+- [ ] T-042.3 [storefront] Bid control on the lot page `/lelang/[id]` wired to `POST /store/bids`, with rejection messages keyed on status + code
 - [ ] T-042.4 [qa] Concurrent equal bids: exactly one accepted
 - [ ] T-042.5 [qa] First bid = OB accepted; first bid < OB rejected; a later bid < current + KB rejected
+
+**Scope note (2026-11-16):** bid removal is US-072 (T-072.1 adds `removed_at`/`removed_by` to `bid`), extend is US-043, the ban check is US-059 (D-047). None of them is in US-042. Until US-072 lands, every `bid` row is a live bid, so AC2's "no bid that isn't removed" reduces to "no bid" (`steps/bid.ts` `minimum`).
+**Bid gate:** the **auction's** status must be `live` (409 `auction_not_live`); the lot must be `open` (409 `lot_not_open`). A lot is `open` while its auction is still `scheduled` (US-033 note), so the lot status alone isn't the gate.
+**Lock limit:** `acquireLockStep` is in-memory without redis, so AC3 holds within one backend process only. Production needs T-090.4.
+
+#### API contract (from the backend report, 2026-11-16; pinned for T-042.3)
+
+```text
+POST /store/bids            auth: customer bearer/session (middlewares.ts), publishable key
+Body   { lot_id: string, amount: integer >= 1 }          (Zod: z.number().int().min(1); no customer id in the body)
+201    { bid: { id, lot_id, amount, source: "web" | "whatsapp", created_at }, current_price: number }
+400    invalid_amount                — not a whole rupiah >= 1
+400    bid_too_low                   — message names the minimum, e.g. "Bid at least Rp1.100.000."
+401    no customer token
+403    own_auction                   — caller is the auction's payer customer (D-033); checked before membership
+403    not_participant               — caller hasn't joined (US-041)
+404    unknown lot
+409    auction_not_live | lot_not_open
+       Medusa's error handler rewrites 409 bodies (code and message become generic). Apps key on the
+       STATUS, never the body, and re-read the lot (GET /store/lots/:id) to show the current state.
+```
+
+#### Briefs
+
+```text
+Story: US-042 (task T-042.1)   Release: mvp
+Agent: backend   Expected: <=45 min
+Status: built 2026-11-16, awaiting qa. Brief recorded after the fact so qa and fix rounds have it.
+
+## Acceptance criteria
+- AC2: The first bid on a lot may equal OB. Every later bid must be at least current price + KB. A lower bid is rejected with the minimum allowed amount (D-023). "First" means no bid that isn't removed: once every bid is removed, the next may equal OB again (D-036).
+- AC3: The lot row is locked and the server's timestamp decides order. Of two equal bids, the first wins and the second is rejected with the new current price.
+- AC4: Bids can't be retracted.
+- AC5: Each bid saves bidder, amount, source (`web`) and time.
+
+## Decisions in force
+D-023: first bid may equal OB; later >= current + KB.
+D-036 / D-024: removal is US-072; leave room (a comment), add no removed fields now.
+CLAUDE.md §8: whole-rupiah integers; lock where order matters; save current_price when the bid happens.
+CLAUDE.md §9: thin module; soft customer_id (text), no FK into the customer module; one mutation per step with compensation.
+
+## Build
+- src/modules/auction/models/bid.ts: id prefix "bid", customer_id text, amount number (check >= 1),
+  source enum web | whatsapp (default web), belongsTo lot (Lot.hasMany bids). Index on lot_id.
+- Register Bid in AuctionModuleService; export BidDTO. Migration via `medusa db:generate auction`.
+- src/workflows/place-bid.ts: acquireLockStep `lot:<lot_id>` → getBiddableLotStep (read-only guards + minimum)
+  → createBidStep (compensation: delete) → setLotCurrentPriceStep (compensation: restore previous price)
+  → releaseLockStep. No retract route (AC4): only POST exists.
+- Leave a `ponytail:` in the guard naming US-059 T-059.1 as where the ban check lands (D-047),
+  and a comment naming US-043 as where extend hooks in (after setLotCurrentPriceStep).
+
+## Start from
+- packages/api/src/workflows/join-auction.ts (lock + guard + create shape)
+- packages/api/src/modules/auction/models/auction-participant.ts (belongsTo + index)
+- packages/api/src/modules/auction/models/lot.ts:48-49 (named check constraint)
+
+## Do not touch
+- apps/**; src/workflows/{join-auction,decide-auction,create-auction,update-draft-auction}.ts; src/api/store/lots/**
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p .                         → clean
+cd packages/api && bun run test:integration:http -- place-bid      → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + migration file name.
+
+## Open questions
+none (mvp-Q6 → D-023)
+```
+
+```text
+Story: US-042 (task T-042.2)   Release: mvp
+Agent: backend   Expected: <=30 min
+Status: built 2026-11-16, awaiting qa. Starts after T-042.1.
+
+## Acceptance criteria
+- AC1: Only joined customers can bid. Not the farmer, not banned users. *(Ban clause delivered and verified by US-059 T-059.1, D-047; not checked in this story.)*
+- AC2, AC3, AC5: as T-042.1 (the route runs that workflow).
+
+## Decisions in force
+D-033: auction.payer_customer_id is the farmer's customer id (own-auction check, before membership).
+D-047: no ban check. D-048 does not apply (that is join; bidding needs the auction `live`).
+CLAUDE.md §9: thin route, Zod in middlewares.ts, identity from req.auth_context only, both generics typed.
+
+## Build
+- src/api/store/bids/validators.ts: StorePlaceBid { lot_id: string min 1, amount: int 1..MAX_SAFE_INTEGER }.
+- src/api/store/bids/route.ts POST → placeBidWorkflow → 201 { bid, current_price } (contract above).
+- middlewares.ts: POST /store/bids → authenticate("customer", ["bearer","session"]) then validateAndTransformBody.
+- Guard order in getBiddableLotStep: 404 lot → 403 own_auction → 403 not_participant → 409 auction_not_live
+  → 409 lot_not_open → 400 invalid_amount → 400 bid_too_low (message names the minimum in id-ID rupiah).
+- bun run codegen.
+
+## Start from
+- packages/api/src/api/store/auctions/[id]/join/route.ts (customer identity, error codes)
+- packages/api/src/api/middlewares.ts (the /store/auctions/:id/join entry)
+
+## Do not touch
+- apps/**; src/api/store/lots/**, src/api/store/auctions/**
+
+## Spec (packages/api/integration-tests/http/place-bid.spec.ts)
+first bid = OB → 201 + row saved; first < OB → 400 bid_too_low, no row; next = current + KB → 201, one below → 400;
+two concurrent equal bids → [201, 400], one row; not joined → 403 not_participant; payer → 403 own_auction;
+auction scheduled/draft/closed/cancelled → 409; cancelled lot → 409; float / 0 → 400; anonymous → 401; unknown lot → 404.
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p .                         → clean
+cd packages/api && bun run codegen                                 → routes.d.ts has store.bids
+cd packages/api && bun run test:integration:http -- place-bid      → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + API contract.
+
+## Open questions
+none
+```
+
+```text
+Story: US-042 (task T-042.3)   Release: mvp
+Agent: frontend (apps/storefront-koi)   Expected: <=45 min
+Starts after: US-040 T-040.2b (the lot page on API data) and US-041 T-041.2 (the join CTA on that page).
+
+## Acceptance criteria
+- AC1: Only joined customers can bid. Not the farmer, not banned users. (UI: the bid control shows only to a joined customer
+  on a `live` auction; every refusal is the server's, never guessed client-side.)
+- AC2: The first bid on a lot may equal OB. Every later bid must be at least current price + KB. A lower bid is rejected with the minimum allowed amount (D-023).
+  (UI: prefill the minimum — OB when the lot has no bid yet, else current + KB — and show the server's bid_too_low message, which names the minimum.)
+- AC3: … Of two equal bids, the first wins and the second is rejected with the new current price.
+  (UI: on bid_too_low or any 409, re-read the lot and show the new current price.)
+- AC4: Bids can't be retracted. (UI: no cancel/undo control.)
+
+## Decisions in force
+D-005 @koi/ui only. Typed client only, never raw fetch. Money via formatPrice (id-ID), integers only.
+D-046 / D-050: no bid control on a closed or cancelled lot. D-047: no ban UI.
+409 bodies are rewritten by Medusa: branch on err.status === 409, never on its code or message.
+
+## Endpoint inventory
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| GET  | /store/lots/:id | yes (T-040.1, committed) | { lot: StoreLot } — current_price, ob, kb, end_time, cancelled, auction.status |
+| GET  | /store/auctions/:id/join | yes (T-041.1b, committed) | { joined, join_fee } (customer token) |
+| POST | /store/bids | yes (T-042.2, uncommitted until US-042 is accepted) | contract above |
+| —    | bid count / "has any bid" for the minimum | **no** | Not needed: use OB when current_price === ob AND no bid is known; otherwise trust the server's bid_too_low. See open question 1. |
+
+## Build
+- src/lib/data/bids.ts: placeBid(lotId, amount) → { ok: true, current_price } | { ok: false, status, code?, message }.
+  401 → redirect to ROUTES.login?sessionExpired=true&redirect=<lot page> (copy createTopupRequest).
+- src/lib/helpers/bid-failure.ts + .test.ts (pure): (status, code, message) → { message, reload: boolean }.
+  400 bid_too_low → server message, reload true; 400 invalid_amount → "Masukkan jumlah rupiah bulat.";
+  403 own_auction / not_participant → server message; 409 → "Lot ini sedang tidak menerima bid.", reload true.
+- Lot page (LotPage.tsx CTA card, ~:140-215): for a joined customer on a `live`, non-cancelled, open lot, replace the
+  "Masuk ruang bidding" link with an amount input (prefilled minimum, step = KB) + "Pasang bid" button.
+  On 201 show the new current price; on reload, router.refresh() so the page re-reads GET /store/lots/:id.
+  Signed out / not joined: keep US-041's CTA. Closed / cancelled / scheduled: no bid control.
+- Don't wire BidTerminal in LiveRoom (US-046 owns /live).
+
+## Start from
+- apps/storefront-koi/src/lib/data/topups.ts:93-120 (mutate + ClientError + 401 redirect)
+- apps/storefront-koi/src/lib/helpers/auction-submit.ts + .test.ts (code → message helper)
+- apps/storefront-koi/src/components/sections/LotDetailsPage/components/LotPage.tsx:140-215 (CTA card)
+- apps/storefront-koi/src/lib/data/lots.ts (getLot) and lib/data/join.ts (from T-041.2)
+
+## Do not touch
+- packages/api/**, apps/admin-koi/**, LivePage/** (US-046), BidHistory (US-044), polling (US-045)
+
+## Definition of done
+cd apps/storefront-koi && bun run check                            → pass
+render-check skill on /lelang/<live lot id> as a seeded customer who joined: first bid = OB → new price shown;
+bid below current + KB → server message with the minimum; as sakura.koi.farm@koi.dev on its own lot → refusal shown;
+signed out → no bid control. If chromium can't launch in the container, say so plainly and give curl output.
+Report: standard header + screenshot paths.
+
+## Open questions
+1. none blocking. The prefill is a convenience; the server is the authority on the minimum. If qa wants an exact
+   "first bid" prefill, US-044 T-044.1 adds a bid count to the lot route and this prefill switches to it.
+```
+
+```text
+Story: US-042 (tasks T-042.4, T-042.5)   Release: mvp
+Agent: qa   Expected: <=30 min
+Starts when: no backend agent is running Jest. T-042.4/.5 cover the backend; re-run the browser part after T-042.3.
+
+Verify AC1–AC5. Decisions: D-023, D-033, D-036 (scope: removal is US-072), D-047 (ban: not in this story), CLAUDE.md §8.
+Code under test: src/modules/auction/models/bid.ts, migrations/Migration20261116050149.ts, src/workflows/place-bid.ts,
+src/workflows/steps/bid.ts, src/api/store/bids/{route,validators}.ts, the /store/bids entry in src/api/middlewares.ts;
+after T-042.3: storefront lib/data/bids.ts, lib/helpers/bid-failure.ts, LotPage.tsx bid control.
+Commands (alone): cd packages/api && bun run test:integration:http -- place-bid; bun x tsc --noEmit -p .;
+cd apps/storefront-koi && bun run check.
+T-042.4: concurrent equal bids → exactly one 201, one row, current_price = that amount (place-bid.spec.ts "lets only one…").
+  Also read the lock key (`lot:<id>`) and confirm the bid read happens after acquireLockStep.
+T-042.5: first bid = OB → 201; first < OB → 400 bid_too_low naming OB; next < current + KB → 400 naming current + KB; = current + KB → 201.
+AC3 wording check: AC3 says the loser "is rejected with the new current price"; the route's 400 bid_too_low message names
+the new MINIMUM (current + KB), and the 201 carries current_price. Judge whether that proves AC3; if not, report it as
+FAIL with the exact message, don't pass it silently.
+Watch for: identity from the body; a float amount accepted; a bid on a scheduled auction's open lot (must be 409);
+a bid on a cancelled lot; a bid row left behind when the price update fails (compensation); any retract/DELETE route (AC4).
+Not in scope, don't fail on: ban check (US-059), extend (US-043), masked bidders (US-044), multi-process locking (T-090.4).
+Browser (after T-042.3): render-check skill on /lelang/<live lot id>, flows above.
+Report PASS/FAIL per AC with file:line and command output. Don't change app code.
+```
 
 ### US-043 Late bids extend the lot · `todo`
 As a **bidder**, I want late bids to extend the lot so that nobody wins by sniping.
@@ -886,8 +1133,123 @@ As a **bidder**, I want late bids to extend the lot so that nobody wins by snipi
 - AC3: Each lot extends on its own. Other lots keep their end time.
 - [ ] T-043.1 [backend] Extend step in the place-bid workflow
 - [ ] T-043.2 [qa] Extend applies per lot and uses the auction's setting at its start
+- [ ] T-043.3 [storefront] Lot page shows the extended end time after a bid (re-read, no new route)
 
-### US-044 Bidders are masked · `todo`
+**Readiness (2026-11-16):** ready once US-042 T-042.1 is accepted (the workflow it hooks into). No open question.
+- The window is already snapshotted per auction: `auction.extend_window_minutes` (`models/auction.ts:38-40`), set at
+  create from the settings table (`create-auction.ts:68`), never changed by a later settings edit (US-030 AC6, US-015 AC2).
+  So "the setting" in AC1 means **the auction's stored value**, not the live setting.
+- The hook goes in `placeBidWorkflow` (`src/workflows/place-bid.ts`), after `setLotCurrentPriceStep` and before
+  `releaseLockStep`, under the same `lot:<id>` lock. `getBiddableLotStep` already returns `end_time` and `auction_id`.
+- The server's time decides (CLAUDE.md §8). A bid accepted at time `t` with `end_time - t <= window` sets
+  `end_time = t + window`. The end time is never shortened (D-024): only move it when `t + window > end_time`.
+- US-050 closes lots on `lot.end_time`; T-030.8 already keeps that column in step with draft edits.
+
+#### Briefs
+
+```text
+Story: US-043 (task T-043.1)   Release: mvp
+Agent: backend   Expected: <=45 min
+Starts after: US-042 T-042.1/.2 accepted.
+
+## Acceptance criteria
+- AC1: A bid in the last 5 minutes (the setting) moves that lot's end time to 5 minutes after the bid.
+- AC2: It repeats until 5 minutes pass with no bid.
+- AC3: Each lot extends on its own. Other lots keep their end time.
+
+## Decisions in force
+plan "Extend": window default 5 min, admin-editable; a change applies only to auctions that haven't started → the
+  auction's snapshotted extend_window_minutes (US-030 AC6). Each lot extends on its own.
+D-024: end time is never shortened (also relevant when US-072 removes a bid later).
+CLAUDE.md §8: server timestamp decides; save the new end_time when the bid happens; lock the row.
+CLAUDE.md §9: one mutation per step, with compensation; no if/async in the composition (use transform/when).
+
+## Build
+- getBiddableLotStep (steps/bid.ts): also read auction.extend_window_minutes; return it in BiddableLot.
+- New step extendLotEndTimeStep (steps/bid.ts): input { lot_id, end_time, window_minutes, bid_at };
+  bid_at = the saved bid's created_at (server time, from createBidStep's result).
+  If end_time - bid_at <= window → update lot.end_time = bid_at + window, only when that is later than end_time.
+  Otherwise no write (return the unchanged end_time). Compensation restores the previous end_time.
+- placeBidWorkflow: call it after setLotCurrentPriceStep, before releaseLockStep. Return the lot's end_time.
+- POST /store/bids response: add `end_time` (ISO) beside current_price, so the client shows the new clock.
+  This is an additive change to the contract; run codegen.
+- Touch only this lot (AC3): the update filters by lot id; never the auction's end_at.
+
+## Start from
+- packages/api/src/workflows/place-bid.ts (the hook point)
+- packages/api/src/workflows/steps/bid.ts (getBiddableLotStep, setLotCurrentPriceStep compensation shape)
+- packages/api/src/modules/auction/models/auction.ts:38-40 (extend_window_minutes)
+
+## Do not touch
+- apps/**; src/workflows/{create-auction,update-draft-auction,join-auction}.ts; the settings module
+
+## Spec (packages/api/integration-tests/http/place-bid.spec.ts, new describe "extend")
+- bid with end_time 3 min away, window 5 → end_time = bid created_at + 5 min (± 1 s)
+- bid with end_time 10 min away → end_time unchanged
+- two bids in a row inside the window → second pushes it again (AC2)
+- auction A has window 5, settings changed to 10 after create → extend uses 5 (snapshot)
+- two lots in one auction: bid on lot 1 inside the window → lot 2's end_time unchanged (AC3)
+- the auction's end_at unchanged
+- forced failure after the extend step → end_time restored (compensation)
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p .                         → clean
+cd packages/api && bun run codegen                                 → store.bids response has end_time
+cd packages/api && bun run test:integration:http -- place-bid      → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + updated POST /store/bids contract.
+
+## Open questions
+none
+```
+
+```text
+Story: US-043 (task T-043.3)   Release: mvp
+Agent: frontend (apps/storefront-koi)   Expected: <=20 min
+Starts after: T-043.1 contract + US-042 T-042.3.
+
+## Acceptance criteria
+- AC1: A bid in the last 5 minutes (the setting) moves that lot's end time to 5 minutes after the bid.
+  (UI: after a bid, the lot page countdown uses the returned end_time.)
+
+## Endpoint inventory
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| POST | /store/bids | yes after T-043.1 | 201 { bid, current_price, end_time } |
+| GET  | /store/lots/:id | yes | { lot } with end_time |
+
+## Build
+- lib/data/bids.ts placeBid: pass end_time through. The lot page's countdown (useCountdown) takes the new end_time
+  on success; router.refresh() already re-reads the lot. No new component. Live updates for other viewers are US-045.
+
+## Do not touch
+- packages/api/**, LivePage/**, polling (US-045)
+
+## Definition of done
+cd apps/storefront-koi && bun run check → pass
+render-check skill on /lelang/<live lot whose end_time is < 5 min away>: bid → countdown jumps to ~5:00.
+Report: standard header + screenshot path, or "browser NOT verified" with the reason.
+
+## Open questions
+none
+```
+
+```text
+Story: US-043 (task T-043.2)   Release: mvp
+Agent: qa   Expected: <=30 min
+
+Verify AC1–AC3. Decisions: plan "Extend", US-030 AC6 (snapshot), D-024 (never shortened), CLAUDE.md §8.
+Code under test: src/workflows/place-bid.ts, src/workflows/steps/bid.ts (extend step), src/api/store/bids/route.ts;
+storefront lib/data/bids.ts + the lot page countdown.
+Commands (alone): cd packages/api && bun run test:integration:http -- place-bid; cd apps/storefront-koi && bun run check.
+Watch for: the extend reading the live setting instead of auction.extend_window_minutes; client time used anywhere;
+another lot's end_time or the auction's end_at changed; end_time moved earlier; extend computed outside the lot lock;
+an extend left in place after a failed bid (compensation).
+Browser: render-check on a live lot close to its end, as a joined customer.
+Report PASS/FAIL per AC with file:line and command output. Don't change app code.
+```
+
+### US-044 Bidders are masked · `blocked (mvp-Q33)`
 As a **customer**, I want other bidders shown masked so that identities stay private.
 *(Plan: Bidding)*
 - AC1: Public pages show bidders masked, for example `Bud***23`.
@@ -895,6 +1257,108 @@ As a **customer**, I want other bidders shown masked so that identities stay pri
 - [ ] T-044.1 [backend] The store response returns only the masked name, never raw identity
 - [ ] T-044.2 [storefront] `BidHistory` uses API data
 - [ ] T-044.3 [qa] No unmasked identity in any store response
+
+**Readiness (2026-11-16): blocked (mvp-Q33).** The plan's example `Bud***23` is three letters of the first name plus two
+trailing characters, but the plan doesn't say where the `23` comes from (phone? customer id? a per-auction number?), and
+the existing `maskName` (`packages/api/src/utils/mask.ts:27`) gives `B*** S******`, a different format. Building either
+would invent a rule. The brief below is written with the format as the only open slot.
+Depends on US-042 T-042.1 (the `bid` table) and US-040 T-040.1 (`GET /store/lots/:id`, which this extends).
+D-046 still holds: a closed lot never names its winner, masked or not. A bid history on a closed lot must not let the
+top row be read as "the winner" — see mvp-Q33 part 2. D-050: a cancelled lot shows no bids.
+
+#### Briefs
+
+```text
+Story: US-044 (task T-044.1)   Release: mvp
+Agent: backend   Expected: <=45 min
+Starts after: mvp-Q33 answered; US-042 T-042.1 accepted.
+
+## Acceptance criteria
+- AC1: Public pages show bidders masked, for example `Bud***23`.
+- AC2: Bid history shows masked name, amount and time.
+
+## Decisions in force
+D-039 / D-042 / D-045: no full PII to anyone else; the bidder's own row may say "Anda" (own record), never another's full name.
+D-046: a closed lot never names the winner (masked included) — apply mvp-Q33 part 2's answer.
+D-050: a cancelled lot returns no bids.
+CLAUDE.md §9: reads via query.graph; no cross-module service call (customer name via a query.graph on customer by id, or a link).
+
+## Build
+- GET /store/lots/:id adds `bid_count: number` and `bids: { bidder: string, amount: number, created_at: string }[]`
+  (newest first, cap 50). GET /store/lots adds `bid_count` only (the card tally).
+- `bidder` is built server-side by one helper in src/utils/mask.ts, format = mvp-Q33's answer. Never return
+  customer_id, email, phone or the full name.
+- Cancelled lot → bids: [], bid_count: 0. Closed lot → per mvp-Q33 part 2.
+- When US-072 lands, removed bids are excluded; leave a comment naming T-072.1.
+- bun run codegen.
+
+## Start from
+- packages/api/src/api/store/lots/route.ts (STORE_LOT_FIELDS, getPublicLots, the cancelled-lot nulling at :72)
+- packages/api/src/utils/mask.ts (helpers + style)
+
+## Do not touch
+- apps/**; src/workflows/place-bid.ts; src/api/store/bids/**
+
+## Spec (store-lots.spec.ts)
+two customers bid → bids[].bidder masked per the agreed format, no customer_id/email/phone anywhere in the JSON
+(stringify + regex); bid_count correct; cancelled lot → []; closed lot per mvp-Q33 part 2.
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean; bun run codegen; bun run test:integration:http -- store-lots → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + updated GET /store/lots(/:id) contract.
+
+## Open questions
+mvp-Q33 (must be answered before dispatch)
+```
+
+```text
+Story: US-044 (task T-044.2)   Release: mvp
+Agent: frontend (apps/storefront-koi)   Expected: <=30 min
+Starts after: T-044.1 contract.
+
+## Acceptance criteria
+- AC1: Public pages show bidders masked, for example `Bud***23`.
+- AC2: Bid history shows masked name, amount and time.
+
+## Endpoint inventory
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| GET | /store/lots/:id | yes; bids/bid_count added by T-044.1 | { lot: { …, bid_count, bids: [{ bidder, amount, created_at }] } } |
+| GET | /store/lots | yes; bid_count added by T-044.1 | card tally |
+
+## Build
+- lib/adapters/lot.ts: map bid_count → auction.bidCount, bids → auction.bids (AuctionBid: bidder, amount, at).
+  Remove the "US-044 owns bid counts" placeholder. Extend lot.test.ts.
+- Lot page: render BidHistory (components/molecules/BidHistory) from lot.auction.bids. Show `bidder` as the API sends it;
+  never mask or unmask client-side. Empty → the component's own empty state. Cancelled → no history.
+- Don't touch LiveRoom's demo `bidsFor` (US-046).
+
+## Do not touch
+- packages/api/**, LivePage/**, const/live.ts
+
+## Definition of done
+cd apps/storefront-koi && bun run check → pass
+render-check skill on /lelang/<lot with bids>: history shows masked names, Rupiah amounts, times; no "undefined".
+Report: standard header + screenshot path, or "browser NOT verified" with the reason.
+
+## Open questions
+none beyond mvp-Q33
+```
+
+```text
+Story: US-044 (task T-044.3)   Release: mvp
+Agent: qa   Expected: <=30 min
+
+Verify AC1–AC2. Decisions: D-039, D-042, D-045, D-046, D-050, mvp-Q33's answer.
+Code under test: src/utils/mask.ts (bidder helper), src/api/store/lots/{route,[id]/route}.ts; storefront lib/adapters/lot.ts, lot page.
+Commands (alone): cd packages/api && bun run test:integration:http -- store-lots; cd apps/storefront-koi && bun run check.
+Check every /store/* response that carries a bid (GET /store/lots, /store/lots/:id, POST /store/bids) for customer_id,
+email, phone, first/last name — none may appear for another customer. POST /store/bids returns only the caller's own bid.
+Watch for: a closed lot's history that reveals the winner (D-046); bids shown on a cancelled lot (D-050).
+Browser: render-check on /lelang and /lelang/<lot with bids>.
+Report PASS/FAIL per AC with file:line and command output. Don't change app code.
+```
 
 ### US-045 Prices update live · `todo`
 As a **bidder**, I want the price and countdown to update without reloading so
@@ -1282,3 +1746,4 @@ is built. Record the answer here, in `plan.md`, and as a decision in `docs/produ
 | mvp-Q30 | **Answered 2026-11-15 (D-048):** option (a); joinable while the auction is `scheduled` or `live`, including while a lot runs past `end_at` on extends; any other status → 409 `auction_not_joinable`. *(Was: when does an auction "end" for joining?)* | none (was US-041) |
 | mvp-Q31 | **Answered 2026-11-15 (D-049):** option (b); approval is refused when `start_at` is now or past (400 `start_passed`, nothing charged, stays `pending_approval`); the admin rejects it so the farmer picks new dates. Follow-up US-032 T-032.6, T-032.7. *(Was: approving an auction whose start time has already passed.)* | none |
 | mvp-Q32 | **Answered 2026-11-15 (D-050):** option (b); a cancelled lot inside a public auction (`scheduled`, `live` or `closed`) stays visible on `/store/lots` and the lot page, labelled "Dibatalkan", with no price, no final price, no sold label, no winner and no bids. Delivered by US-040 T-040.1/2a/2b; US-091 only produces the cancelled lots. *(Was: is a cancelled lot (D-035) in a public auction shown or hidden?)* | none (was US-091) |
+| mvp-Q33 | **Open (2026-11-16).** (1) What is the masked bidder format? The plan's example `Bud***23` keeps 3 letters of the first name plus 2 trailing characters, but doesn't say what the `23` is. Options: (a) first 3 letters of the first name + `***` + last 2 digits of the phone (`Bud***23`; ties the mask to PII, D-039); (b) first 3 letters + `***` + last 2 characters of the customer id (stable, no PII); (c) existing `maskName` format `B*** S******` (already in `src/utils/mask.ts:27`, no suffix; two "Budi"s look alike); (d) per-auction bidder number, e.g. `Bidder #12` (no name at all). (2) On a **closed** lot, is the bid history shown? D-046 forbids naming the winner, masked included; the top row of a history is the winner. Options: (a) hide the history on closed lots, show only final price and sold/unsold; (b) show the history but without the bidder column; (c) show it in full (would override D-046). | US-044 |
