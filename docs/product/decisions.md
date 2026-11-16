@@ -53,11 +53,12 @@ The product-owner agent drafts entries. The owner approves them.
 | D-043 | 2026-11-15 | Column-level encryption for NIK, bank account and phone on top of disk encryption; the wallet and top-up tables are included in US-092 (answers `mvp-Q26`) | In force |
 | D-044 | 2026-11-15 | The winner of a lot sees the farmer's full bank account for that lot only, through the logged reveal (answers `mvp-Q27`) | In force; farmer's view of the winner's phone confirmed 2026-11-15 |
 | D-045 | 2026-11-15 | A person sees their own full PII on their own record; every other caller, admins included, gets the mask | In force |
-| D-046 | 2026-11-15 | Public pages show `scheduled`, `live` and `closed` auctions; a closed lot shows final price and sold/unsold, never the winner | In force |
+| D-046 | 2026-11-15 | Public pages show `scheduled`, `live` and `closed` auctions; a closed lot shows final price and sold/unsold, never the winner | In force; "masked name" clause superseded in part by D-051 |
 | D-047 | 2026-11-15 | Join ships before bans; the ban check lands with strikes (US-059) | In force |
 | D-048 | 2026-11-15 | Customers may join while the auction is `scheduled` or `live` | In force |
 | D-049 | 2026-11-15 | Approval is refused once the auction's start time has passed | In force |
 | D-050 | 2026-11-15 | A cancelled lot inside a public auction stays visible, labelled "Dibatalkan", with no price, final price, winner or bids | In force |
+| D-051 | 2026-11-16 | Bidders shown as `Bud***x7` (3 letters of first name + `***` + last 2 characters of the customer id); full masked bid history on open and closed lots (supersedes D-046 in part) | In force |
 
 ---
 
@@ -542,6 +543,10 @@ auctions whose status is `scheduled`, `live` or `closed`. `draft`,
 **Reason:** Past results show buyers real prices and build trust; the winner's
 identity is private.
 **Source:** Owner, answer to `mvp-Q28` (2026-11-15).
+**Superseded in part:** by D-051 (2026-11-16). A closed lot's bid history is
+shown in full with masked bidder names, so its top row shows the winner's
+masked name. The rest stays in force: no winner id, full name or any
+`winner_*` field on a public route or page.
 
 ### D-047: Join ships before bans; the ban check lands with strikes
 **Decision:** US-041 (join) ships without a ban check. US-059 T-059.1 adds the
@@ -589,3 +594,23 @@ either.
 incomplete, and a bidder who followed the lot can see it was stopped, not lost.
 The reason stays private.
 **Source:** Owner, answer to `mvp-Q32` (2026-11-15).
+
+### D-051: Masked bidder format; full bid history on open and closed lots
+**Decision:** Public pages and `/store/*` routes show every bidder as the first
+3 letters of their first name + `***` + the last 2 characters of their customer
+id, for example `Bud***x7`.
+- No phone digits in the mask (D-039).
+- The full name and the customer id itself never leave the server.
+- The same bidder always shows the same mask within one auction.
+- A lot's bid history (masked bidder, amount, time) is shown in full on open
+  **and** closed lots. On a closed lot, the top row therefore shows the
+  winner's masked name; the owner chose this knowingly.
+- Supersedes D-046 in part: a closed lot still never exposes the winner's
+  identity, id or any `winner_*` field; only the masked name in the history is
+  now allowed.
+- D-050 stands: a cancelled lot shows no bids.
+- Answered `mvp-Q33` (part 1: option (b), lowercase example `Bud***x7`; part 2:
+  option (c)); unblocks US-044.
+**Reason:** A stable, PII-free mask lets bidders follow a lot's competition,
+and a closed lot's full history shows how its price was reached.
+**Source:** Owner, answer to `mvp-Q33` (2026-11-16).

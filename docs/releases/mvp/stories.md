@@ -40,25 +40,25 @@ is spot-checked:
 | 1 Wallet | 6 | 0 | 0 | 0 | 22 | 0 |
 | 2 Becoming a farmer | 2 | 0 | 0 | 0 | 11 | 5 |
 | 3 Auctions for farmers | 4 | 0 | 0 | 0 | 23 | 0 |
-| 4 Joining and bidding | 0 | 3 | 3 | 1 | 0 | 25 |
+| 4 Joining and bidding | 0 | 3 | 4 | 0 | 0 | 25 |
 | 5 Closing and after-sale | 0 | 0 | 12 | 0 | 0 | 37 |
 | 6 Admin operations | 0 | 0 | 6 | 0 | 0 | 22 |
 | 7 WhatsApp bot | 0 | 0 | 0 | 6 | 0 | 12 |
 | 8 Pilot | 0 | 0 | 1 | 0 | 0 | 5 |
-| **Total** | **15** | **3** | **22** | **7** | **65** | **106** |
+| **Total** | **15** | **3** | **23** | **6** | **65** | **106** |
 
 In progress = built work awaiting qa: US-040, US-041, US-042.
 
 Epic 2's open tasks are US-021's T-021.2/.3/.4/.6 (follow-ups on a `done` story)
-and the new T-020.10 (seed an admin user). Blocked: US-044 (mvp-Q33), US-080 –
-US-085 (mvp-Q12).
+and the new T-020.10 (seed an admin user). Blocked: US-080 – US-085 (mvp-Q12).
+US-044 unblocked 2026-11-16 (mvp-Q33 answered, D-051).
 
 **Next in milestone order:**
 1. US-040: qa on T-040.1 + T-040.2a (incl. the browser render check not yet run), then T-040.2b, T-040.2c, T-040.3.
 2. US-041: qa on T-041.1a/.1b, then T-041.2 (join CTA on the lot page, needs T-040.2b), T-041.3.
 3. US-042: qa T-042.4/.5 on the built backend, then T-042.3 (bid control, needs T-040.2b + T-041.2).
 
-Then US-043 (T-043.1 hooks into the place-bid workflow). US-044 waits for mvp-Q33.
+Then US-043 (T-043.1 hooks into the place-bid workflow). US-044 is `todo` (D-051); T-044.1 starts once US-042 T-042.1 is accepted.
 T-020.10 can run any time; qa's admin browser checks need it.
 
 ---
@@ -1249,47 +1249,63 @@ Browser: render-check on a live lot close to its end, as a joined customer.
 Report PASS/FAIL per AC with file:line and command output. Don't change app code.
 ```
 
-### US-044 Bidders are masked · `blocked (mvp-Q33)`
+### US-044 Bidders are masked · `todo`
 As a **customer**, I want other bidders shown masked so that identities stay private.
 *(Plan: Bidding)*
-- AC1: Public pages show bidders masked, for example `Bud***23`.
-- AC2: Bid history shows masked name, amount and time.
+- AC1: Public pages and `/store/*` routes show every bidder as the first 3 letters of their first name + `***` + the
+  last 2 characters of their customer id, for example `Bud***x7` (D-051). No phone digits; the full name and the
+  customer id never appear in any store response; the same bidder shows the same mask on every row of an auction.
+- AC2: A lot's bid history shows masked bidder, amount and time, on open **and** closed lots (D-051). A closed lot
+  still returns no winner id, name or `winner_*` field (D-046). A cancelled lot shows no bids (D-050).
 - [ ] T-044.1 [backend] The store response returns only the masked name, never raw identity
 - [ ] T-044.2 [storefront] `BidHistory` uses API data
 - [ ] T-044.3 [qa] No unmasked identity in any store response
 
-**Readiness (2026-11-16): blocked (mvp-Q33).** The plan's example `Bud***23` is three letters of the first name plus two
-trailing characters, but the plan doesn't say where the `23` comes from (phone? customer id? a per-auction number?), and
-the existing `maskName` (`packages/api/src/utils/mask.ts:27`) gives `B*** S******`, a different format. Building either
-would invent a rule. The brief below is written with the format as the only open slot.
-Depends on US-042 T-042.1 (the `bid` table) and US-040 T-040.1 (`GET /store/lots/:id`, which this extends).
-D-046 still holds: a closed lot never names its winner, masked or not. A bid history on a closed lot must not let the
-top row be read as "the winner" — see mvp-Q33 part 2. D-050: a cancelled lot shows no bids.
+**Readiness (2026-11-16): ready (`todo`).** mvp-Q33 answered (D-051): format `Bud***x7`; full masked history on open
+and closed lots, which supersedes D-046 in part (the top row of a closed lot shows the winner's masked name; nothing
+else about the winner is exposed). Depends on US-042 T-042.1 (the `bid` table, awaiting qa) and US-040 T-040.1
+(`GET /store/lots(/:id)`, which this extends).
+**US-040 unchanged:** `GET /store/lots` and `/store/lots/:id` today return no bids and no winner field
+(`STORE_LOT_FIELDS`, `packages/api/src/api/store/lots/route.ts:56`). Bid history is this story's job; US-040's ACs,
+tasks and qa brief stay as written.
 
 #### Briefs
 
 ```text
 Story: US-044 (task T-044.1)   Release: mvp
 Agent: backend   Expected: <=45 min
-Starts after: mvp-Q33 answered; US-042 T-042.1 accepted.
+Starts after: US-042 T-042.1 accepted (mvp-Q33 answered, D-051).
 
 ## Acceptance criteria
-- AC1: Public pages show bidders masked, for example `Bud***23`.
-- AC2: Bid history shows masked name, amount and time.
+- AC1: every bidder shown as first 3 letters of first name + `***` + last 2 characters of the customer id, e.g. `Bud***x7`
+  (D-051); no phone digits; full name and customer id never in a store response; same bidder, same mask, per auction.
+- AC2: bid history (masked bidder, amount, time) on open and closed lots; closed lot has no winner id/name/`winner_*`
+  field (D-046); cancelled lot has no bids (D-050).
 
 ## Decisions in force
+D-051: the mask format and full masked history on open and closed lots (supersedes D-046 in part).
 D-039 / D-042 / D-045: no full PII to anyone else; the bidder's own row may say "Anda" (own record), never another's full name.
-D-046: a closed lot never names the winner (masked included) — apply mvp-Q33 part 2's answer.
+D-046 (rest in force): a closed lot returns no winner_customer_id, winner name or any winner_* field.
 D-050: a cancelled lot returns no bids.
 CLAUDE.md §9: reads via query.graph; no cross-module service call (customer name via a query.graph on customer by id, or a link).
 
 ## Build
 - GET /store/lots/:id adds `bid_count: number` and `bids: { bidder: string, amount: number, created_at: string }[]`
   (newest first, cap 50). GET /store/lots adds `bid_count` only (the card tally).
-- `bidder` is built server-side by one helper in src/utils/mask.ts, format = mvp-Q33's answer. Never return
-  customer_id, email, phone or the full name.
-- Cancelled lot → bids: [], bid_count: 0. Closed lot → per mvp-Q33 part 2.
-- When US-072 lands, removed bids are excluded; leave a comment naming T-072.1.
+- `bidder` is built server-side by one helper `maskBidder(firstName, customerId)` in src/utils/mask.ts (D-051):
+  - name part = first 3 characters of the trimmed `customer.first_name` (the field `isProfileComplete` requires,
+    src/workflows/create-customer-wallet.ts:27). Shorter than 3 → keep what there is, no padding (`Al` → `Al***x7`).
+    Missing or blank → name part empty (`***x7`).
+  - id part = last 2 characters of `bid.customer_id` (Medusa customer id, `cus_` + ULID, e.g.
+    `cus_01M6V7FMYJDQ3DC4J4ZYQ5S09X` → `9x`), lowercased to match the owner's example. Stable per customer, not
+    derived from PII, never guessable back to the full id.
+  - The mask is a pure function of (first_name, customer_id): no randomness, no per-request salt, so one bidder
+    masks the same way on every row and every request in an auction.
+  - Never return customer_id, winner_customer_id, email, phone or the full name; the id itself stays on the server.
+- Same mask on open AND closed lots. Closed lot → full history (top row = winner's masked name, D-051), and still
+  no winner_customer_id or any winner_* field (D-046).
+- Cancelled lot → bids: [], bid_count: 0 (D-050).
+- Exclude removed bids once US-072 T-072.1 adds removal; leave a comment naming T-072.1 at the bids query.
 - bun run codegen.
 
 ## Start from
@@ -1300,8 +1316,10 @@ CLAUDE.md §9: reads via query.graph; no cross-module service call (customer nam
 - apps/**; src/workflows/place-bid.ts; src/api/store/bids/**
 
 ## Spec (store-lots.spec.ts)
-two customers bid → bids[].bidder masked per the agreed format, no customer_id/email/phone anywhere in the JSON
-(stringify + regex); bid_count correct; cancelled lot → []; closed lot per mvp-Q33 part 2.
+two customers bid → bids[].bidder matches /^.{0,3}\*\*\*[0-9a-z]{2}$/ and equals maskBidder(first_name, id);
+same customer → same string on every row; no customer_id/winner_customer_id/email/phone/full name anywhere in the JSON
+(stringify + regex on the customer ids and names); bid_count correct; cancelled lot → []; closed lot → full history,
+same masks, no winner_* key. Unit check for maskBidder: "Budi" → "Bud***", "Al" → "Al***", blank → "***" (+ id part).
 
 ## Definition of done
 cd packages/api && bun x tsc --noEmit -p . → clean; bun run codegen; bun run test:integration:http -- store-lots → pass (alone)
@@ -1309,7 +1327,7 @@ cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clea
 Report: standard header + updated GET /store/lots(/:id) contract.
 
 ## Open questions
-mvp-Q33 (must be answered before dispatch)
+none (mvp-Q33 answered, D-051)
 ```
 
 ```text
@@ -1318,8 +1336,8 @@ Agent: frontend (apps/storefront-koi)   Expected: <=30 min
 Starts after: T-044.1 contract.
 
 ## Acceptance criteria
-- AC1: Public pages show bidders masked, for example `Bud***23`.
-- AC2: Bid history shows masked name, amount and time.
+- AC1: every bidder shown masked as the API sends it, e.g. `Bud***x7` (D-051).
+- AC2: bid history (masked bidder, amount, time) on open and closed lots; none on a cancelled lot (D-050).
 
 ## Endpoint inventory
 | Method | Path | Exists? | Shape / owner |
@@ -1331,7 +1349,8 @@ Starts after: T-044.1 contract.
 - lib/adapters/lot.ts: map bid_count → auction.bidCount, bids → auction.bids (AuctionBid: bidder, amount, at).
   Remove the "US-044 owns bid counts" placeholder. Extend lot.test.ts.
 - Lot page: render BidHistory (components/molecules/BidHistory) from lot.auction.bids. Show `bidder` as the API sends it;
-  never mask or unmask client-side. Empty → the component's own empty state. Cancelled → no history.
+  never mask or unmask client-side. Empty → the component's own empty state. Closed → full history, no "Pemenang"
+  label or winner highlight on the top row (D-046 rest). Cancelled → no history.
 - Don't touch LiveRoom's demo `bidsFor` (US-046).
 
 ## Do not touch
@@ -1343,19 +1362,21 @@ render-check skill on /lelang/<lot with bids>: history shows masked names, Rupia
 Report: standard header + screenshot path, or "browser NOT verified" with the reason.
 
 ## Open questions
-none beyond mvp-Q33
+none (mvp-Q33 answered, D-051)
 ```
 
 ```text
 Story: US-044 (task T-044.3)   Release: mvp
 Agent: qa   Expected: <=30 min
 
-Verify AC1–AC2. Decisions: D-039, D-042, D-045, D-046, D-050, mvp-Q33's answer.
+Verify AC1–AC2. Decisions: D-051, D-039, D-042, D-045, D-046 (in part), D-050.
 Code under test: src/utils/mask.ts (bidder helper), src/api/store/lots/{route,[id]/route}.ts; storefront lib/adapters/lot.ts, lot page.
 Commands (alone): cd packages/api && bun run test:integration:http -- store-lots; cd apps/storefront-koi && bun run check.
 Check every /store/* response that carries a bid (GET /store/lots, /store/lots/:id, POST /store/bids) for customer_id,
 email, phone, first/last name — none may appear for another customer. POST /store/bids returns only the caller's own bid.
-Watch for: a closed lot's history that reveals the winner (D-046); bids shown on a cancelled lot (D-050).
+Watch for: a mask other than `Bud***x7` (D-051), phone digits in it, one bidder masked two ways in an auction; on a
+closed lot any winner_customer_id / winner_* field or "winner" label (the masked top row itself is allowed, D-051);
+a closed lot whose history differs from an open lot's format; bids shown on a cancelled lot (D-050).
 Browser: render-check on /lelang and /lelang/<lot with bids>.
 Report PASS/FAIL per AC with file:line and command output. Don't change app code.
 ```
@@ -1682,7 +1703,7 @@ table complete.
 | Claim statuses (D-027, D-038) | US-054, US-055, US-056, US-061 |
 | Structure (20 lots, 1–7 days, approval, rejection, approval refused after start D-049, join while scheduled or live D-048, public statuses D-046, cancelled lot public D-050) | US-015, US-030, US-032, US-040, US-041, US-091 |
 | Pricing per lot (OB, KB, first bid = OB, D-023) | US-030, US-042 |
-| Bidding (incl. bid removal, D-024, D-036) | US-042, US-044, US-072 |
+| Bidding (incl. bid removal, D-024, D-036; masked bidders and full history, D-051) | US-042, US-044, US-072 |
 | Extend (anti-sniping) | US-043, US-015, US-030 |
 | Fair play (incl. shill-bidding table, D-028, D-037; ban check on join and bid lands with strikes, D-047) | US-041, US-042, US-059, US-071 |
 | Closing and winners | US-050, US-051 |
@@ -1746,4 +1767,4 @@ is built. Record the answer here, in `plan.md`, and as a decision in `docs/produ
 | mvp-Q30 | **Answered 2026-11-15 (D-048):** option (a); joinable while the auction is `scheduled` or `live`, including while a lot runs past `end_at` on extends; any other status → 409 `auction_not_joinable`. *(Was: when does an auction "end" for joining?)* | none (was US-041) |
 | mvp-Q31 | **Answered 2026-11-15 (D-049):** option (b); approval is refused when `start_at` is now or past (400 `start_passed`, nothing charged, stays `pending_approval`); the admin rejects it so the farmer picks new dates. Follow-up US-032 T-032.6, T-032.7. *(Was: approving an auction whose start time has already passed.)* | none |
 | mvp-Q32 | **Answered 2026-11-15 (D-050):** option (b); a cancelled lot inside a public auction (`scheduled`, `live` or `closed`) stays visible on `/store/lots` and the lot page, labelled "Dibatalkan", with no price, no final price, no sold label, no winner and no bids. Delivered by US-040 T-040.1/2a/2b; US-091 only produces the cancelled lots. *(Was: is a cancelled lot (D-035) in a public auction shown or hidden?)* | none (was US-091) |
-| mvp-Q33 | **Open (2026-11-16).** (1) What is the masked bidder format? The plan's example `Bud***23` keeps 3 letters of the first name plus 2 trailing characters, but doesn't say what the `23` is. Options: (a) first 3 letters of the first name + `***` + last 2 digits of the phone (`Bud***23`; ties the mask to PII, D-039); (b) first 3 letters + `***` + last 2 characters of the customer id (stable, no PII); (c) existing `maskName` format `B*** S******` (already in `src/utils/mask.ts:27`, no suffix; two "Budi"s look alike); (d) per-auction bidder number, e.g. `Bidder #12` (no name at all). (2) On a **closed** lot, is the bid history shown? D-046 forbids naming the winner, masked included; the top row of a history is the winner. Options: (a) hide the history on closed lots, show only final price and sold/unsold; (b) show the history but without the bidder column; (c) show it in full (would override D-046). | US-044 |
+| mvp-Q33 | **Answered 2026-11-16 (D-051):** (1) option (b): first 3 letters of the first name + `***` + last 2 characters of the customer id, e.g. `Bud***x7`; no phone digits; full name and id never leave the server; same bidder, same mask within an auction. (2) option (c): full history with masked names on closed lots too; supersedes D-046 in part (top row shows the winner's masked name; no winner id or `winner_*` field). Unblocks US-044; US-040 unchanged. *(Was: (1) What is the masked bidder format? The plan's example `Bud***23` keeps 3 letters of the first name plus 2 trailing characters, but doesn't say what the `23` is. Options: (a) first 3 letters of the first name + `***` + last 2 digits of the phone (`Bud***23`; ties the mask to PII, D-039); (b) first 3 letters + `***` + last 2 characters of the customer id (stable, no PII); (c) existing `maskName` format `B*** S******` (already in `src/utils/mask.ts:27`, no suffix; two "Budi"s look alike); (d) per-auction bidder number, e.g. `Bidder #12` (no name at all). (2) On a **closed** lot, is the bid history shown? D-046 forbids naming the winner, masked included; the top row of a history is the winner. Options: (a) hide the history on closed lots, show only final price and sold/unsold; (b) show the history but without the bidder column; (c) show it in full (would override D-046).)* | US-044 |
