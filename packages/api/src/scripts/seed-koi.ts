@@ -1,6 +1,6 @@
 import assert from "node:assert";
 
-import { ExecArgs } from "@medusajs/framework/types";
+import { ExecArgs, MedusaContainer } from "@medusajs/framework/types";
 import {
   ContainerRegistrationKeys,
   Modules,
@@ -42,6 +42,9 @@ import {
   updateStoresWorkflow,
 } from "@medusajs/medusa/core-flows";
 import { seedFeeCategories } from "./seed-fee-categories";
+import { WALLET_MODULE } from "../modules/wallet";
+import type WalletModuleService from "../modules/wallet/service";
+import { createCustomerWalletWorkflow } from "../workflows/create-customer-wallet";
 
 /*
  * Koi marketplace seed — the catalog the `storefront-koi` app renders.
@@ -690,6 +693,26 @@ const CUSTOMERS = [
 ];
 
 // ---------------------------------------------------------------------------
+// Demo farmer — one login that is both a customer and a seller (D-003)
+// ---------------------------------------------------------------------------
+
+/* T-020.9. The Farmer area (`/akun/kebun*`) and top-up sign in at
+   `/auth/customer/emailpass`, and `/vendor/*` at `/auth/member/emailpass`, so
+   the demo farmer needs a customer row with a wallet plus the member login and
+   its seller, all under this one email. It is Sakura Koi Farm, the first
+   seeded seller, so every existing login keeps working. */
+const DEMO_FARMER = {
+  first_name: "Sakura",
+  last_name: "Koi",
+  email: PRIMARY_SELLER_EMAIL,
+  phone: "081234567890",
+  /** Whole rupiah (D-011); enough to pay a listing fee and a join fee. */
+  balance: 500_000,
+  /** D-003: one auth identity, both actors. */
+  actors: ["customer", "member"] as const,
+};
+
+// ---------------------------------------------------------------------------
 // Self-check — the one runnable check on the data above.
 // Runs on every seed, so a bad edit fails before any write happens.
 // ---------------------------------------------------------------------------
@@ -721,6 +744,26 @@ export function assertSeedData(): void {
     new Set(SELLER_CONFIGS.map((s) => s.name)).size,
     SELLER_CONFIGS.length,
     "seller names must be unique"
+  );
+
+  // T-020.9: the demo farmer must be a dual actor on a seeded seller's email,
+  // or the Farmer area and top-up have no working login after a seed.
+  assert.ok(
+    DEMO_FARMER.email.endsWith(`@${EMAIL_DOMAIN}`),
+    `demo farmer must be on @${EMAIL_DOMAIN}: ${DEMO_FARMER.email}`
+  );
+  assert.ok(
+    emails.includes(DEMO_FARMER.email),
+    "demo farmer email must belong to a seeded seller"
+  );
+  assert.deepEqual(
+    [...DEMO_FARMER.actors].sort(),
+    ["customer", "member"],
+    "demo farmer must be a customer and a member (D-003)"
+  );
+  assert.ok(
+    Number.isInteger(DEMO_FARMER.balance) && DEMO_FARMER.balance > 0,
+    "demo farmer balance must be whole rupiah above zero"
   );
 
   for (const variety of KOI_VARIETIES) {
@@ -844,6 +887,124 @@ const updateStoreCurrencies = createWorkflow(
     return new WorkflowResponse(stores);
   }
 );
+
+/** Registers an emailpass identity, tolerating one that already exists. */
+const authIdentityFor = async (container: MedusaContainer, email: string) => {
+  const authModuleService = container.resolve(Modules.AUTH);
+  const registerResponse = await authModuleService.register("emailpass", {
+    body: { email, password: SEED_PASSWORD },
+  });
+
+  if (registerResponse.success && registerResponse.authIdentity) {
+    return registerResponse.authIdentity.id;
+  }
+
+  const [providerIdentity] = await authModuleService.listProviderIdentities({
+    entity_id: email,
+    provider: "emailpass",
+  });
+  return providerIdentity.auth_identity_id!;
+};
+
+/**
+ * T-020.9. One auth identity with both actors (D-003): the customer row with
+ * its wallet, and the member + open seller the seller loop already created for
+ * `DEMO_FARMER.email`. Runs before the seller guard, so a database that already
+ * has sellers still gets the farmer — a re-run finds everything and writes
+ * nothing (customer lookup by email, the wallet workflow's own lock, and the
+ * ledger check before the credit).
+ */
+export async function seedDemoFarmer(container: MedusaContainer) {
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER);
+  const query = container.resolve(ContainerRegistrationKeys.QUERY);
+  const authModuleService = container.resolve(Modules.AUTH);
+
+  const { data: existingMembers } = await query.graph({
+    entity: "member",
+    fields: ["id"],
+    filters: { email: DEMO_FARMER.email },
+  });
+  if (!existingMembers[0]) {
+    logger.info(
+      `Demo farmer ${DEMO_FARMER.email} has no member yet; run the seller seeding first.`
+    );
+    return;
+  }
+
+  const authIdentityId = await authIdentityFor(container, DEMO_FARMER.email);
+
+  const { data: existingCustomers } = await query.graph({
+    entity: "customer",
+    fields: ["id"],
+    filters: { email: DEMO_FARMER.email },
+  });
+  let customerId = existingCustomers[0]?.id as string | undefined;
+  if (!customerId) {
+    const { result: created } = await createCustomerAccountWorkflow(
+      container
+    ).run({
+      input: {
+        authIdentityId,
+        customerData: {
+          email: DEMO_FARMER.email,
+          first_name: DEMO_FARMER.first_name,
+          last_name: DEMO_FARMER.last_name,
+          phone: DEMO_FARMER.phone,
+        },
+      },
+    });
+    customerId = created.id;
+  }
+
+  // D-011: the wallet exists once the profile is complete (name + phone).
+  await createCustomerWalletWorkflow(container).run({
+    input: { customer_id: customerId },
+  });
+  const {
+    data: [walletRow],
+  } = await query.graph({
+    entity: "customer",
+    fields: ["wallet.id"],
+    filters: { id: customerId },
+  });
+  const walletId = walletRow?.wallet?.id as string | undefined;
+  assert.ok(walletId, "demo farmer wallet was not created");
+
+  const { data: ledger } = await query.graph({
+    entity: "wallet_transaction",
+    fields: ["amount"],
+    filters: { wallet_id: walletId },
+  });
+  if (!ledger.length) {
+    const walletModuleService =
+      container.resolve<WalletModuleService>(WALLET_MODULE);
+    await walletModuleService.createWalletTransactions([
+      {
+        wallet_id: walletId,
+        type: "manual_topup",
+        amount: DEMO_FARMER.balance,
+        reference: "seed: demo farmer",
+      },
+    ]);
+  }
+
+  // D-003: both ids on this identity's app_metadata. Each account workflow set
+  // its own key; the merge keeps any other key a future step stores there.
+  const memberId = existingMembers[0].id as string;
+  const identity = await authModuleService.retrieveAuthIdentity(authIdentityId);
+  await authModuleService.updateAuthIdentities({
+    id: authIdentityId,
+    app_metadata: {
+      ...identity.app_metadata,
+      customer_id: customerId,
+      member_id: memberId,
+    },
+  });
+
+  logger.info(
+    `Finished seeding. Demo farmer ${DEMO_FARMER.email} holds Rp${DEMO_FARMER.balance} (customer ${customerId}, member ${memberId}).`
+  );
+}
 
 export default async function seedKoiData({ container }: ExecArgs) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER);
@@ -1107,6 +1268,8 @@ export default async function seedKoiData({ container }: ExecArgs) {
     logger.info(
       "Koi sellers already exist, skipping seller, product, offer and customer seeding."
     );
+    // T-020.9: still complete the demo farmer on a database seeded before it.
+    await seedDemoFarmer(container);
     logger.info("Finished seeding.");
     return;
   }
@@ -1123,25 +1286,6 @@ export default async function seedKoiData({ container }: ExecArgs) {
   const randInt = (min: number, max: number) =>
     min + Math.floor(rand() * (max - min + 1));
   const pick = <T,>(items: T[]) => items[randInt(0, items.length - 1)];
-
-  const authModuleService = container.resolve(Modules.AUTH);
-
-  /** Registers an emailpass identity, tolerating one that already exists. */
-  const authIdentityFor = async (email: string) => {
-    const registerResponse = await authModuleService.register("emailpass", {
-      body: { email, password: SEED_PASSWORD },
-    });
-
-    if (registerResponse.success && registerResponse.authIdentity) {
-      return registerResponse.authIdentity.id;
-    }
-
-    const [providerIdentity] = await authModuleService.listProviderIdentities({
-      entity_id: email,
-      provider: "emailpass",
-    });
-    return providerIdentity.auth_identity_id!;
-  };
 
   logger.info("Seeding shared shipping profile...");
   let sharedShippingProfileId: string;
@@ -1181,7 +1325,7 @@ export default async function seedKoiData({ container }: ExecArgs) {
   for (const [index, sellerConfig] of SELLER_CONFIGS.entries()) {
     const email = sellerEmail(sellerConfig.name);
     const location = `${sellerConfig.city}, ${sellerConfig.province}`;
-    const authIdentityId = await authIdentityFor(email);
+    const authIdentityId = await authIdentityFor(container, email);
 
     const { result: seller } = await createSellerAccountWorkflow(container).run({
       input: {
@@ -1633,7 +1777,7 @@ export default async function seedKoiData({ container }: ExecArgs) {
   const customerModuleService = container.resolve(Modules.CUSTOMER);
 
   for (const customer of CUSTOMERS) {
-    const authIdentityId = await authIdentityFor(customer.email);
+    const authIdentityId = await authIdentityFor(container, customer.email);
 
     const { result: created } = await createCustomerAccountWorkflow(
       container
@@ -1667,5 +1811,7 @@ export default async function seedKoiData({ container }: ExecArgs) {
     `Finished seeding customers. Every seeded login uses password "${SEED_PASSWORD}".`
   );
 
-  logger.info("Finished seeding.");
+  // T-020.9: the seller loop above created the member and open seller for this
+  // email; the customer row and wallet complete the D-003 dual actor.
+  await seedDemoFarmer(container);
 }
