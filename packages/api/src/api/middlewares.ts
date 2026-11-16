@@ -35,6 +35,10 @@ import {
   VendorUpdateAuction,
 } from "./vendor/auctions/validators"
 import {
+  VendorGetSoldLotsParams,
+  VendorRevealSoldLot,
+} from "./vendor/sold-lots/validators"
+import {
   AdminApproveAuction,
   AdminGetAuctionsParams,
   AdminRejectAuction,
@@ -421,6 +425,18 @@ export default defineMiddlewares({
       method: ["POST"],
       matcher: "/vendor/auctions/:id/lots",
       middlewares: [validateAndTransformBody(VendorAddDraftLots)],
+    },
+    // US-051 T-051.1b/T-051.5 (D-056). The farmer's sold lots; the reveal of
+    // the winner's default shipping address, one value per body.
+    {
+      method: ["GET"],
+      matcher: "/vendor/sold-lots",
+      middlewares: [validateAndTransformQuery(VendorGetSoldLotsParams, {})],
+    },
+    {
+      method: ["POST"],
+      matcher: "/vendor/sold-lots/:id/reveal",
+      middlewares: [validateAndTransformBody(VendorRevealSoldLot)],
     },
     // US-032. Admin-authenticated by Medusa's /admin default (D-002).
     {

@@ -43,13 +43,15 @@ export function overrideFormError(input: OverrideFormInput): string | null {
  * US-032 AC6, D-049).
  *
  * @remarks
- * Keyed on the backend's `code`, not its message (D-020: the message is
- * English and carries the exact shortfall, which the UI shows as-is rather
- * than re-parsing). Any other code or a missing one passes the message
- * through unchanged, matching every other action on this screen. */
+ * Keyed on the backend's `code`, not its message (D-020, D-055): the message is
+ * Indonesian and carries the exact shortfall, which the UI shows as-is rather
+ * than re-parsing. The sentence uses the backend's own term, "biaya pasang
+ * lelang", so both apps name the fee the same way. Any other code or a missing
+ * one passes the message through unchanged, matching every other action on this
+ * screen. */
 export function auctionApproveErrorMessage(message: string, code: string | undefined): string {
   if (code === 'insufficient_balance') {
-    return `Saldo petani tidak cukup untuk biaya listing. ${message} Lelang belum disetujui — minta petani top up saldo, lalu setujui lagi.`;
+    return `Saldo petani tidak cukup untuk biaya pasang lelang. ${message} Lelang belum disetujui — minta petani top up saldo, lalu setujui lagi.`;
   }
   if (code === 'start_passed') {
     return 'Waktu mulai lelang sudah lewat. Tolak lelang ini dengan alasan agar petani memilih tanggal baru.';

@@ -1,5 +1,6 @@
 import { cn } from "cn"
 import { ArrowRight, Gavel } from "lucide-react"
+import { useState } from "react"
 
 import { Button, Card, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
@@ -80,7 +81,13 @@ export function LotPage({
     openingBid,
     bidStep,
   } = auction
-  const remaining = useCountdown(endsAt)
+  /* US-043 T-043.3: our own accepted bid answers with the lot's end time after
+     the extend, so the clock moves at once — before, or without, the refresh.
+     `router.refresh()` later supplies the same value as a prop; until then this
+     one wins, and a read that returns no value leaves the prop's clock alone. */
+  const [bidEndTime, setBidEndTime] = useState<string>()
+  const shownEnd = bidEndTime ?? endsAt
+  const remaining = useCountdown(shownEnd)
   const closing = isClosing(remaining)
   /* `sold` only ever arrives on a closed lot (the adapter's own contract), so
      reading it off is the same test as `status === "ended"` without a second
@@ -226,7 +233,7 @@ export function LotPage({
                                     ? formatRemaining(remaining!)
                                     : "ditutup"}
                               </div>
-                              <RenderIf when={closed ? undefined : endsAt}>
+                              <RenderIf when={closed ? undefined : shownEnd}>
                                 {(at) => (
                                   <div className="text-xs text-muted-foreground tabular-nums">
                                     {formatDeadline(at)} WIB
@@ -279,7 +286,9 @@ export function LotPage({
                       </RenderIf>
 
                       <RenderIf when={bid}>
-                        {(control) => <PlaceBid {...control} />}
+                        {(control) => (
+                          <PlaceBid {...control} onEndTime={setBidEndTime} />
+                        )}
                       </RenderIf>
 
                       <RenderIf when={!bid}>

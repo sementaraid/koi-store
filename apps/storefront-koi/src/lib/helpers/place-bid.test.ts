@@ -47,15 +47,9 @@ test('a below-minimum amount is not refused here: the server names the minimum',
 });
 
 test('bid_too_low shows the server message and asks for a re-read', () => {
-  const info = bidFailureInfo({
-    code: 'bid_too_low',
-    status: 400,
-    message: `Bid at least ${formatPrice(1_100_000)}.`
-  });
-  assert.deepEqual(info, {
-    message: `Bid at least ${formatPrice(1_100_000)}.`,
-    refresh: true
-  });
+  const message = 'Bid minimal Rp1.100.000. Harga sekarang Rp1.000.000.';
+  const info = bidFailureInfo({ code: 'bid_too_low', status: 400, message });
+  assert.deepEqual(info, { message, refresh: true });
 });
 
 test('invalid_amount reads in Indonesian', () => {

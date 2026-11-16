@@ -109,7 +109,7 @@ export const checkJoinFeeBalanceStep = createStep(
     if (balance < input.amount) {
       throw new MedusaError(
         MedusaError.Types.INVALID_DATA,
-        `Your balance (${rupiah(balance)}) is below the join fee (${rupiah(input.amount)}). Top up your wallet first.`,
+        `Saldo ${rupiah(balance)} kurang dari biaya ikut lelang ${rupiah(input.amount)}.`,
         "insufficient_balance"
       )
     }
@@ -162,7 +162,7 @@ export const chargeJoinFeeStep = createStep(
     if (!input.wallet_id) {
       throw new MedusaError(
         MedusaError.Types.INVALID_DATA,
-        "You have no wallet yet, so the join fee can't be charged.",
+        "Dompet Anda belum dibuat, jadi biaya ikut lelang belum bisa dicatat.",
         "insufficient_balance"
       )
     }

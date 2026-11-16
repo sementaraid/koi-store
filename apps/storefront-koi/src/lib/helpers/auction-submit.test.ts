@@ -5,7 +5,7 @@ import { submitFailureInfo } from './auction-submit.ts';
 
 test('a short balance offers the top-up page and keeps the server message', () => {
   const message =
-    'Your balance (Rp50.000) is below the listing fee (Rp100.000). Top up your wallet first.';
+    'Saldo Rp119.999 kurang dari biaya pasang lelang Rp120.000.';
   assert.deepEqual(submitFailureInfo('insufficient_balance', message), {
     message,
     topUp: true

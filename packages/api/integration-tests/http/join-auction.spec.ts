@@ -208,6 +208,10 @@ medusaIntegrationTestRunner({
       )
       expect(refused.status).toEqual(400)
       expect(refused.data.code).toEqual("insufficient_balance")
+      // D-055: Indonesian, id-ID rupiah, shown verbatim.
+      expect(refused.data.message).toEqual(
+        "Saldo Rp40.000 kurang dari biaya ikut lelang Rp100.000."
+      )
       expect(await participants(auctionId)).toHaveLength(0)
       expect(await joinFeeRows(walletId!)).toHaveLength(0)
       expect(await balanceOf(walletId!)).toEqual(40_000)
@@ -222,6 +226,9 @@ medusaIntegrationTestRunner({
       )
       expect(refused.status).toEqual(400)
       expect(refused.data.code).toEqual("insufficient_balance")
+      expect(refused.data.message).toEqual(
+        "Saldo Rp0 kurang dari biaya ikut lelang Rp100.000."
+      )
       expect(await participants(auctionId)).toHaveLength(0)
     })
 

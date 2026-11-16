@@ -1,5 +1,5 @@
 import { ClientError } from '@mercurjs/client';
-import { AlertTriangle, Gavel, LockKeyhole, Plus, Sprout } from 'lucide-react';
+import { AlertTriangle, Gavel, LockKeyhole, PackageCheck, Plus, Sprout } from 'lucide-react';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { cn } from 'cn';
@@ -262,13 +262,23 @@ function MyAuctions({
     <div className="grid gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <StatusTabs status={status} />
-        <Button
-          render={<Link href={ROUTES.farmAuctionNew} />}
-          nativeButton={false}
-        >
-          <Plus aria-hidden />
-          Buat lelang
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            render={<Link href={ROUTES.farmSold} />}
+            nativeButton={false}
+          >
+            <PackageCheck aria-hidden />
+            Lot terjual
+          </Button>
+          <Button
+            render={<Link href={ROUTES.farmAuctionNew} />}
+            nativeButton={false}
+          >
+            <Plus aria-hidden />
+            Buat lelang
+          </Button>
+        </div>
       </div>
 
       <RenderIf when={failed}>

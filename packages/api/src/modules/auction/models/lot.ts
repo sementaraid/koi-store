@@ -32,6 +32,9 @@ export const Lot = model
     end_time: model.dateTime(),
     winner_customer_id: model.text().nullable(),
     final_price: model.number().nullable(),
+    // US-050: set by the close job with winner/final_price; US-051's deadline
+    // counts from it.
+    closed_at: model.dateTime().nullable(),
     status: model.enum([...LOT_STATUSES]).default("open"),
     cancel_reason: model.text().nullable(),
     auction: model.belongsTo(() => Auction, { mappedBy: "lots" }),

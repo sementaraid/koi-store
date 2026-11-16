@@ -18,6 +18,9 @@ export type StorePlaceBidResponse = {
   bid: StoreBid
   // The lot's price after this bid.
   current_price: number
+  // The lot's end time after this bid (ISO); later than before when the bid
+  // landed inside the extend window (US-043).
+  end_time: string
 }
 
 // US-042 AC3: a below-minimum bid carries the lot's CURRENT price (not the
@@ -35,7 +38,7 @@ export type StoreBidTooLowError = {
 // US-042 T-042.2 (AC1–AC5, D-023). Identity is the customer token, never the
 // body. Errors: 400 `invalid_amount` / `bid_too_low`; 401 no customer;
 // 403 `own_auction` / `not_participant`; 404 unknown lot;
-// 409 `auction_not_live` / `lot_not_open` (Medusa's handler replaces the code
+// 409 `auction_not_live` / `lot_not_open` / `lot_ended` (Medusa's handler replaces the code
 // and message on a 409, so the Koi apps key on the status).
 export const POST = async (
   req: AuthenticatedMedusaRequest<StorePlaceBidType>,
@@ -61,6 +64,7 @@ export const POST = async (
         created_at: new Date(result.bid.created_at).toISOString(),
       },
       current_price: Number(result.lot.current_price),
+      end_time: result.end_time,
     })
   } catch (error) {
     // The workflow engine rethrows the step error as a plain serialized object,

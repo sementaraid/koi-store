@@ -13,6 +13,7 @@ export { OrderDetailPage } from './AccountPage/OrderDetailPage';
 export { OrdersPage } from './AccountPage/OrdersPage';
 export { ReviewsPage } from './AccountPage/ReviewsPage';
 export { SettingsPage } from './AccountPage/SettingsPage';
+export { SoldLotsPage } from './AccountPage/SoldLotsPage';
 export { TopupPage } from './AccountPage/TopupPage';
 export { WalletPage } from './AccountPage/WalletPage';
 export { AuctionsPage } from './AuctionsPage/AuctionsPage';

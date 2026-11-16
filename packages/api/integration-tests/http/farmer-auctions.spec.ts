@@ -660,7 +660,10 @@ medusaIntegrationTestRunner({
         .catch((e: HttpError & { response: { data: { code?: string } } }) => e.response)
       expect(refused.status).toEqual(400)
       expect(refused.data.code).toEqual("insufficient_balance")
-      expect(refused.data.message).toContain("Top up")
+      // D-055: Indonesian, id-ID rupiah, shown verbatim.
+      expect(refused.data.message).toEqual(
+        "Saldo Rp119.999 kurang dari biaya pasang lelang Rp120.000."
+      )
 
       const stored = await getContainer()
         .resolve<AuctionModuleService>(AUCTION_MODULE)

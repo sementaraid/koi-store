@@ -134,6 +134,10 @@ export type PlaceBidResult =
       /** The lot's price after this bid. Optional because the route may answer
           without it: the caller then re-reads the lot (`router.refresh()`). */
       current_price?: number;
+      /** The lot's end time after this bid (ISO, US-043): later than before
+          when the bid landed inside the extend window. Optional for the same
+          reason as `current_price`. */
+      end_time?: string;
     }
   | { success: false; error: string; code?: string; status?: number };
 
@@ -151,7 +155,11 @@ export const placeBid = async (lotId: string, amount: number): Promise<PlaceBidR
 
   return sdk.store.bids
     .mutate({ lot_id: lotId, amount, fetchOptions: { headers } })
-    .then((res) => ({ success: true as const, current_price: res.current_price }))
+    .then((res) => ({
+      success: true as const,
+      current_price: res.current_price,
+      end_time: res.end_time
+    }))
     .catch((err: unknown) => {
       if (err instanceof ClientError && err.status === 401) {
         redirect(`${ROUTES.login}?sessionExpired=true&redirect=${encodeURIComponent(returnPath)}`);

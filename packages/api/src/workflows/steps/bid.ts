@@ -31,6 +31,8 @@ export type BiddableLot = {
   kb: number
   end_time: string
   auction_id: string
+  // US-043: the auction's snapshot (US-030 AC6), never the live setting.
+  extend_window_minutes: number
 }
 
 // Read-only guard (US-042 AC1–AC3). Run under the lot lock, so the bid read and
@@ -60,6 +62,7 @@ export const getBiddableLotStep = createStep(
         "auction.id",
         "auction.status",
         "auction.payer_customer_id",
+        "auction.extend_window_minutes",
       ],
       filters: { id: input.lot_id },
     })
@@ -74,6 +77,7 @@ export const getBiddableLotStep = createStep(
       id?: string
       status?: string
       payer_customer_id?: string | null
+      extend_window_minutes?: number
     }
 
     // US-042 AC1 / plan "Fair play". The farmer's customer id was saved at
@@ -118,6 +122,16 @@ export const getBiddableLotStep = createStep(
         MedusaError.Types.CONFLICT,
         "This lot is not open for bids.",
         "lot_not_open"
+      )
+    }
+    // US-043 AC4: bidding ends when the timer ends, even before the close job
+    // (US-050, `end_time <= now`) runs, so extend never revives a finished lot.
+    // 409: Medusa rewrites the message, apps key on the status (D-055).
+    if (Date.now() >= new Date(lot.end_time as string).getTime()) {
+      throw new MedusaError(
+        MedusaError.Types.CONFLICT,
+        "Lot ini sudah selesai.",
+        "lot_ended"
       )
     }
 
@@ -165,6 +179,7 @@ export const getBiddableLotStep = createStep(
       kb,
       end_time: new Date(lot.end_time as string).toISOString(),
       auction_id: auction.id as string,
+      extend_window_minutes: Number(auction.extend_window_minutes),
     }
     return new StepResponse(biddable)
   }
@@ -230,6 +245,53 @@ export const setLotCurrentPriceStep = createStep(
     }
     await container.resolve<AuctionModuleService>(AUCTION_MODULE).updateLots([
       { id: restore.lot_id, current_price: restore.previous_price },
+    ])
+  }
+)
+
+export type ExtendLotEndTimeStepInput = {
+  lot_id: string
+  // The lot's end time before this bid (ISO, from getBiddableLotStep).
+  end_time: string
+  // The auction's snapshot (US-030 AC6).
+  window_minutes: number
+  // The saved bid's created_at: server time decides (CLAUDE.md §8).
+  bid_at: string | Date
+}
+
+type ExtendRestore = { lot_id: string; end_time: string }
+
+// US-043 AC1–AC3: a bid inside the window before end_time moves THIS lot's
+// end_time to bid_at + window. Never shortened (D-024); outside the window no
+// write. Returns the lot's end_time after this bid (ISO). Compensation restores
+// the previous end_time.
+export const extendLotEndTimeStep = createStep(
+  "extend-lot-end-time",
+  async (input: ExtendLotEndTimeStepInput, { container }) => {
+    const restore: ExtendRestore = { lot_id: input.lot_id, end_time: input.end_time }
+    const end = new Date(input.end_time).getTime()
+    const window = input.window_minutes * 60 * 1000
+    const extended = new Date(input.bid_at).getTime() + window
+    // Outside the window (end - bid_at > window) means bid_at + window < end;
+    // equal adds nothing. Either way no write, and the end is never shortened.
+    if (extended <= end) {
+      // Restoring the same end_time on compensation is harmless.
+      return new StepResponse(new Date(end).toISOString(), restore)
+    }
+    await container.resolve<AuctionModuleService>(AUCTION_MODULE).updateLots([
+      { id: input.lot_id, end_time: new Date(extended) },
+    ])
+    return new StepResponse(new Date(extended).toISOString(), restore)
+  },
+  async (
+    restore: ExtendRestore | undefined,
+    { container }
+  ) => {
+    if (!restore) {
+      return
+    }
+    await container.resolve<AuctionModuleService>(AUCTION_MODULE).updateLots([
+      { id: restore.lot_id, end_time: new Date(restore.end_time) },
     ])
   }
 )

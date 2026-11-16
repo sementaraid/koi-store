@@ -2,6 +2,7 @@ import { createWorkflow, transform, WorkflowResponse } from "@medusajs/framework
 import { acquireLockStep, releaseLockStep } from "@medusajs/medusa/core-flows"
 import {
   createBidStep,
+  extendLotEndTimeStep,
   getBiddableLotStep,
   setLotCurrentPriceStep,
 } from "./steps/bid"
@@ -17,8 +18,9 @@ export type PlaceBidWorkflowInput = {
 // current price, all or nothing. The per-lot lock serialises bids on the same
 // lot, so two equal bids cannot both read the same current price: the first
 // saves, the second re-reads it and is refused `bid_too_low` (AC3). No money
-// moves, so no wallet is locked. Extend (US-043) and the outbid event (US-083)
-// are not part of this workflow yet.
+// moves, so no wallet is locked. A bid inside the auction's extend window
+// pushes this lot's end_time (US-043). The outbid event (US-083) is not part of
+// this workflow yet.
 export const placeBidWorkflow = createWorkflow(
   "place-bid",
   function (input: PlaceBidWorkflowInput) {
@@ -45,8 +47,18 @@ export const placeBidWorkflow = createWorkflow(
       }))
     )
 
+    // US-043: `lot` above is the pre-extend row; end_time comes from here.
+    const end_time = extendLotEndTimeStep(
+      transform({ biddable, bid }, ({ biddable, bid }) => ({
+        lot_id: biddable.lot_id,
+        end_time: biddable.end_time,
+        window_minutes: biddable.extend_window_minutes,
+        bid_at: bid.created_at,
+      }))
+    )
+
     releaseLockStep({ key: lotLock })
 
-    return new WorkflowResponse({ bid, lot })
+    return new WorkflowResponse({ bid, lot, end_time })
   }
 )

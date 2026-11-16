@@ -7,8 +7,7 @@ import { farmAuctionHref, ROUTES } from '@/const/routes';
 import type { AuctionStatus } from '@/lib/helpers/auction-status';
 
 import { sdk } from '../client';
-import { getMemberAuthHeaders } from './cookies';
-import { getMyFarm } from './farm';
+import { vendorHeaders } from './vendor';
 
 /* The Farmer area's create-auction and draft-edit actions (US-030 T-030.3),
    through `/vendor/auctions` (member token + `x-seller-id`, D-003). Every
@@ -77,18 +76,6 @@ export type AuctionsPage = {
   limit: number;
   offset: number;
 };
-
-/** The member headers plus `x-seller-id`, from the signed-in farmer's own
-    approved farm. Throws when there is no member session or no farm — every
-    caller here is reached only from inside the Farmer area, which already
-    required both. */
-async function vendorHeaders(): Promise<{ authorization: string; 'x-seller-id': string }> {
-  const [headers, seller] = await Promise.all([getMemberAuthHeaders(), getMyFarm()]);
-  if (!('authorization' in headers) || !seller) {
-    throw new ClientError('Sesi petani tidak aktif.', 'Unauthorized', 401);
-  }
-  return { ...headers, 'x-seller-id': seller.id };
-}
 
 /** Narrows the route's own `delivery_method: string` — see {@link Auction}'s
     remark. Takes the route's shape rather than `Auction` itself so it works

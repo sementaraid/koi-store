@@ -35,7 +35,14 @@ import { formatPrice } from '@/lib/helpers/format-price';
  * a re-read) remounts it prefilled without fighting the customer while they
  * type.
  */
-export function PlaceBid({ lotId, ob, kb, currentPrice, mode }: BidControl) {
+export function PlaceBid({
+  lotId,
+  ob,
+  kb,
+  currentPrice,
+  mode,
+  onEndTime
+}: BidControl & { onEndTime?: (endTime: string) => void }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<BidFailure | null>(null);
@@ -85,6 +92,9 @@ export function PlaceBid({ lotId, ob, kb, currentPrice, mode }: BidControl) {
     if (result.success) {
       toast.success('Bid Anda tercatat. Harga dapat berubah bila ada bid lain.');
       setConfirmed({ amount: parsed.amount, currentPrice: result.current_price ?? null });
+      /* The lot's end time after this bid (US-043): a late bid pushes it later,
+         so the page's countdown moves now rather than waiting for the refresh. */
+      if (result.end_time) onEndTime?.(result.end_time);
       /* Re-read the lot so the board and this control show the server's own
          price. A soft refresh of the server components, not a page reload. */
       router.refresh();

@@ -972,5 +972,10 @@ export type Routes = {
             };
         };
         feeCategories: typeof import("../src/api/vendor/fee-categories/route");
+        soldLots: typeof import("../src/api/vendor/sold-lots/route") & {
+            $id: {
+                reveal: typeof import("../src/api/vendor/sold-lots/[id]/reveal/route");
+            };
+        };
     };
 };

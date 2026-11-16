@@ -51,10 +51,10 @@ test('override form: both together, or neither, is fine', () => {
 });
 
 test('maps the insufficient_balance code to a clear top-up prompt, keeping the backend detail', () => {
-  const message = 'Your balance (Rp0) is below the listing fee (Rp100.000). Top up your wallet first.';
+  const message = 'Saldo Rp119.999 kurang dari biaya pasang lelang Rp120.000.';
   assert.equal(
     auctionApproveErrorMessage(message, 'insufficient_balance'),
-    `Saldo petani tidak cukup untuk biaya listing. ${message} Lelang belum disetujui — minta petani top up saldo, lalu setujui lagi.`
+    `Saldo petani tidak cukup untuk biaya pasang lelang. ${message} Lelang belum disetujui — minta petani top up saldo, lalu setujui lagi.`
   );
 });
 

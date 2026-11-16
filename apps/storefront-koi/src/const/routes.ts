@@ -52,6 +52,8 @@ export const ROUTES = {
   farmHome: "/akun/kebun/beranda",
   /** Create a new auction and its lots (US-030). */
   farmAuctionNew: "/akun/kebun/lelang/baru",
+  /** The farmer's sold lots: winner, final price, masked address (US-051). */
+  farmSold: "/akun/kebun/terjual",
   /** Name, contact, password. */
   settings: "/akun/pengaturan",
   /** Sign in. */

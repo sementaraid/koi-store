@@ -193,6 +193,9 @@ medusaIntegrationTestRunner({
       const refused = await failure(api.post(`/admin/auctions/${auctionId}/approve`, {}, { headers: admin }))
       expect(refused.status).toEqual(400)
       expect(refused.data.code).toEqual("insufficient_balance")
+      expect(refused.data.message).toEqual(
+        "Saldo Rp99.999 kurang dari biaya pasang lelang Rp100.000."
+      )
 
       const stored = await auctions().retrieveAuction(auctionId)
       expect(stored.status).toEqual("pending_approval")

@@ -9,6 +9,8 @@ const rupiah = (n: number) => `Rp${n.toLocaleString("id-ID")}`
 // Read-only (D-020): the balance, a SUM of the ledger, must cover the listing
 // fee. Submit runs it as a pre-check; approval runs it again under the wallet
 // lock. No wallet counts as Rp0. `code` lets the Koi apps show the top-up prompt.
+// D-055: Indonesian, shown verbatim to the farmer (submit) and inside
+// admin-koi's approve sentence, so it names no reader and no next step.
 export const checkWalletBalanceStep = createStep(
   "check-wallet-balance",
   async (input: { wallet_id: string | null; amount: number }, { container }) => {
@@ -18,7 +20,7 @@ export const checkWalletBalanceStep = createStep(
     if (balance < input.amount) {
       throw new MedusaError(
         MedusaError.Types.INVALID_DATA,
-        `Your balance (${rupiah(balance)}) is below the listing fee (${rupiah(input.amount)}). Top up your wallet first.`,
+        `Saldo ${rupiah(balance)} kurang dari biaya pasang lelang ${rupiah(input.amount)}.`,
         "insufficient_balance"
       )
     }
@@ -46,7 +48,7 @@ export const chargeListingFeeStep = createStep(
     if (!input.wallet_id) {
       throw new MedusaError(
         MedusaError.Types.INVALID_DATA,
-        "The farmer has no wallet yet, so the listing fee can't be recorded.",
+        "Dompet petani belum dibuat, jadi biaya pasang lelang belum bisa dicatat.",
         "insufficient_balance"
       )
     }
