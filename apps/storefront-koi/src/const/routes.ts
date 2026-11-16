@@ -102,3 +102,8 @@ export const pageHref = (base: string, page: number) => `${base}?page=${page}`
 
 /** One draft auction's own edit page (US-030 AC8). */
 export const farmAuctionHref = (id: string) => `/akun/kebun/lelang/${id}`
+
+/** The farmer's auction tracker, filtered to one status (T-033.2). Omitted,
+    `status` reads as "Semua" — the one tab the tracker opens on. */
+export const farmHomeStatusHref = (status?: string) =>
+  status ? `${ROUTES.farmHome}?status=${status}` : ROUTES.farmHome

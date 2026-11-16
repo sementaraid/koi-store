@@ -4,6 +4,7 @@ import { ClientError } from '@mercurjs/client';
 import { revalidatePath } from 'next/cache';
 
 import { farmAuctionHref, ROUTES } from '@/const/routes';
+import type { AuctionStatus } from '@/lib/helpers/auction-status';
 
 import { sdk } from '../client';
 import { getMemberAuthHeaders } from './cookies';
@@ -122,13 +123,18 @@ const toAuctionDetail = (auction: RawAuctionDetail): AuctionDetail => ({
   }))
 });
 
-/** The signed-in farmer's auctions, newest first (minimal list — T-033.2
-    builds the full status tracker later). */
-export const getMyAuctions = async (limit = 20, offset = 0): Promise<AuctionsPage> => {
+/** The signed-in farmer's auctions, newest first, optionally narrowed to one
+    status (T-033.2's status tracker). */
+export const getMyAuctions = async (
+  limit = 20,
+  offset = 0,
+  status?: AuctionStatus
+): Promise<AuctionsPage> => {
   const headers = await vendorHeaders();
   const page = await sdk.vendor.auctions.query({
     limit,
     offset,
+    ...(status ? { status } : {}),
     fetchOptions: { headers, cache: 'no-store' }
   });
   return { ...page, auctions: page.auctions.map(asAuction) };

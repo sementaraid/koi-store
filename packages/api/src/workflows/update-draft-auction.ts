@@ -1,8 +1,15 @@
-import { createWorkflow, transform, WorkflowResponse } from "@medusajs/framework/workflows-sdk"
+import {
+  createWorkflow,
+  transform,
+  when,
+  WorkflowResponse,
+} from "@medusajs/framework/workflows-sdk"
+import { acquireLockStep, releaseLockStep } from "@medusajs/medusa/core-flows"
 import { validateSellerOpenStep } from "./steps/validate-seller-open"
 import {
   getAuctionSettingsStep,
   getDraftAuctionStep,
+  setLotsEndTimeStep,
   validateAuctionUpdateStep,
   updateDraftAuctionStep,
   type UpdateDraftAuctionFields,
@@ -26,6 +33,10 @@ export const updateDraftAuctionWorkflow = createWorkflow(
   "update-draft-auction",
   function (input: UpdateDraftAuctionWorkflowInput) {
     validateSellerOpenStep({ seller_id: input.seller_id })
+
+    // Same key as add-draft-lots: a lot added meanwhile can't keep the old end_at.
+    const lockKey = transform(input, ({ auction_id }) => `auction:${auction_id}`)
+    acquireLockStep({ key: lockKey, timeout: 10, ttl: 30 })
 
     const auction = getDraftAuctionStep({
       auction_id: input.auction_id,
@@ -58,6 +69,18 @@ export const updateDraftAuctionWorkflow = createWorkflow(
         update,
       }))
     )
+
+    // T-030.8: every lot closes at the auction's end_at (US-050).
+    when({ update }, ({ update }) => update.end_ms !== undefined).then(() => {
+      setLotsEndTimeStep(
+        transform({ input, update }, ({ input, update }) => ({
+          auction_id: input.auction_id,
+          end_ms: update.end_ms as number,
+        }))
+      )
+    })
+
+    releaseLockStep({ key: lockKey })
 
     return new WorkflowResponse(updated)
   }

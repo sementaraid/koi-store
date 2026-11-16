@@ -27,7 +27,13 @@ export function LotDossier({
   account?: HeaderAccount;
   cart?: HeaderCart;
 }) {
-  const state = useFeedSearch<AuctionStatus>(DEFAULT_AUCTION_FILTER);
+  /* `selected`/`onAttributesChange` are `useFeedSearch`'s attribute-facet pair
+     — the floor has no facets, so `LotPage` (which takes no such props) must
+     not receive them: unused keys here fall into its `...rest` and land on
+     the DOM, producing the hydration mismatch and unknown `onAttributesChange`
+     warning seen on `/lelang` and the lot dossier. */
+  const { selected: _selected, onAttributesChange: _onAttributesChange, ...state } =
+    useFeedSearch<AuctionStatus>(DEFAULT_AUCTION_FILTER);
   const lot = DEFAULT_AUCTION_LOTS.find((candidate) => candidate.id === id);
 
   if (!lot) notFound();

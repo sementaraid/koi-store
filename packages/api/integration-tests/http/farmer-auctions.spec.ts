@@ -12,6 +12,26 @@ import type AuctionModuleService from "../../src/modules/auction/service"
 import { WALLET_MODULE } from "../../src/modules/wallet"
 import type WalletModuleService from "../../src/modules/wallet/service"
 import { createCustomerWalletWorkflow } from "../../src/workflows/create-customer-wallet"
+import { createStep, createWorkflow, StepResponse } from "@medusajs/framework/workflows-sdk"
+import { setLotsEndTimeStep } from "../../src/workflows/steps/auction"
+
+// US-030 T-030.8: the real step, plus a step that fails after it, so the
+// workflow's compensation actually runs. A step only builds inside a workflow
+// definition, so the check cannot call it on its own.
+const failAfterLotsStep = createStep(
+  "qa-fail-after-lots",
+  async () => {
+    throw new Error("qa: simulated failure after setLotsEndTimeStep")
+  }
+)
+
+const setLotsEndTimeTestWorkflow = createWorkflow(
+  "set-lots-end-time-test",
+  function (input: { auction_id: string; end_ms: number }) {
+    setLotsEndTimeStep(input)
+    failAfterLotsStep()
+  }
+)
 
 jest.setTimeout(120 * 1000)
 
@@ -369,6 +389,24 @@ medusaIntegrationTestRunner({
         created.data.auction.listing_fee
       )
 
+      // T-030.8: the lots follow the new end_at, and a lot added after the
+      // edit takes it too.
+      const lotEndTimes = async () =>
+        (
+          await container
+            .resolve<AuctionModuleService>(AUCTION_MODULE)
+            .listLots({ auction_id: auctionId }, { select: ["end_time"] })
+        ).map((l) => new Date(l.end_time).toISOString())
+      const newEnd = new Date(updated.data.auction.end_at).toISOString()
+      expect(await lotEndTimes()).toEqual([newEnd])
+      const addedLot = await api.post(
+        `/vendor/auctions/${auctionId}/lots`,
+        { lots: [lot({ title: `Showa ${Date.now()}` })] },
+        { headers: vendor }
+      )
+      expect(addedLot.status).toEqual(201)
+      expect(await lotEndTimes()).toEqual([newEnd, newEnd])
+
       // A body that tries to set a fee is refused.
       expect(
         await statusOf(
@@ -441,6 +479,54 @@ medusaIntegrationTestRunner({
           .resolve<WalletModuleService>(WALLET_MODULE)
           .listWalletTransactions({ wallet_id: walletId, type: "listing_fee" })
       ).length
+
+    // US-030 T-030.8, the half the edit test above cannot show: the test runner
+    // rolls a failed workflow's steps back in memory, so a broken compensation
+    // still ends with the old end_times. This runs the real step, then fails a
+    // step after it, so the compensation has to put the old end_times back.
+    it("setLotsEndTimeStep's compensation puts every lot's old end_time back (US-030 T-030.8)", async () => {
+      const container = getContainer()
+      const auctionsSvc = container.resolve<AuctionModuleService>(AUCTION_MODULE)
+      const { seller } = await registerFarm({ approve: true })
+      const category = await createCategory("g")
+      const [auction] = await auctionsSvc.createAuctions([
+        {
+          seller_id: seller.id,
+          fee_category_id: category.id,
+          start_at: new Date(Date.now() + DAY),
+          end_at: new Date(Date.now() + 3 * DAY),
+          delivery_method: "courier",
+          status: "draft",
+          listing_fee: 50_000,
+          join_fee: 100_000,
+          extend_window_minutes: 5,
+        },
+      ])
+      const oldEnd = Date.now() + 2 * DAY
+      const [first, second] = await auctionsSvc.createLots([
+        { auction_id: auction.id, product_id: "prod_a", ob: 1, kb: 1, current_price: 1, end_time: new Date(oldEnd), status: "open" },
+        { auction_id: auction.id, product_id: "prod_b", ob: 1, kb: 1, current_price: 1, end_time: new Date(oldEnd), status: "open" },
+      ])
+
+      const newEnd = Date.now() + 6 * DAY
+      const input = { auction_id: auction.id, end_ms: newEnd }
+      const endTimes = async () =>
+        (await auctionsSvc.listLots({ auction_id: auction.id }, { select: ["end_time"] }))
+          .map((l) => new Date(l.end_time).getTime())
+          .sort()
+
+      // The failing step rolls the mutation back through the real compensation.
+      // `run` reports the failure in its own result instead of throwing here,
+      // so the assertions are on what is left in the table.
+      const run = await setLotsEndTimeTestWorkflow(container)
+        .run({ input, throwOnError: false })
+      expect(run.errors?.length).toBeGreaterThan(0)
+
+      expect(await endTimes()).toEqual([oldEnd, oldEnd])
+      expect([first.id, second.id].sort()).toEqual(
+        (await auctionsSvc.listLots({ auction_id: auction.id }, { select: ["id"] })).map((l) => l.id).sort()
+      )
+    })
 
     it("submit recomputes the fees from the current table after a category and lot change, and saves the payer from the member token (US-031 AC1–AC3, AC8)", async () => {
       const container = getContainer()

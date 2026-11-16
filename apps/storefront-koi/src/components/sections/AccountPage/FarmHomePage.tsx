@@ -2,6 +2,7 @@ import { ClientError } from '@mercurjs/client';
 import { AlertTriangle, Gavel, LockKeyhole, Plus, Sprout } from 'lucide-react';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
+import { cn } from 'cn';
 
 import {
   Badge,
@@ -15,11 +16,18 @@ import {
 } from '@koi/ui';
 import { Link } from '@/components/atoms';
 import { EmptyFeed } from '@/components/cells/EmptyFeed/EmptyFeed';
-import { farmAuctionHref, ROUTES } from '@/const/routes';
+import { FeedPagination } from '@/components/cells/FeedPagination/FeedPagination';
+import { farmAuctionHref, farmHomeStatusHref, ROUTES } from '@/const/routes';
 import { getMyAuctions, type AuctionListItem } from '@/lib/data/auctions';
 import { getMyFarm, type FarmSeller } from '@/lib/data/farm';
 import { requireCustomer } from '@/lib/guard';
-import { auctionStatusLabel } from '@/lib/helpers/auction-status';
+import {
+  AUCTION_STATUSES,
+  auctionStatusLabel,
+  isAuctionStatus,
+  type AuctionStatus
+} from '@/lib/helpers/auction-status';
+import { formatDeadline } from '@/lib/helpers/format-deadline';
 import { farmStatusInfo } from '@/lib/helpers/farm-status';
 import { getShell } from '@/lib/shell';
 
@@ -27,6 +35,18 @@ import { listOrderGroups } from './AccountPage';
 import { countOpen } from './components/Orders';
 import { AccountFrame } from './components/AccountFrame';
 import { SubmitAuctionButton } from './components/SubmitAuctionButton';
+
+/** How many auctions one page of the tracker shows (US-033 AC1). Matches
+    `/vendor/auctions`'s own default limit, so a farmer with few auctions
+    never sees a pager. */
+const PER_PAGE = 20;
+
+/** Props for {@link FarmHomePage}: the route's own `?status=&page=`, read
+    server-side (US-033 T-033.2) — the tracker never flips a status on the
+    client, only what the server returned for that query. */
+export type FarmHomePageProps = {
+  searchParams: Promise<{ status?: string | string[]; page?: string | string[] }>;
+};
 
 /** The Farmer area home.
  *
@@ -36,14 +56,14 @@ import { SubmitAuctionButton } from './components/SubmitAuctionButton';
  * card, worded by `farmStatusInfo`, with the rejection reason when there is
  * one. Registration is not offered to a seller that already exists: a
  * rejection is final (AC3), so the closed card links to the status page and
- * nowhere else. An approved farmer sees "Buat lelang" and a minimal list of
- * their own auctions (US-030 T-030.3); the full status tracker is T-033.2,
- * a later task. */
-export async function FarmHomePage() {
-  const [, { account, cart }, groups] = await Promise.all([
+ * nowhere else. An approved farmer sees "Buat lelang" and the auction tracker
+ * (US-033): six status tabs, each row's lot count and dates, and the pager. */
+export async function FarmHomePage({ searchParams }: FarmHomePageProps) {
+  const [, { account, cart }, groups, params] = await Promise.all([
     requireCustomer(ROUTES.farmHome),
     getShell(),
-    listOrderGroups()
+    listOrderGroups(),
+    searchParams
   ]);
 
   let seller: FarmSeller | null = null;
@@ -62,11 +82,20 @@ export async function FarmHomePage() {
 
   const approved = seller ? farmStatusInfo(seller).approved : false;
 
+  /* An unknown `?status=` is not a filter this page owns — read as "Semua"
+     rather than sent to the server as a status it would 400 on. */
+  const status = isAuctionStatus(params.status) ? params.status : undefined;
+  const rawPage = Array.isArray(params.page) ? params.page[0] : params.page;
+  const page = Math.max(Number.parseInt(rawPage ?? '1', 10) || 1, 1);
+
   let auctions: AuctionListItem[] = [];
+  let count = 0;
   let auctionsFailed = false;
   if (approved) {
     try {
-      auctions = (await getMyAuctions()).auctions;
+      const result = await getMyAuctions(PER_PAGE, (page - 1) * PER_PAGE, status);
+      auctions = result.auctions;
+      count = result.count;
     } catch {
       auctionsFailed = true;
     }
@@ -84,7 +113,13 @@ export async function FarmHomePage() {
       <CardContent />
     </Card>
   ) : approved ? (
-    <MyAuctions auctions={auctions} failed={auctionsFailed} />
+    <MyAuctions
+      auctions={auctions}
+      failed={auctionsFailed}
+      status={status}
+      page={page}
+      pageCount={Math.max(1, Math.ceil(count / PER_PAGE))}
+    />
   ) : (
     <Closed seller={seller} />
   );
@@ -171,19 +206,62 @@ function Closed({ seller }: { seller: FarmSeller | null }): ReactNode {
   );
 }
 
-/** An approved farmer's own auctions, newest first, plus the way to make a
-    new one (US-030 T-030.3). Minimal on purpose: the full status tracker
-    with pagination and filters is T-033.2, a later task. */
+/** The tabs row: "Semua" plus D-031's six statuses, each a link to the same
+    page with its own `?status=` — a server-rendered filter, not client state
+    (US-033 AC2: show what the server returns). */
+function StatusTabs({ status }: { status?: AuctionStatus }) {
+  const tabs: { value?: AuctionStatus; label: string }[] = [
+    { value: undefined, label: 'Semua' },
+    ...AUCTION_STATUSES.map((value) => ({ value, label: auctionStatusLabel(value).label }))
+  ];
+
+  return (
+    <nav
+      aria-label="Status lelang"
+      className="flex flex-wrap gap-1 overflow-x-auto"
+    >
+      {tabs.map(({ value, label }) => {
+        const active = value === status;
+        return (
+          <Link
+            key={label}
+            href={farmHomeStatusHref(value)}
+            aria-current={active ? 'page' : undefined}
+            className={cn(
+              'rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors',
+              active
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            )}
+          >
+            {label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+/** An approved farmer's auction tracker (US-033): status tabs, each row's lot
+    count, start–end dates and status badge, and the way to make a new
+    auction (US-030 T-030.3). */
 function MyAuctions({
   auctions,
-  failed
+  failed,
+  status,
+  page,
+  pageCount
 }: {
   auctions: AuctionListItem[];
   failed: boolean;
+  status?: AuctionStatus;
+  page: number;
+  pageCount: number;
 }): ReactNode {
   return (
     <div className="grid gap-4">
-      <div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <StatusTabs status={status} />
         <Button
           render={<Link href={ROUTES.farmAuctionNew} />}
           nativeButton={false}
@@ -210,43 +288,50 @@ function MyAuctions({
 
       <RenderIf when={!failed && auctions.length ? auctions : null}>
         {(list) => (
-          <Card className="px-5 py-1">
-            {list.map((auction) => {
-              const status = auctionStatusLabel(auction.status);
-              return (
-                <div
-                  key={auction.id}
-                  className="flex flex-wrap items-center justify-between gap-4 border-b border-border py-4 last:border-b-0"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-foreground">
-                      {auction.lot_count} lot
-                    </p>
-                    <p className="mt-0.5 text-sm text-muted-foreground">
-                      {new Date(auction.start_at).toLocaleDateString('id-ID')} –{' '}
-                      {new Date(auction.end_at).toLocaleDateString('id-ID')}
-                    </p>
+          <>
+            <Card className="px-5 py-1">
+              {list.map((auction) => {
+                const auctionStatus = auctionStatusLabel(auction.status);
+                return (
+                  <div
+                    key={auction.id}
+                    className="flex flex-wrap items-center justify-between gap-4 border-b border-border py-4 last:border-b-0"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-foreground">
+                        {auction.lot_count} lot
+                      </p>
+                      <p className="mt-0.5 text-sm text-muted-foreground">
+                        {formatDeadline(auction.start_at)} – {formatDeadline(auction.end_at)}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Badge variant={auctionStatus.tone}>{auctionStatus.label}</Badge>
+                      <Link
+                        href={farmAuctionHref(auction.id)}
+                        className="text-sm font-medium text-accent-ink hover:underline"
+                      >
+                        {auction.status === 'draft' ? 'Ubah' : 'Lihat'}
+                      </Link>
+                    </div>
+                    <RenderIf when={auction.status === 'draft'}>
+                      {() => (
+                        <div className="w-full sm:w-auto">
+                          <SubmitAuctionButton auctionId={auction.id} />
+                        </div>
+                      )}
+                    </RenderIf>
                   </div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <Badge variant={status.tone}>{status.label}</Badge>
-                    <Link
-                      href={farmAuctionHref(auction.id)}
-                      className="text-sm font-medium text-accent-ink hover:underline"
-                    >
-                      {auction.status === 'draft' ? 'Ubah' : 'Lihat'}
-                    </Link>
-                  </div>
-                  <RenderIf when={auction.status === 'draft'}>
-                    {() => (
-                      <div className="w-full sm:w-auto">
-                        <SubmitAuctionButton auctionId={auction.id} />
-                      </div>
-                    )}
-                  </RenderIf>
-                </div>
-              );
-            })}
-          </Card>
+                );
+              })}
+            </Card>
+
+            <FeedPagination
+              page={page}
+              pageCount={pageCount}
+              href={farmHomeStatusHref(status)}
+            />
+          </>
         )}
       </RenderIf>
 
@@ -254,9 +339,11 @@ function MyAuctions({
         {() => (
           <EmptyFeed
             icon={<Gavel aria-hidden />}
-            narrowing={false}
-            noMatchTitle="Belum ada lelang"
-            noMatchBody="Lelang yang Anda buat muncul di sini, lengkap dengan statusnya."
+            narrowing={Boolean(status)}
+            noMatchTitle="Tidak ada lelang dengan status ini"
+            noMatchBody="Pilih tab status lain, atau lihat semua lelang Anda."
+            emptyTitle="Belum ada lelang"
+            emptyBody="Lelang yang Anda buat muncul di sini, lengkap dengan statusnya."
           />
         )}
       </RenderIf>

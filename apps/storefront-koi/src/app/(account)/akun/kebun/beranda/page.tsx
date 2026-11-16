@@ -7,10 +7,14 @@ export const metadata: Metadata = {
   title: 'Area petani'
 };
 
-export default function Page() {
+export default function Page({
+  searchParams
+}: {
+  searchParams: Promise<{ status?: string | string[]; page?: string | string[] }>;
+}) {
   return (
     <Suspense>
-      <FarmHomePage />
+      <FarmHomePage searchParams={searchParams} />
     </Suspense>
   );
 }

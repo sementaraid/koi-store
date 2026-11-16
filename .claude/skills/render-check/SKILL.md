@@ -103,6 +103,26 @@ Anything else is a bug. Classify it in the report:
 
 Warnings (level `warning`) don't fail a route. List them under "Not blocking".
 
+### Known upstream issue: intermittent `useId` mismatch
+
+Next 15.5.24 bundles its own React (`19.2.0-canary-0bdb9206-20250818`, in
+`node_modules/next/dist/compiled/react-dom`), which has a `useId` replay bug
+under `<Suspense>` fixed upstream in React 19.3.0 (react#35518). On some loads
+it mismatches generated ids. It can't be fixed in this repo without editing
+`node_modules`, which the rules forbid.
+
+A hydration error counts as this known issue — **not blocking**, list it under
+"Not blocking" with the load count — only when **all** of these hold:
+- every differing attribute is an `id` or `htmlFor` whose values look like
+  `base-ui-_R_…` or `_R_…` (React-generated), with nothing else in the diff
+- it does not reproduce on every load (re-load the route 5 times; it shows on
+  some, not all)
+- no text, element or other attribute differs
+
+Anything else — text, `className`, a date, a non-generated id, or a mismatch on
+every load — is a real hydration bug and fails the route. Remove this section
+once Next ships React ≥19.3.0.
+
 `devOverlay: absent` means you aren't on a dev server (or the page crashed
 before Next loaded). The overlay checks then prove nothing: say so.
 

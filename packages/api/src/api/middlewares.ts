@@ -41,6 +41,7 @@ import {
 } from "./admin/auctions/validators"
 import { StorePhone } from "./store/customers/validators"
 import { StoreGetWalletParams } from "./store/wallet/validators"
+import { StoreGetLotsParams } from "./store/lots/validators"
 import {
   SCREENSHOT_MAX_BYTES,
   SCREENSHOT_MIME_TYPES,
@@ -261,6 +262,18 @@ export default defineMiddlewares({
       method: ["POST"],
       matcher: "/store/customers/me",
       middlewares: [requirePhone(false)],
+    },
+    {
+      method: ["GET"],
+      matcher: "/store/lots",
+      middlewares: [
+        // Public: publishable key only, no customer identity (US-040 AC3).
+        validateAndTransformQuery(StoreGetLotsParams, {
+          defaults: [],
+          isList: true,
+          defaultLimit: 20,
+        }),
+      ],
     },
     {
       method: ["GET"],

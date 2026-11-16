@@ -36,7 +36,11 @@ export const approveAuctionWorkflow = createWorkflow(
       name: "approve-auction-lock",
     })
 
-    const pending = getPendingAuctionStep({ auction_id: input.auction_id })
+    // mvp-Q31 (b): refused before the balance check and the charge.
+    const pending = getPendingAuctionStep({
+      auction_id: input.auction_id,
+      refuse_started: true,
+    })
 
     const { data: customers } = useQueryGraphStep({
       entity: "customer",

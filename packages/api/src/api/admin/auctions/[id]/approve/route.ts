@@ -21,7 +21,8 @@ export type AdminApproveAuctionResponse = {
 // US-032 AC2/AC3 + US-031 AC5–AC7: approve, optionally overriding the fees
 // with a reason, and charge the listing fee in the same workflow.
 // 400 `insufficient_balance` when the payer's balance dropped below the final
-// fee (nothing saved); 409 when the auction is not pending approval.
+// fee (nothing saved); 400 `start_passed` when start_at is not in the future
+// (mvp-Q31, nothing saved); 409 when the auction is not pending approval.
 export const POST = async (
   req: AuthenticatedMedusaRequest<AdminApproveAuctionType>,
   res: MedusaResponse<AdminApproveAuctionResponse>

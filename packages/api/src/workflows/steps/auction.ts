@@ -300,16 +300,28 @@ export type PendingAuction = {
 
 // Read-only guard for approve and reject (US-032, D-031): only a
 // `pending_approval` auction is in the admin queue. Run under the workflow's
-// per-auction lock so two decisions can't both pass.
+// per-auction lock so two decisions can't both pass. `refuse_started` (approve
+// only, mvp-Q31 option b): a start_at at or before the server's now is refused
+// with `start_passed`; reject stays allowed so the farmer can resubmit.
 export const getPendingAuctionStep = createStep(
   "get-pending-auction",
-  async (input: { auction_id: string }, { container }) => {
+  async (
+    input: { auction_id: string; refuse_started?: boolean },
+    { container }
+  ) => {
     const query = container.resolve(ContainerRegistrationKeys.QUERY)
     const {
       data: [auction],
     } = await query.graph({
       entity: "auction",
-      fields: ["id", "status", "listing_fee", "join_fee", "payer_customer_id"],
+      fields: [
+        "id",
+        "status",
+        "start_at",
+        "listing_fee",
+        "join_fee",
+        "payer_customer_id",
+      ],
       filters: { id: input.auction_id },
     })
 
@@ -323,6 +335,16 @@ export const getPendingAuctionStep = createStep(
       throw new MedusaError(
         MedusaError.Types.CONFLICT,
         `Auction ${input.auction_id} is not pending approval`
+      )
+    }
+    if (
+      input.refuse_started &&
+      new Date(auction.start_at).getTime() <= Date.now()
+    ) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        "This auction's start time has already passed. Reject it so the farmer can resubmit with new dates.",
+        "start_passed"
       )
     }
 
@@ -481,5 +503,37 @@ export const updateDraftAuctionStep = createStep(
         ...(end_ms !== undefined ? { end_at: new Date(end_ms) } : {}),
       },
     ])
+  }
+)
+
+// T-030.8: single mutation, every lot of the auction gets the auction's new
+// end_at as its end_time (a lot closes on its own end_time, US-050).
+// Compensation restores each lot's previous end_time.
+export const setLotsEndTimeStep = createStep(
+  "set-lots-end-time",
+  async (input: { auction_id: string; end_ms: number }, { container }) => {
+    const service = auctionService(container)
+    const lots = await service.listLots(
+      { auction_id: input.auction_id },
+      { select: ["id", "end_time"] }
+    )
+    await service.updateLots(
+      lots.map((lot) => ({ id: lot.id, end_time: new Date(input.end_ms) }))
+    )
+    return new StepResponse(
+      void 0,
+      lots.map((lot) => ({ id: lot.id, end_ms: new Date(lot.end_time).getTime() }))
+    )
+  },
+  async (
+    previous: { id: string; end_ms: number }[] | undefined,
+    { container }
+  ) => {
+    if (!previous?.length) {
+      return
+    }
+    await auctionService(container).updateLots(
+      previous.map((lot) => ({ id: lot.id, end_time: new Date(lot.end_ms) }))
+    )
   }
 )

@@ -58,6 +58,13 @@ test('maps the insufficient_balance code to a clear top-up prompt, keeping the b
   );
 });
 
+test('maps the start_passed code to a clear message to reject and ask for new dates', () => {
+  assert.equal(
+    auctionApproveErrorMessage('start time already passed', 'start_passed'),
+    'Waktu mulai lelang sudah lewat. Tolak lelang ini dengan alasan agar petani memilih tanggal baru.'
+  );
+});
+
 test('passes through any other code or message unchanged', () => {
   assert.equal(auctionApproveErrorMessage('Not found', undefined), 'Not found');
   assert.equal(auctionApproveErrorMessage('Conflict', 'some_other_code'), 'Conflict');

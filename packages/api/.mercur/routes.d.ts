@@ -663,8 +663,16 @@ export type Routes = {
                 calculate: typeof import("@medusajs/medusa/api/store/shipping-options/[id]/calculate/route");
             };
         };
+        auctions: {
+            $id: {
+                join: typeof import("../src/api/store/auctions/[id]/join/route");
+            };
+        };
         custom: typeof import("../src/api/store/custom/route");
         farmUploads: typeof import("../src/api/store/farm-uploads/route");
+        lots: typeof import("../src/api/store/lots/route") & {
+            $id: typeof import("../src/api/store/lots/[id]/route");
+        };
         platformBankAccount: typeof import("../src/api/store/platform-bank-account/route");
         topupRequests: typeof import("../src/api/store/topup-requests/route");
         wallet: typeof import("../src/api/store/wallet/route");

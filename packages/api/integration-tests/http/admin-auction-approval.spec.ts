@@ -200,6 +200,29 @@ medusaIntegrationTestRunner({
       expect(await balanceOf(walletId)).toEqual(99_999)
     })
 
+    it("refuses approval with 400 start_passed once start_at has passed, charging nothing (US-032 T-032.6, mvp-Q31)", async () => {
+      const { auctionId, walletId } = await pendingAuction(300_000)
+      // Time moved on while it waited in the queue (end_at stays after start_at).
+      await auctions().updateAuctions([{ id: auctionId, start_at: new Date(Date.now() - 60_000) }])
+
+      const refused = await failure(api.post(`/admin/auctions/${auctionId}/approve`, {}, { headers: admin }))
+      expect(refused.status).toEqual(400)
+      expect(refused.data.code).toEqual("start_passed")
+      expect(refused.data.message).toMatch(/start time has already passed/)
+
+      expect((await auctions().retrieveAuction(auctionId)).status).toEqual("pending_approval")
+      expect((await ledger(walletId)).filter((t) => t.type === "listing_fee")).toHaveLength(0)
+      expect(await balanceOf(walletId)).toEqual(300_000)
+
+      // Reject still works, so the farmer can resubmit with new dates.
+      const rejected = await api.post(
+        `/admin/auctions/${auctionId}/reject`,
+        { reason: "Waktu mulai sudah lewat." },
+        { headers: admin }
+      )
+      expect(rejected.data.auction.status).toEqual("draft")
+    })
+
     it("rolls back the status when the charge fails after it (US-031 AC7)", async () => {
       const { auctionId, walletId } = await pendingAuction(300_000)
       const spy = jest

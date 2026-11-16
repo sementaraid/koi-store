@@ -1,4 +1,5 @@
 import { model } from "@medusajs/framework/utils"
+import { AuctionParticipant } from "./auction-participant"
 import { Lot } from "./lot"
 
 // D-031: `draft → pending_approval → scheduled → live → closed | cancelled`.
@@ -46,6 +47,9 @@ export const Auction = model
     // D-031: set when an admin rejects; cleared on the next submit (US-032).
     rejection_reason: model.text().nullable(),
     lots: model.hasMany(() => Lot, { mappedBy: "auction" }),
+    participants: model.hasMany(() => AuctionParticipant, {
+      mappedBy: "auction",
+    }),
   })
   .indexes([{ on: ["seller_id"] }, { on: ["status"] }])
   .checks([

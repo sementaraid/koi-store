@@ -39,7 +39,8 @@ export function overrideFormError(input: OverrideFormInput): string | null {
   return null;
 }
 
-/** The approve route's error, read for the UI (T-031.5, US-031 AC6).
+/** The approve route's error, read for the UI (T-031.5/T-032.7, US-031 AC6,
+ * US-032 AC6, D-049).
  *
  * @remarks
  * Keyed on the backend's `code`, not its message (D-020: the message is
@@ -47,6 +48,11 @@ export function overrideFormError(input: OverrideFormInput): string | null {
  * than re-parsing). Any other code or a missing one passes the message
  * through unchanged, matching every other action on this screen. */
 export function auctionApproveErrorMessage(message: string, code: string | undefined): string {
-  if (code !== 'insufficient_balance') return message;
-  return `Saldo petani tidak cukup untuk biaya listing. ${message} Lelang belum disetujui — minta petani top up saldo, lalu setujui lagi.`;
+  if (code === 'insufficient_balance') {
+    return `Saldo petani tidak cukup untuk biaya listing. ${message} Lelang belum disetujui — minta petani top up saldo, lalu setujui lagi.`;
+  }
+  if (code === 'start_passed') {
+    return 'Waktu mulai lelang sudah lewat. Tolak lelang ini dengan alasan agar petani memilih tanggal baru.';
+  }
+  return message;
 }
