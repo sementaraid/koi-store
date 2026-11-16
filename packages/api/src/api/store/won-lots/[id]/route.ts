@@ -1,0 +1,42 @@
+import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
+import type {
+  AuthenticatedMedusaRequest,
+  MedusaResponse,
+} from "@medusajs/framework/http"
+import {
+  toWonLot,
+  WON_LOT_FIELDS,
+  WON_LOT_STATUSES,
+  type StoreWonLotResponse,
+} from "../route"
+
+// US-051 T-051.6 / US-053 T-053.2: one of the caller's own won lots. Another
+// customer's lot is 404 (no existence leak), same as delivered/route.ts.
+export const GET = async (
+  req: AuthenticatedMedusaRequest,
+  res: MedusaResponse<StoreWonLotResponse>
+) => {
+  const customerId = req.auth_context.actor_id
+  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+
+  const {
+    data: [row],
+  } = await query.graph({
+    entity: "lot",
+    fields: WON_LOT_FIELDS,
+    filters: {
+      id: req.params.id,
+      winner_customer_id: customerId,
+      status: [...WON_LOT_STATUSES],
+    },
+  })
+
+  if (!row) {
+    throw new MedusaError(
+      MedusaError.Types.NOT_FOUND,
+      `Lot ${req.params.id} was not found`
+    )
+  }
+
+  res.json({ lot: toWonLot(row) })
+}

@@ -20,6 +20,7 @@ import { PageShell } from "@/components/organisms/PageShell/PageShell"
 import { ProductCard } from "@/components/organisms/ProductCard/ProductCard"
 import { JoinAuction } from "@/components/sections/LotDetailsPage/components/JoinAuction"
 import { PlaceBid } from "@/components/sections/LotDetailsPage/components/PlaceBid"
+import { WonLotPanel } from "@/components/sections/LotDetailsPage/components/WonLotPanel"
 import type { LotPageProps } from "@/types/lot"
 import { formatDeadline } from "@/lib/helpers/format-deadline"
 import { formatPrice } from "@/lib/helpers/format-price"
@@ -56,6 +57,7 @@ export function LotPage({
   media,
   join,
   bid,
+  wonLot,
   liveHref,
   backHref = ROUTES.auctions,
   activeHref = ROUTES.auctions,
@@ -263,6 +265,15 @@ export function LotPage({
                           }
                         />
                       </div>
+
+                      {/* The winner's own band (US-053 T-053.2): their row from
+                          `GET /store/won-lots/:id` decides it, so a visitor
+                          who did not win this lot never sees it. */}
+                      <RenderIf when={wonLot}>
+                        {(mine) => (
+                          <WonLotPanel lotId={mine.id} status={mine.status} />
+                        )}
+                      </RenderIf>
 
                       <Button
                         size="lg"

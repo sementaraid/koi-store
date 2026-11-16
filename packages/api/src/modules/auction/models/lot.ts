@@ -35,6 +35,11 @@ export const Lot = model
     // US-050: set by the close job with winner/final_price; US-051's deadline
     // counts from it.
     closed_at: model.dateTime().nullable(),
+    // US-052 T-052.1 / US-053 T-053.1: saved when the farmer ships and when
+    // the winner marks it delivered (US-054's 4-hour claim window counts it).
+    tracking_number: model.text().nullable(),
+    shipped_at: model.dateTime().nullable(),
+    delivered_at: model.dateTime().nullable(),
     status: model.enum([...LOT_STATUSES]).default("open"),
     cancel_reason: model.text().nullable(),
     auction: model.belongsTo(() => Auction, { mappedBy: "lots" }),

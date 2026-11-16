@@ -1,6 +1,9 @@
 'use server';
 
 import { ClientError } from '@mercurjs/client';
+import { revalidatePath } from 'next/cache';
+
+import { ROUTES } from '@/const/routes';
 
 import { sdk } from '../client';
 import type { FullAddress } from '../helpers/sold-lot';
@@ -19,6 +22,9 @@ export type SoldLot = {
   closed_at: string | null;
   auction: { id: string; delivery_method: string };
   product: { title: string | null; thumbnail: string | null };
+  /** US-052 T-052.1: set when the farmer ships with one; null for
+      self-delivery and until the lot is `shipped`. */
+  tracking_number: string | null;
   winner: {
     name: string;
     address: { city: string | null; province: string | null } | null;
@@ -60,5 +66,43 @@ export const revealSoldLotAddress = async (
     return {
       error: err instanceof ClientError ? err.message : 'Gagal menampilkan alamat.'
     };
+  }
+};
+
+export type MarkShippedResult =
+  | { success: true }
+  | { success: false; message: string; code?: string; status?: number };
+
+/** Mark one of the farmer's own `paid` lots shipped (US-052 T-052.2, AC1 AC2).
+ *
+ * @remarks
+ * The status is never flipped here: the server's row is re-read after success
+ * (`revalidatePath`) and a refused call answers with its reason. Courier needs
+ * a tracking number — the server refuses a blank one; this only carries what
+ * was typed. A stale row (409) refreshes; a terminated farm's 403 keeps the
+ * server's own Indonesian message (D-055). */
+export const markSoldLotShipped = async (
+  id: string,
+  trackingNumber?: string
+): Promise<MarkShippedResult> => {
+  try {
+    const headers = await vendorHeaders();
+    await sdk.vendor.soldLots.$id.shipped.mutate({
+      $id: id,
+      ...(trackingNumber ? { tracking_number: trackingNumber } : {}),
+      fetchOptions: { headers }
+    });
+    revalidatePath(ROUTES.farmSold);
+    return { success: true };
+  } catch (err: unknown) {
+    if (err instanceof ClientError) {
+      return {
+        success: false,
+        message: err.message,
+        code: err.code,
+        status: err.status
+      };
+    }
+    return { success: false, message: 'Gagal menandai lot dikirim. Coba lagi.' };
   }
 };

@@ -677,6 +677,11 @@ export type Routes = {
         platformBankAccount: typeof import("../src/api/store/platform-bank-account/route");
         topupRequests: typeof import("../src/api/store/topup-requests/route");
         wallet: typeof import("../src/api/store/wallet/route");
+        wonLots: typeof import("../src/api/store/won-lots/route") & {
+            $id: typeof import("../src/api/store/won-lots/[id]/route") & {
+                delivered: typeof import("../src/api/store/won-lots/[id]/delivered/route");
+            };
+        };
     };
     vendor: {
         campaigns: typeof import("@mercurjs/core/api/vendor/campaigns/route") & {
@@ -975,6 +980,7 @@ export type Routes = {
         soldLots: typeof import("../src/api/vendor/sold-lots/route") & {
             $id: {
                 reveal: typeof import("../src/api/vendor/sold-lots/[id]/reveal/route");
+                shipped: typeof import("../src/api/vendor/sold-lots/[id]/shipped/route");
             };
         };
     };

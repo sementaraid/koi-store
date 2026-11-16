@@ -21,7 +21,8 @@ export function LotDossier({
   account,
   cart,
   join,
-  bid
+  bid,
+  wonLot
 }: {
   lot: AuctionProduct;
   lots: AuctionProduct[];
@@ -34,6 +35,8 @@ export function LotDossier({
   /** The bid slot's server-side state (US-042 T-042.3); omitted unless the
       visitor is a joined customer on a live lot. */
   bid?: BidControl;
+  /** The winner's own row (US-053 T-053.2); omitted unless they won it. */
+  wonLot?: { id: string; status: string };
 }) {
   /* `selected`/`onAttributesChange` are `useFeedSearch`'s attribute-facet pair
      — the floor has no facets, so `LotPage` (which takes no such props) must
@@ -52,6 +55,7 @@ export function LotDossier({
       cart={cart}
       join={join}
       bid={bid}
+      wonLot={wonLot}
       {...state}
     />
   );

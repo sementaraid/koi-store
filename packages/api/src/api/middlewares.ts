@@ -36,6 +36,7 @@ import {
 } from "./vendor/auctions/validators"
 import {
   VendorGetSoldLotsParams,
+  VendorMarkLotShipped,
   VendorRevealSoldLot,
 } from "./vendor/sold-lots/validators"
 import {
@@ -46,6 +47,7 @@ import {
 import { StorePhone } from "./store/customers/validators"
 import { StoreGetWalletParams } from "./store/wallet/validators"
 import { StoreGetLotsParams } from "./store/lots/validators"
+import { StoreGetWonLotsParams } from "./store/won-lots/validators"
 import { StorePlaceBid } from "./store/bids/validators"
 import {
   SCREENSHOT_MAX_BYTES,
@@ -289,6 +291,31 @@ export default defineMiddlewares({
         validateAndTransformBody(StorePlaceBid),
       ],
     },
+    // US-053 T-053.1: `shipped → delivered`, winner only. No body.
+    {
+      method: ["POST"],
+      matcher: "/store/won-lots/:id/delivered",
+      middlewares: [authenticate("customer", ["bearer", "session"])],
+    },
+    // US-051 T-051.6 / US-053 T-053.2: the caller's own won lots, read only.
+    // Customer token; no farmer contact in either response (D-052).
+    {
+      method: ["GET"],
+      matcher: "/store/won-lots",
+      middlewares: [
+        authenticate("customer", ["bearer", "session"]),
+        validateAndTransformQuery(StoreGetWonLotsParams, {
+          defaults: [],
+          isList: true,
+          defaultLimit: 20,
+        }),
+      ],
+    },
+    {
+      method: ["GET"],
+      matcher: "/store/won-lots/:id",
+      middlewares: [authenticate("customer", ["bearer", "session"])],
+    },
     {
       method: ["GET"],
       matcher: "/store/wallet",
@@ -437,6 +464,12 @@ export default defineMiddlewares({
       method: ["POST"],
       matcher: "/vendor/sold-lots/:id/reveal",
       middlewares: [validateAndTransformBody(VendorRevealSoldLot)],
+    },
+    // US-052 T-052.1: `paid → shipped`. Body optional (self-delivery).
+    {
+      method: ["POST"],
+      matcher: "/vendor/sold-lots/:id/shipped",
+      middlewares: [validateAndTransformBody(VendorMarkLotShipped)],
     },
     // US-032. Admin-authenticated by Medusa's /admin default (D-002).
     {

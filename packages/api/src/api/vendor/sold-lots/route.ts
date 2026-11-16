@@ -24,6 +24,8 @@ export type SoldLot = {
   status: string
   final_price: number | null
   closed_at: string | null
+  // US-052 T-052.1: null for self-delivery, and until the lot is shipped.
+  tracking_number: string | null
   auction: { id: string; delivery_method: string }
   product: { title: string | null; thumbnail: string | null }
   // D-052: name only. No phone, email or customer id, ever.
@@ -42,6 +44,7 @@ export const SOLD_LOT_FIELDS = [
   "status",
   "final_price",
   "closed_at",
+  "tracking_number",
   "winner_customer_id",
   "auction.id",
   "auction.seller_id",
@@ -130,6 +133,7 @@ export const toSoldLots = async (
       closed_at: row.closed_at
         ? new Date(row.closed_at as string).toISOString()
         : null,
+      tracking_number: (row.tracking_number as string | null) ?? null,
       auction: {
         id: auction.id as string,
         delivery_method: auction.delivery_method as string,

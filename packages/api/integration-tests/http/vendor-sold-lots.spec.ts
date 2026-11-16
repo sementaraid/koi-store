@@ -15,6 +15,8 @@ import type { AuctionStatus } from "../../src/modules/auction/models/auction"
 import type { LotStatus } from "../../src/modules/auction/models/lot"
 import { PII_AUDIT_MODULE } from "../../src/modules/pii-audit"
 import type PiiAuditModuleService from "../../src/modules/pii-audit/service"
+import { createStep, createWorkflow } from "@medusajs/framework/workflows-sdk"
+import { setLotFieldsStep } from "../../src/workflows/steps/lot"
 
 jest.setTimeout(120 * 1000)
 
@@ -29,6 +31,18 @@ const statusOf = (p: Promise<unknown>) =>
 // sold lots, the winner's masked address and the logged full-address reveal.
 
 const DAY = 24 * 60 * 60 * 1000
+
+// US-052 T-052.1: the real mutation, then a failure, so its compensation runs.
+const failAfterLotFieldsStep = createStep("qa-fail-after-lot-fields", async () => {
+  throw new Error("qa: simulated failure after setLotFieldsStep")
+})
+const setLotFieldsThenFailWorkflow = createWorkflow(
+  "set-lot-fields-then-fail-test",
+  function (input: { id: string; update: { status: "shipped" } }) {
+    setLotFieldsStep(input)
+    failAfterLotFieldsStep()
+  }
+)
 
 const STREET = "Jl. Raya Bogor 1"
 const POSTAL = "16111"
@@ -140,7 +154,11 @@ medusaIntegrationTestRunner({
       return row
     }
 
-    const auction = async (sellerId: string, status: AuctionStatus = "closed") => {
+    const auction = async (
+      sellerId: string,
+      status: AuctionStatus = "closed",
+      deliveryMethod: "courier" | "self_delivery" = "courier"
+    ) => {
       const start = Date.now() - 2 * DAY
       const [row] = await auctions().createAuctions([
         {
@@ -148,7 +166,7 @@ medusaIntegrationTestRunner({
           fee_category_id: "feecat_sold",
           start_at: new Date(start),
           end_at: new Date(start + DAY),
-          delivery_method: "courier",
+          delivery_method: deliveryMethod,
           status,
           listing_fee: 50_000,
           join_fee: 100_000,
@@ -464,6 +482,155 @@ medusaIntegrationTestRunner({
         expect(await reveal(farmer.vendor, {})).toEqual(400)
         expect(await reveal(farmer.customerHeaders, { field: "shipping_address" })).toEqual(401)
         expect(await auditRows(lotId)).toHaveLength(0)
+      })
+    })
+
+    describe("shipped", () => {
+      const seedShippable = async (options: {
+        status?: LotStatus
+        deliveryMethod?: "courier" | "self_delivery"
+      } = {}) => {
+        const farmer = await registerFarm()
+        const winnerCustomer = await winner([])
+        const a = await auction(
+          farmer.seller.id,
+          "closed",
+          options.deliveryMethod ?? "courier"
+        )
+        const prod = await p(`s${Math.random().toString(36).slice(2, 6)}`)
+        const lotId = await lot({
+          auctionId: a,
+          productId: prod.id,
+          status: options.status ?? "paid",
+          winnerCustomerId: winnerCustomer.id,
+        })
+        return { farmer, winnerCustomer, lotId }
+      }
+
+      const ship = (
+        headers: Record<string, string>,
+        lotId: string,
+        body?: unknown
+      ) =>
+        statusOf(
+          api.post(`/vendor/sold-lots/${lotId}/shipped`, body, { headers })
+        )
+
+      it("ships a paid courier lot with a tracking number (AC1, AC2)", async () => {
+        const { farmer, lotId } = await seedShippable()
+        const res = await api.post(
+          `/vendor/sold-lots/${lotId}/shipped`,
+          { tracking_number: "  JNE123  " },
+          { headers: farmer.vendor }
+        )
+        expect(res.status).toEqual(200)
+        expect(res.data.lot).toMatchObject({
+          id: lotId,
+          status: "shipped",
+          tracking_number: "JNE123",
+        })
+
+        const row = await auctions().retrieveLot(lotId)
+        expect(row.status).toEqual("shipped")
+        expect(row.tracking_number).toEqual("JNE123")
+        expect(row.shipped_at).toBeTruthy()
+      })
+
+      it("refuses won, open and shipped lots with 409 (AC1)", async () => {
+        const won = await seedShippable({ status: "won" })
+        expect(
+          await ship(won.farmer.vendor, won.lotId, { tracking_number: "X1" })
+        ).toEqual(409)
+        expect((await auctions().retrieveLot(won.lotId)).status).toEqual("won")
+
+        const open_ = await seedShippable({ status: "open" })
+        expect(
+          await ship(open_.farmer.vendor, open_.lotId, { tracking_number: "X1" })
+        ).toEqual(409)
+
+        const twice = await seedShippable()
+        expect(
+          await ship(twice.farmer.vendor, twice.lotId, { tracking_number: "X1" })
+        ).toEqual(200)
+        expect(
+          await ship(twice.farmer.vendor, twice.lotId, { tracking_number: "X2" })
+        ).toEqual(409)
+        expect((await auctions().retrieveLot(twice.lotId)).tracking_number).toEqual(
+          "X1"
+        )
+      })
+
+      it("requires a tracking number for courier, not for self-delivery (AC2)", async () => {
+        const courier = await seedShippable()
+        expect(await ship(courier.farmer.vendor, courier.lotId, {})).toEqual(400)
+        expect(
+          await ship(courier.farmer.vendor, courier.lotId, { tracking_number: "   " })
+        ).toEqual(400)
+        expect((await auctions().retrieveLot(courier.lotId)).status).toEqual("paid")
+
+        const self = await seedShippable({ deliveryMethod: "self_delivery" })
+        const res = await api.post(
+          `/vendor/sold-lots/${self.lotId}/shipped`,
+          {},
+          { headers: self.farmer.vendor }
+        )
+        expect(res.status).toEqual(200)
+        expect(res.data.lot.tracking_number).toBeNull()
+      })
+
+      it("404s another seller's lot and leaves it unchanged (AC1)", async () => {
+        const owner = await seedShippable()
+        const other = await registerFarm()
+        expect(
+          await ship(other.vendor, owner.lotId, { tracking_number: "NOPE" })
+        ).toEqual(404)
+        expect((await auctions().retrieveLot(owner.lotId)).status).toEqual("paid")
+      })
+
+      it("keeps winner and final price unchanged (D-026)", async () => {
+        const { farmer, winnerCustomer, lotId } = await seedShippable()
+        await ship(farmer.vendor, lotId, { tracking_number: "JNE9" })
+        const row = await auctions().retrieveLot(lotId)
+        expect(row.winner_customer_id).toEqual(winnerCustomer.id)
+        expect(Number(row.final_price)).toEqual(1_500_000)
+      })
+
+      it("restores the lot when a later step fails (compensation)", async () => {
+        const { lotId } = await seedShippable()
+        const run = await setLotFieldsThenFailWorkflow(getContainer()).run({
+          input: { id: lotId, update: { status: "shipped" } },
+          throwOnError: false,
+        })
+        expect(run.errors?.length).toBeGreaterThan(0)
+        const row = await auctions().retrieveLot(lotId)
+        expect(row.status).toEqual("paid")
+        expect(row.shipped_at).toBeNull()
+      })
+
+      it("allows a suspended farm and refuses a terminated one (AC4, D-054)", async () => {
+        const container = getContainer()
+        const suspended = await seedShippable()
+        await suspendSellerWorkflow(container).run({
+          input: { seller_id: suspended.farmer.seller.id, reason: "qa suspend" },
+        })
+        expect(
+          await ship(suspended.farmer.vendor, suspended.lotId, {
+            tracking_number: "SUS1",
+          })
+        ).toEqual(200)
+
+        const terminated = await seedShippable()
+        await terminateSellerWorkflow(container).run({
+          input: { seller_id: terminated.farmer.seller.id, reason: "qa terminate" },
+        })
+        expect(
+          await ship(terminated.farmer.vendor, terminated.lotId, {
+            tracking_number: "TER1",
+          })
+        ).toEqual(403)
+        expect((await auctions().retrieveLot(terminated.lotId)).status).toEqual(
+          "paid"
+        )
       })
     })
   },

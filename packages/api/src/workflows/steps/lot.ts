@@ -8,7 +8,16 @@ const auctionService = (container: { resolve: <T>(key: string) => T }) =>
   container.resolve<AuctionModuleService>(AUCTION_MODULE)
 
 export type LotFields = Partial<
-  Pick<LotDTO, "status" | "winner_customer_id" | "final_price" | "closed_at">
+  Pick<
+    LotDTO,
+    | "status"
+    | "winner_customer_id"
+    | "final_price"
+    | "closed_at"
+    | "tracking_number"
+    | "shipped_at"
+    | "delivered_at"
+  >
 >
 
 // Single mutation on one lot (US-050 close; US-052/053 reuse it for

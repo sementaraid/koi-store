@@ -1,0 +1,112 @@
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import type {
+  AuthenticatedMedusaRequest,
+  MedusaResponse,
+} from "@medusajs/framework/http"
+import type { LotStatus } from "../../../modules/auction/models/lot"
+import type { StoreGetWonLotsParamsType } from "./validators"
+
+// US-051 T-051.6 / US-053 T-053.2 (AC1 reading, D-046, D-052): the winner's
+// own won-and-later lots. The public `GET /store/lots/:id` deliberately hides
+// the winner, so the signed-in winner reads their lots here. No farmer contact
+// (no bank, holder name or phone): T-051.6's no-contact version. The
+// farmer-contact reveal stays parked with D-044.
+
+export type WonLot = {
+  id: string
+  status: string
+  final_price: number | null
+  closed_at: string | null
+  tracking_number: string | null
+  delivered_at: string | null
+  auction: { id: string; delivery_method: string }
+  product: { title: string | null; thumbnail: string | null }
+}
+
+export type StoreWonLotsResponse = {
+  lots: WonLot[]
+  count: number
+  limit: number
+  offset: number
+}
+
+export type StoreWonLotResponse = { lot: WonLot }
+
+// The caller's own lots only, so `winner_customer_id` is used as a filter, not
+// selectable. No seller field beyond the auction id.
+export const WON_LOT_FIELDS = [
+  "id",
+  "status",
+  "final_price",
+  "closed_at",
+  "tracking_number",
+  "delivered_at",
+  "auction.id",
+  "auction.delivery_method",
+  "product.title",
+  "product.thumbnail",
+]
+
+// Same list as the farmer's sold lots: a closed lot with a winner (D-035).
+export const WON_LOT_STATUSES = [
+  "won",
+  "paid",
+  "shipped",
+  "delivered",
+  "claimed",
+] as const satisfies readonly LotStatus[]
+
+const iso = (value: unknown): string | null =>
+  value ? new Date(value as string).toISOString() : null
+
+export const toWonLot = (row: Record<string, unknown>): WonLot => {
+  const auction = (row.auction ?? {}) as Record<string, unknown>
+  const product = row.product as
+    | { title?: string | null; thumbnail?: string | null }
+    | null
+    | undefined
+  return {
+    id: row.id as string,
+    status: row.status as string,
+    final_price: (row.final_price as number | null) ?? null,
+    closed_at: iso(row.closed_at),
+    tracking_number: (row.tracking_number as string | null) ?? null,
+    delivered_at: iso(row.delivered_at),
+    auction: {
+      id: auction.id as string,
+      delivery_method: auction.delivery_method as string,
+    },
+    product: {
+      title: product?.title ?? null,
+      thumbnail: product?.thumbnail ?? null,
+    },
+  }
+}
+
+// US-051 T-051.6: the caller's won-and-later lots, newest closed first.
+// Customer token only (middlewares.ts); identity from auth_context.
+export const GET = async (
+  req: AuthenticatedMedusaRequest<unknown, StoreGetWonLotsParamsType>,
+  res: MedusaResponse<StoreWonLotsResponse>
+) => {
+  const customerId = req.auth_context.actor_id
+  const { limit = 20, offset = 0 } = req.validatedQuery
+  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+
+  const { data, metadata } = await query.graph({
+    entity: "lot",
+    fields: WON_LOT_FIELDS,
+    filters: {
+      winner_customer_id: customerId,
+      status: [...WON_LOT_STATUSES],
+    },
+    pagination: { skip: offset, take: limit, order: { closed_at: "DESC" } },
+  })
+
+  res.json({
+    lots: data.map(toWonLot),
+    count: metadata?.count ?? 0,
+    limit,
+    offset,
+  })
+}

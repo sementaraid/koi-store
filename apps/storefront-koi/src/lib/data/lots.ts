@@ -1,6 +1,7 @@
 'use server';
 
 import { ClientError } from '@mercurjs/client';
+import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 import { ROUTES, lotHref } from '@/const/routes';
@@ -122,6 +123,62 @@ export const joinAuction = async (auctionId: string): Promise<JoinAuctionResult>
           }
         : { success: false as const, error: 'Gagal ikut lelang. Coba lagi.' }
     );
+};
+
+/* US-053 T-053.2. `GET /store/won-lots/:id` — customer token only. The public
+   lot read hides the winner (D-046), so the winner's own status and the
+   "mark delivered" action come from here; a 404 means "not the winner". */
+
+export type WonLot = {
+  id: string;
+  status: string;
+  final_price: number | null;
+  closed_at: string | null;
+  tracking_number: string | null;
+  delivered_at: string | null;
+  auction: { id: string; delivery_method: string };
+  product: { title: string | null; thumbnail: string | null };
+};
+
+/** The caller's own won lot, or `null` when they are not its winner.
+ *
+ * @remarks
+ * Never called for a signed-out visitor: the route answers 401 to an anonymous
+ * request, while `null` here is the ordinary "not the winner" answer that keeps
+ * the public view. Any other failure also reads as `null` — the page must still
+ * draw. */
+export const getWonLot = async (id: string): Promise<WonLot | null> => {
+  const headers = await getAuthHeaders();
+  if (!('authorization' in headers)) return null;
+
+  return sdk.store.wonLots.$id
+    .query({ $id: id, fetchOptions: { headers, cache: 'no-store' } })
+    .then(({ lot }) => lot as WonLot)
+    .catch(() => null);
+};
+
+export type MarkDeliveredResult =
+  | { success: true }
+  | { success: false; message: string; code?: string; status?: number };
+
+/** Mark one of the caller's own `shipped` won lots delivered (US-053 AC1). The
+    status is never flipped here: the page re-reads the server's row. */
+export const markWonLotDelivered = async (id: string): Promise<MarkDeliveredResult> => {
+  const headers = await getAuthHeaders();
+  if (!('authorization' in headers)) {
+    return { success: false, message: 'Sesi Anda telah berakhir. Masuk lagi.' };
+  }
+
+  try {
+    await sdk.store.wonLots.$id.delivered.mutate({ $id: id, fetchOptions: { headers } });
+    revalidatePath(lotHref(id));
+    return { success: true };
+  } catch (err: unknown) {
+    if (err instanceof ClientError) {
+      return { success: false, message: err.message, code: err.code, status: err.status };
+    }
+    return { success: false, message: 'Gagal menandai lot diterima. Coba lagi.' };
+  }
 };
 
 /* US-042 T-042.3. `POST /store/bids` — customer token only, identity from the

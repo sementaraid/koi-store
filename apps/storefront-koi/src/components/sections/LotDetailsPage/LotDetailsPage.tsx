@@ -4,7 +4,7 @@ import { FEED_LIMIT } from '@/const';
 import { lotHref } from '@/const/routes';
 import { toAuctionProduct, toAuctionProducts } from '@/lib/adapters/lot';
 import { getMyFarm } from '@/lib/data/farm';
-import { getJoinState, getLot, listLots } from '@/lib/data/lots';
+import { getJoinState, getLot, getWonLot, listLots } from '@/lib/data/lots';
 import { getWallet } from '@/lib/data/wallet';
 import { joinAvailable, joinControlState, type JoinControl } from '@/lib/helpers/join-auction';
 import { bidControlState, type BidControl } from '@/lib/helpers/place-bid';
@@ -31,6 +31,12 @@ export async function LotDetailsPage({ id }: { id: string }) {
 
   const { join, bid } = await getLotControls(storeLot, id);
 
+  /* US-053 T-053.2: only a sold lot has a winner. `getWonLot` returns null for
+     a signed-out visitor without calling the authenticated route, and null for
+     anyone who did not win — both keep the ordinary public view. */
+  const mine = storeLot.sold ? await getWonLot(id) : null;
+  const wonLot = mine ? { id: mine.id, status: mine.status } : undefined;
+
   return (
     <LotDossier
       lot={lot}
@@ -40,6 +46,7 @@ export async function LotDetailsPage({ id }: { id: string }) {
       cart={cart}
       join={join}
       bid={bid}
+      wonLot={wonLot}
     />
   );
 }

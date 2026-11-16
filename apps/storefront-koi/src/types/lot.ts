@@ -51,4 +51,7 @@ export type LotPageProps = ComponentProps<"div"> &
     /** The bid slot's server-side state (US-042 T-042.3); omitted unless the
         visitor is a joined, signed-in, non-owner customer. */
     bid?: BidControl
+    /** The winner's own row for this lot (US-053 T-053.2); omitted unless the
+        signed-in visitor won it. */
+    wonLot?: { id: string; status: string }
   }

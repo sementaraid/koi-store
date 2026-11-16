@@ -30,3 +30,11 @@ export const VendorRevealSoldLot = z.object({
 })
 
 export type VendorRevealSoldLotType = z.infer<typeof VendorRevealSoldLot>
+
+// US-052 T-052.1 (AC2): courier needs it, self-delivery doesn't. Optional
+// here; the workflow refuses a blank one for a courier lot.
+export const VendorMarkLotShipped = z.object({
+  tracking_number: z.string().trim().max(100).optional(),
+})
+
+export type VendorMarkLotShippedType = z.infer<typeof VendorMarkLotShipped>

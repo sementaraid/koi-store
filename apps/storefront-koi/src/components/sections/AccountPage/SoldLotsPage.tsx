@@ -24,12 +24,17 @@ import { formatDeadline } from '@/lib/helpers/format-deadline';
 import { formatPrice } from '@/lib/helpers/format-price';
 import { farmStatusInfo } from '@/lib/helpers/farm-status';
 import { soldLotStatusLabel } from '@/lib/helpers/sold-lot';
+import {
+  shippedTrackingLabel,
+  soldLotAction
+} from '@/lib/helpers/sold-lot-actions';
 import { getShell } from '@/lib/shell';
 
 import { listOrderGroups } from './AccountPage';
 import { countOpen } from './components/Orders';
 import { AccountFrame } from './components/AccountFrame';
 import { RevealAddress } from './components/RevealAddress';
+import { ShipLot } from './components/ShipLot';
 
 /** How many sold lots one page shows (matches the route's own default). */
 const PER_PAGE = 20;
@@ -166,6 +171,8 @@ function SoldLots({
             <Card className="px-5 py-1">
               {list.map((lot) => {
                 const status = soldLotStatusLabel(lot.status);
+                const action = soldLotAction(lot.status);
+                const tracking = shippedTrackingLabel(lot.status, lot.tracking_number);
                 return (
                   <div
                     key={lot.id}
@@ -214,6 +221,15 @@ function SoldLots({
                         lotId={lot.id}
                         address={lot.winner.address}
                       />
+                      {tracking ? (
+                        <p className="text-xs text-muted-foreground">{tracking}</p>
+                      ) : null}
+                      {action === 'ship' ? (
+                        <ShipLot
+                          lotId={lot.id}
+                          deliveryMethod={lot.auction.delivery_method}
+                        />
+                      ) : null}
                     </div>
                   </div>
                 );
