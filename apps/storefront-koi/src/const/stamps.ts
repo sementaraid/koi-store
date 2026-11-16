@@ -46,11 +46,14 @@ export type PillSpec = {
 /** A pill that also pulses — state the visitor must not miss. */
 export type StateSpec = PillSpec & { pulse: boolean }
 
-/** Lifecycle of a lot, as the floor words it. */
+/** Lifecycle of a lot, as the floor words it. `cancelled` (D-050): the lot was
+    pulled, not sold or unsold — its own tone, muted like `ended`, since
+    neither is still actionable. */
 export const AUCTION_STATUS = {
   live: { label: "Live", variant: "live", pulse: true },
   upcoming: { label: "Upcoming", variant: "neutral", pulse: false },
   ended: { label: "Ended", variant: "muted", pulse: false },
+  cancelled: { label: "Dibatalkan", variant: "muted", pulse: false },
 } as const satisfies Record<AuctionStatus, StateSpec>
 
 /**

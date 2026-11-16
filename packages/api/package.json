@@ -20,6 +20,9 @@
   "scripts": {
     "build": "medusa build && node ./scripts/bundle-dashboards.mjs",
     "seed": "medusa exec ./src/scripts/seed-koi.ts",
+    "qa-check": "medusa exec ./src/scripts/qa_seed_check.ts",
+    "qa-seed-lots": "medusa exec ./src/scripts/qa_seed_lots.ts",
+    "qa-seed-hidden": "medusa exec ./src/scripts/qa_seed_hidden.ts",
     "start": "medusa start",
     "dev": "medusa develop",
     "test:integration:http": "TEST_TYPE=integration:http NODE_OPTIONS=--experimental-vm-modules jest --silent=false --runInBand --forceExit",

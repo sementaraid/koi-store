@@ -5,11 +5,9 @@ import { Link } from "@/components/atoms/Link/Link"
 import { CONTAINER } from "@/const/layout"
 import { ROUTES, lotHref } from "@/const/routes"
 import {
-  DEFAULT_FEATURED,
   DEFAULT_HOME_CLAIMS,
   DEFAULT_HOME_PARTNERS,
   DEFAULT_HOME_STATS,
-  DEFAULT_LOTS,
 } from "@/const/home"
 import { Eyebrow } from "@/components/atoms/Eyebrow/Eyebrow"
 import { FeedGrid } from "@/components/atoms/FeedGrid/FeedGrid"
@@ -30,8 +28,8 @@ export type {
  * The house's front page: the bar, the hero, the floor, and the footer.
  *
  * Data in, page out — the same seam every koi module uses. It does not fetch,
- * bid or route: the app hands it lots, or it falls back to the kit's demo floor,
- * which is what Storybook and a fresh checkout render.
+ * bid or route: the app hands it lots (US-040 T-040.2c), or it draws the pitch
+ * without them.
  *
  * @remarks
  * Signed out unless an `account` arrives, because a landing page meets a
@@ -43,13 +41,13 @@ export type {
  * `/catalog`.
  *
  * @example
- * // App, once the API exists
- * const { featured, lots } = useHomeLots()
+ * // App (US-040 T-040.2c)
+ * const { featured, lots } = await loadHomeLots()
  * <Home featured={featured} lots={lots} account={session} />
  */
 export function Home({
-  featured = DEFAULT_FEATURED,
-  lots = DEFAULT_LOTS,
+  featured,
+  lots = [],
   stats = DEFAULT_HOME_STATS,
   claims = DEFAULT_HOME_CLAIMS,
   partners = DEFAULT_HOME_PARTNERS,
@@ -122,19 +120,24 @@ export function Home({
             </RenderIf>
           </div>
 
-          {/* The one lot worth a full tile: the next one to close. */}
-          <div className="w-full max-w-md justify-self-start lg:justify-self-end">
-            <ProductCard
-              product={featured}
-              href={lotHref(featured.id)}
-              action={
-                <Button size="md" className="flex-1">
-                  <Gavel aria-hidden />
-                  Pasang Bid
-                </Button>
-              }
-            />
-          </div>
+          {/* The one lot worth a full tile: the next one to close. No lot, no
+              tile — the pitch stands alone. */}
+          <RenderIf when={featured ?? null}>
+            {(lot) => (
+              <div className="w-full max-w-md justify-self-start lg:justify-self-end">
+                <ProductCard
+                  product={lot}
+                  href={lotHref(lot.id)}
+                  action={
+                    <Button size="md" className="flex-1">
+                      <Gavel aria-hidden />
+                      Pasang Bid
+                    </Button>
+                  }
+                />
+              </div>
+            )}
+          </RenderIf>
         </div>
       </section>
 

@@ -35,6 +35,27 @@ overlay, and the visible text. Missing one of them misses a class of bug.
   seed data is missing, report NOT VERIFIED; don't run the seed yourself
   unless the brief says so. Never create users or change data to get in.
 
+### If the MCP tools are not loaded
+
+They are only loaded after a session restart. Don't install Playwright in the
+app container: it has no root and no system libraries, and chromium fails with
+`libglib-2.0.so.0: cannot open shared object file`. Don't add a Playwright
+dependency either.
+
+Drive the same browser out of the MCP image instead, on the host network, so it
+reaches `127.0.0.1:3001`:
+
+```bash
+mkdir -p /tmp/koi-render
+docker run --rm --init --network=host --ipc=host --user "$(id -u):$(id -g)" \
+  -e HOME=/tmp -v /tmp/koi-render:/work -w /work --entrypoint node \
+  mcr.microsoft.com/playwright/mcp:latest script.js
+```
+
+chromium is at `/ms-playwright/chromium-*/chrome-linux*/chrome`; launch it with
+`--no-sandbox`. Read all four sources from that script: HTTP status, `console`
+messages, the `nextjs-portal` overlay's issue count, and the collected text.
+
 ## Procedure (per route, and again after every action)
 
 1. `browser_navigate` to the full URL. Note the HTTP status it reports.

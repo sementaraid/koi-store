@@ -21,8 +21,10 @@ import type { CountdownTarget } from "@/hooks/use-countdown"
 /** How a product is sold. */
 export type ProductKind = "auction" | "simple"
 
-/** Lifecycle of an auction lot, as the house tracks it. */
-export type AuctionStatus = "live" | "upcoming" | "ended"
+/** Lifecycle of an auction lot, as the house tracks it. `"cancelled"` is a lot
+    whose auction stayed public but the lot itself was pulled (D-050) — it
+    carries no price, no tally, no winner. */
+export type AuctionStatus = "live" | "upcoming" | "ended" | "cancelled"
 
 /** Where a fixed-price koi stands, as the breeder tracks it. */
 export type Availability = "available" | "reserved" | "sold"
@@ -160,6 +162,18 @@ export type AuctionState = {
       the house publishes only the totals, and the history view says so rather
       than drawing an empty list. */
   bids?: AuctionBid[]
+  /** Opening bid, in major units. Omit where the house has not said. */
+  openingBid?: number
+  /** Minimum raise, in major units. Omit where the house has not said. */
+  bidStep?: number
+  /** True for a lot pulled from an otherwise-public auction (D-050): no bid,
+      cart, terminal or sheet ever reads one, because every such lot is also
+      `status: "cancelled"`, which gates the price row before any of them run. */
+  cancelled?: boolean
+  /** Whether a closed lot sold. Set only when `status: "ended"`; the
+      "Terjual" / "Tidak terjual" label a closed lot's card and page draw
+      instead of a live price (D-046). */
+  sold?: boolean
 }
 
 /**

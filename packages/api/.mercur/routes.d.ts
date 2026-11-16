@@ -668,6 +668,7 @@ export type Routes = {
                 join: typeof import("../src/api/store/auctions/[id]/join/route");
             };
         };
+        bids: typeof import("../src/api/store/bids/route");
         custom: typeof import("../src/api/store/custom/route");
         farmUploads: typeof import("../src/api/store/farm-uploads/route");
         lots: typeof import("../src/api/store/lots/route") & {

@@ -1,31 +1,39 @@
 'use client';
 
-import { notFound } from 'next/navigation';
-
-import {
-  DEFAULT_AUCTION_FILTER,
-  DEFAULT_AUCTION_LOTS
-} from '@/const/auctions';
+import { DEFAULT_AUCTION_FILTER } from '@/const/auctions';
 import { LotPage } from '@/components/sections/LotDetailsPage/components/LotPage';
+import type { JoinControl } from '@/lib/helpers/join-auction';
+import type { BidControl } from '@/lib/helpers/place-bid';
 import type { HeaderAccount, HeaderCart } from '@/types/header';
-import type { AuctionStatus } from '@/types/product';
+import type { MediaItem } from '@/types/lot';
+import type { AuctionProduct, AuctionStatus } from '@/types/product';
 import { useFeedSearch } from '@/hooks/use-feed-search';
 
 /**
  * One lot's dossier, with the floor's grid under it paged through the URL.
- *
- * ponytail: the lot is looked up in the kit's demo floor, so an id outside it
- * is a 404 — which is the right answer either way. Replace the lookup with a
- * loader when `packages/api` has an auction module.
+ * The lot and the grid are the server page's own fetch (`getLot`/`listLots`,
+ * T-040.2b) — this component only reads the URL's filter and page.
  */
 export function LotDossier({
-  id,
+  lot,
+  lots,
+  media,
   account,
-  cart
+  cart,
+  join,
+  bid
 }: {
-  id: string;
+  lot: AuctionProduct;
+  lots: AuctionProduct[];
+  media: MediaItem[];
   account?: HeaderAccount;
   cart?: HeaderCart;
+  /** The join slot's server-side state (US-041); omitted when the lot is not
+      open to joins at all. */
+  join?: JoinControl;
+  /** The bid slot's server-side state (US-042 T-042.3); omitted unless the
+      visitor is a joined customer on a live lot. */
+  bid?: BidControl;
 }) {
   /* `selected`/`onAttributesChange` are `useFeedSearch`'s attribute-facet pair
      — the floor has no facets, so `LotPage` (which takes no such props) must
@@ -34,9 +42,17 @@ export function LotDossier({
      warning seen on `/lelang` and the lot dossier. */
   const { selected: _selected, onAttributesChange: _onAttributesChange, ...state } =
     useFeedSearch<AuctionStatus>(DEFAULT_AUCTION_FILTER);
-  const lot = DEFAULT_AUCTION_LOTS.find((candidate) => candidate.id === id);
 
-  if (!lot) notFound();
-
-  return <LotPage lot={lot} account={account} cart={cart} {...state} />;
+  return (
+    <LotPage
+      lot={lot}
+      lots={lots}
+      media={media}
+      account={account}
+      cart={cart}
+      join={join}
+      bid={bid}
+      {...state}
+    />
+  );
 }

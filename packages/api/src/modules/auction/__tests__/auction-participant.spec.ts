@@ -4,12 +4,13 @@ import AuctionModuleService from "../service"
 import { Auction } from "../models/auction"
 import { AuctionParticipant } from "../models/auction-participant"
 import { Lot } from "../models/lot"
+import { Bid } from "../models/bid"
 
 jest.setTimeout(60 * 1000)
 
 moduleIntegrationTestRunner<AuctionModuleService>({
   moduleName: AUCTION_MODULE,
-  moduleModels: [Auction, Lot, AuctionParticipant],
+  moduleModels: [Auction, Lot, Bid, AuctionParticipant],
   resolve: "./src/modules/auction",
   testSuite: ({ service }) => {
     describe("auction participant", () => {

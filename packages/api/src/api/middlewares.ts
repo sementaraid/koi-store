@@ -42,6 +42,7 @@ import {
 import { StorePhone } from "./store/customers/validators"
 import { StoreGetWalletParams } from "./store/wallet/validators"
 import { StoreGetLotsParams } from "./store/lots/validators"
+import { StorePlaceBid } from "./store/bids/validators"
 import {
   SCREENSHOT_MAX_BYTES,
   SCREENSHOT_MIME_TYPES,
@@ -273,6 +274,15 @@ export default defineMiddlewares({
           isList: true,
           defaultLimit: 20,
         }),
+      ],
+    },
+    {
+      method: ["POST"],
+      matcher: "/store/bids",
+      middlewares: [
+        // Auth first, so an anonymous request never gets its body parsed.
+        authenticate("customer", ["bearer", "session"]),
+        validateAndTransformBody(StorePlaceBid),
       ],
     },
     {

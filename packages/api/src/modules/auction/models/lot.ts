@@ -1,5 +1,6 @@
 import { model } from "@medusajs/framework/utils"
 import { Auction } from "./auction"
+import { Bid } from "./bid"
 
 // plan.md "Design rules": lot `open → unsold | won | cancelled` (D-035),
 // `won → paid → shipped` → delivered | claimed. Closing/shipping is US-050+.
@@ -34,6 +35,7 @@ export const Lot = model
     status: model.enum([...LOT_STATUSES]).default("open"),
     cancel_reason: model.text().nullable(),
     auction: model.belongsTo(() => Auction, { mappedBy: "lots" }),
+    bids: model.hasMany(() => Bid, { mappedBy: "lot" }),
   })
   .indexes([{ on: ["auction_id"] }])
   .checks([

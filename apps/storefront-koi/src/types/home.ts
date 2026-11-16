@@ -25,16 +25,16 @@ export type HomeClaim = {
 /**
  * Props for {@link Home}.
  *
- * Everything the page shows arrives here, with the kit's own demo data as the
- * fallback — so the app wires an API in at one call site, and Storybook drives
- * the same page from controls.
+ * Everything the page shows can arrive here; only `stats`, `claims` and (absent
+ * partners) still fall back to the kit's demo copy. Lots never do (US-040
+ * T-040.2c) — no lot means no hero tile and no strip.
  */
 export type HomeProps = ComponentProps<"div"> & {
-  /** The lot the hero leads with: the one closing soonest.
-      @defaultValue the kit's demo lot */
+  /** The lot the hero leads with: the one closing soonest. Omitted, the hero
+      draws its pitch without a tile. */
   featured?: AuctionProduct
   /** The floor's remaining lots, in given order. An empty list drops the band
-      rather than drawing an empty grid. @defaultValue the kit's demo three */
+      rather than drawing an empty grid. @defaultValue `[]` */
   lots?: AuctionProduct[]
   /** Hero figures. `[]` drops the row. @defaultValue the kit's three */
   stats?: HomeStat[]

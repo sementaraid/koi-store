@@ -2,7 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 
-import { DEFAULT_AUCTION_LOTS } from '@/const/auctions';
+import { DEFAULT_AUCTION_LOTS } from '@/const/live';
 import { LiveRoom } from '@/components/sections/LivePage/components/LiveRoom';
 import type { HeaderAccount, HeaderCart } from '@/types/header';
 

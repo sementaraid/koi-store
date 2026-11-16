@@ -13,9 +13,18 @@ import type { HomeProps } from '@/types/home';
  */
 export function Landing({
   account,
+  featured,
+  lots,
   partners
 }: {
   account?: HeaderAccount;
-} & Pick<HomeProps, 'partners'>) {
-  return <Home account={account} {...(partners ? { partners } : {})} />;
+} & Pick<HomeProps, 'featured' | 'lots' | 'partners'>) {
+  return (
+    <Home
+      account={account}
+      {...(featured ? { featured } : {})}
+      {...(lots ? { lots } : {})}
+      {...(partners ? { partners } : {})}
+    />
+  );
 }

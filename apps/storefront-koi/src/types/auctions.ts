@@ -43,7 +43,6 @@ export type AuctionFilter = GoodsFilter<AuctionStatus>
 export type AuctionsProps = ComponentProps<"div"> &
   FeedState<AuctionStatus> &
   FeedShell & {
-    /** Every lot the house has on the floor, unfiltered and unpaged.
-        @defaultValue the kit's demo ten */
-    lots?: AuctionProduct[]
+    /** Every lot the house has on the floor, unfiltered and unpaged. */
+    lots: AuctionProduct[]
   }

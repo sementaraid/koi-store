@@ -7,7 +7,6 @@ import { CONTAINER } from "@/const/layout"
 import { ROUTES, lotHref } from "@/const/routes"
 import {
   DEFAULT_AUCTION_FILTER,
-  DEFAULT_AUCTION_LOTS,
   DEFAULT_AUCTION_SORTS,
   DEFAULT_AUCTION_TABS,
   STATUS_LABEL,
@@ -43,8 +42,7 @@ export type {
  *
  * Data in, page out — the same seam every koi page uses. It does not fetch,
  * bid, or route: the app hands it the lots and the current filter, and hears
- * back through `onFilterChange` and `onPageChange`. Until then the kit's demo
- * floor renders, which is what Storybook and a fresh checkout show.
+ * back through `onFilterChange` and `onPageChange`.
  *
  * @remarks
  * Stateless on purpose. `filter` and `page` are the caller's, which is exactly
@@ -65,7 +63,7 @@ export type {
  * />
  */
 export function Auctions({
-  lots = DEFAULT_AUCTION_LOTS,
+  lots,
   filter = DEFAULT_AUCTION_FILTER,
   page = 1,
   pageSize = PAGE_SIZE,

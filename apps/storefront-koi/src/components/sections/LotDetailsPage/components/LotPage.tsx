@@ -3,13 +3,8 @@ import { ArrowRight, Gavel } from "lucide-react"
 
 import { Button, Card, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
-import {
-  DEFAULT_AUCTION_FILTER,
-  DEFAULT_AUCTION_LOTS,
-  DEFAULT_AUCTION_LOT,
-} from "@/const/auctions"
+import { DEFAULT_AUCTION_FILTER } from "@/const/auctions"
 import { CONTAINER, SECTION_LABEL } from "@/const/layout"
-import { DEFAULT_LIVE_MEDIA } from "@/const/live"
 import { ROUTES, lotHref, roomHref } from "@/const/routes"
 import { EmptyFeed } from "@/components/cells/EmptyFeed/EmptyFeed"
 import { FeedGrid } from "@/components/atoms/FeedGrid/FeedGrid"
@@ -17,11 +12,13 @@ import { FeedPagination } from "@/components/cells/FeedPagination/FeedPagination
 import { LiveBand } from "@/components/cells/LiveBand/LiveBand"
 import { LotIdentity } from "@/components/molecules/LotIdentity/LotIdentity"
 import { MediaStage } from "@/components/molecules/MediaStage/MediaStage"
-import { SpecSheet } from "@/components/cells/SpecSheet/SpecSheet"
+import { SpecCell, SpecSheet } from "@/components/cells/SpecSheet/SpecSheet"
 import { LotLayout } from "@/components/atoms/LotLayout/LotLayout"
 import { LotTrustList } from "@/components/molecules/LotTrust/LotTrust"
 import { PageShell } from "@/components/organisms/PageShell/PageShell"
 import { ProductCard } from "@/components/organisms/ProductCard/ProductCard"
+import { JoinAuction } from "@/components/sections/LotDetailsPage/components/JoinAuction"
+import { PlaceBid } from "@/components/sections/LotDetailsPage/components/PlaceBid"
 import type { LotPageProps } from "@/types/lot"
 import { formatDeadline } from "@/lib/helpers/format-deadline"
 import { formatPrice } from "@/lib/helpers/format-price"
@@ -44,18 +41,20 @@ export type { LotPageProps, MediaItem } from "@/types/lot"
  * @remarks
  * The evaluation rung between the floor and the room. A bidder arrives from a
  * grid tile to read what the lot is — bloodline, age, sex, awards, what the
- * breeder wrote about it — and the only way into the bidding is the room, so
- * the CTA points at `/live` with this lot's id rather than placing a bid here.
- * Nothing on this page places a bid: the countdown ticks and that is all, which
- * is exactly what should happen to a page a crawler may fetch at noon.
+ * breeder wrote about it. A joined customer on a live lot bids here (US-042
+ * T-042.3); every other visitor is pointed at the room or the join control,
+ * and the countdown ticks for a page a crawler may fetch at noon.
  *
- * @example
- * <LotPage lot={lot} />
+ * A closed lot (D-046) swaps the price-and-countdown cells for the final price
+ * and "Terjual" / "Tidak terjual" — never who won. A cancelled lot (D-050)
+ * drops the whole board for one line: no price, no OB/KB, no bid controls.
  */
 export function LotPage({
-  lot = DEFAULT_AUCTION_LOT,
-  lots = DEFAULT_AUCTION_LOTS,
-  media = DEFAULT_LIVE_MEDIA,
+  lot,
+  lots,
+  media,
+  join,
+  bid,
   liveHref,
   backHref = ROUTES.auctions,
   activeHref = ROUTES.auctions,
@@ -70,9 +69,23 @@ export function LotPage({
   ...rest
 }: LotPageProps) {
   const { listing, auction, info } = lot
-  const { currentBid, currency, bidCount, endsAt, status } = auction
+  const {
+    currentBid,
+    currency,
+    bidCount,
+    endsAt,
+    status,
+    cancelled,
+    sold,
+    openingBid,
+    bidStep,
+  } = auction
   const remaining = useCountdown(endsAt)
   const closing = isClosing(remaining)
+  /* `sold` only ever arrives on a closed lot (the adapter's own contract), so
+     reading it off is the same test as `status === "ended"` without a second
+     flag to keep in step. */
+  const closed = sold !== undefined
 
   const {
     items,
@@ -87,10 +100,6 @@ export function LotPage({
     page,
     pageSize
   )
-  /* Named for what it is: `media` is already defaulted to the demo set above,
-     so a caller that wants only the lot's own photo passes one item — there is
-     no second fallback to the photo here, because `media` is never undefined. */
-  const gallery = media
 
   return (
     <PageShell
@@ -109,7 +118,7 @@ export function LotPage({
       <LotLayout
         media={
           <>
-            <MediaStage items={gallery} />
+            <MediaStage items={media} />
 
             {/* The breeder's word, then the facts behind it — one column,
                 because a bidder weighing the two reads them together. Each
@@ -144,79 +153,145 @@ export function LotPage({
             <Card className="gap-0 overflow-hidden p-0">
               <LiveBand
                 title={
-                  status === "live"
-                    ? "Sedang dilelang di ruang siaran"
-                    : status === "ended"
-                      ? "Lelang sudah ditutup"
-                      : "Dilelang di ruang siaran"
+                  cancelled
+                    ? "Lot dibatalkan"
+                    : status === "live"
+                      ? "Sedang dilelang di ruang siaran"
+                      : status === "ended"
+                        ? "Lelang sudah ditutup"
+                        : "Dilelang di ruang siaran"
                 }
               />
 
               <div className="flex flex-col gap-4 p-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="min-w-0">
-                    <div className="text-xs text-muted-foreground">
-                      Penawaran tertinggi
-                    </div>
-                    <div className="truncate font-heading text-2xl font-extrabold tabular-nums">
-                      {formatPrice(currentBid, currency)}
-                    </div>
-                    <RenderIf when={bidCount}>
-                      {(count) => (
-                        <div className="text-xs text-muted-foreground tabular-nums">
-                          {count} bid
-                        </div>
-                      )}
-                    </RenderIf>
-                  </div>
+                {/* Pulled from an otherwise-public auction (D-050): no price,
+                    no OB/KB, no bid controls — the band above already says
+                    "Lot dibatalkan", this is the one line underneath it. */}
+                <RenderIf when={cancelled}>
+                  {() => (
+                    <p className="text-center text-xs text-muted-foreground">
+                      Lot ini dibatalkan oleh penyelenggara dan tidak lagi
+                      dilelang.
+                    </p>
+                  )}
+                </RenderIf>
 
-                  {/* `when={remaining !== null}`: `0` is a real value here — a
-                      clock that has run out — and `RenderIf`'s own gate is
-                      truthiness, which would hide it. */}
-                  <RenderIf when={remaining !== null}>
-                    {() => (
-                      <div className="min-w-0">
-                        <div className="text-xs text-muted-foreground">
-                          {remaining! > 0 ? "Ditutup dalam" : "Lelang"}
+                <RenderIf when={!cancelled}>
+                  {() => (
+                    <>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="min-w-0">
+                          <div className="text-xs text-muted-foreground">
+                            {closed ? "Harga akhir" : "Penawaran tertinggi"}
+                          </div>
+                          <div className="truncate font-heading text-2xl font-extrabold tabular-nums">
+                            {formatPrice(currentBid, currency)}
+                          </div>
+                          <RenderIf when={bidCount !== undefined}>
+                            {() => (
+                              <div className="text-xs text-muted-foreground tabular-nums">
+                                {bidCount} bid
+                              </div>
+                            )}
+                          </RenderIf>
                         </div>
-                        <div
-                          className={cn(
-                            "truncate font-heading text-2xl font-extrabold tabular-nums",
-                            closing && "text-destructive"
-                          )}
-                        >
-                          {remaining! > 0
-                            ? formatRemaining(remaining!)
-                            : "ditutup"}
-                        </div>
-                        <RenderIf when={endsAt}>
-                          {(at) => (
-                            <div className="text-xs text-muted-foreground tabular-nums">
-                              {formatDeadline(at)} WIB
+
+                        {/* A closed lot swaps the clock for the sold label —
+                            the figure a closed lot's second cell carries is
+                            never a countdown (D-046). `when={closed ? true :
+                            remaining !== null}`: `0` is a real countdown value
+                            here, and only an open lot reads `remaining` at
+                            all. */}
+                        <RenderIf when={closed ? true : remaining !== null}>
+                          {() => (
+                            <div className="min-w-0">
+                              <div className="text-xs text-muted-foreground">
+                                {closed
+                                  ? "Status"
+                                  : remaining! > 0
+                                    ? "Ditutup dalam"
+                                    : "Lelang"}
+                              </div>
+                              <div
+                                className={cn(
+                                  "truncate font-heading text-2xl font-extrabold tabular-nums",
+                                  !closed && closing && "text-destructive"
+                                )}
+                              >
+                                {closed
+                                  ? sold
+                                    ? "Terjual"
+                                    : "Tidak terjual"
+                                  : remaining! > 0
+                                    ? formatRemaining(remaining!)
+                                    : "ditutup"}
+                              </div>
+                              <RenderIf when={closed ? undefined : endsAt}>
+                                {(at) => (
+                                  <div className="text-xs text-muted-foreground tabular-nums">
+                                    {formatDeadline(at)} WIB
+                                  </div>
+                                )}
+                              </RenderIf>
                             </div>
                           )}
                         </RenderIf>
                       </div>
-                    )}
-                  </RenderIf>
-                </div>
 
-                <Button
-                  size="lg"
-                  render={<Link href={liveHref ?? roomHref(lot.id)} />}
-                  nativeButton={false}
-                  className="w-full"
-                >
-                  <Gavel aria-hidden />
-                  {status === "live"
-                    ? "Masuk ruang bidding"
-                    : "Lihat ruang lelang"}
-                  <ArrowRight aria-hidden />
-                </Button>
+                      <div className="grid grid-cols-2 gap-3">
+                        <SpecCell
+                          label="Opening bid (OB)"
+                          value={
+                            openingBid !== undefined
+                              ? formatPrice(openingBid, currency)
+                              : undefined
+                          }
+                        />
+                        <SpecCell
+                          label="Kenaikan bid (KB)"
+                          value={
+                            bidStep !== undefined
+                              ? formatPrice(bidStep, currency)
+                              : undefined
+                          }
+                        />
+                      </div>
 
-                <p className="text-center text-xs text-muted-foreground">
-                  Bid &amp; beli langsung dilakukan di ruang siaran.
-                </p>
+                      <Button
+                        size="lg"
+                        render={<Link href={liveHref ?? roomHref(lot.id)} />}
+                        nativeButton={false}
+                        className="w-full"
+                      >
+                        <Gavel aria-hidden />
+                        {status === "live"
+                          ? "Masuk ruang bidding"
+                          : "Lihat ruang lelang"}
+                        <ArrowRight aria-hidden />
+                      </Button>
+
+                      {/* Joining is the way in (US-041 T-041.2); a joined
+                          customer bids here instead (US-042 T-042.3). Both
+                          slots are decided on the server; a closed or
+                          cancelled lot never reaches this branch. */}
+                      <RenderIf when={join}>
+                        {(control) => <JoinAuction {...control} />}
+                      </RenderIf>
+
+                      <RenderIf when={bid}>
+                        {(control) => <PlaceBid {...control} />}
+                      </RenderIf>
+
+                      <RenderIf when={!bid}>
+                        {() => (
+                          <p className="text-center text-xs text-muted-foreground">
+                            Bid &amp; beli langsung dilakukan di ruang siaran.
+                          </p>
+                        )}
+                      </RenderIf>
+                    </>
+                  )}
+                </RenderIf>
               </div>
             </Card>
 

@@ -4,10 +4,11 @@ import { test } from "node:test"
 /* Relative paths only: the test runner strips types without reading tsconfig,
    so the `@/` alias does not resolve here. Type-only imports are erased, which
    is why the component modules can be named at all. */
-import { DEFAULT_AUCTION_LOTS } from "../../const/auctions.ts"
 import { DEFAULT_CATALOG_KOI } from "../../const/catalog.ts"
 import { DEFAULT_SUPPLIES } from "../../const/marketplace.ts"
 import type {
+  AuctionProduct,
+  AuctionStatus,
   Availability,
   GoodsFilter,
   SimpleProduct,
@@ -151,22 +152,47 @@ test("the price sorts read the asking price, not a bid", () => {
 })
 
 /* The floor, through the same read model: the status is the lifecycle, the
-   figure is the current bid, and only this feed has a deadline to order by. */
+   figure is the current bid, and only this feed has a deadline to order by.
+   A local fixture (T-040.2b) rather than `const/auctions.ts`'s demo lots —
+   the floor now reads the API, so this test owns its own lots. */
 const floor = {
   statusOf: lotStatus,
   priceOf: lotPrice,
   deadlineOf: lotDeadline,
 }
 
+const lot = (
+  id: string,
+  status: AuctionStatus,
+  currentBid: number,
+  endsAt: number
+): AuctionProduct => ({
+  kind: "auction",
+  id,
+  title: id,
+  listing: { category: "Kohaku" },
+  auction: { status, currentBid, endsAt },
+})
+
+const LOTS: AuctionProduct[] = [
+  lot("1", "live", 48_500_000, Date.now() + 42 * 60_000),
+  lot("2", "live", 21_000_000, Date.now() + 3 * 3_600_000),
+  lot("3", "upcoming", 4_250_000, Date.now() + 52 * 3_600_000),
+  lot("4", "ended", 11_600_000, Date.now() - 6 * 3_600_000),
+  lot("5", "ended", 39_800_000, Date.now() - 30 * 3_600_000),
+  lot("6", "upcoming", 6_750_000, Date.now() + 3 * 24 * 3_600_000),
+  lot("7", "live", 63_000_000, Date.now() + 8 * 60_000),
+]
+
 test("a lot tabs by its lifecycle and sorts by the current bid", () => {
   const live = filterGoods(
-    DEFAULT_AUCTION_LOTS,
+    LOTS,
     { status: "live", category: "", sort: "price-desc" },
     floor,
     1,
     99
   )
-  assert.ok(live.total > 0, "the demo floor must have live lots")
+  assert.ok(live.total > 0, "the fixture must have live lots")
   assert.ok(live.items.every((lot) => lot.auction.status === "live"))
   const bids = live.items.map((lot) => lot.auction.currentBid)
   assert.deepEqual(
@@ -177,7 +203,7 @@ test("a lot tabs by its lifecycle and sorts by the current bid", () => {
 
 test("ending-soon leads with the nearest deadline", () => {
   const { items } = filterGoods(
-    DEFAULT_AUCTION_LOTS,
+    LOTS,
     { status: "all", category: "", sort: "ending-soon" },
     floor,
     1,
@@ -199,7 +225,7 @@ test("the demo feeds have more items than one page", () => {
   assert.ok(shop.total > 6, "demo shop must exercise paging")
   assert.ok(shop.pageCount > 1)
 
-  const auctions = filterGoods(DEFAULT_AUCTION_LOTS, ALL, floor, 1, 6)
-  assert.ok(auctions.total > 6, "demo floor must exercise paging")
+  const auctions = filterGoods(LOTS, ALL, floor, 1, 6)
+  assert.ok(auctions.total > 6, "fixture must exercise paging")
   assert.ok(auctions.pageCount > 1)
 })

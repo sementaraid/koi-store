@@ -2,10 +2,12 @@ import { MedusaService } from "@medusajs/framework/utils"
 import type { InferEntityType } from "@medusajs/framework/types"
 import { Auction } from "./models/auction"
 import { AuctionParticipant } from "./models/auction-participant"
+import { Bid } from "./models/bid"
 import { Lot } from "./models/lot"
 
 export type AuctionDTO = InferEntityType<typeof Auction>
 export type LotDTO = InferEntityType<typeof Lot>
+export type BidDTO = InferEntityType<typeof Bid>
 export type AuctionParticipantDTO = InferEntityType<typeof AuctionParticipant>
 
 // Thin CRUD only (best-practices/modules). Seller, fee category and product
@@ -14,6 +16,7 @@ export type AuctionParticipantDTO = InferEntityType<typeof AuctionParticipant>
 class AuctionModuleService extends MedusaService({
   Auction,
   Lot,
+  Bid,
   AuctionParticipant,
 }) {}
 

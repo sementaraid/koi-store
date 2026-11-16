@@ -3,7 +3,7 @@ import { Gavel, History } from "lucide-react"
 
 import { Button, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
-import { DEFAULT_AUCTION_LOTS, bidsFor } from "@/const/auctions"
+import { DEFAULT_AUCTION_LOTS, bidsFor } from "@/const/live"
 import { CONTAINER, SECTION_LABEL } from "@/const/layout"
 import {
   DEFAULT_BROADCAST_TICKER,
