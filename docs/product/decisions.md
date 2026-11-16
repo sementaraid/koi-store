@@ -51,7 +51,7 @@ The product-owner agent drafts entries. The owner approves them.
 | D-041 | 2026-11-15 | Every seller suspend and every ban needs a reason (extends D-015) | In force |
 | D-042 | 2026-11-15 | Admins see masked PII everywhere; a full value only through an explicit reveal, logged (answers `mvp-Q25`) | In force |
 | D-043 | 2026-11-15 | Column-level encryption for NIK, bank account and phone on top of disk encryption; the wallet and top-up tables are included in US-092 (answers `mvp-Q26`) | In force |
-| D-044 | 2026-11-15 | The winner of a lot sees the farmer's full bank account for that lot only, through the logged reveal (answers `mvp-Q27`) | In force; the 2026-11-15 "farmer reveals the winner's phone" confirmation superseded by D-052 |
+| D-044 | 2026-11-15 | The winner of a lot sees the farmer's full bank account for that lot only, through the logged reveal (answers `mvp-Q27`) | On hold (owner reconsidering, 2026-11-16): the winner sees no farmer contact for now; the 2026-11-15 "farmer reveals the winner's phone" confirmation superseded by D-052 |
 | D-045 | 2026-11-15 | A person sees their own full PII on their own record; every other caller, admins included, gets the mask | In force |
 | D-046 | 2026-11-15 | Public pages show `scheduled`, `live` and `closed` auctions; a closed lot shows final price and sold/unsold, never the winner | In force; "masked name" clause superseded in part by D-051 |
 | D-047 | 2026-11-15 | Join ships before bans; the ban check lands with strikes (US-059) | In force |
@@ -59,10 +59,12 @@ The product-owner agent drafts entries. The owner approves them.
 | D-049 | 2026-11-15 | Approval is refused once the auction's start time has passed | In force |
 | D-050 | 2026-11-15 | A cancelled lot inside a public auction stays visible, labelled "Dibatalkan", with no price, final price, winner or bids | In force |
 | D-051 | 2026-11-16 | Bidders shown as `Bud***x7` (3 letters of first name + `***` + last 2 characters of the customer id); full masked bid history on open and closed lots (supersedes D-046 in part) | In force |
-| D-052 | 2026-11-16 | No phone between winner and farmer in the MVP: the winner gets only the farmer's bank account (D-044 reveal), the farmer only the winner's name; no wa.me link (answers `mvp-Q34`; supersedes D-044's phone confirmation) | In force |
+| D-052 | 2026-11-16 | No phone between winner and farmer in the MVP: the winner gets only the farmer's bank account (D-044 reveal), the farmer only the winner's name; no wa.me link (answers `mvp-Q34`; supersedes D-044's phone confirmation) | In force for "no phone either way"; the farmer also gets the winner's address (D-056); the winner's bank-account part on hold with D-044 |
 | D-053 | 2026-11-16 | A lot the winner never marks delivered stays `shipped`; no job, no setting in the MVP (answers `mvp-Q35`) | In force |
 | D-054 | 2026-11-16 | A farm suspended after approval may still mark its already-sold lots paid and shipped; it can't create auctions or lots; a terminated farm can't (answers `mvp-Q36`) | In force |
 | D-055 | 2026-11-16 | Error messages the Koi apps show verbatim are Indonesian, written on the backend, rupiah in `id-ID`; `@mercurjs/client` is not patched | In force |
+| D-056 | 2026-11-16 | The farmer gets the winner's default shipping address: masked (city + province) on the sold lot, full only through a logged reveal (answers `mvp-Q37`; relaxes D-052 for the address only, never the phone) | In force |
+| D-057 | 2026-11-16 | If the winner's bank reveal returns, it returns the account number and the account-holder name, both full, one audit row (answers `mvp-Q39`) | On hold with D-044: intended rule, not built |
 
 ---
 
@@ -498,6 +500,15 @@ column encryption protects both.
 **Source:** Owner, answer to `mvp-Q26` (2026-11-15).
 
 ### D-044: Winner sees the farmer's full bank account for its own lot
+**Status: On hold (owner reconsidering, 2026-11-16).** Owner: "for now don't
+show farmer contact, that's all, I will recalculate it." Not superseded: the
+text below stays as the rule to restore if the owner brings it back. Until then
+the winner sees no farmer contact at all (no phone, D-052; no bank account or
+holder name). Context, not a decision: the owner is considering Xendit escrow
+(`docs/releases/README.md`, Ideas not yet planned), under which the winner never
+needs the farmer's bank account. If restored, the reveal also returns the
+holder name (D-057).
+
 **Decision:** The winner of a lot sees the farmer's **full** bank account, but
 only for the lot they won, and only through the same logged reveal as D-042
 (who, when, lot record, field). The farmer's view of the winner's phone stays
@@ -639,6 +650,9 @@ number, masked or revealed.
 **Reason:** Phones are PII (D-039); the bank account is the only contact data
 a winner needs to pay.
 **Source:** Owner, answer to `mvp-Q34` (2026-11-16).
+**Changed 2026-11-16:** the farmer also gets the winner's saved address
+(masked, full through a logged reveal, D-056); "no phone either way" stands.
+The winner's bank-account bullet is on hold with D-044.
 
 ### D-053: A lot never marked delivered stays shipped
 **Decision:** When the winner never marks a lot delivered, nothing happens in
@@ -680,3 +694,45 @@ Indonesian on the backend, with rupiah formatted `id-ID` (`Rp1.100.000`).
 **Reason:** The customer sees exactly what the server wrote; a translation in
 the client can't see fields the client already dropped.
 **Source:** Owner (2026-11-16), after the US-042 `bid_too_low` follow-up.
+
+### D-056: Farmer gets the winner's saved address, masked, full through a logged reveal
+**Decision:** The farmer ships to the address already saved on the winner's
+customer account: the winner's **default shipping address**
+(`customer_address.is_default_shipping = true`; Medusa allows at most one per
+customer, unique index `IDX_customer_address_unique_customer_shipping`).
+- **Mask (one rule):** on the farmer's sold-lot row only `city` and `province`
+  are shown. `address_1`, `address_2` and `postal_code` are **not sent** in the
+  row at all. The helpers in `packages/api/src/utils/mask.ts` keep a value's
+  first or last characters, which on a street line would leak the house number,
+  so none of them is used for addresses.
+- **Reveal:** the full address comes only through an explicit reveal by the
+  farmer, for their own sold lot, logged in `pii_reveal_audit` exactly like
+  D-042/D-044: who (`actor_type`, `actor_id` from `req.auth_context`), when,
+  `record_type: "lot"`, `record_id: <lot id>`, `field: "shipping_address"`. One
+  reveal returns the whole address (`first_name`, `last_name`, `address_1`,
+  `address_2`, `postal_code`, `city`, `province`, `country_code`) and writes
+  **one** audit row. The address's own `phone` and `company` are never read.
+- The address is read at reveal time (the current default), not copied onto
+  the lot at close.
+- **No default address:** the farmer's row shows "Alamat belum diisi" and has no
+  reveal; a reveal call gets 404 with no audit row. The winner's won-lot page
+  shows a prompt to add one, linking to the account address page (`/akun/alamat`).
+- **Relaxes D-052 for the address only.** No phone either way still holds: the
+  farmer never gets the winner's phone (the account's or the address's), masked
+  or full, and there is no `wa.me` link.
+- Answered `mvp-Q37`, option (a) with a logged reveal.
+**Reason:** The farmer needs a full address to ship; the MVP has no order to
+carry one, and the account already holds it. The reveal keeps every look traced.
+**Source:** Owner, answer to `mvp-Q37` (2026-11-16).
+
+### D-057: The winner's bank reveal includes the holder name (on hold with D-044)
+**Status: On hold with D-044 (owner reconsidering, 2026-11-16). Intended rule,
+not built.**
+**Decision:** If the winner's reveal of the farmer's bank account (D-044) comes
+back, one reveal returns the full `account_number` **and** the full
+`holder_name`, and writes **one** audit row with `field: "bank_account"`
+(`record_type: "lot"`), the same one-reveal-one-row shape as D-056.
+- Answered `mvp-Q39`, option (b), with one row per reveal instead of one per
+  field.
+**Reason:** The payer checks the name on the account before transferring.
+**Source:** Owner, answer to `mvp-Q39` (2026-11-16).

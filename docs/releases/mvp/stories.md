@@ -24,31 +24,56 @@ on them.
 
 **Counts** (computed from this file, 2026-11-16):
 
-| Epic | Stories done | In progress | Todo | Blocked | Tasks done | Tasks open |
-|---|---|---|---|---|---|---|
-| 0 Foundations | 3 | 0 | 0 | 0 | 9 | 0 |
-| 1 Wallet | 6 | 0 | 0 | 0 | 22 | 0 |
-| 2 Becoming a farmer | 2 | 0 | 0 | 0 | 11 | 5 |
-| 3 Auctions for farmers | 4 | 0 | 0 | 0 | 23 | 0 |
-| 4 Joining and bidding | 3 | 0 | 4 | 0 | 14 | 11 |
-| 5 Closing and after-sale | 0 | 0 | 12 | 0 | 0 | 40 |
-| 6 Admin operations | 0 | 0 | 6 | 0 | 0 | 22 |
-| 7 WhatsApp bot | 0 | 0 | 0 | 6 | 0 | 12 |
-| 8 Pilot | 0 | 0 | 1 | 0 | 0 | 5 |
-| **Total** | **18** | **0** | **23** | **6** | **79** | **95** |
+| Epic | Stories done | In progress | Todo | Parked | Blocked | Tasks done | Tasks open | Tasks parked |
+|---|---|---|---|---|---|---|---|---|
+| 0 Foundations | 3 | 0 | 0 | 0 | 0 | 9 | 0 | 0 |
+| 1 Wallet | 6 | 0 | 0 | 0 | 0 | 22 | 0 | 0 |
+| 2 Becoming a farmer | 2 | 0 | 0 | 0 | 0 | 11 | 5 | 0 |
+| 3 Auctions for farmers | 4 | 0 | 0 | 0 | 0 | 23 | 0 | 0 |
+| 4 Joining and bidding | 3 | 0 | 4 | 0 | 0 | 14 | 11 | 0 |
+| 5 Closing and after-sale | 0 | 0 | 10 | 2 | 0 | 0 | 44 | 4 |
+| 6 Admin operations | 0 | 0 | 6 | 0 | 0 | 0 | 22 | 0 |
+| 7 WhatsApp bot | 0 | 0 | 0 | 0 | 6 | 0 | 12 | 0 |
+| 8 Pilot | 0 | 0 | 1 | 0 | 0 | 0 | 5 | 0 |
+| **Total** | **18** | **0** | **21** | **2** | **6** | **79** | **99** | **4** |
 
 Epic 2's open tasks are US-021's T-021.2/.3/.4/.6 (follow-ups on a `done` story)
 and the new T-020.10 (seed an admin user). Blocked: US-080 – US-085 (mvp-Q12).
 Epic 5 task count drops by one: T-051.3b dropped (D-052). US-051 unblocked by D-052 (2026-11-16).
 
+**Parked (2026-11-16, owner recalculating the payment model; not blocked by a question).**
+Stories: US-056, US-058. Tasks inside `todo` stories: T-051.1a, T-051.3a, T-051.2a
+(winner bank-account reveal; D-044 on hold), T-052.4 (mark paid; a Xendit webhook
+replaces it under escrow). Partial: US-059's "winner didn't pay" strike part.
+**Only newly blocked: none.** `mvp-Q37` and `mvp-Q39` answered (D-056, D-057).
+
+**Needed under either payment model (keep building):** US-043, US-050, US-051
+farmer side (T-051.1b, .5, .2b), the shipped half of US-052, US-053 (marking
+delivered becomes the payout trigger), US-054/US-055 (the claim window gates the
+payout), US-057, US-060, US-061.
+
+**Payment model open (owner, 2026-11-16):** until it is decided, an auction can
+end with a winner but with **no in-app way to pay**. Owner is recalculating;
+planned direction (not a decision) is Xendit escrow (`docs/releases/README.md`,
+Ideas not yet planned). D-044 is on hold, so the 1×24 h payment deadline
+(US-058, strikes) can't work end to end. Stopgap options **not chosen**:
+(1) the pilot pays off-platform, as WhatsApp auctions do today; (2) wallet-held
+escrow without Xendit (a new money flow, needs owner approval).
+
+**Docs out of date (owner edit needed, not edited here):**
+`apps/storefront-koi/CLAUDE.md:97-98` still says the farmer's WhatsApp and bank
+details are shown to the winner and the farmer sees the winner's WhatsApp. It
+contradicts D-052 (no phone either way), D-044 (on hold) and D-056.
+
 **Next in milestone order:**
 1. US-043 T-043.1 (extend + the bid-after-end gate, the gap found while checking
    the brief), T-043.2 in the same run, then T-043.3 (storefront).
 2. US-050 T-050.1 → T-050.2 (close workflows + `close-lots` job), T-050.3 qa.
-3. US-051: farmer side T-051.1b → T-051.2b (sold lots, winner's name only, D-052);
-   winner side T-051.1a → T-051.3a → T-051.2a (won lots + bank-account reveal, D-044).
-4. US-052 T-052.1/.2/.3 (no `validateSellerOpenStep`, D-054), then US-053
-   T-053.1, T-053.2 (after T-051.2a), T-053.3.
+3. US-051: farmer side T-051.1b → T-051.5 → T-051.2b (sold lots, winner's name +
+   masked address, D-052/D-056); winner side T-051.6 → T-051.7 (won lots, no farmer
+   contact, D-044 on hold). T-051.1a/.3a/.2a parked.
+4. US-052 shipped half (T-052.1 split, T-052.2 shipped only, T-052.3), then US-053
+   T-053.1, T-053.2 (after T-051.7), T-053.3. T-052.4 (mark paid) parked.
 5. US-044 (D-051) can run anytime after US-042's commit; T-044.1 touches only the
    store lot routes, no bid workflow.
 T-020.10 can run any time; qa's admin browser checks need it.
@@ -1565,40 +1590,56 @@ rewritten on a second run; close without the `lot:<id>` lock; a store response n
 Report PASS/FAIL per AC with file:line and command output. Don't change app code.
 ```
 
-### US-051 Winner sees the farmer's bank account; farmer sees the winner's name · `todo`
+### US-051 Farmer sees the winner's name and address; winner sees their won lots · `todo` (winner bank-account part `parked (owner reconsidering, 2026-11-16)`)
 **Depends on:** US-092 (masking and the logged reveal).
-As a **winner**, I want the farmer's bank account so that I can pay within
-1×24 hours. *(Plan: Closing and winners; D-044, D-052)*
-- AC1: Only the winner of that lot sees the farmer's bank account (full, via the logged reveal, D-044) and nothing else, plus the 1×24 h deadline. No phone either way: no farmer phone or WhatsApp number, masked or full, and no `wa.me` link (D-052).
-- AC2: The farmer sees only the winner's name for their own sold lots. No winner phone, masked or full, and no reveal (D-052).
-- AC3: The farmer's bank account is shown masked; the winner reveals the full account number for their own winning lot only, through the logged reveal (D-044). Until the reveal, the winner sees a mask. *(Account-holder name: `mvp-Q39`, non-blocking; it stays masked until answered.)*
-- AC4: Every reveal is recorded: who, when, which lot, which field (D-042, D-044).
-**PII (D-039, D-044, D-052):** the full bank number is a narrow exception for the winner's own lot, through the same logged reveal as the admin. No phone crosses between winner and farmer in the MVP (D-052 supersedes the 2026-11-15 D-044 confirmation that let the farmer reveal the winner's phone).
-- [ ] T-051.1a [backend] `GET /store/won-lots`: the winner's own won lots, farm name, bank name, masked account number and holder name, 1×24 h deadline; no phone (D-052)
-- [ ] T-051.3a [backend] `POST /store/won-lots/:id/reveal`: winner reveals the farmer's bank account number for their own lot; one audit row per reveal
-- [ ] T-051.1b [backend] `GET /vendor/sold-lots`: the farmer's own sold lots with the winner's name; no phone (D-052)
+As a **farmer**, I want the winner's name and delivery address so that I can ship the fish; as a **winner**, I want
+my won lots listed so that I can see what I won and mark it delivered. *(Plan: Closing and winners, Delivery; D-044
+(on hold), D-052, D-056, D-057)*
+- AC1 *(parked, owner reconsidering, 2026-11-16; D-044 on hold)*: Only the winner of that lot sees the farmer's bank account (full, via the logged reveal, D-044) and nothing else, plus the 1×24 h deadline. No phone either way: no farmer phone or WhatsApp number, masked or full, and no `wa.me` link (D-052).
+- AC2: The farmer sees, for their own sold lots, the winner's name and the winner's default shipping address masked: `city` and `province` only; street lines and postal code are not sent (D-056). No winner phone, masked or full (D-052). *(Changed 2026-11-16, `mvp-Q37`: was "name only, no reveal".)*
+- AC3 *(parked with AC1; rule recorded by D-057, `mvp-Q39`)*: The farmer's bank account is shown masked; the winner reveals the full account number **and** full account-holder name for their own winning lot only, in one logged reveal (`field: "bank_account"`, one audit row) (D-044, D-057). Until the reveal, the winner sees a mask.
+- AC4: Every reveal is recorded: who, when, which lot, which field (D-042, D-056).
+- AC5: The farmer reveals the winner's full default shipping address for their own sold lot only, through the logged reveal: one `pii_reveal_audit` row per reveal, `record_type: "lot"`, `record_id: <lot id>`, `field: "shipping_address"`. If the winner has no default shipping address, the row shows "Alamat belum diisi" with no reveal button, and a reveal call gets 404 with no audit row (D-056).
+- AC6: The winner sees their own won lots with no farmer contact (no bank account, no holder name, no phone). A winner with no default shipping address sees a prompt on the won lot to add one, linking to `/akun/alamat` (D-056).
+**PII (D-039, D-052, D-056):** the winner's full address is a narrow exception for the farmer of that lot, through the same logged reveal as the admin. No phone crosses between winner and farmer (D-052). The winner sees no farmer contact while D-044 is on hold.
+- [ ] T-051.1a [backend] `GET /store/won-lots`: the winner's own won lots, farm name, bank name, masked account number and holder name, 1×24 h deadline; no phone (D-052) *(parked (owner reconsidering, 2026-11-16): carries farmer bank details; replaced for now by T-051.6)*
+- [ ] T-051.3a [backend] `POST /store/won-lots/:id/reveal`: winner reveals the farmer's bank account number and holder name for their own lot, one audit row (D-057) *(parked (owner reconsidering, 2026-11-16))*
+- [ ] T-051.1b [backend] `GET /vendor/sold-lots`: the farmer's own sold lots with the winner's name and masked default shipping address (city + province, D-056); no phone (D-052)
 - T-051.3b *(dropped 2026-11-16, D-052: the farmer no longer reveals the winner's phone. Not built.)*
-- [ ] T-051.2a [storefront] Won lots page `/akun/menang` with the bank-account reveal
-- [ ] T-051.2b [storefront] Sold lots page in the Farmer area (winner's name; no reveal)
-- [ ] T-051.4 [qa] Other users get 404 or no data; the full account number is reachable only for the winner's own lot; no phone in any won-lot or sold-lot response or page; every reveal is audited
+- [ ] T-051.5 [backend] `POST /vendor/sold-lots/:id/reveal`: the farmer reveals the winner's full default shipping address for their own sold lot; one audit row per reveal (D-056) *(new 2026-11-16)*
+- [ ] T-051.6 [backend] `GET /store/won-lots` without farmer contact: the winner's own won lots plus `has_shipping_address` (D-056) *(new 2026-11-16; the no-contact version of T-051.1a)*
+- [ ] T-051.2a [storefront] Won lots page `/akun/menang` with the bank-account reveal *(parked (owner reconsidering, 2026-11-16); replaced for now by T-051.7)*
+- [ ] T-051.7 [storefront] Won lots page `/akun/menang` with no farmer contact and the "add an address" prompt (D-056) *(new 2026-11-16; US-053 T-053.2 sits on it)*
+- [ ] T-051.2b [storefront] Sold lots page in the Farmer area (winner's name, masked address, address reveal)
+- [ ] T-051.4 [qa] Other users get 404 or no data; the full address is reachable only for the farmer's own sold lot and every reveal is audited; no farmer contact in any won-lot response or page; no phone in any won-lot or sold-lot response or page
 
-**Readiness (2026-11-16): `todo` (was `blocked (mvp-Q34)`).** `mvp-Q34` answered by D-052: no phone either way; the
-winner's only contact data is the farmer's bank account through D-044's logged reveal. The winner side shrinks to that
-reveal; the farmer side loses its reveal (T-051.3b dropped). Still open, non-blocking: whether the reveal also covers
-the account-holder name (`mvp-Q39`; until answered, only `account_number` is revealable and `holder_name` stays masked),
-and how the farmer reaches or ships to the winner with no phone (`mvp-Q37`; owner: "use the contact information you
-already have"). Build order: T-051.1b → T-051.2b (farmer), T-051.1a → T-051.3a → T-051.2a (winner), then T-051.4.
+**Under escrow** (owner's planned direction, 2026-11-16, not a decision): the winner pays the platform through Xendit,
+so the winner never needs the farmer's bank account; AC1, AC3, T-051.1a, T-051.3a and T-051.2a would be dropped.
+
+**Readiness (2026-11-16): `todo` for the farmer side and the no-contact winner page; winner bank-account part
+`parked (owner reconsidering, 2026-11-16)`.** `mvp-Q37` answered by D-056 (farmer gets the winner's default shipping
+address, masked, full through a logged reveal). `mvp-Q39` answered by D-057 (number + holder name, one row), but it
+applies only if D-044 returns. Owner, same day: "for now don't show farmer contact" → D-044 on hold, winner bank tasks
+parked (not blocked by a question; the owner is recalculating the payment model).
+Build order: T-051.1b → T-051.5 → T-051.2b (farmer), T-051.6 → T-051.7 (winner), then T-051.4.
 **Depends on:** US-050 (winner_customer_id, final_price, `closed_at`).
 **Reuse, no second audit mechanism:** `createPiiRevealAuditStep` (`src/workflows/steps/pii-reveal.ts:66`, already
 generic: its comment names US-051) writes to `pii_reveal_audit` (`src/modules/pii-audit/models/pii-reveal-audit.ts`,
-open-text `actor_type`/`record_type`). The winner's reveal uses `record_type: "lot"`, `record_id: <lot id>` (AC4 "which lot").
+open-text `actor_type`/`record_type`). Lot reveals use `record_type: "lot"`, `record_id: <lot id>` (AC4 "which lot").
 Pattern: `revealFarmPiiWorkflow` (`src/workflows/reveal-farm-pii.ts:16-33`): read, then audit row, value returned
 only after the row is written.
-**Masking:** routes mask with `src/utils/mask.ts` themselves (`maskAccountNumber`, `maskName`). The
-response middlewares are a second net only: `storePiiMask` masks only `seller`/`sellers` keys and `vendorPiiMask`
-masks `phone`/`payment_details` keys (`src/api/utils/mask-response.ts:69-130,155-157`). A reveal response is
-`{ field, value }`, so the key `value` passes both untouched; don't name it `account_number`. No route here selects
-`phone` at all (D-052): not masking a phone is not enough, it must not be read.
+**Address (D-056), verified in Medusa 2.21.2 `@medusajs/customer` `models/address.js`:** `customer_address` has
+`first_name, last_name, company, address_1, address_2, city, province, postal_code, country_code, phone,
+is_default_shipping, is_default_billing`, and `customer.addresses` is a hasMany. At most one default shipping address
+per customer (unique partial index `IDX_customer_address_unique_customer_shipping`). The default = the address with
+`is_default_shipping = true`; none → "no address" (don't fall back to the first address). Never select the address's
+`phone` (D-052) or `company`. Read at reveal time; nothing copied onto the lot. The storefront already writes
+`is_default_shipping` (`lib/data/customer.ts:195`) and has the address page (`ROUTES.addresses` = `/akun/alamat`).
+**Masking:** routes mask themselves; for the address that means not selecting the hidden fields at all (D-056: the
+`mask.ts` helpers keep leading/trailing characters, which on a street line leaks the house number, so none is used).
+The response middlewares are a second net only: `storePiiMask` masks only `seller`/`sellers` keys and `vendorPiiMask`
+masks `phone`/`payment_details`/`ktp_nik` keys (`src/api/utils/mask-response.ts:69-130,155-157`). A reveal response is
+`{ field, value }`. No route here selects `phone` at all (D-052): not masking a phone is not enough, it must not be read.
 **Names:** the farmer sees the winner's name (plan "Closing and winners"). Names stay unmasked, as in the admin farm
 queue (`admin/farms/route.ts:160,218`); only account-holder names are masked (`maskName`).
 
@@ -1606,14 +1647,16 @@ queue (`admin/farms/route.ts:160,218`); only account-holder names are masked (`m
 
 ```text
 Story: US-051 (task T-051.1b)   Release: mvp
-Agent: backend   Expected: <=35 min
+Agent: backend   Expected: <=40 min
 Starts after: US-050 T-050.1 (closed_at, winner saved).
 
 ## Acceptance criteria
-- AC2: The farmer sees only the winner's name for their own sold lots. No winner phone, masked or full, and no reveal (D-052).
+- AC2: The farmer sees, for their own sold lots, the winner's name and the winner's default shipping address masked: `city` and `province` only; street lines and postal code are not sent (D-056). No winner phone, masked or full (D-052).
 
 ## Decisions in force
-D-052: no phone between winner and farmer: the row never selects or returns the winner's phone, masked or not.
+D-052: no phone between winner and farmer: the row never selects or returns the winner's phone (customer.phone or the
+address's phone), masked or not. D-056: address = the winner's address with is_default_shipping = true; the row carries
+only city + province; address_1, address_2, postal_code, company, phone are never selected.
 D-039 / D-042: no other winner PII (email, customer id). D-003: member token + x-seller-id; seller from
 req.seller_context, never the body. D-055: any message a Koi app may show verbatim is Indonesian.
 CLAUDE.md §9: reads via query.graph; route thin; both generics typed.
@@ -1623,9 +1666,11 @@ CLAUDE.md §9: reads via query.graph; route thin; both generics typed.
   and status in won | paid | shipped | delivered | claimed (the SOLD_STATUSES list, store/lots/route.ts:80).
   Newest closed first; limit/offset (Zod, max 100).
 - Row: { id, status, final_price, closed_at, auction: { id, delivery_method }, product: { title, thumbnail },
-  winner: { name: first_name + " " + last_name } }. Winner read by query.graph on `customer` (fields id, first_name,
-  last_name only) filtered by the lots' winner_customer_id (one query for the page, not one per row).
-- Never return winner_customer_id, email or any phone.
+  winner: { name: first_name + " " + last_name, address: { city, province } | null } }. Winner read by one query.graph
+  on `customer` (fields id, first_name, last_name, addresses.is_default_shipping, addresses.city, addresses.province
+  only) filtered by the lots' winner_customer_id (one query for the page, not one per row); pick the address with
+  is_default_shipping = true in the mapper (filtering a nested relation in query.graph is not verified); none → null.
+- Never return winner_customer_id, email, any phone, or any other address field.
 - Import "../../../types/seller-context" (submit/route.ts:11 pattern). bun run codegen.
 
 ## Start from
@@ -1636,9 +1681,11 @@ CLAUDE.md §9: reads via query.graph; route thin; both generics typed.
 - apps/**; src/api/utils/mask-response.ts; src/api/store/**; src/modules/pii-audit/**
 
 ## Spec (packages/api/integration-tests/http/sold-lots.spec.ts; real seller + member token like farmer-auctions.spec.ts)
-- farmer A sees their won lot with the winner's full name
+- farmer A sees their won lot with the winner's full name and address { city, province } of the default shipping address
+- winner with a non-default address only → address null; winner with none → address null
 - farmer B (other seller) → lot not in the list; open/unsold/cancelled lots not listed
-- JSON has no winner_customer_id, no email, no `phone` key and not the winner's phone digits (stringify + includes)
+- JSON has no winner_customer_id, no email, no `phone` key and not the winner's phone digits (stringify + includes);
+  not the address_1 or postal_code strings (stringify + includes)
 
 ## Definition of done
 cd packages/api && bun x tsc --noEmit -p . → clean; bun run codegen
@@ -1653,23 +1700,79 @@ none
 T-051.3b has no brief: dropped by D-052 (the farmer no longer reveals the winner's phone).
 
 ```text
-Story: US-051 (task T-051.2b)   Release: mvp
-Agent: frontend (apps/storefront-koi)   Expected: <=35 min
-Starts after: T-051.1b contract.
+Story: US-051 (task T-051.5)   Release: mvp
+Agent: backend   Expected: <=40 min
+Starts after: T-051.1b (route folder, ownership read).
 
 ## Acceptance criteria
-- AC2: The farmer sees only the winner's name for their own sold lots. No winner phone, masked or full, and no reveal (D-052).
+- AC4: Every reveal is recorded: who, when, which lot, which field (D-042, D-056).
+- AC5: The farmer reveals the winner's full default shipping address for their own sold lot only, through the logged reveal: one `pii_reveal_audit` row per reveal, `record_type: "lot"`, `record_id: <lot id>`, `field: "shipping_address"`. If the winner has no default shipping address, ... a reveal call gets 404 with no audit row (D-056).
+
+## Decisions in force
+D-056: the full address only through this reveal; one reveal returns the whole address and writes one row.
+D-042: explicit, append-only audit row, value returned only after the row is written. D-052: never select the
+customer's or the address's phone; `company` not selected either. D-003: seller from req.seller_context; actor_type and
+actor_id from req.auth_context, never the body. D-055: messages a Koi app may show verbatim are Indonesian.
+
+## Build
+- POST /vendor/sold-lots/:id/reveal, body { field: "shipping_address" } (Zod enum, one value; middlewares.ts
+  validateAndTransformBody like /admin/farms/:id/reveal at :460-465).
+- Workflow src/workflows/reveal-lot-address.ts `revealWinnerAddressWorkflow({ seller_id, lot_id, field, actor_type,
+  actor_id })`: read step (lot with auction.seller_id = seller_id and status in the SOLD_STATUSES list, else 404 with no
+  existence leak; then the winner's address with is_default_shipping = true via query.graph on `customer`, fields
+  addresses.{is_default_shipping, first_name, last_name, address_1, address_2, postal_code, city, province,
+  country_code}; none → 404 NOT_FOUND, Indonesian message "Alamat pemenang belum diisi") → createPiiRevealAuditStep({
+  actor_type, actor_id, record_type: "lot", record_id: lot_id, field: "shipping_address" }) → return { field, value:
+  { first_name, last_name, address_1, address_2, postal_code, city, province, country_code } }.
+- No new audit model. Import "../../../../../types/seller-context". bun run codegen.
+
+## Start from
+- packages/api/src/workflows/reveal-farm-pii.ts:16-33; src/workflows/steps/pii-reveal.ts:54-74
+- packages/api/src/api/admin/farms/[id]/reveal/route.ts (route shape, actor from auth_context :20)
+- packages/api/src/api/vendor/sold-lots/route.ts (T-051.1b: ownership + SOLD_STATUSES)
+
+## Do not touch
+- apps/**; src/modules/pii-audit/**; src/api/utils/mask-response.ts; src/api/store/**
+
+## Spec (sold-lots.spec.ts, describe "address reveal")
+- own sold lot, winner has a default shipping address → 200 { field: "shipping_address", value: full address };
+  exactly one new pii_reveal_audit row (actor_id, record_type "lot", record_id, field "shipping_address")
+- winner with no default shipping address → 404, no audit row
+- another seller's lot → 404, no audit row; open/unsold/cancelled lot → 404, no audit row
+- field "phone" → 400; response has no `phone` key and not the address's phone digits
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean; bun run codegen
+cd packages/api && bun run test:integration:http -- sold-lots → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + API contract.
+
+## Open questions
+none
+```
+
+```text
+Story: US-051 (task T-051.2b)   Release: mvp
+Agent: frontend (apps/storefront-koi)   Expected: <=40 min
+Starts after: T-051.1b and T-051.5 contracts.
+
+## Acceptance criteria
+- AC2: The farmer sees, for their own sold lots, the winner's name and the winner's default shipping address masked: `city` and `province` only; street lines and postal code are not sent (D-056). No winner phone, masked or full (D-052).
+- AC5: The farmer reveals the winner's full default shipping address for their own sold lot only, through the logged reveal. If the winner has no default shipping address, the row shows "Alamat belum diisi" with no reveal button (D-056).
 
 ## Endpoint inventory
 | Method | Path | Exists? | Shape / owner |
 |---|---|---|---|
-| GET  | /vendor/sold-lots | after T-051.1b | { lots: [{ id, status, final_price, closed_at, auction, product, winner: { name } }], count } |
+| GET  | /vendor/sold-lots | after T-051.1b | { lots: [{ id, status, final_price, closed_at, auction, product, winner: { name, address: { city, province } \| null } }], count } |
+| POST | /vendor/sold-lots/:id/reveal | after T-051.5 | { field: "shipping_address" } → 200 { field, value: { first_name, last_name, address_1, address_2, postal_code, city, province, country_code } }; 404 |
 
 ## Build
 - Route /akun/kebun/terjual (ROUTES.farmSold in const/routes.ts); farmer guard as FarmHomePage.tsx:61-85.
 - Data: lib/data/auctions.ts beside getMyAuctions, using vendorHeaders() (:85-90); typed sdk only, no raw fetch.
-- Table: product, final price (id-ID Rupiah), closed date, status label, winner name. No phone column, no reveal,
-  no WhatsApp/wa.me link (D-052).
+- Table: product, final price (id-ID Rupiah), closed date, status label, winner name, address: "city, province" +
+  "Tampilkan alamat" button; address null → "Alamat belum diisi", no button. The reveal fetches on click only (never on
+  render: each reveal writes an audit row), then shows the full address. Copy the behaviour of admin-koi
+  FarmQueue.tsx:257-313; don't import from admin-koi. No phone column, no WhatsApp/wa.me link (D-052).
 - Link to it from the Farmer area home (FarmHomePage).
 
 ## Do not touch
@@ -1686,6 +1789,7 @@ none
 ```
 
 ```text
+PARKED (owner reconsidering, 2026-11-16; D-044 on hold). Don't hand off. Kept for if D-044 returns; T-051.6 replaces it now.
 Story: US-051 (task T-051.1a)   Release: mvp
 Agent: backend   Expected: <=40 min
 Starts after: US-050 T-050.1 (winner_customer_id, final_price, closed_at).
@@ -1730,29 +1834,31 @@ cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clea
 Report: standard header + API contract.
 
 ## Open questions
-none (mvp-Q39 holder name: stays masked until answered)
+none (mvp-Q39 answered by D-057: holder name masked here, full only through T-051.3a)
 ```
 
 ```text
+PARKED (owner reconsidering, 2026-11-16; D-044 and D-057 on hold). Don't hand off. Updated for D-057 so it is ready if D-044 returns.
 Story: US-051 (task T-051.3a)   Release: mvp
 Agent: backend   Expected: <=40 min
 Starts after: T-051.1a.
 
 ## Acceptance criteria
-- AC3: … the winner reveals the full account number for their own winning lot only, through the logged reveal (D-044).
-- AC4: Every reveal is recorded: who, when, which lot, which field (D-042, D-044).
+- AC3: … the winner reveals the full account number **and** full account-holder name for their own winning lot only, in one logged reveal (`field: "bank_account"`, one audit row) (D-044, D-057).
+- AC4: Every reveal is recorded: who, when, which lot, which field (D-042, D-056).
 
 ## Decisions in force
-D-044: full bank account, winner's own lot only, logged reveal. D-042: explicit, one append-only audit row per reveal.
-D-052: no phone field in the enum. D-055: messages a Koi app may show verbatim are Indonesian.
+D-044: full bank account, winner's own lot only, logged reveal. D-057: one reveal returns number + holder name, one
+audit row with field "bank_account". D-042: explicit, append-only audit row. D-052: no phone field in the enum. D-055: messages a Koi app may show verbatim are Indonesian.
 
 ## Build
-- POST /store/won-lots/:id/reveal, body { field: "account_number" } (Zod enum, one value until mvp-Q39; middlewares.ts
+- POST /store/won-lots/:id/reveal, body { field: "bank_account" } (Zod enum, one value (D-057); middlewares.ts
   authenticate("customer", …) + validateAndTransformBody, like /admin/farms/:id/reveal at :460-465).
 - Workflow src/workflows/reveal-lot-contact.ts `revealFarmBankAccountWorkflow({ customer_id, lot_id, field, actor_id })`:
   read step (lot with winner_customer_id = customer_id and status in the sold list, else 404 with no existence leak;
-  then seller.payment_details.account_number via auction.seller_id) → createPiiRevealAuditStep({ actor_type: "customer",
-  actor_id, record_type: "lot", record_id: lot_id, field: "account_number" }) → return { field, value }.
+  then seller.payment_details.{account_number, holder_name} via auction.seller_id) → createPiiRevealAuditStep({
+  actor_type: "customer", actor_id, record_type: "lot", record_id: lot_id, field: "bank_account" }) → return
+  { field, value: { account_number, holder_name } }.
 - actor_id from req.auth_context, never the body. bun run codegen.
 
 ## Start from
@@ -1763,7 +1869,8 @@ D-052: no phone field in the enum. D-055: messages a Koi app may show verbatim a
 - apps/**; src/modules/pii-audit/** (no new model, no second audit table); src/api/utils/mask-response.ts; src/api/vendor/**
 
 ## Spec (won-lots.spec.ts, describe "reveal")
-- own won lot → 200 { field: "account_number", value: <full number> }; exactly one new pii_reveal_audit row with
+- own won lot → 200 { field: "bank_account", value: { account_number, holder_name } (both full) }; exactly one new
+  pii_reveal_audit row with
   actor_type "customer", actor_id, record_type "lot", record_id, field
 - another customer's lot → 404 and no audit row; an open/unsold/cancelled lot → 404 and no audit row; anonymous → 401
 - field "phone" → 400 (not in the enum)
@@ -1779,6 +1886,7 @@ none
 ```
 
 ```text
+PARKED (owner reconsidering, 2026-11-16; D-044 on hold). Don't hand off. T-051.7 replaces it now.
 Story: US-051 (task T-051.2a)   Release: mvp
 Agent: frontend (apps/storefront-koi)   Expected: <=45 min
 Starts after: T-051.1a and T-051.3a contracts.
@@ -1791,14 +1899,14 @@ Starts after: T-051.1a and T-051.3a contracts.
 | Method | Path | Exists? | Shape / owner |
 |---|---|---|---|
 | GET  | /store/won-lots | after T-051.1a | { lots: [{ id, status, final_price, closed_at, pay_by, product, auction, seller: { id, name, payment_details(masked) } }], count } |
-| POST | /store/won-lots/:id/reveal | after T-051.3a | { field: "account_number" } → 200 { field, value } |
+| POST | /store/won-lots/:id/reveal | after T-051.3a | { field: "bank_account" } → 200 { field, value: { account_number, holder_name } } |
 
 ## Build
 - Route /akun/menang (ROUTES.wonLots in const/routes.ts), requireCustomer guard; link from AccountNav.
 - Data: lib/data/lots.ts with getAuthHeaders(); typed sdk only, no raw fetch.
 - Rows: product, final price (formatPrice), pay-by deadline (formatDeadline), status label, farm name, bank name,
   masked holder name, masked account number + "Tampilkan" button. The reveal fetches on click only (never on render:
-  each reveal writes an audit row), then shows the full number. Copy the behaviour of admin-koi FarmQueue.tsx:257-313;
+  each reveal writes an audit row), then shows the full number and holder name (D-057). Copy the behaviour of admin-koi FarmQueue.tsx:257-313;
   don't import from admin-koi. No phone, no WhatsApp button, no wa.me link (D-052).
 
 ## Do not touch
@@ -1814,20 +1922,102 @@ none
 ```
 
 ```text
+Story: US-051 (task T-051.6)   Release: mvp
+Agent: backend   Expected: <=35 min
+Starts after: US-050 T-050.1 (winner_customer_id, final_price, closed_at).
+
+## Acceptance criteria
+- AC6: The winner sees their own won lots with no farmer contact (no bank account, no holder name, no phone). A winner with no default shipping address sees a prompt on the won lot to add one, linking to `/akun/alamat` (D-056).
+
+## Decisions in force
+D-044 on hold (owner, 2026-11-16): no farmer contact; never select seller.phone or seller.payment_details. D-052: no
+phone either way. D-046: caller's own data, not a public route; store/lots/** stays winner-free. D-056: the prompt
+needs only whether the winner has a default shipping address. D-055: messages a Koi app may show verbatim are
+Indonesian. Identity from req.auth_context.actor_id only.
+
+## Build
+- GET /store/won-lots (src/api/store/won-lots/route.ts): lots with winner_customer_id = auth_context.actor_id and status
+  in the SOLD_STATUSES list (store/lots/route.ts:80). Newest closed first; limit/offset (Zod, max 100).
+- middlewares.ts entry authenticate("customer", ["bearer","session"]) as /store/bids.
+- Response { lots: [{ id, status, final_price, closed_at, product: { title, thumbnail }, auction: { id, delivery_method },
+  seller: { id, name } }], count, has_shipping_address: boolean }. has_shipping_address = the caller has an address with
+  is_default_shipping = true (one query.graph on `customer`, fields addresses.is_default_shipping only).
+- No pay_by field: the payment deadline waits on the payment model (status block). bun run codegen.
+
+## Start from
+- packages/api/src/api/store/bids/route.ts (customer route, auth_context)
+- packages/api/src/api/store/lots/route.ts:80 (SOLD_STATUSES)
+
+## Do not touch
+- apps/**; src/api/store/lots/**; src/api/vendor/**; src/modules/pii-audit/**; src/api/utils/mask-response.ts
+
+## Spec (packages/api/integration-tests/http/won-lots.spec.ts)
+- winner sees own won lot with farm name; has_shipping_address true with a default shipping address, false with none
+  or with only a non-default address
+- another customer → the lot not listed; open/unsold/cancelled lots not listed; anonymous → 401
+- JSON has no `phone` key, no `payment_details` key, not the farm's phone digits or account number
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean; bun run codegen
+cd packages/api && bun run test:integration:http -- won-lots → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + API contract.
+
+## Open questions
+none
+```
+
+```text
+Story: US-051 (task T-051.7)   Release: mvp
+Agent: frontend (apps/storefront-koi)   Expected: <=35 min
+Starts after: T-051.6 contract.
+
+## Acceptance criteria
+- AC6: The winner sees their own won lots with no farmer contact (no bank account, no holder name, no phone). A winner with no default shipping address sees a prompt on the won lot to add one, linking to `/akun/alamat` (D-056).
+
+## Endpoint inventory
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| GET  | /store/won-lots | after T-051.6 | { lots: [{ id, status, final_price, closed_at, product, auction, seller: { id, name } }], count, has_shipping_address } |
+
+## Build
+- Route /akun/menang (ROUTES.wonLots in const/routes.ts), requireCustomer guard; link from AccountNav.
+- Data: lib/data/lots.ts with getAuthHeaders(); typed sdk only, no raw fetch.
+- Rows: product, final price (formatPrice), closed date, status label, farm name. No bank details, no phone, no
+  WhatsApp button, no wa.me link (D-044 on hold, D-052). No payment deadline (waits on the payment model).
+- has_shipping_address false → a notice above the list ("Tambahkan alamat pengiriman utama agar peternak bisa mengirim
+  ikanmu") with a link to ROUTES.addresses (/akun/alamat).
+
+## Do not touch
+- packages/api/**, apps/admin-koi/**, the sold-lots page (T-051.2b), LivePage/**
+
+## Definition of done
+cd apps/storefront-koi && bun run check → pass
+render-check on /akun/menang as the winner of a closed lot, with and without a default shipping address (or "browser
+NOT verified" and why).
+Report: standard header + render check result + screenshot path.
+
+## Open questions
+none
+```
+
+```text
 Story: US-051 (task T-051.4)   Release: mvp
 Agent: qa   Expected: <=30 min
-Runs after the five build tasks (T-051.1a, .3a, .2a, .1b, .2b).
+Runs after the five live build tasks (T-051.1b, .5, .2b, .6, .7). T-051.1a, .3a, .2a are parked: not tested.
 
-Verify AC1–AC4. Decisions: D-039, D-042, D-044, D-045, D-052.
-Code under test: src/api/store/won-lots/**, src/api/vendor/sold-lots/**, src/workflows/reveal-lot-contact.ts,
+Verify AC2, AC4, AC5, AC6 (AC1, AC3 parked). Decisions: D-039, D-042, D-044 (on hold), D-045, D-052, D-056.
+Code under test: src/api/store/won-lots/**, src/api/vendor/sold-lots/**, src/workflows/reveal-lot-address.ts,
 storefront /akun/menang and /akun/kebun/terjual.
 Commands (alone): bun run test:integration:http -- won-lots; then -- sold-lots; then -- pii-reveal (regression);
 bun run check in apps/storefront-koi.
-Watch for: any phone (farm's or winner's, masked or full) or wa.me link in a response or page source; a full account in
-any list response or page source before a reveal; a reveal that returns a value without an audit row (or writes two);
-another customer reaching a lot (must be 404, no audit row); reveal fired on render; winner_customer_id or email in a
-vendor response; a second audit table.
-Browser: render-check /akun/menang as the winner (incl. one reveal) and /akun/kebun/terjual as the farmer.
+Watch for: any phone (farm's, winner's or the address's, masked or full) or wa.me link in a response or page source;
+any farmer bank detail in a won-lot response or page; address_1, address_2 or postal_code in a sold-lots list response
+or page source before a reveal; a reveal that returns a value without an audit row (or writes two); another farmer
+reaching a lot (must be 404, no audit row); a reveal for a winner with no default address (404, no row); reveal fired
+on render; winner_customer_id or email in a vendor response; a second audit table.
+Browser: render-check /akun/menang as the winner (with and without a default address) and /akun/kebun/terjual as the
+farmer (incl. one address reveal).
 Report PASS/FAIL per AC with file:line and command output. Don't change app code.
 ```
 
@@ -1837,10 +2027,14 @@ As a **farmer**, I want to mark a lot paid and then shipped so that progress is
 tracked. *(Plan: Closing, Delivery; D-052, D-054)*
 - AC1: `won → paid → shipped`, in order only.
 - AC2: Courier delivery requires a tracking number. Self-delivery doesn't.
-- AC3: While shipping, the farmer sees the winner's name only; no winner phone, masked or full, and no reveal (D-052). *(Changed 2026-11-16: was "phone masked, full through US-051's reveal".)*
+- AC3: While shipping, the farmer sees the winner's name and masked address (D-056, US-051); no winner phone, masked or full, and no reveal from this story (D-052). *(Changed 2026-11-16: was "phone masked, full through US-051's reveal".)*
 - AC4: A farm suspended after approval can still mark its own already-sold lots paid and shipped; a terminated farm can't (403). It still can't create auctions or lots (D-054).
-- [ ] T-052.1 [backend] `lot.tracking_number` + mark-paid and mark-shipped workflows + `/vendor/sold-lots/:id/paid|shipped` routes (the farmer must own the lot)
-- [ ] T-052.2 [storefront] Farmer area actions on the sold-lots page
+**Under escrow** (planned direction, 2026-11-16, not a decision): only the "paid" part changes: the farmer marking
+paid is replaced by a Xendit webhook, so T-052.4 (and AC1's `won → paid`) is parked. The shipped half, the sold-lots
+row and the tracking number are unchanged and buildable now.
+- [ ] T-052.1 [backend] `lot.tracking_number` + mark-shipped workflow + `POST /vendor/sold-lots/:id/shipped` (the farmer must own the lot); `won → paid` is T-052.4 *(split 2026-11-16)*
+- [ ] T-052.4 [backend] mark-paid workflow + `POST /vendor/sold-lots/:id/paid` *(parked (payment model: Xendit escrow pending, 2026-11-16): under escrow a Xendit webhook sets paid, so AC1's `won → paid` route is not built now)*
+- [ ] T-052.2 [storefront] Farmer area actions on the sold-lots page ("Tandai dikirim" builds now; "Tandai sudah dibayar" parked with T-052.4)
 - [ ] T-052.3 [qa] States can't be skipped; no winner phone anywhere on the farmer's side (D-052); a suspended farm can finish its sold lots, a terminated one can't (D-054)
 
 **Readiness (2026-11-16): ready (`todo`).** No open question blocks it (`mvp-Q34` → D-052, `mvp-Q36` → D-054).
@@ -1865,9 +2059,10 @@ row); this story adds no PII read.
 Story: US-052 (task T-052.1)   Release: mvp
 Agent: backend   Expected: <=45 min
 Starts after: US-050 T-050.1 (setLotFieldsStep, steps/lot.ts) and US-051 T-051.1b (GET /vendor/sold-lots, row shape).
+Split 2026-11-16: this brief builds `paid → shipped` only; `won → paid` is T-052.4, parked.
 
 ## Acceptance criteria
-- AC1: `won → paid → shipped`, in order only.
+- AC1 (shipped half): `paid → shipped` only, from `paid`; no skipped or backward state.
 - AC2: Courier delivery requires a tracking number. Self-delivery doesn't.
 - AC4: A farm suspended after approval can still mark its own already-sold lots paid and shipped; a terminated farm can't (403). It still can't create auctions or lots (D-054).
 
@@ -1881,18 +2076,15 @@ D-052: the response row has no winner phone. D-055: messages a Koi app may show 
 
 ## Build
 - Lot model: `tracking_number: model.text().nullable()`; migration (`bunx medusa db:generate auction`).
-- src/workflows/mark-lot-sold-status.ts, two workflows, same shape:
-  markLotPaidWorkflow({ seller_id, lot_id }) and markLotShippedWorkflow({ seller_id, lot_id, tracking_number? }):
+- src/workflows/mark-lot-sold-status.ts, one workflow:
+  markLotShippedWorkflow({ seller_id, lot_id, tracking_number? }):
   acquireLockStep `lot:<id>` → guard step (read only: seller status by query.graph on `seller` as
   validate-seller-open.ts:20-26, `SellerStatus.TERMINATED` → 403 FORBIDDEN code `seller_terminated`, Indonesian
   message; lot with auction.seller_id and auction.delivery_method; not this seller's → 404; status !== expected
-  from-status → 409 `invalid_lot_status`;
-  shipped + courier + blank tracking → 400 `tracking_number_required`) → setLotFieldsStep({ status: "paid" }) or
-  ({ status: "shipped", tracking_number: trimmed or null }) → releaseLockStep.
-  One guard step taking `{ from: "won" | "paid" }` is fine (two callers).
-- Routes (POST, both generics typed): /vendor/sold-lots/:id/paid (no body; strict empty body as store/auctions/[id]/
-  join/route.ts:45-51) and /vendor/sold-lots/:id/shipped (Zod { tracking_number?: string trimmed, max 100 } in
-  middlewares.ts). Response { lot: <the GET /vendor/sold-lots row> } — reuse T-051.1b's mapper; add tracking_number
+  from-status `paid` → 409 `invalid_lot_status`; courier + blank tracking → 400 `tracking_number_required`) →
+  setLotFieldsStep({ status: "shipped", tracking_number: trimmed or null }) → releaseLockStep.
+- Route (POST, both generics typed): /vendor/sold-lots/:id/shipped, body Zod { tracking_number?: string trimmed,
+  max 100 } in middlewares.ts (T-052.4 adds /:id/paid later). Response { lot: <the GET /vendor/sold-lots row> } — reuse T-051.1b's mapper; add tracking_number
   to that row. Import "../../../../../types/seller-context". bun run codegen.
 
 ## Start from
@@ -1904,13 +2096,13 @@ D-052: the response row has no winner phone. D-055: messages a Koi app may show 
 ## Do not touch
 - apps/**; src/workflows/close-lot.ts, place-bid.ts; src/modules/pii-audit/**; src/api/utils/mask-response.ts
 
-## Spec (packages/api/integration-tests/http/sold-lots.spec.ts, describe "paid and shipped")
-- won → paid → shipped (courier, tracking "JNE123") → each 200, status saved, tracking saved
-- won → shipped directly → 409, status still won; paid twice → 409; shipped on an `unsold`/`open` lot → 409
+## Spec (packages/api/integration-tests/http/sold-lots.spec.ts, describe "shipped")
+- lot seeded `paid`, ship courier with tracking "JNE123" → 200, status shipped, tracking saved
+- won → shipped → 409, status still won; shipped twice → 409; shipped on an `unsold`/`open` lot → 409
 - courier with no / blank tracking → 400, status still paid; self_delivery with no tracking → 200
 - another seller's lot → 404, unchanged; winner_customer_id and final_price unchanged after both transitions
 - forced failure after setLotFieldsStep (farmer-auctions.spec.ts:18-34 pattern) → status restored
-- seller suspended after the lot was won → paid and shipped still 200 (D-054); seller suspended then terminated (Mercur
+- seller suspended after the lot was won → shipped still 200 (D-054); seller suspended then terminated (Mercur
   refuses terminating an `open` seller) → 403, status unchanged
 
 ## Definition of done
@@ -1924,6 +2116,39 @@ none
 ```
 
 ```text
+Story: US-052 (task T-052.4)   Release: mvp
+Agent: backend   Expected: <=35 min
+Starts after: T-052.1 (the mark-lot-sold-status.ts workflow file and routes).
+PARKED (payment model: Xendit escrow pending, 2026-11-16). Don't hand off. Under escrow a Xendit webhook sets paid,
+so this route is likely dropped, not adapted.
+
+## Acceptance criteria
+- AC1 (paid half): `won → paid`, in order only.
+- AC4: a suspended farm may still mark its own sold lots paid; a terminated farm can't (403) (D-054).
+
+## Decisions in force
+plan "Lot lifecycle"; CLAUDE.md §8 explicit transitions. D-003: seller from req.seller_context. D-054: no
+validateSellerOpenStep; ownership (404) + status !== TERMINATED (403). D-055: Indonesian messages.
+
+## Build
+- Same file as T-052.1: markLotPaidWorkflow({ seller_id, lot_id }): lock `lot:<id>` → same guard step, from-status
+  `won` → setLotFieldsStep({ status: "paid" }) → release. Reuse T-052.1's guard step and row mapper.
+- Route POST /vendor/sold-lots/:id/paid, no body (strict empty body as store/auctions/[id]/join/route.ts:45-51).
+  bun run codegen.
+
+## Spec (sold-lots.spec.ts, describe "paid")
+- won → paid → 200, status paid; won → shipped → 409; paid twice → 409; another seller's lot → 404
+- suspended seller → 200; terminated → 403 (D-054)
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean; bun run codegen; bun run test:integration:http -- sold-lots → pass (alone)
+Report: standard header + API contract.
+
+## Open questions
+none
+```
+
+```text
 Story: US-052 (task T-052.2)   Release: mvp
 Agent: frontend (apps/storefront-koi)   Expected: <=40 min
 Starts after: T-052.1 contract and US-051 T-051.2b (the page).
@@ -1931,7 +2156,7 @@ Starts after: T-052.1 contract and US-051 T-051.2b (the page).
 ## Acceptance criteria
 - AC1: `won → paid → shipped`, in order only.
 - AC2: Courier delivery requires a tracking number. Self-delivery doesn't.
-- AC3: While shipping, the farmer sees the winner's name only; no winner phone, masked or full, and no reveal (D-052). *(Changed 2026-11-16: was "phone masked, full through US-051's reveal".)*
+- AC3: While shipping, the farmer sees the winner's name and masked address (D-056, US-051); no winner phone, masked or full, and no reveal from this story (D-052). *(Changed 2026-11-16: was "phone masked, full through US-051's reveal".)*
 
 ## Endpoint inventory
 | Method | Path | Exists? | Shape / owner |
@@ -1975,10 +2200,11 @@ As a **winner**, I want to mark the fish delivered so that the sale completes an
 the claim window starts. *(Plan: Delivery)*
 - AC1: Only the winner can mark `shipped → delivered`.
 - [ ] T-053.1 [backend] `lot.delivered_at` + delivered workflow + `POST /store/won-lots/:id/delivered`
-- [ ] T-053.2 [storefront] Button on the won lot *(unblocked 2026-11-16, D-052; starts after US-051 T-051.2a, the page it sits on)*
+- [ ] T-053.2 [storefront] Button on the won lot *(unblocked 2026-11-16, D-052; starts after US-051 T-051.7, its page now that T-051.2a is parked)*
 - [ ] T-053.3 [qa] Only the winner, only from `shipped`; `delivered_at` saved *(new task 2026-11-16: the story had no qa task)*
 
-**Readiness (2026-11-16): `todo`; T-053.1 ready, T-053.2 ready after US-051 T-051.2a (mvp-Q34 → D-052).** The rule is plain: plan "Delivery" (the
+**Readiness (2026-11-16): `todo`; T-053.1 ready, T-053.2 ready after US-051 T-051.7 (mvp-Q34 → D-052; T-051.2a is
+parked, so the page is T-051.7's no-contact `/akun/menang`).** The rule is plain: plan "Delivery" (the
 winner marks it delivered) and the lifecycle `shipped → delivered`. `delivered_at` is saved because the claim window
 runs "within 4 hours of marking it delivered" (plan "Dead-on-arrival claims" 1, US-054 AC1); the lot has no such
 column. A winner who never marks delivered: **nothing** in the MVP, the lot stays `shipped` (D-053, `mvp-Q35`). No job,
@@ -2033,9 +2259,9 @@ Report: standard header + API contract.
 none
 ```
 
-T-053.2 (unblocked by D-052; starts after US-051 T-051.2a): a "Sudah diterima" button on `/akun/menang` rows with
-status `shipped`, calling `POST /store/won-lots/:id/delivered`; 409 → refresh. Full brief written when T-051.2a's page
-exists.
+T-053.2 (unblocked by D-052; starts after US-051 T-051.7): a "Sudah diterima" button on `/akun/menang` rows with
+status `shipped`, calling `POST /store/won-lots/:id/delivered`; 409 → refresh. Full brief written when T-051.7's page
+exists. Under Xendit escrow this click becomes the payout trigger (planned direction, not a decision).
 
 ```text
 Story: US-053 (task T-053.3)   Release: mvp
@@ -2067,7 +2293,10 @@ to decide disputes, so that claims are fair. *(Plan: Dead-on-arrival claims 3; D
 - [ ] T-055.3 [admin] `/klaim` dispute screen
 - [ ] T-055.4 [qa] Farmer accept gives `approved` directly; admin can't decide a claim that isn't `disputed`
 
-### US-056 Approved claims are resolved · `todo`
+### US-056 Approved claims are resolved · `parked (payment model: Xendit escrow pending, 2026-11-16)`
+**Under escrow** (planned direction, 2026-11-16, not a decision): the refund comes out of the held funds, not from the
+farmer directly, so AC1's "the farmer refunds directly" path is replaced by a platform refund from escrow. Replacement
+not designed; don't build the farmer-refund path.
 As a **winner**, I want an approved claim settled within 3 days so that I'm made
 whole. *(Plan: Dead-on-arrival claims 4–6; D-027, D-038)*
 - AC1: The farmer has 3 days to refund directly or ship a replacement, then marks it done (`approved → resolved`). The winner confirms (`resolved → confirmed`). The 3 days start when the claim becomes `approved`, on both paths (D-038).
@@ -2089,7 +2318,10 @@ can judge farms. *(Plan: Ratings)*
 - [ ] T-057.1 [backend] `farmer_rating` model + workflow + routes
 - [ ] T-057.2 [storefront] Rating form + display on the partner page
 
-### US-058 Farmer reports a winner who didn't pay · `todo`
+### US-058 Farmer reports a winner who didn't pay · `parked (payment model: Xendit escrow pending, 2026-11-16)`
+**Under escrow** (planned direction, 2026-11-16, not a decision): the payment deadline comes from the Xendit invoice
+expiry, so "report after 1×24 h" and AC1's deadline are replaced by the invoice's expiry. Not designed; don't build the
+manual deadline check.
 As a **farmer**, I want to report a winner who didn't pay within 1×24 h so that
 admin can act. *(Plan: Winner doesn't pay; D-026)*
 - AC1: The farmer can report after the deadline. The admin reviews it and may give a strike.
@@ -2098,10 +2330,10 @@ admin can act. *(Plan: Winner doesn't pay; D-026)*
 - [ ] T-058.2 [storefront] Report button after the deadline
 - [ ] T-058.3 [admin] Report review that leads to a strike
 
-### US-059 Strikes and bans · `todo`
+### US-059 Strikes and bans · `todo` (the "winner didn't pay" strike part parked with US-058, 2026-11-16)
 As an **admin**, I want to give strikes after checking a report so that repeat
 offenders are banned. *(Plan: Strikes)*
-- AC1: Admin gives each strike with a reason (winner: didn't pay; farmer: didn't ship a paid lot, or refused an approved claim).
+- AC1: Admin gives each strike with a reason (winner: didn't pay; farmer: didn't ship a paid lot, or refused an approved claim). *(The "winner didn't pay" reason is parked with US-058: under escrow the deadline comes from the Xendit invoice expiry. Farmer reasons build now.)*
 - AC2: 2 active strikes = ban. A banned winner can't join or bid. A banned farmer can't create auctions.
 - AC3: Strikes expire after 6 months. Admin can remove a strike with a reason.
 - AC4: Every ban and every suspend needs a written reason, the same rule as a farm rejection (D-041). admin-koi refuses the action without one.
@@ -2190,7 +2422,7 @@ little of it. *(Plan: Personal data protection; D-039, D-040, D-042, D-043, D-04
 - [ ] T-092.2 [backend] Masking in every API result that carries PII: `/store/*`, `/vendor/*`, `/admin/*`; admins get the mask too (D-042); owner's own record is the only unmasked result (D-045)
 - [ ] T-092.3 [admin] Masked rendering on every admin-koi screen that shows PII (`/kebun`, `/pengguna`, `/saldo/*`, live monitoring, cancel), plus the reveal button wired to the audit-logged route
 - [ ] T-092.4 [storefront] Account screen (`/store/customers/me`) and farm-registration screen show the owner's own full phone and own bank details (self-view, D-045); any PII about someone else shown on storefront screens stays masked, e.g. the won-lot screens in US-051
-- [ ] T-092.5 [backend] Reveal route (`/admin/*` and the winner's own-lot route) writing an append-only audit entry (who, when, record, field) (D-042, D-044)
+- [ ] T-092.5 [backend] Reveal route (`/admin/*` and the farmer's own-lot address reveal, D-056) writing an append-only audit entry (who, when, record, field) (D-042; the winner's bank reveal, D-044, is on hold)
 - [ ] T-092.6 [backend] One-off migration script that encrypts the existing plain PII values in the wallet and top-up tables in place, verifies, and leaves no plaintext copy (D-043) — **open**
 - [ ] T-092.7 [qa] A direct DB read shows ciphertext; every PII-bearing API response shows only the mask, admin routes included, except the owner's own record; the key is not committed; the KTP photo is still only a private file key (D-040)
 - [ ] T-092.8 [qa] Every admin-koi and storefront screen that shows PII renders only the mask, except the owner's own full value on their own account and farm-registration screens; a reveal writes exactly one audit row with who, when, record and field; the migration leaves no plaintext
@@ -2292,7 +2524,7 @@ table complete.
 | Plan section | Stories |
 |---|---|
 | Users and roles | US-002, US-020, US-021, US-070 |
-| Personal data protection (column encryption on top of disk; masked everywhere incl. admin; logged reveal; self-view; no phone between winner and farmer; D-039, D-042, D-043, D-044, D-045, D-052) | US-092, US-020, US-021, US-010 – US-013, US-051, US-052, US-057, US-070, US-091 |
+| Personal data protection (column encryption on top of disk; masked everywhere incl. admin; logged reveal; self-view; no phone between winner and farmer; farmer gets the winner's saved address; D-039, D-042, D-043, D-044 (on hold), D-045, D-052, D-056, D-057) | US-092, US-020, US-021, US-010 – US-013, US-051, US-052, US-057, US-070, US-091 |
 | Orphan upload cleanup (owner follow-up) | US-093 |
 | Becoming a farmer | US-020, US-021 |
 | Store credit wallet: how credit moves (4 join, 5 submit/approve, D-020, D-031–D-033) | US-010, US-011, US-012, US-015, US-031, US-032, US-041 |
@@ -2308,10 +2540,10 @@ table complete.
 | Bidding (incl. bid removal, D-024, D-036; masked bidders and full history, D-051) | US-042, US-044, US-072 |
 | Extend (anti-sniping) | US-043, US-015, US-030 |
 | Fair play (incl. shill-bidding table, D-028, D-037; ban check on join and bid lands with strikes, D-047) | US-041, US-042, US-059, US-071 |
-| Closing and winners (bank account only, no phone either way, D-052) | US-050, US-051 |
+| Closing and winners (no phone either way, D-052; farmer gets the winner's saved address, D-056; winner's bank reveal on hold, D-044) | US-050, US-051 |
 | Winner doesn't pay (second bidder off-platform, D-026) | US-058, US-059 |
 | Strikes (incl. ban check on join and bid, D-047; suspended farm finishes sold lots, D-054) | US-059, US-052 |
-| Delivery (never marked delivered → stays `shipped`, D-053) | US-030, US-052, US-053 |
+| Delivery (shipping to the winner's saved address, D-056; never marked delivered → stays `shipped`, D-053) | US-030, US-052, US-053 |
 | Dead-on-arrival claims (on-site notices D-025, auto-confirm D-027) | US-054, US-055, US-056, US-061 |
 | Cancellations (farmer before start, admin once live, D-022, D-031, D-034, D-035; a cancelled lot stays public as "Dibatalkan", D-050) | US-060, US-091, US-040 |
 | Key flows: approve auction (D-033) | US-031, US-032 |
@@ -2375,6 +2607,6 @@ is built. Record the answer here, in `plan.md`, and as a decision in `docs/produ
 | mvp-Q34 | **Answered 2026-11-16 (D-052):** no phone in the MVP, either way. The winner sees the farmer's bank account (full, through D-044's logged reveal) and nothing else; the farmer sees the winner's name; no `wa.me` link (it needs the full number). The farmer's reveal of the winner's phone (D-044 confirmation) is dropped (T-051.3b dropped). Unblocks US-051 and US-053 T-053.2. The holder-name part was not answered → `mvp-Q39`. *(Was: how does the winner see the farmer's WhatsApp number (US-051 AC1)? Options (a) full through the logged reveal, (b) masked with a server-side wa.me redirect, (c) none in the MVP; and does "full bank account" include the holder name?)* | none (was US-051, US-053 T-053.2) |
 | mvp-Q35 | **Answered 2026-11-16 (D-053):** option (a), nothing in the MVP; the lot stays `shipped`; no job, no setting. "Auto-confirm delivery after N days" is kept in `docs/releases/README.md`, Ideas not yet planned. *(Was: does a lot the winner never marks delivered need anything?)* | none (was US-053) |
 | mvp-Q36 | **Answered 2026-11-16 (D-054):** option (a), yes: a farm suspended after approval may still mark its already-sold lots paid and shipped; it can't create auctions or lots. The paid/shipped routes skip `validateSellerOpenStep` and check ownership + status not `terminated` (`SellerStatus.TERMINATED` exists in Mercur 2.3.7). *(Was: may a suspended farmer finish already-won lots?)* | none (was US-052 T-052.1) |
-| mvp-Q37 | **Open (2026-11-16, non-blocking for building; blocks the pilot).** With no phone (D-052), how does the farmer get the winner's delivery address, or reach them when the fish is ready? The owner said "use the order/contact information already have", but the MVP creates no order for an auction (plan Path to beta: orders start with beta), and the sold-lots row (US-051 T-051.1b) carries only the winner's name. Options: (a) the winner's default Medusa customer address is shown to the farmer on the sold lot (masked like other PII? full? through a logged reveal?); (b) the winner types a delivery address on the won lot (new field); (c) the winner contacts the farmer off-platform using the bank transfer note; nothing on the platform. My recommendation: (b) or (a) with a logged reveal. | none to build now; US-090 pilot readiness; a new task in US-051/US-052 if (a) or (b) |
+| mvp-Q37 | **Answered 2026-11-16 (D-056):** option (a) with a logged reveal. The farmer ships to the winner's **default shipping address** (`customer_address.is_default_shipping = true`, at most one per customer in Medusa 2.21.2). Sold-lot row shows it masked: **city + province only**; `address_1`, `address_2` and `postal_code` are not sent (the `mask.ts` helpers keep leading/trailing chars, which leaks the house number, so none is used). Full address only through the farmer's logged reveal for their own sold lot (`pii_reveal_audit`, `record_type` `lot`, `field` `shipping_address`, one row per reveal). No default address → "Alamat belum diisi", no reveal (404, no row), and the winner's won-lot page prompts to add one (`/akun/alamat`). Relaxes D-052 for the address only; **no phone either way stands** (the customer's or the address's phone is never selected). Adds T-051.5 and tasks in US-051/US-052. *(Was: how does the farmer get the winner's delivery address with no phone? Options (a) the winner's default Medusa address (masked? full? reveal?); (b) the winner types an address on the won lot; (c) off-platform only.)* | none (was US-090 pilot readiness; added T-051.5, T-051.1b, T-051.2b, T-052.2) |
 | mvp-Q38 | **Open (2026-11-16, non-blocking; US-085 is already blocked by mvp-Q12).** The plan's WhatsApp **Win** message ("sends the farmer's WhatsApp and bank details", US-085 AC1) conflicts with D-052 (no farmer phone to the winner) and D-044 (the full bank account only through the logged reveal). Options: (a) the win message sends a link to `/akun/menang` and the 1×24 h deadline only; (b) it sends the full bank account, the message itself counting as a logged reveal; (c) it sends the masked account plus the link. Recommend (a). | US-085 |
-| mvp-Q39 | **Open (2026-11-16, non-blocking).** Does the winner's reveal (D-044, US-051 T-051.3a) include the account-holder name, or only the account number? D-043 groups number + holder name as bank fields; part 2 of `mvp-Q34` was not answered. Until answered, only `account_number` is revealable and `holder_name` stays masked. Options: (a) number only; (b) number and holder name (one audit row per field). Recommend (b): the payer checks the name before transferring. | US-051 T-051.3a enum (one extra value later) |
+| mvp-Q39 | **Answered 2026-11-16 (D-057):** option (b), and one reveal records both fields: the winner's reveal returns the full `account_number` **and** full `holder_name`, with **one** `pii_reveal_audit` row (`field: "bank_account"`, not one row per field). **On hold with D-044** (owner, 2026-11-16: no farmer contact for now): intended rule, not built. Updated now so it is ready if D-044 returns: US-051 AC3, T-051.3a (body enum `"bank_account"`, response `{ account_number, holder_name }`), T-051.2a. *(Was: does the reveal include the account-holder name? Options (a) number only; (b) number and holder name.)* | none (was US-051 T-051.3a; those tasks are parked, not blocked) |

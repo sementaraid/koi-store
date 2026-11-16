@@ -55,7 +55,8 @@ the highest that already exists, in any release.
 `AC2`, … each testable) · tasks · plan reference · status.
 
 **Story status.** `todo` · `in progress` · `blocked (<question id>)` ·
-`done (evidence: <link or command output>)`
+`done (evidence: <link or command output>)` · `parked (<reason, date>)` — the
+owner paused it; no question blocks it, and it must not be built.
 
 **Task tags.** Each tag says which agent owns the task:
 
