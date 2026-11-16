@@ -2,6 +2,7 @@
 
 import { RenderIf } from "@koi/ui"
 import { useCountdown } from "@/hooks/use-countdown"
+import { closedLotLabel } from "@/lib/helpers/closed-lot-label"
 import { formatRemaining } from "@/lib/helpers/format-remaining"
 
 import type { AuctionProduct } from "@/types/product"
@@ -35,8 +36,12 @@ export function AuctionProductCard({
   ...card
 }: AuctionProductCardProps) {
   const { title, image, listing, auction, highlights, stamps, info } = product
-  const { currentBid, currency, bidCount, endsAt } = auction
+  const { currentBid, currency, bidCount, endsAt, cancelled, sold } = auction
   const remaining = useCountdown(endsAt)
+  /* A closed lot (D-046) shows its final price and "Terjual" / "Tidak
+     terjual" — never a live "Bid" or a clock. `sold` is set only by the
+     adapter on a closed lot, so `undefined` means still open. */
+  const closed = closedLotLabel(sold)
   /* One pill row, two vocabularies: what the floor earned — reads as bid
      highlights, only a lot can have them — then who stands behind the lot,
      which a shelf good can have too. */
@@ -62,30 +67,35 @@ export function AuctionProductCard({
           listing={listing}
           info={info}
           infoLookup={INFO}
-          priceLabel="Bid"
-          /* Stay ternaries: 0 and 0ms are real values here, and `RenderIf`'s
-             gate is truthiness. */
+          priceLabel={closed?.priceLabel ?? "Bid"}
+          /* A cancelled lot (D-050) has no price, no tally, no clock — the
+             status pill above already says "Dibatalkan". A closed lot (D-046)
+             swaps the tally and clock for "Terjual" / "Tidak terjual". */
           trailing={
-            <>
-              <RenderIf when={bidCount !== undefined}>
-                {() => (
-                  <div className="tabular-nums">
-                    {bidCount} {bidCount === 1 ? "bid" : "bids"}
-                  </div>
-                )}
-              </RenderIf>
-              <RenderIf when={remaining !== null}>
-                {() => (
-                  <div className="tabular-nums">
-                    {formatRemaining(remaining!)}
-                  </div>
-                )}
-              </RenderIf>
-            </>
+            closed ? (
+              <div className="font-medium">{closed.statusLabel}</div>
+            ) : cancelled ? undefined : (
+              <>
+                <RenderIf when={bidCount !== undefined}>
+                  {() => (
+                    <div className="tabular-nums">
+                      {bidCount} {bidCount === 1 ? "bid" : "bids"}
+                    </div>
+                  )}
+                </RenderIf>
+                <RenderIf when={remaining !== null}>
+                  {() => (
+                    <div className="tabular-nums">
+                      {formatRemaining(remaining!)}
+                    </div>
+                  )}
+                </RenderIf>
+              </>
+            )
           }
           /* The bid state, spread so the price row reads `currentBid` and its
              currency without a second shape to pass around. */
-          sale={{ price: currentBid, currency }}
+          sale={cancelled ? undefined : { price: currentBid, currency }}
         />
       }
     />

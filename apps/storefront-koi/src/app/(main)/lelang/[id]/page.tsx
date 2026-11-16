@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
-import { Suspense } from 'react';
 
-import { DEFAULT_AUCTION_LOTS } from '@/const/auctions';
+import { getLot } from '@/lib/data/lots';
 import { LotDetailsPage } from '@/components/sections';
 
 export async function generateMetadata({
@@ -10,11 +9,14 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const lot = DEFAULT_AUCTION_LOTS.find((candidate) => candidate.id === id);
+  const lot = await getLot(id);
 
   return { title: lot?.title ?? 'Lot lelang' };
 }
 
+/* No `Suspense`: an unknown id is a `notFound()` inside the section, and a
+   boundary above it would flush the shell before the 404 could be set. Same
+   reason the product route awaits its section. */
 export default async function LotRoute({
   params
 }: {
@@ -22,9 +24,5 @@ export default async function LotRoute({
 }) {
   const { id } = await params;
 
-  return (
-    <Suspense>
-      <LotDetailsPage id={id} />
-    </Suspense>
-  );
+  return <LotDetailsPage id={id} />;
 }
