@@ -36,6 +36,7 @@ import {
   createServiceZonesWorkflow,
   createShippingProfilesWorkflow,
   createTaxRegionsWorkflow,
+  createUserAccountWorkflow,
   linkSalesChannelsToApiKeyWorkflow,
   linkSalesChannelsToStockLocationWorkflow,
   updateStoresStep,
@@ -889,10 +890,14 @@ const updateStoreCurrencies = createWorkflow(
 );
 
 /** Registers an emailpass identity, tolerating one that already exists. */
-const authIdentityFor = async (container: MedusaContainer, email: string) => {
+const authIdentityFor = async (
+  container: MedusaContainer,
+  email: string,
+  password = SEED_PASSWORD
+) => {
   const authModuleService = container.resolve(Modules.AUTH);
   const registerResponse = await authModuleService.register("emailpass", {
-    body: { email, password: SEED_PASSWORD },
+    body: { email, password },
   });
 
   if (registerResponse.success && registerResponse.authIdentity) {
@@ -905,6 +910,35 @@ const authIdentityFor = async (container: MedusaContainer, email: string) => {
   });
   return providerIdentity.auth_identity_id!;
 };
+
+/**
+ * T-020.10. The admin-koi login, created the way `medusa user` does: an
+ * emailpass identity plus `createUserAccountWorkflow` (user row + `user_id` on
+ * the identity). A user with this email already present means nothing to do.
+ * `||`, not `??`: the `.env.template` placeholders are empty strings.
+ */
+export async function seedAdminUser(container: MedusaContainer) {
+  const logger = container.resolve(ContainerRegistrationKeys.LOGGER);
+  const query = container.resolve(ContainerRegistrationKeys.QUERY);
+  const email = process.env.ADMIN_EMAIL || `admin@${EMAIL_DOMAIN}`;
+  const password = process.env.ADMIN_PASSWORD || SEED_PASSWORD;
+
+  const { data: existingUsers } = await query.graph({
+    entity: "user",
+    fields: ["id"],
+    filters: { email },
+  });
+  if (existingUsers[0]) {
+    logger.info(`Admin user ${email} already exists, skipping.`);
+    return;
+  }
+
+  const authIdentityId = await authIdentityFor(container, email, password);
+  await createUserAccountWorkflow(container).run({
+    input: { authIdentityId, userData: { email } },
+  });
+  logger.info(`Finished seeding admin user ${email}.`);
+}
 
 /**
  * T-020.9. One auth identity with both actors (D-003): the customer row with
@@ -1017,6 +1051,8 @@ export default async function seedKoiData({ container }: ExecArgs) {
   logger.info("Seed data self-check passed.");
 
   logger.info("Seeding koi store data...");
+  // T-020.10: before every guard, so an already-seeded database still gets it.
+  await seedAdminUser(container);
   const [store] = await storeModuleService.listStores();
   let defaultSalesChannel = await salesChannelModuleService.listSalesChannels({
     name: "Default Sales Channel",

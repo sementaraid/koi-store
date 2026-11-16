@@ -126,7 +126,7 @@ git add <the story's files> && git commit -m "feat(US-xxx): <what it does>"
 | App | URL | Sign in |
 |---|---|---|
 | Storefront + Farmer area | `http://127.0.0.1:3001` | Seeded customers `*@koi.dev` / `supersecret`; approved farm `sakura.koi.farm@koi.dev` / `supersecret` (customer with a Rp500.000 wallet plus member and `open` seller, so it opens the Farmer area) |
-| Admin | `http://127.0.0.1:3002/masuk` | Dev admin `admin@koi.dev` / `supersecret`. **Not created by the seed yet**: it exists only in the current dev DB. T-020.10 adds it to `seed-koi.ts` (env `ADMIN_EMAIL` / `ADMIN_PASSWORD`, these values as defaults). A fresh DB has no admin login until T-020.10 lands |
+| Admin | `http://127.0.0.1:3002/masuk` | Seeded admin `admin@koi.dev` / `supersecret` (env `ADMIN_EMAIL` / `ADMIN_PASSWORD` override these defaults; `seed-koi.ts` creates it when missing) |
 | Backend | `http://127.0.0.1:9000` | — |
 
 Screenshots and page snapshots land in `.playwright-mcp/` (gitignored).
