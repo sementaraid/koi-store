@@ -51,7 +51,7 @@ The product-owner agent drafts entries. The owner approves them.
 | D-041 | 2026-11-15 | Every seller suspend and every ban needs a reason (extends D-015) | In force |
 | D-042 | 2026-11-15 | Admins see masked PII everywhere; a full value only through an explicit reveal, logged (answers `mvp-Q25`) | In force |
 | D-043 | 2026-11-15 | Column-level encryption for NIK, bank account and phone on top of disk encryption; the wallet and top-up tables are included in US-092 (answers `mvp-Q26`) | In force |
-| D-044 | 2026-11-15 | The winner of a lot sees the farmer's full bank account for that lot only, through the logged reveal (answers `mvp-Q27`) | In force; farmer's view of the winner's phone confirmed 2026-11-15 |
+| D-044 | 2026-11-15 | The winner of a lot sees the farmer's full bank account for that lot only, through the logged reveal (answers `mvp-Q27`) | In force; the 2026-11-15 "farmer reveals the winner's phone" confirmation superseded by D-052 |
 | D-045 | 2026-11-15 | A person sees their own full PII on their own record; every other caller, admins included, gets the mask | In force |
 | D-046 | 2026-11-15 | Public pages show `scheduled`, `live` and `closed` auctions; a closed lot shows final price and sold/unsold, never the winner | In force; "masked name" clause superseded in part by D-051 |
 | D-047 | 2026-11-15 | Join ships before bans; the ban check lands with strikes (US-059) | In force |
@@ -59,6 +59,10 @@ The product-owner agent drafts entries. The owner approves them.
 | D-049 | 2026-11-15 | Approval is refused once the auction's start time has passed | In force |
 | D-050 | 2026-11-15 | A cancelled lot inside a public auction stays visible, labelled "Dibatalkan", with no price, final price, winner or bids | In force |
 | D-051 | 2026-11-16 | Bidders shown as `Bud***x7` (3 letters of first name + `***` + last 2 characters of the customer id); full masked bid history on open and closed lots (supersedes D-046 in part) | In force |
+| D-052 | 2026-11-16 | No phone between winner and farmer in the MVP: the winner gets only the farmer's bank account (D-044 reveal), the farmer only the winner's name; no wa.me link (answers `mvp-Q34`; supersedes D-044's phone confirmation) | In force |
+| D-053 | 2026-11-16 | A lot the winner never marks delivered stays `shipped`; no job, no setting in the MVP (answers `mvp-Q35`) | In force |
+| D-054 | 2026-11-16 | A farm suspended after approval may still mark its already-sold lots paid and shipped; it can't create auctions or lots; a terminated farm can't (answers `mvp-Q36`) | In force |
+| D-055 | 2026-11-16 | Error messages the Koi apps show verbatim are Indonesian, written on the backend, rupiah in `id-ID`; `@mercurjs/client` is not patched | In force |
 
 ---
 
@@ -503,7 +507,8 @@ masked.
 - Confirmed 2026-11-15: the farmer's view of the winner's phone stays masked;
   the full number comes only through US-051's logged reveal of the winner's
   phone for the farmer's own sold lot. This is a confirmation of the line above;
-  no separate decision is needed.
+  no separate decision is needed. **Superseded by D-052 (2026-11-16):** the
+  farmer gets no winner phone at all, masked or revealed.
 - Answered `mvp-Q27`; unblocks US-051.
 **Reason:** The winner must type the full account number to transfer the money;
 any other user, and any other lot, stays masked.
@@ -614,3 +619,64 @@ id, for example `Bud***x7`.
 **Reason:** A stable, PII-free mask lets bidders follow a lot's competition,
 and a closed lot's full history shows how its price was reached.
 **Source:** Owner, answer to `mvp-Q33` (2026-11-16).
+
+### D-052: No phone between winner and farmer in the MVP
+**Decision:** Neither side of a won lot sees the other's phone or WhatsApp
+number, masked or revealed.
+- The winner sees the farmer's bank account (full, through the logged reveal,
+  D-044) and nothing else of the farmer's contact data.
+- The farmer sees the winner's name and nothing else of the winner's contact
+  data. The farmer's reveal of the winner's phone (D-044 confirmation,
+  2026-11-15) is dropped.
+- No `wa.me` link or any "chat on WhatsApp" button: it needs the full number.
+- The winner pays the farmer directly into the revealed bank account. If the
+  farmer needs to reach the buyer, they use the contact information they
+  already have (owner's words; what that is, in the MVP, is `mvp-Q37`).
+- Supersedes the 2026-11-15 confirmation bullet of D-044 and the plan's
+  "the winner sees the farmer's WhatsApp … the farmer sees the winner's …
+  WhatsApp" (Closing and winners).
+- Answered `mvp-Q34`; unblocks US-051 and US-053 T-053.2.
+**Reason:** Phones are PII (D-039); the bank account is the only contact data
+a winner needs to pay.
+**Source:** Owner, answer to `mvp-Q34` (2026-11-16).
+
+### D-053: A lot never marked delivered stays shipped
+**Decision:** When the winner never marks a lot delivered, nothing happens in
+the MVP: the lot stays `shipped`. No scheduled job, no auto-confirm and no
+setting for it. The claim window (4 hours from delivered) never opens for that
+lot.
+- "Auto-confirm delivery after N days" is kept in `docs/releases/README.md`,
+  Ideas not yet planned.
+- Answered `mvp-Q35`, option (a).
+**Reason:** Keeps the MVP small; the sale already stands once shipped.
+**Source:** Owner, answer to `mvp-Q35` (2026-11-16).
+
+### D-054: A farm suspended after approval may finish its sold lots
+**Decision:** A farm suspended after approval (D-041) may still mark its
+already-sold lots `paid` and `shipped`, so buyers are not stranded. It can't
+create auctions or lots, or do any other farmer action.
+- The paid and shipped routes (US-052) do **not** run `validateSellerOpenStep`.
+  They check instead that the lot belongs to the caller's seller and that the
+  seller's status is not `terminated` (`SellerStatus.TERMINATED`, Mercur
+  2.3.7, `@mercurjs/types` `seller/common`). A terminated farm gets 403.
+- Every other custom `/vendor/*` mutation keeps `validateSellerOpenStep`.
+- A rejected farm (D-015) is also `suspended`, but owns no sold lot, so the
+  ownership check refuses it.
+- Answered `mvp-Q36`, option (a).
+**Reason:** A suspension punishes the farm, not the winner who already paid.
+**Source:** Owner, answer to `mvp-Q36` (2026-11-16).
+
+### D-055: User-facing error messages are Indonesian, written on the backend
+**Decision:** Every error message a Koi app may show verbatim is written in
+Indonesian on the backend, with rupiah formatted `id-ID` (`Rp1.100.000`).
+- `@mercurjs/client` keeps only `message` and `code` (plus the HTTP status)
+  from an error body, so the server's message is the last place the copy the
+  customer reads can be right.
+- Patching or wrapping the client to carry extra fields is rejected.
+- Apps still key behaviour on `code` / status, never on message text. A 409
+  body is rewritten by Medusa, so its message never reaches a user; the app
+  writes that copy itself.
+- Admin-only messages follow the same rule when admin-koi shows them verbatim.
+**Reason:** The customer sees exactly what the server wrote; a translation in
+the client can't see fields the client already dropped.
+**Source:** Owner (2026-11-16), after the US-042 `bid_too_low` follow-up.

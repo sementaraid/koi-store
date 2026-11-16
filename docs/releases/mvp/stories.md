@@ -16,21 +16,11 @@ are defined in `docs/product/overview.md`.
 
 ## Status as of 2026-11-16
 
-**Last accepted story:** US-033 (tasks T-033.1/.2/.3), committed `c323956`.
-T-030.8, T-032.6, T-032.7 and T-020.9 (seed fix) were accepted in the same pass.
-Every story above Epic 4 is `done`. Nothing in Epic 4 has passed qa yet.
-
-**Built, awaiting qa.** Tasks stay `[ ]` until qa reports PASS and the evidence
-is spot-checked:
-- US-041 T-041.1a, T-041.1b — committed (`auction_participant` + unique index,
-  join-auction workflow, `POST`/`GET /store/auctions/:id/join`). Specs exist
-  (3 module, 12 http), not yet qa-run.
-- US-040 T-040.1 — committed (`GET /store/lots`, `GET /store/lots/:id`). 8 specs.
-- US-042 T-042.1, T-042.2 — **uncommitted** (`bid` model,
-  `Migration20261116050149`, place-bid workflow, `POST /store/bids`). 10 specs.
-- US-040 T-040.2a — **uncommitted** (`lib/data/lots.ts`,
-  `lib/adapters/lot.ts` + test, `lelang` feed on the API). Browser render NOT
-  verified: the app container can't launch chromium, only `curl` was checked.
+**Last accepted stories:** US-040, US-041, US-042 (Epic 4), qa PASS on every AC
+and accepted the same day. US-033 was the pass before. T-030.8, T-032.6, T-032.7
+and T-020.10 (seed fix) were accepted earlier. The `bid` model and the bid/join
+code are still **uncommitted** — commit before US-050 T-050.1's migration builds
+on them.
 
 **Counts** (computed from this file, 2026-11-16):
 
@@ -40,28 +30,28 @@ is spot-checked:
 | 1 Wallet | 6 | 0 | 0 | 0 | 22 | 0 |
 | 2 Becoming a farmer | 2 | 0 | 0 | 0 | 11 | 5 |
 | 3 Auctions for farmers | 4 | 0 | 0 | 0 | 23 | 0 |
-| 4 Joining and bidding | 0 | 3 | 4 | 0 | 0 | 25 |
-| 5 Closing and after-sale | 0 | 0 | 12 | 0 | 0 | 37 |
+| 4 Joining and bidding | 3 | 0 | 4 | 0 | 14 | 11 |
+| 5 Closing and after-sale | 0 | 0 | 12 | 0 | 0 | 40 |
 | 6 Admin operations | 0 | 0 | 6 | 0 | 0 | 22 |
 | 7 WhatsApp bot | 0 | 0 | 0 | 6 | 0 | 12 |
 | 8 Pilot | 0 | 0 | 1 | 0 | 0 | 5 |
-| **Total** | **15** | **3** | **23** | **6** | **65** | **106** |
-
-In progress = built work awaiting qa: US-040, US-041, US-042.
+| **Total** | **18** | **0** | **23** | **6** | **79** | **95** |
 
 Epic 2's open tasks are US-021's T-021.2/.3/.4/.6 (follow-ups on a `done` story)
 and the new T-020.10 (seed an admin user). Blocked: US-080 – US-085 (mvp-Q12).
-US-044 unblocked 2026-11-16 (mvp-Q33 answered, D-051).
+Epic 5 task count drops by one: T-051.3b dropped (D-052). US-051 unblocked by D-052 (2026-11-16).
 
 **Next in milestone order:**
-1. US-040: qa on T-040.1 + T-040.2a (incl. the browser render check not yet run), then T-040.2b, T-040.2c, T-040.3.
-2. US-041: qa on T-041.1a/.1b, then T-041.2 (join CTA on the lot page, needs T-040.2b), T-041.3.
-3. US-042: qa T-042.4/.5 on the built backend, then T-042.3 (bid control, needs T-040.2b + T-041.2).
-
-Then US-043 (T-043.1 hooks into the place-bid workflow). US-044 is `todo` (D-051); T-044.1 starts once US-042 T-042.1 is accepted.
+1. US-043 T-043.1 (extend + the bid-after-end gate, the gap found while checking
+   the brief), T-043.2 in the same run, then T-043.3 (storefront).
+2. US-050 T-050.1 → T-050.2 (close workflows + `close-lots` job), T-050.3 qa.
+3. US-051: farmer side T-051.1b → T-051.2b (sold lots, winner's name only, D-052);
+   winner side T-051.1a → T-051.3a → T-051.2a (won lots + bank-account reveal, D-044).
+4. US-052 T-052.1/.2/.3 (no `validateSellerOpenStep`, D-054), then US-053
+   T-053.1, T-053.2 (after T-051.2a), T-053.3.
+5. US-044 (D-051) can run anytime after US-042's commit; T-044.1 touches only the
+   store lot routes, no bid workflow.
 T-020.10 can run any time; qa's admin browser checks need it.
-
----
 
 ## Epic 0: Foundations (Milestone 1)
 
@@ -282,6 +272,7 @@ auctions the platform accepts. *(Plan: How credit moves 5, Fees, Key flows: appr
 - [x] T-031.4 [backend] Balance re-check + `listing_fee` charge steps inside US-032's approve workflow, with compensation (AC5–AC7) — `admin-auction-approval.spec.ts:162-184,186-201,203-222`
 - [x] T-031.2 [storefront] Submit action in the Farmer area; short-balance prompt that links to top-up — `SubmitAuctionButton.tsx:67-82`; storefront-koi `bun run check` clean; screenshot `/tmp/koi-qa/31-after-submit.png`
 - [x] T-031.5 [admin] Clear error in the `/lelang` queue when approval fails on a short balance — `apps/admin-koi/src/lib/helpers/auction-format.ts:49`, `auction-format.test.ts:56`; admin-koi `bun run check` (28 tests) clean
+**D-055 sweep (2026-11-16):** T-031.1/T-031.2: `insufficient_balance` on submit is English in source (`steps/listing-fee.ts:21`) and the storefront shows it **verbatim** to the farmer (`auction-submit.ts:18`) — breaks D-055. T-031.4/T-031.5: the same English message is embedded inside admin-koi's Indonesian sentence (`auction-format.ts:51-52`) — mixed language.
 - [x] T-031.3 [qa] A failure after the charge rolls it back; a short balance refuses submission and approval and writes nothing; resubmitting after a category or lot change recomputes the fees; the charge lands on the saved `customer_id`'s wallet; rejection and a lowered fee write no refund — `farmer-auctions.spec.ts:445-512,553-602`; `admin-auction-approval.spec.ts:186-222,259-305`. Not verified: two truly concurrent approvals (a sequential second approve gets 409 and charges nothing, `admin-auction-approval.spec.ts:179-184`)
 
 ### US-032 Admin approves or rejects auctions · `done (evidence: packages/api/integration-tests/http/admin-auction-approval.spec.ts:131-160,162-184,224-257,259-305; apps/admin-koi/src/components/AuctionQueue.tsx; apps/storefront-koi/src/components/sections/AccountPage/components/EditAuction.tsx:76,226; qa PASS)`
@@ -300,6 +291,7 @@ category, photos and fees are checked. *(Plan: Structure, Fees; D-020, D-031, D-
 - [x] T-032.3 [qa] An override or a rejection without a reason is refused; a rejected auction is `draft` with the reason visible to its farmer and no override; a `draft` auction never shows in the queue; no status outside the plan's enum is written — `admin-auction-approval.spec.ts:131-160,224-257,259-305`
 - [x] T-032.6 [backend] *(Follow-up, AC6, D-049.)* In `approveAuctionWorkflow` (`packages/api/src/workflows/decide-auction.ts`), refuse when `start_at <= now`: `MedusaError` `INVALID_DATA` (400) with code `start_passed`, checked before the wallet lock and charge. Add `start_at` to what the approve path reads (`getPendingAuctionStep`, `steps/auction.ts:304-337`, is shared with reject; reject must keep working on a passed start). Spec in `admin-auction-approval.spec.ts`: a `pending_approval` auction with a past `start_at` → 400 `start_passed`, no `listing_fee` row, status still `pending_approval`; rejecting the same auction still works. No route shape change, no codegen. — `steps/auction.ts:340-348` (`refuse_started`), `decide-auction.ts` approve passes it before the payer read, wallet lock and charge; `admin-auction-approval.spec.ts:203-223`; browser: past-start approve → 400, 0 `listing_fee` rows, still `pending_approval`, reject works
 - [x] T-032.7 [admin] *(Follow-up, AC6.)* `/lelang`: map code `start_passed` in `auctionApproveErrorMessage` (`apps/admin-koi/src/lib/helpers/auction-format.ts:49`) to a clear Indonesian message that tells the admin to reject with a reason so the farmer picks new dates; add a case to `auction-format.test.ts`. `bun run check` clean. — `auction-format.ts:54-56`, `auction-format.test.ts:61-66`; admin-koi `bun run check` (29 tests) clean; browser toast shows the Indonesian message
+**D-055 sweep (2026-11-16):** T-032.6/T-032.7: `start_passed` (admin-only) is English in source (`steps/auction.ts:347`); admin-koi translates it client-side (`auction-format.ts:54-56`), so the admin reads Indonesian.
 **Follow-up (2026-11-15):** T-032.6 and T-032.7 were added after acceptance (`mvp-Q31` → D-049). US-032 stays `done`. Both were qa-verified and product-owner-accepted on 2026-11-16 (commit `c323956`); AC6 is now proven (`admin-auction-approval.spec.ts:203-223` 400 `start_passed`, no fee row, still `pending_approval`; reject path still works; admin-koi toast).
 
 ### US-033 Auctions start and farmers track them · `done (evidence: packages/api/src/modules/auction/models/auction.ts:6-13; packages/api/src/jobs/start-auctions.ts; packages/api/src/workflows/start-auction.ts; packages/api/integration-tests/http/auction-start-job.spec.ts:83-105; packages/api/integration-tests/http/admin-auction-approval.spec.ts:203-223,282-305; apps/storefront-koi/src/components/sections/AccountPage/FarmHomePage.tsx:212-241; apps/storefront-koi/src/lib/helpers/auction-status.ts:16-28,33-40; live job tick in dev DB scheduled → live, log "found 1, started 1"; screenshot .playwright-mcp/qa-us033-farm-beranda-tabs.png; qa PASS)`
@@ -433,17 +425,17 @@ Report PASS/FAIL per AC with file:line and command output. Don't change app code
 
 ## Epic 4: Joining and bidding (Milestone 4)
 
-### US-040 Customer browses real auctions · `in progress`
+### US-040 Customer browses real auctions · `done (evidence: packages/api/integration-tests/http/store-lots.spec.ts:153-410 (8/8); packages/api/src/api/store/lots/route.ts:80,105-125; apps/storefront-koi/src/lib/data/lots.ts:67,175; apps/storefront-koi/src/components/sections/LotDetailsPage/components/LotPage.tsx:83,243-251; LotDetailsPage.tsx:26 (real 404); storefront bun run check pass (161 tests); browser closed-sold/unsold/cancelled and tab counts; qa PASS)`
 As a **customer**, I want to browse live and upcoming auctions and their lots so
 that I can choose what to bid on. *(Plan: Milestone 4)*
 - AC1: `lelang` and lot pages show API data. The demo constants are removed.
 - AC2: Each lot shows photos, OB, KB, current price and time left.
 - AC3: Lots of `scheduled`, `live` and `closed` auctions are public; `draft`, `pending_approval` and `cancelled` auctions never are. A closed lot shows its final price and "Terjual" or "Tidak terjual", never who won: no winner field of any kind on a public route or page (D-046). A cancelled lot inside a public auction stays visible, labelled "Dibatalkan", with no price, no final price, no sold label, no winner and no bids (D-050).
-- [ ] T-040.1 [backend] Public store routes `GET /store/lots` and `GET /store/lots/:id` (the storefront is lot-centric: `lelang` lists lots, and `/lelang/[id]` takes a lot id) — built 2026-11-16, awaiting qa (committed in `c323956`; `store-lots.spec.ts` 8 specs pass per backend report)
-- [ ] T-040.2a [storefront] `lib/data/lots.ts` + `lib/adapters/lot.ts` (+ test); the `lelang` feed on API data — built 2026-11-16, awaiting qa (uncommitted; `lot.test.ts` 5 cases, cancelled-lot card). **Browser render NOT verified**: the app container can't launch chromium; only `curl` was run. qa must run the render check on `/lelang`.
-- [ ] T-040.2b [storefront] The lot page `/lelang/[id]` on API data (photos, OB, KB, current price, time left); remove the demo lots from `const/auctions.ts`
-- [ ] T-040.2c [storefront] Home page hero and lot strip on API data (`const/home.ts` demo lots link to ids `1…n`, which 404 once T-040.2b lands)
-- [ ] T-040.3 [qa] No demo data left in auction views
+- [x] T-040.1 [backend] Public store routes `GET /store/lots` and `GET /store/lots/:id` (the storefront is lot-centric: `lelang` lists lots, and `/lelang/[id]` takes a lot id) — built 2026-11-16, qa PASS 2026-11-16 (committed in `c323956`; `store-lots.spec.ts` 8 specs pass per backend report)
+- [x] T-040.2a [storefront] `lib/data/lots.ts` + `lib/adapters/lot.ts` (+ test); the `lelang` feed on API data — built 2026-11-16, qa PASS 2026-11-16 (uncommitted; `lot.test.ts` 5 cases, cancelled-lot card). **Browser render NOT verified**: the app container can't launch chromium; only `curl` was run. qa must run the render check on `/lelang`.
+- [x] T-040.2b [storefront] The lot page `/lelang/[id]` on API data (photos, OB, KB, current price, time left); remove the demo lots from `const/auctions.ts`
+- [x] T-040.2c [storefront] Home page hero and lot strip on API data (`const/home.ts` demo lots link to ids `1…n`, which 404 once T-040.2b lands)
+- [x] T-040.3 [qa] No demo data left in auction views
 
 **Readiness (2026-11-15):** ready. `mvp-Q28` answered (D-046): public statuses are `scheduled`, `live` and `closed`; closed lots show final price and sold/unsold, never the winner; the "Selesai" tab stays. `mvp-Q32` answered (D-050): a cancelled lot inside a public auction stays visible as "Dibatalkan", with no price, no final price, no sold label, no winner and no bids. No lot can be cancelled before US-091, so the tasks build it now (flag, labels) and US-091 only produces the cancelled lots.
 **Known interim:** the live room (`/live`) keeps its demo lots until US-046 T-046.2. Its tiles link to demo ids, which 404 once T-040.2b lands. Accepted until US-046 and recorded here so qa doesn't fail US-040 on it.
@@ -710,17 +702,18 @@ payer_customer_id/winner_customer_id/cancel_reason, and "winner" at all on a clo
 Report PASS/FAIL per AC with file:line and command output. Don't change app code.
 ```
 
-### US-041 Customer joins an auction · `in progress`
+### US-041 Customer joins an auction · `done (evidence: packages/api/integration-tests/http/join-auction.spec.ts:126-266 (12/12); packages/api/src/modules/auction/__tests__/auction-participant.spec.ts:33-63 (3/3); apps/storefront-koi/src/lib/helpers/join-auction.ts:72-81; JoinAuction.tsx:52-58,100-117; browser join wrote 1 participant + 1 join_fee −100000; qa PASS; ban clause → US-059, D-047)`
 As a **customer**, I want to join an auction by paying the join fee once so that
 I can bid on all its lots. *(Plan: Structure, Fair play, Strikes)*
 - AC1: Join fee recorded as `join_fee` (−) once per auction. The participant is added in the same workflow.
 - AC2: Short balance blocks joining with a "top up" prompt.
 - AC3: Joining is allowed any time until the auction ends, including after bidding starts.
 - AC4: A farmer can't join their own auction. A banned customer can't join. *(Ban clause delivered and verified by US-059 T-059.1, D-047; not checked in this story.)*
-- [ ] T-041.1a [backend] `auction_participant` model + migration (unique per auction + customer) — built 2026-11-16, awaiting qa (committed in `c323956`; `Migration20261115211617.ts:10` unique index; `auction-participant.spec.ts` 3 cases)
-- [ ] T-041.1b [backend] Join workflow + `POST`/`GET /store/auctions/:id/join` (balance check, charge, participant) — built 2026-11-16, awaiting qa (committed in `c323956`; `join-auction.spec.ts` 12 specs pass per backend report)
-- [ ] T-041.2 [storefront] Join button with the fee shown and a short-balance prompt
-- [ ] T-041.3 [qa] Joining twice charges once; own-auction users are blocked (banned users: US-059, D-047)
+- [x] T-041.1a [backend] `auction_participant` model + migration (unique per auction + customer) — built 2026-11-16, qa PASS 2026-11-16 (committed in `c323956`; `Migration20261115211617.ts:10` unique index; `auction-participant.spec.ts` 3 cases)
+- [x] T-041.1b [backend] Join workflow + `POST`/`GET /store/auctions/:id/join` (balance check, charge, participant) — built 2026-11-16, qa PASS 2026-11-16 (committed in `c323956`; `join-auction.spec.ts` 12 specs pass per backend report)
+- [x] T-041.2 [storefront] Join button with the fee shown and a short-balance prompt
+- [x] T-041.3 [qa] Joining twice charges once; own-auction users are blocked (banned users: US-059, D-047)
+**D-055 sweep (2026-11-16):** T-041.1b: `insufficient_balance` (`steps/join-fee.ts:112,165`) and `own_auction` (`:61`) are English in source; T-041.2 translates them client-side (`join-auction.ts:72-87`), so the customer reads Indonesian. Backend copy to be translated when the join code is next touched; `already_joined`/`auction_not_joinable` are 409 (never shown).
 
 **Readiness (2026-11-15):** ready. `mvp-Q29` answered (D-047) and `mvp-Q30` answered (D-048). Depends on US-040 (below). Where each rule comes from:
 - **Charge:** plan "How credit moves" step 4 and Key flows "Join auction". One workflow checks the balance, records `join_fee` (−) and adds the participant, all or nothing. The amount is the final join fee, `fee_override_join_fee ?? join_fee` (D-032). The balance is a sum of the ledger, never a stored number (CLAUDE.md §8). The wallet row is locked with the same `wallet:<id>` key as approval and adjustments. No wallet (profile incomplete, D-011) counts as Rp0 and gets the top-up prompt.
@@ -915,22 +908,24 @@ Report PASS/FAIL per AC with file:line and command output. Don't change app code
 ```
 
 
-### US-042 Customer places a bid on the website · `in progress`
+### US-042 Customer places a bid on the website · `done (evidence: packages/api/integration-tests/http/place-bid.spec.ts:139-291 (10/10, incl. :213-232 concurrent equal bids [201, 400], one row); packages/api/src/workflows/place-bid.ts:25-28 (lock `lot:<id>`); packages/api/src/api/store/bids/route.ts (POST only, no retract); apps/storefront-koi/src/components/sections/LotDetailsPage/components/PlaceBid.tsx:38-67; browser OB prefill, success, refusal; qa PASS; ban clause → US-059, D-047)`
 As a **joined customer**, I want to bid on a lot so that I can win it. *(Plan: Bidding, Pricing per lot; D-023)*
 - AC1: Only joined customers can bid. Not the farmer, not banned users. *(Ban clause delivered and verified by US-059 T-059.1, D-047; not checked in this story.)*
 - AC2: The first bid on a lot may equal OB. Every later bid must be at least current price + KB. A lower bid is rejected with the minimum allowed amount (D-023). "First" means no bid that isn't removed: once every bid is removed, the next may equal OB again (D-036).
 - AC3: The lot row is locked and the server's timestamp decides order. Of two equal bids, the first wins and the second is rejected with the new current price.
 - AC4: Bids can't be retracted.
 - AC5: Each bid saves bidder, amount, source (`web`) and time.
-- [ ] T-042.1 [backend] `bid` model + place-bid workflow with row lock — built 2026-11-16, awaiting qa (**uncommitted**: `models/bid.ts`, `Migration20261116050149.ts`, `workflows/place-bid.ts`, `workflows/steps/bid.ts`; lock key `lot:<id>`; `place-bid.spec.ts` 10 specs pass per backend report)
-- [ ] T-042.2 [backend] Store route `POST` bid, identity from `auth_context` — built 2026-11-16, awaiting qa (**uncommitted**: `api/store/bids/{route,validators}.ts`, `middlewares.ts` `/store/bids` entry, `routes.d.ts` `store.bids`; rules: first bid = OB, later ≥ current + KB, lot lock, concurrency)
-- [ ] T-042.3 [storefront] Bid control on the lot page `/lelang/[id]` wired to `POST /store/bids`, with rejection messages keyed on status + code
-- [ ] T-042.4 [qa] Concurrent equal bids: exactly one accepted
-- [ ] T-042.5 [qa] First bid = OB accepted; first bid < OB rejected; a later bid < current + KB rejected
+- [x] T-042.1 [backend] `bid` model + place-bid workflow with row lock — built 2026-11-16, qa PASS 2026-11-16 (**uncommitted**: `models/bid.ts`, `Migration20261116050149.ts`, `workflows/place-bid.ts`, `workflows/steps/bid.ts`; lock key `lot:<id>`; `place-bid.spec.ts` 10 specs pass per backend report)
+- [x] T-042.2 [backend] Store route `POST` bid, identity from `auth_context` — built 2026-11-16, qa PASS 2026-11-16 (**uncommitted**: `api/store/bids/{route,validators}.ts`, `middlewares.ts` `/store/bids` entry, `routes.d.ts` `store.bids`; rules: first bid = OB, later ≥ current + KB, lot lock, concurrency)
+- [x] T-042.3 [storefront] Bid control on the lot page `/lelang/[id]` wired to `POST /store/bids`, with rejection messages keyed on status + code
+- [x] T-042.4 [qa] Concurrent equal bids: exactly one accepted
+- [x] T-042.5 [qa] First bid = OB accepted; first bid < OB rejected; a later bid < current + KB rejected
 
+**D-055 sweep (2026-11-16):** T-042.1/.2: `own_auction` (`steps/bid.ts:85`), `not_participant` (`:103`), `invalid_amount` (`:144`) are Indonesian in source; `auction_not_live`/`lot_not_open` (`:111,119`) are English but 409 (Medusa rewrites the body, never shown; T-042.3 writes its own copy, `place-bid.ts:118-123`); `bid_too_low` see the follow-up below.
 **Scope note (2026-11-16):** bid removal is US-072 (T-072.1 adds `removed_at`/`removed_by` to `bid`), extend is US-043, the ban check is US-059 (D-047). None of them is in US-042. Until US-072 lands, every `bid` row is a live bid, so AC2's "no bid that isn't removed" reduces to "no bid" (`steps/bid.ts` `minimum`).
 **Bid gate:** the **auction's** status must be `live` (409 `auction_not_live`); the lot must be `open` (409 `lot_not_open`). A lot is `open` while its auction is still `scheduled` (US-033 note), so the lot status alone isn't the gate.
 **Lock limit:** `acquireLockStep` is in-memory without redis, so AC3 holds within one backend process only. Production needs T-090.4.
+**Follow-up after acceptance (2026-11-16, not a reopen):** the `bid_too_low` refusal text was English ("Bid at least Rp…") inside the Indonesian UI. `@mercurjs/client` keeps only `message` and `code`, so a numeric `minimum` in the body never reaches the storefront. Fix in progress, per D-055: the **backend message itself** is translated ("Bid minimal Rp1.100.000. Harga sekarang Rp1.000.000.", `src/utils/bid.ts`, uncommitted, not yet qa-verified) and the storefront keeps showing it verbatim (`place-bid.ts:103-108`). Patching or wrapping the client was explicitly rejected by the owner (D-055). AC2/AC3 stay met; the amount and `current_price` are already correct. Still to fix in the same round: the test fixture `apps/storefront-koi/src/lib/helpers/place-bid.test.ts:49-58` still uses the old English text.
 
 #### API contract (from the backend report, 2026-11-16; pinned for T-042.3)
 
@@ -1131,11 +1126,23 @@ As a **bidder**, I want late bids to extend the lot so that nobody wins by snipi
 - AC1: A bid in the last 5 minutes (the setting) moves that lot's end time to 5 minutes after the bid.
 - AC2: It repeats until 5 minutes pass with no bid.
 - AC3: Each lot extends on its own. Other lots keep their end time.
-- [ ] T-043.1 [backend] Extend step in the place-bid workflow
-- [ ] T-043.2 [qa] Extend applies per lot and uses the auction's setting at its start
+- AC4: A bid that arrives after the lot's end time is refused (409); the timer has ended, so the lot is no longer open for bids even before the close job runs. *(Plan: Lot lifecycle, "Open for bids --(timer ends)-->"; added 2026-11-16, see below.)*
+- [ ] T-043.1 [backend] Extend step in the place-bid workflow, plus the bid-after-end gate (AC4)
+- [ ] T-043.2 [qa] Extend applies per lot and uses the auction's setting at its start; a bid after end_time is refused
 - [ ] T-043.3 [storefront] Lot page shows the extended end time after a bid (re-read, no new route)
 
 **Readiness (2026-11-16):** ready once US-042 T-042.1 is accepted (the workflow it hooks into). No open question.
+**Brief checked against the built code (2026-11-16):** matches. `getBiddableLotStep` already reads and returns
+`end_time` and `auction_id` (`steps/bid.ts:21-32,56,159-160`); the hook point is after `setLotCurrentPriceStep`
+(`place-bid.ts:40`) and before `releaseLockStep` (`place-bid.ts:48`); the 201 body is built at `bids/route.ts:53-62`
+(type `StorePlaceBidResponse`, `:17-21`), where `end_time` is added. Two corrections, both in the T-043.1 brief:
+- **Gap found (AC4):** the guard checks the auction's `live` status and the lot's `open` status (`steps/bid.ts:106-120`)
+  but never `end_time`. The close job (US-050) runs once a minute, so a bid could land up to ~60 s after the end and
+  the extend step would then push `end_time` forward, reviving a finished lot. The plan's lifecycle ends bidding when
+  the timer ends; T-043.1 adds the gate (`now >= end_time` → 409 `lot_ended`). The storefront needs no change: it
+  already treats every 409 as "not taking bids" and re-reads the lot (US-042 T-042.3 brief).
+- The workflow currently returns `{ bid, lot }` where `lot` is `setLotCurrentPriceStep`'s result, i.e. the
+  **pre-extend** row. The response's `end_time` must come from the extend step's output.
 - The window is already snapshotted per auction: `auction.extend_window_minutes` (`models/auction.ts:38-40`), set at
   create from the settings table (`create-auction.ts:68`), never changed by a later settings edit (US-030 AC6, US-015 AC2).
   So "the setting" in AC1 means **the auction's stored value**, not the live setting.
@@ -1156,29 +1163,37 @@ Starts after: US-042 T-042.1/.2 accepted.
 - AC1: A bid in the last 5 minutes (the setting) moves that lot's end time to 5 minutes after the bid.
 - AC2: It repeats until 5 minutes pass with no bid.
 - AC3: Each lot extends on its own. Other lots keep their end time.
+- AC4: A bid that arrives after the lot's end time is refused (409); the timer has ended, so the lot is no longer open for bids even before the close job runs.
 
 ## Decisions in force
 plan "Extend": window default 5 min, admin-editable; a change applies only to auctions that haven't started → the
   auction's snapshotted extend_window_minutes (US-030 AC6). Each lot extends on its own.
+plan "Lot lifecycle": bidding ends when the timer ends (AC4); US-050 closes the lot on the next job tick.
 D-024: end time is never shortened (also relevant when US-072 removes a bid later).
 CLAUDE.md §8: server timestamp decides; save the new end_time when the bid happens; lock the row.
 CLAUDE.md §9: one mutation per step, with compensation; no if/async in the composition (use transform/when).
 
 ## Build
-- getBiddableLotStep (steps/bid.ts): also read auction.extend_window_minutes; return it in BiddableLot.
+- getBiddableLotStep (steps/bid.ts:40): also read auction.extend_window_minutes; return it in BiddableLot (:21-32).
+- AC4 gate in getBiddableLotStep, right after the lot_not_open check (:114-120): if Date.now() >= end_time →
+  MedusaError CONFLICT, code `lot_ended`, "This lot has ended." (409; Medusa rewrites the body, apps key on status).
+  D-055: a 409 message never reaches a user, but write it in Indonesian anyway ("Lot ini sudah selesai.").
+  The same instant rule as the close job (US-050 closes `end_time <= now`): a bid is accepted only while now < end_time.
 - New step extendLotEndTimeStep (steps/bid.ts): input { lot_id, end_time, window_minutes, bid_at };
   bid_at = the saved bid's created_at (server time, from createBidStep's result).
   If end_time - bid_at <= window → update lot.end_time = bid_at + window, only when that is later than end_time.
   Otherwise no write (return the unchanged end_time). Compensation restores the previous end_time.
-- placeBidWorkflow: call it after setLotCurrentPriceStep, before releaseLockStep. Return the lot's end_time.
-- POST /store/bids response: add `end_time` (ISO) beside current_price, so the client shows the new clock.
-  This is an additive change to the contract; run codegen.
+- placeBidWorkflow: call it after setLotCurrentPriceStep (place-bid.ts:40), before releaseLockStep (:48).
+  Return its end_time (setLotCurrentPriceStep's `lot` is the pre-extend row; don't read end_time from it).
+- POST /store/bids response (bids/route.ts:53-62, type :17-21): add `end_time` (ISO) beside current_price, so the
+  client shows the new clock. This is an additive change to the contract; run codegen.
 - Touch only this lot (AC3): the update filters by lot id; never the auction's end_at.
 
 ## Start from
 - packages/api/src/workflows/place-bid.ts (the hook point)
-- packages/api/src/workflows/steps/bid.ts (getBiddableLotStep, setLotCurrentPriceStep compensation shape)
+- packages/api/src/workflows/steps/bid.ts (getBiddableLotStep, setLotCurrentPriceStep compensation shape :202-228)
 - packages/api/src/modules/auction/models/auction.ts:38-40 (extend_window_minutes)
+- packages/api/integration-tests/http/farmer-auctions.spec.ts:18-34 (forced-failure test workflow for compensation)
 
 ## Do not touch
 - apps/**; src/workflows/{create-auction,update-draft-auction,join-auction}.ts; the settings module
@@ -1191,6 +1206,8 @@ CLAUDE.md §9: one mutation per step, with compensation; no if/async in the comp
 - two lots in one auction: bid on lot 1 inside the window → lot 2's end_time unchanged (AC3)
 - the auction's end_at unchanged
 - forced failure after the extend step → end_time restored (compensation)
+- AC4: lot whose end_time is 1 s in the past (auction still `live`, lot still `open`) → 409, no bid row, end_time
+  and current_price unchanged
 
 ## Definition of done
 cd packages/api && bun x tsc --noEmit -p .                         → clean
@@ -1238,7 +1255,8 @@ none
 Story: US-043 (task T-043.2)   Release: mvp
 Agent: qa   Expected: <=30 min
 
-Verify AC1–AC3. Decisions: plan "Extend", US-030 AC6 (snapshot), D-024 (never shortened), CLAUDE.md §8.
+Verify AC1–AC4. Decisions: plan "Extend", plan "Lot lifecycle" (AC4), US-030 AC6 (snapshot), D-024 (never shortened), CLAUDE.md §8.
+AC4: a bid on a `live` auction's `open` lot whose end_time has passed → 409, no row, no extend.
 Code under test: src/workflows/place-bid.ts, src/workflows/steps/bid.ts (extend step), src/api/store/bids/route.ts;
 storefront lib/data/bids.ts + the lot page countdown.
 Commands (alone): cd packages/api && bun run test:integration:http -- place-bid; cd apps/storefront-koi && bun run check.
@@ -1407,41 +1425,625 @@ fixed. *(Plan: Closing and winners, Key flows)*
 - AC1: A job every minute closes lots past their end time.
 - AC2: Highest bid that isn't removed wins (`won`). No such bid gives `unsold`. A `cancelled` lot is never closed (D-035).
 - AC3: Winner, final price and close time are saved on the lot, never recomputed from bids.
-- [ ] T-050.1 [backend] Close-lots job running a close workflow (idempotent, batched)
-- [ ] T-050.2 [backend] The auction becomes `closed` when all its lots are closed (`unsold`, `won` or later, or `cancelled`)
+- [ ] T-050.1 [backend] Close-lot workflow + `closed_at` column (lock, guard, winner and price saved)
+- [ ] T-050.2 [backend] Close-auction workflow + the `close-lots` job running both (idempotent, batched): the auction becomes `closed` when all its lots are closed (`unsold`, `won` or later, or `cancelled`)
 - [ ] T-050.3 [qa] Running the job twice changes nothing; an extended lot isn't closed early
 
-### US-051 Winner and farmer see each other's contact details · `todo`
+**Readiness (2026-11-16): ready (`todo`).** No open question blocks it. Starts after US-042 is accepted and committed
+(the `bid` table and `lot.bids` relation are uncommitted today, and T-050.1 adds a lot migration on top of them) and
+after US-043 T-043.1 (bids refused after `end_time`, so close and bid agree on the instant).
+- **When the auction closes:** stated by D-048 ("the auction is still `live` until every lot has closed (US-050)") and
+  the plan's auction enum `live → closed` (plan "Design rules"). A `cancelled` lot counts as closed (D-035: no winner,
+  never reopened). So: a `live` auction with no `open` lot left → `closed`. No `end_at` check is needed.
+- **Close time:** the plan says "Winner, final price and close time are saved on the lot" (Closing and winners), but
+  `lot` has no close-time column (`models/lot.ts:23-37`). T-050.1 adds `closed_at` (nullable). US-051's 1×24 h
+  deadline is computed from it.
+- **Winner:** the highest bid; of two equal amounts the first recorded (plan "Bidding"). Removal is US-072, so every
+  bid counts today (same note as `steps/bid.ts` `minimum`). Saved once, never recomputed (CLAUDE.md §8, D-036).
+- **Cancelled lots are skipped** (D-035, D-050): the guard closes only `open` lots. Lots of a `cancelled` auction are
+  skipped because the guard also requires the auction to be `live`.
+- **Extended lots:** the job reads `lot.end_time`, which US-043 moves; T-030.8 keeps it in step with draft edits.
+- No frontend task: US-040 already renders a closed lot's final price and sold/unsold (`store/lots/route.ts:80,113-118`),
+  and US-033's tracker already shows `closed`.
+
+#### Briefs
+
+```text
+Story: US-050 (task T-050.1)   Release: mvp
+Agent: backend   Expected: <=45 min
+Starts after: US-042 accepted and committed; US-043 T-043.1 accepted.
+
+## Acceptance criteria
+- AC2: Highest bid that isn't removed wins (`won`). No such bid gives `unsold`. A `cancelled` lot is never closed (D-035).
+- AC3: Winner, final price and close time are saved on the lot, never recomputed from bids.
+
+## Decisions in force
+plan "Closing and winners": highest bid wins; no bids → unsold; winner, final price and close time saved on the lot.
+plan "Bidding": of two equal bids, the first recorded wins.
+D-035: a cancelled lot has no winner and is never closed. D-036: results saved at close, never recomputed.
+CLAUDE.md §8: lock the row; save results when the action happens; explicit enum transitions (`open → won | unsold`).
+CLAUDE.md §9: one mutation per step with compensation; no if/async in the composition (use when/transform).
+
+## Build
+- Lot model: add `closed_at: model.dateTime().nullable()`; generate the migration (`bunx medusa db:generate auction`).
+- New file src/workflows/steps/lot.ts:
+  - `setLotFieldsStep` — single mutation `{ id, update }`, compensation restores exactly the changed fields
+    (copy setAuctionFieldsStep, steps/auction.ts:378-406). US-052/053 reuse it.
+  - `getClosableLotStep` (read only) — lot + auction.status + its bids; returns `{ close: boolean, update }`:
+    close only when lot.status === "open" AND auction.status === "live" AND end_time <= now (server clock).
+    Winner = bid with max amount, tie → earliest created_at. update = { status: "won", winner_customer_id,
+    final_price: winning amount, closed_at: now } or { status: "unsold", closed_at: now } (winner/final stay null).
+- New workflow src/workflows/close-lot.ts `closeLotWorkflow({ lot_id })`: acquireLockStep `lot:<id>` (the SAME key as
+  place-bid.ts:25-28, so a bid and the close can't interleave) → getClosableLotStep → when(close) setLotFieldsStep →
+  releaseLockStep. Returns { closed, status }. Not due / already closed → skipped, never an error.
+- Comment at the bids read naming US-072 T-072.1 (exclude removed bids once removal exists).
+
+## Start from
+- packages/api/src/workflows/start-auction.ts (lock + read guard + when, the same shape)
+- packages/api/src/workflows/steps/auction.ts:378-406 (setAuctionFieldsStep)
+- packages/api/src/modules/auction/models/lot.ts
+
+## Do not touch
+- apps/**; src/workflows/place-bid.ts, steps/bid.ts; src/api/store/lots/** (US-040 already renders closed lots)
+
+## Spec (packages/api/integration-tests/http/close-lots-job.spec.ts; seed via the module service like auction-start-job.spec.ts:16-46)
+- live auction, lot end_time past, bids 1.0M (A) and 1.1M (B) → won, winner B, final_price 1_100_000, closed_at set
+- no bids → unsold, winner_customer_id and final_price null, closed_at set
+- end_time in the future (an extended lot) → still open
+- cancelled lot with past end_time → untouched; lot of a `scheduled` / `cancelled` auction → untouched
+- second run on a closed lot → closed: false, updated_at identical
+- forced failure after setLotFieldsStep (test workflow, farmer-auctions.spec.ts:18-34) → lot back to open, fields null
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p .                              → clean
+cd packages/api && bun run test:integration:http -- close-lots-job      → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + migration name + the workflow's input/output.
+
+## Open questions
+none
+```
+
+```text
+Story: US-050 (task T-050.2)   Release: mvp
+Agent: backend   Expected: <=45 min
+Starts after: T-050.1.
+
+## Acceptance criteria
+- AC1: A job every minute closes lots past their end time.
+- T-050.2: The auction becomes `closed` when all its lots are closed (`unsold`, `won` or later, or `cancelled`).
+
+## Decisions in force
+D-048: the auction stays `live` until every lot has closed. Plan enum: auction `live → closed`.
+D-035: cancelled lots count as closed. CLAUDE.md §9: job fetches ids, runs a workflow, idempotent, batched.
+
+## Build
+- New workflow src/workflows/close-auction.ts `closeAuctionWorkflow({ auction_id })`: lock `auction:<id>` (same key as
+  start-auction.ts:31 and approve/reject) → read guard: status === "live" AND no lot with status "open" →
+  when(due) setAuctionFieldsStep({ status: "closed" }) → release. Returns { closed }.
+- New job src/jobs/close-lots.ts, schedule "* * * * *", copy start-auctions.ts:
+  1. ids of lots with status "open" AND end_time <= now (pages of 50, ids first, then process) → closeLotWorkflow each.
+  2. ids of `live` auctions → closeAuctionWorkflow each (the workflow's guard decides; skipped is not an error).
+  Per-id try/catch; one summary log line: lots found/won/unsold/skipped/failed, auctions closed.
+
+## Start from
+- packages/api/src/jobs/start-auctions.ts (paging, per-id try/catch, summary)
+- packages/api/src/workflows/start-auction.ts (lock + guard + setAuctionFieldsStep)
+
+## Do not touch
+- apps/**; src/jobs/start-auctions.ts; src/workflows/place-bid.ts
+
+## Spec (close-lots-job.spec.ts, new describe "job")
+- live auction, 2 lots past end_time → both closed, auction `closed`
+- 2 lots, one past end, one extended into the future → first closed, auction stays `live`; later run after the second
+  ends → auction `closed`
+- live auction whose only open lot is cancelled → `closed` (all lots closed)
+- second job run → nothing changes (updated_at identical on lots and auction)
+- `scheduled`, `closed`, `cancelled` auctions → untouched
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p .                              → clean
+cd packages/api && bun run test:integration:http -- close-lots-job      → pass (alone)
+Real tick in the dev DB (optional, as in T-033.1): log line "close-lots: ..." seen. Say if not run.
+Report: standard header + job name/schedule + the summary log format.
+
+## Open questions
+none
+```
+
+```text
+Story: US-050 (task T-050.3)   Release: mvp
+Agent: qa   Expected: <=30 min
+
+Verify AC1–AC3 and T-050.2. Decisions: D-035, D-036, D-048, plan "Closing and winners", CLAUDE.md §8.
+Code under test: src/jobs/close-lots.ts, src/workflows/{close-lot,close-auction}.ts, src/workflows/steps/lot.ts,
+the lot migration.
+Commands (alone): cd packages/api && bun run test:integration:http -- close-lots-job; then -- place-bid (regression).
+Watch for: winner taken from current_price or the last bid instead of the highest bid; equal-amount tie not won by the
+first recorded; a cancelled lot touched; the auction closed while a lot is still open (extended); final_price/winner
+rewritten on a second run; close without the `lot:<id>` lock; a store response now exposing winner_customer_id (D-046).
+Report PASS/FAIL per AC with file:line and command output. Don't change app code.
+```
+
+### US-051 Winner sees the farmer's bank account; farmer sees the winner's name · `todo`
 **Depends on:** US-092 (masking and the logged reveal).
-As a **winner**, I want the farmer's WhatsApp and bank details so that I can pay
-within 1×24 hours. *(Plan: Closing and winners)*
-- AC1: Only the winner of that lot sees the farmer's WhatsApp and bank account, plus the 1×24 h deadline.
-- AC2: The farmer sees only the winner's name and WhatsApp number; the number is masked by default (D-039), and the farmer reveals the full number for their own sold lot through the logged reveal (D-044 confirmation).
-- AC3: The farmer's bank account is shown masked; the winner reveals the full account for their own winning lot only, through the logged reveal (D-044). Until the reveal, both sides see a mask.
+As a **winner**, I want the farmer's bank account so that I can pay within
+1×24 hours. *(Plan: Closing and winners; D-044, D-052)*
+- AC1: Only the winner of that lot sees the farmer's bank account (full, via the logged reveal, D-044) and nothing else, plus the 1×24 h deadline. No phone either way: no farmer phone or WhatsApp number, masked or full, and no `wa.me` link (D-052).
+- AC2: The farmer sees only the winner's name for their own sold lots. No winner phone, masked or full, and no reveal (D-052).
+- AC3: The farmer's bank account is shown masked; the winner reveals the full account number for their own winning lot only, through the logged reveal (D-044). Until the reveal, the winner sees a mask. *(Account-holder name: `mvp-Q39`, non-blocking; it stays masked until answered.)*
 - AC4: Every reveal is recorded: who, when, which lot, which field (D-042, D-044).
-**PII (D-039, D-044):** the full bank number is a narrow exception for the winner's own lot, through the same logged reveal as the admin; the farmer's full view of the winner's phone comes the same way (D-044 confirmation, 2026-11-15). US-052's shipping flow uses this: the farmer ships the winner but keeps seeing the masked phone until this story's reveal exists.
-- [ ] T-051.1 [backend] Store routes for won lots (winner) and sold lots (farmer), scoped by `auth_context`; masked by default, reveal scoped to the winner's own lot (bank) and the farmer's own lot (winner's phone)
-- [ ] T-051.2 [storefront] Won lots under `akun`; sold lots in the Farmer area
-- [ ] T-051.3 [backend] Reveal action writes an append-only audit entry (who, when, lot, field) (D-044)
-- [ ] T-051.4 [qa] Other users get 403 or no data; the full account is reachable only for the winner's own lot; the winner's full phone only for the farmer's own lot; every reveal is audited
+**PII (D-039, D-044, D-052):** the full bank number is a narrow exception for the winner's own lot, through the same logged reveal as the admin. No phone crosses between winner and farmer in the MVP (D-052 supersedes the 2026-11-15 D-044 confirmation that let the farmer reveal the winner's phone).
+- [ ] T-051.1a [backend] `GET /store/won-lots`: the winner's own won lots, farm name, bank name, masked account number and holder name, 1×24 h deadline; no phone (D-052)
+- [ ] T-051.3a [backend] `POST /store/won-lots/:id/reveal`: winner reveals the farmer's bank account number for their own lot; one audit row per reveal
+- [ ] T-051.1b [backend] `GET /vendor/sold-lots`: the farmer's own sold lots with the winner's name; no phone (D-052)
+- T-051.3b *(dropped 2026-11-16, D-052: the farmer no longer reveals the winner's phone. Not built.)*
+- [ ] T-051.2a [storefront] Won lots page `/akun/menang` with the bank-account reveal
+- [ ] T-051.2b [storefront] Sold lots page in the Farmer area (winner's name; no reveal)
+- [ ] T-051.4 [qa] Other users get 404 or no data; the full account number is reachable only for the winner's own lot; no phone in any won-lot or sold-lot response or page; every reveal is audited
+
+**Readiness (2026-11-16): `todo` (was `blocked (mvp-Q34)`).** `mvp-Q34` answered by D-052: no phone either way; the
+winner's only contact data is the farmer's bank account through D-044's logged reveal. The winner side shrinks to that
+reveal; the farmer side loses its reveal (T-051.3b dropped). Still open, non-blocking: whether the reveal also covers
+the account-holder name (`mvp-Q39`; until answered, only `account_number` is revealable and `holder_name` stays masked),
+and how the farmer reaches or ships to the winner with no phone (`mvp-Q37`; owner: "use the contact information you
+already have"). Build order: T-051.1b → T-051.2b (farmer), T-051.1a → T-051.3a → T-051.2a (winner), then T-051.4.
+**Depends on:** US-050 (winner_customer_id, final_price, `closed_at`).
+**Reuse, no second audit mechanism:** `createPiiRevealAuditStep` (`src/workflows/steps/pii-reveal.ts:66`, already
+generic: its comment names US-051) writes to `pii_reveal_audit` (`src/modules/pii-audit/models/pii-reveal-audit.ts`,
+open-text `actor_type`/`record_type`). The winner's reveal uses `record_type: "lot"`, `record_id: <lot id>` (AC4 "which lot").
+Pattern: `revealFarmPiiWorkflow` (`src/workflows/reveal-farm-pii.ts:16-33`): read, then audit row, value returned
+only after the row is written.
+**Masking:** routes mask with `src/utils/mask.ts` themselves (`maskAccountNumber`, `maskName`). The
+response middlewares are a second net only: `storePiiMask` masks only `seller`/`sellers` keys and `vendorPiiMask`
+masks `phone`/`payment_details` keys (`src/api/utils/mask-response.ts:69-130,155-157`). A reveal response is
+`{ field, value }`, so the key `value` passes both untouched; don't name it `account_number`. No route here selects
+`phone` at all (D-052): not masking a phone is not enough, it must not be read.
+**Names:** the farmer sees the winner's name (plan "Closing and winners"). Names stay unmasked, as in the admin farm
+queue (`admin/farms/route.ts:160,218`); only account-holder names are masked (`maskName`).
+
+#### Briefs
+
+```text
+Story: US-051 (task T-051.1b)   Release: mvp
+Agent: backend   Expected: <=35 min
+Starts after: US-050 T-050.1 (closed_at, winner saved).
+
+## Acceptance criteria
+- AC2: The farmer sees only the winner's name for their own sold lots. No winner phone, masked or full, and no reveal (D-052).
+
+## Decisions in force
+D-052: no phone between winner and farmer: the row never selects or returns the winner's phone, masked or not.
+D-039 / D-042: no other winner PII (email, customer id). D-003: member token + x-seller-id; seller from
+req.seller_context, never the body. D-055: any message a Koi app may show verbatim is Indonesian.
+CLAUDE.md §9: reads via query.graph; route thin; both generics typed.
+
+## Build
+- GET /vendor/sold-lots (src/api/vendor/sold-lots/route.ts): lots whose auction.seller_id = req.seller_context.seller_id
+  and status in won | paid | shipped | delivered | claimed (the SOLD_STATUSES list, store/lots/route.ts:80).
+  Newest closed first; limit/offset (Zod, max 100).
+- Row: { id, status, final_price, closed_at, auction: { id, delivery_method }, product: { title, thumbnail },
+  winner: { name: first_name + " " + last_name } }. Winner read by query.graph on `customer` (fields id, first_name,
+  last_name only) filtered by the lots' winner_customer_id (one query for the page, not one per row).
+- Never return winner_customer_id, email or any phone.
+- Import "../../../types/seller-context" (submit/route.ts:11 pattern). bun run codegen.
+
+## Start from
+- packages/api/src/api/vendor/auctions/[id]/route.ts:30-56 (seller-scoped read)
+- packages/api/src/api/vendor/auctions/route.ts + validators.ts (list params pattern)
+
+## Do not touch
+- apps/**; src/api/utils/mask-response.ts; src/api/store/**; src/modules/pii-audit/**
+
+## Spec (packages/api/integration-tests/http/sold-lots.spec.ts; real seller + member token like farmer-auctions.spec.ts)
+- farmer A sees their won lot with the winner's full name
+- farmer B (other seller) → lot not in the list; open/unsold/cancelled lots not listed
+- JSON has no winner_customer_id, no email, no `phone` key and not the winner's phone digits (stringify + includes)
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean; bun run codegen
+cd packages/api && bun run test:integration:http -- sold-lots → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + API contract.
+
+## Open questions
+none
+```
+
+T-051.3b has no brief: dropped by D-052 (the farmer no longer reveals the winner's phone).
+
+```text
+Story: US-051 (task T-051.2b)   Release: mvp
+Agent: frontend (apps/storefront-koi)   Expected: <=35 min
+Starts after: T-051.1b contract.
+
+## Acceptance criteria
+- AC2: The farmer sees only the winner's name for their own sold lots. No winner phone, masked or full, and no reveal (D-052).
+
+## Endpoint inventory
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| GET  | /vendor/sold-lots | after T-051.1b | { lots: [{ id, status, final_price, closed_at, auction, product, winner: { name } }], count } |
+
+## Build
+- Route /akun/kebun/terjual (ROUTES.farmSold in const/routes.ts); farmer guard as FarmHomePage.tsx:61-85.
+- Data: lib/data/auctions.ts beside getMyAuctions, using vendorHeaders() (:85-90); typed sdk only, no raw fetch.
+- Table: product, final price (id-ID Rupiah), closed date, status label, winner name. No phone column, no reveal,
+  no WhatsApp/wa.me link (D-052).
+- Link to it from the Farmer area home (FarmHomePage).
+
+## Do not touch
+- packages/api/**, apps/admin-koi/**, the won-lots page (T-051.2a), LivePage/**
+
+## Definition of done
+cd apps/storefront-koi && bun run check → pass
+render-check skill on /akun/kebun/terjual as sakura.koi.farm@koi.dev. Data: needs a lot won from that farm's auction;
+create it through the API flow if none exists, else say "browser NOT verified" and why.
+Report: standard header + render check result + screenshot path.
+
+## Open questions
+none
+```
+
+```text
+Story: US-051 (task T-051.1a)   Release: mvp
+Agent: backend   Expected: <=40 min
+Starts after: US-050 T-050.1 (winner_customer_id, final_price, closed_at).
+
+## Acceptance criteria
+- AC1: Only the winner of that lot sees the farmer's bank account (full, via the logged reveal, D-044) and nothing else, plus the 1×24 h deadline. No phone either way: no farmer phone or WhatsApp number, masked or full, and no `wa.me` link (D-052).
+- AC3: The farmer's bank account is shown masked; the winner reveals the full account number for their own winning lot only, through the logged reveal (D-044). Until the reveal, the winner sees a mask.
+
+## Decisions in force
+D-052: never select or return the farm's phone (seller.phone), masked or not. D-044: account masked here; full only via
+T-051.3a. D-046: this is the caller's own data, not a public route; store/lots/** stays winner-free.
+D-055: messages a Koi app may show verbatim are Indonesian. Identity from req.auth_context.actor_id only.
+
+## Build
+- GET /store/won-lots (src/api/store/won-lots/route.ts): lots with winner_customer_id = auth_context.actor_id and status
+  in the SOLD_STATUSES list (store/lots/route.ts:80). Newest closed first; limit/offset (Zod, max 100).
+- middlewares.ts entry authenticate("customer", ["bearer","session"]) as /store/bids (:281-288).
+- Row: { id, status, final_price, closed_at, pay_by: closed_at + 24 h (ISO), product: { title, thumbnail },
+  auction: { id, delivery_method }, seller: { id, name, payment_details: { bank_name, holder_name: maskName(...),
+  account_number: maskAccountNumber(...) } } }. Seller read by one query.graph on `seller` for the page's
+  auction.seller_id values, fields id, name, payment_details.{bank_name,holder_name,account_number}
+  (admin/farms/route.ts:80-82); never `phone`. Key `seller` so storePiiMask re-masks as a second net (idempotent).
+- bun run codegen.
+
+## Start from
+- packages/api/src/api/store/bids/route.ts (customer route, auth_context)
+- packages/api/src/api/admin/farms/route.ts:66-82,208-213 (seller payment_details fields + masking)
+- packages/api/src/utils/mask.ts:21-31
+
+## Do not touch
+- apps/**; src/api/store/lots/**; src/api/vendor/**; src/modules/pii-audit/**; src/api/utils/mask-response.ts
+
+## Spec (packages/api/integration-tests/http/won-lots.spec.ts)
+- winner sees own won lot: masked account (last 4 only), masked holder name, bank name, pay_by = closed_at + 24 h
+- another customer → the lot not listed; open/unsold/cancelled lots not listed; anonymous → 401
+- JSON has no `phone` key and not the farm's phone digits; no full account number
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean; bun run codegen
+cd packages/api && bun run test:integration:http -- won-lots → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + API contract.
+
+## Open questions
+none (mvp-Q39 holder name: stays masked until answered)
+```
+
+```text
+Story: US-051 (task T-051.3a)   Release: mvp
+Agent: backend   Expected: <=40 min
+Starts after: T-051.1a.
+
+## Acceptance criteria
+- AC3: … the winner reveals the full account number for their own winning lot only, through the logged reveal (D-044).
+- AC4: Every reveal is recorded: who, when, which lot, which field (D-042, D-044).
+
+## Decisions in force
+D-044: full bank account, winner's own lot only, logged reveal. D-042: explicit, one append-only audit row per reveal.
+D-052: no phone field in the enum. D-055: messages a Koi app may show verbatim are Indonesian.
+
+## Build
+- POST /store/won-lots/:id/reveal, body { field: "account_number" } (Zod enum, one value until mvp-Q39; middlewares.ts
+  authenticate("customer", …) + validateAndTransformBody, like /admin/farms/:id/reveal at :460-465).
+- Workflow src/workflows/reveal-lot-contact.ts `revealFarmBankAccountWorkflow({ customer_id, lot_id, field, actor_id })`:
+  read step (lot with winner_customer_id = customer_id and status in the sold list, else 404 with no existence leak;
+  then seller.payment_details.account_number via auction.seller_id) → createPiiRevealAuditStep({ actor_type: "customer",
+  actor_id, record_type: "lot", record_id: lot_id, field: "account_number" }) → return { field, value }.
+- actor_id from req.auth_context, never the body. bun run codegen.
+
+## Start from
+- packages/api/src/workflows/reveal-farm-pii.ts:16-33; src/workflows/steps/pii-reveal.ts:54-74
+- packages/api/src/api/admin/farms/[id]/reveal/route.ts (route shape)
+
+## Do not touch
+- apps/**; src/modules/pii-audit/** (no new model, no second audit table); src/api/utils/mask-response.ts; src/api/vendor/**
+
+## Spec (won-lots.spec.ts, describe "reveal")
+- own won lot → 200 { field: "account_number", value: <full number> }; exactly one new pii_reveal_audit row with
+  actor_type "customer", actor_id, record_type "lot", record_id, field
+- another customer's lot → 404 and no audit row; an open/unsold/cancelled lot → 404 and no audit row; anonymous → 401
+- field "phone" → 400 (not in the enum)
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean; bun run codegen
+cd packages/api && bun run test:integration:http -- won-lots → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + API contract.
+
+## Open questions
+none
+```
+
+```text
+Story: US-051 (task T-051.2a)   Release: mvp
+Agent: frontend (apps/storefront-koi)   Expected: <=45 min
+Starts after: T-051.1a and T-051.3a contracts.
+
+## Acceptance criteria
+- AC1: Only the winner of that lot sees the farmer's bank account (full, via the logged reveal, D-044) and nothing else, plus the 1×24 h deadline. No phone either way: no farmer phone or WhatsApp number, masked or full, and no `wa.me` link (D-052).
+- AC3: The farmer's bank account is shown masked; the winner reveals the full account number for their own winning lot only, through the logged reveal (D-044). Until the reveal, the winner sees a mask.
+
+## Endpoint inventory
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| GET  | /store/won-lots | after T-051.1a | { lots: [{ id, status, final_price, closed_at, pay_by, product, auction, seller: { id, name, payment_details(masked) } }], count } |
+| POST | /store/won-lots/:id/reveal | after T-051.3a | { field: "account_number" } → 200 { field, value } |
+
+## Build
+- Route /akun/menang (ROUTES.wonLots in const/routes.ts), requireCustomer guard; link from AccountNav.
+- Data: lib/data/lots.ts with getAuthHeaders(); typed sdk only, no raw fetch.
+- Rows: product, final price (formatPrice), pay-by deadline (formatDeadline), status label, farm name, bank name,
+  masked holder name, masked account number + "Tampilkan" button. The reveal fetches on click only (never on render:
+  each reveal writes an audit row), then shows the full number. Copy the behaviour of admin-koi FarmQueue.tsx:257-313;
+  don't import from admin-koi. No phone, no WhatsApp button, no wa.me link (D-052).
+
+## Do not touch
+- packages/api/**, apps/admin-koi/**, the sold-lots page (T-051.2b), LivePage/**
+
+## Definition of done
+cd apps/storefront-koi && bun run check → pass
+render-check on /akun/menang as the winner of a closed lot, incl. one reveal click (or "browser NOT verified" and why).
+Report: standard header + render check result + screenshot path.
+
+## Open questions
+none
+```
+
+```text
+Story: US-051 (task T-051.4)   Release: mvp
+Agent: qa   Expected: <=30 min
+Runs after the five build tasks (T-051.1a, .3a, .2a, .1b, .2b).
+
+Verify AC1–AC4. Decisions: D-039, D-042, D-044, D-045, D-052.
+Code under test: src/api/store/won-lots/**, src/api/vendor/sold-lots/**, src/workflows/reveal-lot-contact.ts,
+storefront /akun/menang and /akun/kebun/terjual.
+Commands (alone): bun run test:integration:http -- won-lots; then -- sold-lots; then -- pii-reveal (regression);
+bun run check in apps/storefront-koi.
+Watch for: any phone (farm's or winner's, masked or full) or wa.me link in a response or page source; a full account in
+any list response or page source before a reveal; a reveal that returns a value without an audit row (or writes two);
+another customer reaching a lot (must be 404, no audit row); reveal fired on render; winner_customer_id or email in a
+vendor response; a second audit table.
+Browser: render-check /akun/menang as the winner (incl. one reveal) and /akun/kebun/terjual as the farmer.
+Report PASS/FAIL per AC with file:line and command output. Don't change app code.
+```
 
 ### US-052 Farmer marks paid and shipped · `todo`
-**Depends on:** US-051 (the logged contact reveal used when shipping), US-092 (masking).
+**Depends on:** US-050 T-050.1; US-051 farmer side (T-051.1b, T-051.2b: the sold-lots page), US-092 (masking).
 As a **farmer**, I want to mark a lot paid and then shipped so that progress is
-tracked. *(Plan: Closing, Delivery)*
+tracked. *(Plan: Closing, Delivery; D-052, D-054)*
 - AC1: `won → paid → shipped`, in order only.
 - AC2: Courier delivery requires a tracking number. Self-delivery doesn't.
-- AC3: While shipping, the farmer sees the winner's phone **masked** (D-039); the full number comes only through US-051's logged reveal for the farmer's own sold lot.
-- [ ] T-052.1 [backend] Status workflows + store routes (the farmer must own the lot)
-- [ ] T-052.2 [storefront] Farmer area actions
-- [ ] T-052.3 [qa] States can't be skipped; the farmer's phone view stays masked unless revealed through US-051, which is audited
+- AC3: While shipping, the farmer sees the winner's name only; no winner phone, masked or full, and no reveal (D-052). *(Changed 2026-11-16: was "phone masked, full through US-051's reveal".)*
+- AC4: A farm suspended after approval can still mark its own already-sold lots paid and shipped; a terminated farm can't (403). It still can't create auctions or lots (D-054).
+- [ ] T-052.1 [backend] `lot.tracking_number` + mark-paid and mark-shipped workflows + `/vendor/sold-lots/:id/paid|shipped` routes (the farmer must own the lot)
+- [ ] T-052.2 [storefront] Farmer area actions on the sold-lots page
+- [ ] T-052.3 [qa] States can't be skipped; no winner phone anywhere on the farmer's side (D-052); a suspended farm can finish its sold lots, a terminated one can't (D-054)
+
+**Readiness (2026-11-16): ready (`todo`).** No open question blocks it (`mvp-Q34` → D-052, `mvp-Q36` → D-054).
+Sequence: US-050 T-050.1 → US-051 T-051.1b, T-051.2b → this story. AC3 is met by US-051's farmer side (no phone in the
+row); this story adds no PII read.
+- **Transitions (plan "Lot lifecycle", "Design rules"):** `won → paid`, `paid → shipped`. Nothing else: no `won → shipped`,
+  no going back. Each transition is its own workflow under the `lot:<id>` lock, guarded by the current status (409).
+- **Tracking number:** plan "Delivery" ("with tracking number for courier"). Courier → required, non-blank. Self-delivery
+  → optional. Needs a `tracking_number` column (plan's model table doesn't list it; the Delivery rule requires it).
+- **Ownership:** the lot's `auction.seller_id` = `req.seller_context.seller_id`, else 404 (no existence leak), as
+  `getVendorAuctionDetail` (`vendor/auctions/[id]/route.ts:30-56`).
+- **Suspended farm (D-054, `mvp-Q36`):** the paid and shipped routes are the one exception to the checklist's
+  `validateSellerOpenStep`: they must **not** run it. They check instead that the lot belongs to the caller's seller
+  (404) and that the seller's status is not `terminated` (403). `SellerStatus` in Mercur 2.3.7 (`@mercurjs/types`
+  `seller/common.d.ts`) is `open | pending_approval | suspended | terminated`, so `TERMINATED` exists. A rejected farm
+  (D-015, `suspended`) owns no sold lot, so ownership refuses it.
+- No deadline and no strike here: non-payment is US-058, not shipping a paid lot is US-059.
+
+#### Briefs
+
+```text
+Story: US-052 (task T-052.1)   Release: mvp
+Agent: backend   Expected: <=45 min
+Starts after: US-050 T-050.1 (setLotFieldsStep, steps/lot.ts) and US-051 T-051.1b (GET /vendor/sold-lots, row shape).
+
+## Acceptance criteria
+- AC1: `won → paid → shipped`, in order only.
+- AC2: Courier delivery requires a tracking number. Self-delivery doesn't.
+- AC4: A farm suspended after approval can still mark its own already-sold lots paid and shipped; a terminated farm can't (403). It still can't create auctions or lots (D-054).
+
+## Decisions in force
+plan "Lot lifecycle" / "Design rules": `won → paid → shipped`; CLAUDE.md §8: explicit transitions, no skipped state.
+plan "Closing and winners": the farmer marks the lot paid, then shipped. plan "Delivery": tracking number for courier.
+D-003: seller from req.seller_context, never the body. D-026: winner and final_price never change here.
+D-054: a suspended farm may finish its sold lots: do NOT use validateSellerOpenStep here (the checklist's one
+exception); check ownership (404) and seller.status !== SellerStatus.TERMINATED (403) instead.
+D-052: the response row has no winner phone. D-055: messages a Koi app may show verbatim are Indonesian.
+
+## Build
+- Lot model: `tracking_number: model.text().nullable()`; migration (`bunx medusa db:generate auction`).
+- src/workflows/mark-lot-sold-status.ts, two workflows, same shape:
+  markLotPaidWorkflow({ seller_id, lot_id }) and markLotShippedWorkflow({ seller_id, lot_id, tracking_number? }):
+  acquireLockStep `lot:<id>` → guard step (read only: seller status by query.graph on `seller` as
+  validate-seller-open.ts:20-26, `SellerStatus.TERMINATED` → 403 FORBIDDEN code `seller_terminated`, Indonesian
+  message; lot with auction.seller_id and auction.delivery_method; not this seller's → 404; status !== expected
+  from-status → 409 `invalid_lot_status`;
+  shipped + courier + blank tracking → 400 `tracking_number_required`) → setLotFieldsStep({ status: "paid" }) or
+  ({ status: "shipped", tracking_number: trimmed or null }) → releaseLockStep.
+  One guard step taking `{ from: "won" | "paid" }` is fine (two callers).
+- Routes (POST, both generics typed): /vendor/sold-lots/:id/paid (no body; strict empty body as store/auctions/[id]/
+  join/route.ts:45-51) and /vendor/sold-lots/:id/shipped (Zod { tracking_number?: string trimmed, max 100 } in
+  middlewares.ts). Response { lot: <the GET /vendor/sold-lots row> } — reuse T-051.1b's mapper; add tracking_number
+  to that row. Import "../../../../../types/seller-context". bun run codegen.
+
+## Start from
+- packages/api/src/workflows/start-auction.ts (lock + guard + when); src/workflows/steps/lot.ts (setLotFieldsStep, T-050.1)
+- packages/api/src/workflows/steps/validate-seller-open.ts:16-35 (seller status read; copy the read, not the step)
+- packages/api/src/api/vendor/auctions/[id]/submit/route.ts (vendor POST route shape)
+- packages/api/src/api/vendor/sold-lots/route.ts (T-051.1b)
+
+## Do not touch
+- apps/**; src/workflows/close-lot.ts, place-bid.ts; src/modules/pii-audit/**; src/api/utils/mask-response.ts
+
+## Spec (packages/api/integration-tests/http/sold-lots.spec.ts, describe "paid and shipped")
+- won → paid → shipped (courier, tracking "JNE123") → each 200, status saved, tracking saved
+- won → shipped directly → 409, status still won; paid twice → 409; shipped on an `unsold`/`open` lot → 409
+- courier with no / blank tracking → 400, status still paid; self_delivery with no tracking → 200
+- another seller's lot → 404, unchanged; winner_customer_id and final_price unchanged after both transitions
+- forced failure after setLotFieldsStep (farmer-auctions.spec.ts:18-34 pattern) → status restored
+- seller suspended after the lot was won → paid and shipped still 200 (D-054); seller suspended then terminated (Mercur
+  refuses terminating an `open` seller) → 403, status unchanged
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean; bun run codegen
+cd packages/api && bun run test:integration:http -- sold-lots → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + API contract (both routes, errors).
+
+## Open questions
+none
+```
+
+```text
+Story: US-052 (task T-052.2)   Release: mvp
+Agent: frontend (apps/storefront-koi)   Expected: <=40 min
+Starts after: T-052.1 contract and US-051 T-051.2b (the page).
+
+## Acceptance criteria
+- AC1: `won → paid → shipped`, in order only.
+- AC2: Courier delivery requires a tracking number. Self-delivery doesn't.
+- AC3: While shipping, the farmer sees the winner's name only; no winner phone, masked or full, and no reveal (D-052). *(Changed 2026-11-16: was "phone masked, full through US-051's reveal".)*
+
+## Endpoint inventory
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| GET  | /vendor/sold-lots | after T-051.1b | rows incl. status, auction.delivery_method, tracking_number (T-052.1), winner.name (no phone, D-052) |
+| POST | /vendor/sold-lots/:id/paid | after T-052.1 | no body → { lot } ; 409 wrong status |
+| POST | /vendor/sold-lots/:id/shipped | after T-052.1 | { tracking_number? } → { lot } ; 400 tracking_number_required, 403 seller_terminated, 409 |
+
+## Build
+- On /akun/kebun/terjual rows: `won` → "Tandai sudah dibayar"; `paid` → "Tandai dikirim" with a tracking input
+  (required, shown only for courier); `shipped`/later → status label + tracking number. Server action → typed sdk
+  with vendorHeaders(); router.refresh() after success; 409 → "Status lot sudah berubah" + refresh.
+- No phone, no reveal, no WhatsApp/wa.me link on the row (D-052). A suspended farm still sees the actions (D-054);
+  403 → show the server's (Indonesian, D-055) message.
+
+## Do not touch
+- packages/api/**, apps/admin-koi/**, the won-lots page (US-051 T-051.2a)
+
+## Definition of done
+cd apps/storefront-koi && bun run check → pass
+render-check on /akun/kebun/terjual as sakura.koi.farm@koi.dev, incl. one paid and one shipped submit (or "browser NOT
+verified" and why). Report: standard header + render check result + screenshot path.
+
+## Open questions
+none
+```
+
+```text
+Story: US-052 (task T-052.3)   Release: mvp
+Agent: qa   Expected: <=30 min
+Verify AC1–AC4. Decisions: plan "Lot lifecycle", "Delivery", D-039, D-042, D-052, D-054.
+Commands (alone): bun run test:integration:http -- sold-lots; bun run check in apps/storefront-koi.
+Watch for: any skipped or backward transition; courier shipped without tracking; another seller's lot changing; any
+winner phone (masked or full) in the list or page source; winner_customer_id/final_price changed; the paid/shipped
+workflows using validateSellerOpenStep (would lock out a suspended farm, D-054); a terminated farm let through.
+Browser: render-check /akun/kebun/terjual as the farmer, walk won → paid → shipped.
+```
 
 ### US-053 Winner marks delivered · `todo`
 As a **winner**, I want to mark the fish delivered so that the sale completes and
 the claim window starts. *(Plan: Delivery)*
 - AC1: Only the winner can mark `shipped → delivered`.
-- [ ] T-053.1 [backend] Delivered workflow + route
-- [ ] T-053.2 [storefront] Button on the won lot
+- [ ] T-053.1 [backend] `lot.delivered_at` + delivered workflow + `POST /store/won-lots/:id/delivered`
+- [ ] T-053.2 [storefront] Button on the won lot *(unblocked 2026-11-16, D-052; starts after US-051 T-051.2a, the page it sits on)*
+- [ ] T-053.3 [qa] Only the winner, only from `shipped`; `delivered_at` saved *(new task 2026-11-16: the story had no qa task)*
+
+**Readiness (2026-11-16): `todo`; T-053.1 ready, T-053.2 ready after US-051 T-051.2a (mvp-Q34 → D-052).** The rule is plain: plan "Delivery" (the
+winner marks it delivered) and the lifecycle `shipped → delivered`. `delivered_at` is saved because the claim window
+runs "within 4 hours of marking it delivered" (plan "Dead-on-arrival claims" 1, US-054 AC1); the lot has no such
+column. A winner who never marks delivered: **nothing** in the MVP, the lot stays `shipped` (D-053, `mvp-Q35`). No job,
+no auto-confirm, no setting; don't add one. "Auto-confirm delivery after N days" waits in `docs/releases/README.md`,
+Ideas not yet planned. `delivered → claimed` is US-054.
+
+#### Briefs
+
+```text
+Story: US-053 (task T-053.1)   Release: mvp
+Agent: backend   Expected: <=35 min
+Starts after: US-052 T-052.1 (a lot can reach `shipped`); US-050 T-050.1 (setLotFieldsStep).
+
+## Acceptance criteria
+- AC1: Only the winner can mark `shipped → delivered`.
+
+## Decisions in force
+plan "Delivery" + lifecycle `shipped → delivered`; CLAUDE.md §8 explicit transitions, save the time when it happens.
+Identity from req.auth_context.actor_id (customer token), never the body. D-046: no winner field on public routes.
+
+## Build
+- Lot model: `delivered_at: model.dateTime().nullable()`; migration.
+- src/workflows/mark-lot-delivered.ts markLotDeliveredWorkflow({ customer_id, lot_id }): lock `lot:<id>` → guard
+  (read only: lot.winner_customer_id !== customer_id → 404 (no existence leak); status !== "shipped" → 409
+  `invalid_lot_status`) → setLotFieldsStep({ status: "delivered", delivered_at: now }) → release.
+- Route src/api/store/won-lots/[id]/delivered/route.ts (POST, no body, strict empty body like join/route.ts:45-51);
+  middlewares.ts entry authenticate("customer", ["bearer","session"]) as /store/bids (:281-288).
+  Response { lot: { id, status, delivered_at } } (the full won-lot row is T-051.1a's; no phone in it, D-052). bun run codegen.
+- D-053: no job, no deadline, no setting for a lot that is never marked delivered. D-055: messages a Koi app may show
+  verbatim are Indonesian.
+
+## Start from
+- packages/api/src/workflows/start-auction.ts; src/workflows/steps/lot.ts (T-050.1)
+- packages/api/src/api/store/auctions/[id]/join/route.ts (customer POST route)
+
+## Do not touch
+- apps/**; src/api/store/lots/**; src/api/vendor/**; src/modules/pii-audit/**
+
+## Spec (packages/api/integration-tests/http/won-lot-delivered.spec.ts)
+- winner on a shipped lot → 200, status delivered, delivered_at ≈ now
+- another customer → 404, unchanged; anonymous → 401
+- winner on won / paid / delivered lot → 409, unchanged
+- forced failure after setLotFieldsStep → status shipped, delivered_at null
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean; bun run codegen
+cd packages/api && bun run test:integration:http -- won-lot-delivered → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + API contract.
+
+## Open questions
+none
+```
+
+T-053.2 (unblocked by D-052; starts after US-051 T-051.2a): a "Sudah diterima" button on `/akun/menang` rows with
+status `shipped`, calling `POST /store/won-lots/:id/delivered`; 409 → refresh. Full brief written when T-051.2a's page
+exists.
+
+```text
+Story: US-053 (task T-053.3)   Release: mvp
+Agent: qa   Expected: <=20 min
+Verify AC1. Commands (alone): bun run test:integration:http -- won-lot-delivered. Browser: after T-053.2.
+Watch for: a non-winner or the farmer able to mark delivered; delivered from any status but shipped; delivered_at
+missing or overwritten on a repeat.
+```
 
 ### US-054 Winner opens a dead-on-arrival claim · `todo`
 As a **winner**, I want to claim within 4 hours if the fish arrives dead or sick
@@ -1580,7 +2182,7 @@ little of it. *(Plan: Personal data protection; D-039, D-040, D-042, D-043, D-04
 - AC2: The existing wallet and top-up tables are covered in the same story; their plain values are migrated by a one-off script that encrypts in place, verifies, and leaves no plaintext copy (D-043). **Not built yet.**
 - AC3: No API result returns a full PII value to any client except the owner's own record; `/admin/*` included, admins get the mask. Each returns a masked form (a short prefix/suffix or last-4, the rest hidden) or nothing. The KTP photo is only ever a private file, never a URL. Self-view is the only unmasked path and is limited to the owner's own phone and own bank details on `/store/customers/me` and the farmer's own `/vendor/sellers*` record (D-045).
 - AC4: Every screen in `apps/storefront-koi` and `apps/admin-koi` renders the masked value only, except the owner's own full value on their own account and farm-registration screens (D-045); no page source or client payload holds another person's full value. Admins are not exempt (D-042).
-- AC5: A full value of someone else's PII is reachable only through an explicit reveal route. It is **required**, not optional, and records who, when, which record and which field in an append-only audit table (D-042). Its only callers are an admin reveal and a winner's reveal of their own won lot's bank account (D-044) and, for the farmer, the winner's phone on their own sold lot (US-051).
+- AC5: A full value of someone else's PII is reachable only through an explicit reveal route. It is **required**, not optional, and records who, when, which record and which field in an append-only audit table (D-042). Its only callers are an admin reveal and a winner's reveal of their own won lot's bank account (D-044, US-051). *(Changed 2026-11-16: the farmer's reveal of the winner's phone is dropped, D-052.)*
 - AC6: Encryption keys come from the environment, not the database or the repo; `.env.template` gets a placeholder (root `CLAUDE.md` §11).
 - AC7: `/admin/sellers*` responses do not return unmasked `payout_account.data`, because that free-form JSON can hold a bank number or a phone; it is masked like the other PII fields. `professional_details` (`corporate_name`, `registration_number`, `tax_id`) stays unmasked deliberately — out of scope unless the owner says otherwise.
 **Status note:** masking is the part that lands here; column-level encryption (AC1, AC2; T-092.1, T-092.6) is **still not built**. Don't read this story as complete while encryption is missing. Still open as of US-021 acceptance (2026-11-15): T-092.1/T-092.6 column encryption, and T-092.9 `/admin/sellers*` `payout_account.data` masking.
@@ -1647,7 +2249,7 @@ bid by WhatsApp. *(Plan: WhatsApp bot: Identity)*
 - [ ] T-084.1 [backend] Command handler (read only)
 
 ### US-085 Win message · `blocked (mvp-Q12)`
-- AC1: The winner gets the farmer's WhatsApp and bank details and the 1×24 h deadline.
+- AC1: The winner gets the farmer's WhatsApp and bank details and the 1×24 h deadline. *(Conflicts with D-052 and D-044; to be rewritten when `mvp-Q38` is answered. Don't build as written.)*
 - [ ] T-085.1 [backend] Subscriber on lot won + utility template
 
 The website must work without WhatsApp. The bot can launch after the web.
@@ -1690,7 +2292,7 @@ table complete.
 | Plan section | Stories |
 |---|---|
 | Users and roles | US-002, US-020, US-021, US-070 |
-| Personal data protection (column encryption on top of disk; masked everywhere incl. admin; logged reveal; self-view; D-039, D-042, D-043, D-044, D-045) | US-092, US-020, US-021, US-010 – US-013, US-051, US-052, US-057, US-070, US-091 |
+| Personal data protection (column encryption on top of disk; masked everywhere incl. admin; logged reveal; self-view; no phone between winner and farmer; D-039, D-042, D-043, D-044, D-045, D-052) | US-092, US-020, US-021, US-010 – US-013, US-051, US-052, US-057, US-070, US-091 |
 | Orphan upload cleanup (owner follow-up) | US-093 |
 | Becoming a farmer | US-020, US-021 |
 | Store credit wallet: how credit moves (4 join, 5 submit/approve, D-020, D-031–D-033) | US-010, US-011, US-012, US-015, US-031, US-032, US-041 |
@@ -1706,20 +2308,22 @@ table complete.
 | Bidding (incl. bid removal, D-024, D-036; masked bidders and full history, D-051) | US-042, US-044, US-072 |
 | Extend (anti-sniping) | US-043, US-015, US-030 |
 | Fair play (incl. shill-bidding table, D-028, D-037; ban check on join and bid lands with strikes, D-047) | US-041, US-042, US-059, US-071 |
-| Closing and winners | US-050, US-051 |
+| Closing and winners (bank account only, no phone either way, D-052) | US-050, US-051 |
 | Winner doesn't pay (second bidder off-platform, D-026) | US-058, US-059 |
-| Strikes (incl. ban check on join and bid, D-047) | US-059 |
-| Delivery | US-030, US-052, US-053 |
+| Strikes (incl. ban check on join and bid, D-047; suspended farm finishes sold lots, D-054) | US-059, US-052 |
+| Delivery (never marked delivered → stays `shipped`, D-053) | US-030, US-052, US-053 |
 | Dead-on-arrival claims (on-site notices D-025, auto-confirm D-027) | US-054, US-055, US-056, US-061 |
 | Cancellations (farmer before start, admin once live, D-022, D-031, D-034, D-035; a cancelled lot stays public as "Dibatalkan", D-050) | US-060, US-091, US-040 |
 | Key flows: approve auction (D-033) | US-031, US-032 |
 | Key flows: place bid | US-042, US-043 |
+| Key flows: close lots (a job every minute; winner and price saved at close) | US-050 |
 | Open questions: owner actions (Qontak quote, Meta verification, D-029) | US-080 (T-080.2, T-080.5) |
 | Ratings | US-057 |
 | WhatsApp bot | US-080 – US-085 |
 | Technical approach: frontends, shared UI | US-001, US-003 |
 | Key flows: live updates, live room | US-045, US-046 |
 | Build milestones 1–8 | Epics 0–8 |
+| Design rules: user-facing error messages Indonesian, from the backend (D-055) | US-042 (follow-up), US-031, US-041; every new task via the task-brief checklist |
 
 ## Out of scope for the MVP (from the plan)
 
@@ -1768,3 +2372,9 @@ is built. Record the answer here, in `plan.md`, and as a decision in `docs/produ
 | mvp-Q31 | **Answered 2026-11-15 (D-049):** option (b); approval is refused when `start_at` is now or past (400 `start_passed`, nothing charged, stays `pending_approval`); the admin rejects it so the farmer picks new dates. Follow-up US-032 T-032.6, T-032.7. *(Was: approving an auction whose start time has already passed.)* | none |
 | mvp-Q32 | **Answered 2026-11-15 (D-050):** option (b); a cancelled lot inside a public auction (`scheduled`, `live` or `closed`) stays visible on `/store/lots` and the lot page, labelled "Dibatalkan", with no price, no final price, no sold label, no winner and no bids. Delivered by US-040 T-040.1/2a/2b; US-091 only produces the cancelled lots. *(Was: is a cancelled lot (D-035) in a public auction shown or hidden?)* | none (was US-091) |
 | mvp-Q33 | **Answered 2026-11-16 (D-051):** (1) option (b): first 3 letters of the first name + `***` + last 2 characters of the customer id, e.g. `Bud***x7`; no phone digits; full name and id never leave the server; same bidder, same mask within an auction. (2) option (c): full history with masked names on closed lots too; supersedes D-046 in part (top row shows the winner's masked name; no winner id or `winner_*` field). Unblocks US-044; US-040 unchanged. *(Was: (1) What is the masked bidder format? The plan's example `Bud***23` keeps 3 letters of the first name plus 2 trailing characters, but doesn't say what the `23` is. Options: (a) first 3 letters of the first name + `***` + last 2 digits of the phone (`Bud***23`; ties the mask to PII, D-039); (b) first 3 letters + `***` + last 2 characters of the customer id (stable, no PII); (c) existing `maskName` format `B*** S******` (already in `src/utils/mask.ts:27`, no suffix; two "Budi"s look alike); (d) per-auction bidder number, e.g. `Bidder #12` (no name at all). (2) On a **closed** lot, is the bid history shown? D-046 forbids naming the winner, masked included; the top row of a history is the winner. Options: (a) hide the history on closed lots, show only final price and sold/unsold; (b) show the history but without the bidder column; (c) show it in full (would override D-046).)* | US-044 |
+| mvp-Q34 | **Answered 2026-11-16 (D-052):** no phone in the MVP, either way. The winner sees the farmer's bank account (full, through D-044's logged reveal) and nothing else; the farmer sees the winner's name; no `wa.me` link (it needs the full number). The farmer's reveal of the winner's phone (D-044 confirmation) is dropped (T-051.3b dropped). Unblocks US-051 and US-053 T-053.2. The holder-name part was not answered → `mvp-Q39`. *(Was: how does the winner see the farmer's WhatsApp number (US-051 AC1)? Options (a) full through the logged reveal, (b) masked with a server-side wa.me redirect, (c) none in the MVP; and does "full bank account" include the holder name?)* | none (was US-051, US-053 T-053.2) |
+| mvp-Q35 | **Answered 2026-11-16 (D-053):** option (a), nothing in the MVP; the lot stays `shipped`; no job, no setting. "Auto-confirm delivery after N days" is kept in `docs/releases/README.md`, Ideas not yet planned. *(Was: does a lot the winner never marks delivered need anything?)* | none (was US-053) |
+| mvp-Q36 | **Answered 2026-11-16 (D-054):** option (a), yes: a farm suspended after approval may still mark its already-sold lots paid and shipped; it can't create auctions or lots. The paid/shipped routes skip `validateSellerOpenStep` and check ownership + status not `terminated` (`SellerStatus.TERMINATED` exists in Mercur 2.3.7). *(Was: may a suspended farmer finish already-won lots?)* | none (was US-052 T-052.1) |
+| mvp-Q37 | **Open (2026-11-16, non-blocking for building; blocks the pilot).** With no phone (D-052), how does the farmer get the winner's delivery address, or reach them when the fish is ready? The owner said "use the order/contact information already have", but the MVP creates no order for an auction (plan Path to beta: orders start with beta), and the sold-lots row (US-051 T-051.1b) carries only the winner's name. Options: (a) the winner's default Medusa customer address is shown to the farmer on the sold lot (masked like other PII? full? through a logged reveal?); (b) the winner types a delivery address on the won lot (new field); (c) the winner contacts the farmer off-platform using the bank transfer note; nothing on the platform. My recommendation: (b) or (a) with a logged reveal. | none to build now; US-090 pilot readiness; a new task in US-051/US-052 if (a) or (b) |
+| mvp-Q38 | **Open (2026-11-16, non-blocking; US-085 is already blocked by mvp-Q12).** The plan's WhatsApp **Win** message ("sends the farmer's WhatsApp and bank details", US-085 AC1) conflicts with D-052 (no farmer phone to the winner) and D-044 (the full bank account only through the logged reveal). Options: (a) the win message sends a link to `/akun/menang` and the 1×24 h deadline only; (b) it sends the full bank account, the message itself counting as a logged reveal; (c) it sends the masked account plus the link. Recommend (a). | US-085 |
+| mvp-Q39 | **Open (2026-11-16, non-blocking).** Does the winner's reveal (D-044, US-051 T-051.3a) include the account-holder name, or only the account number? D-043 groups number + holder name as bank fields; part 2 of `mvp-Q34` was not answered. Until answered, only `account_number` is revealable and `holder_name` stays masked. Options: (a) number only; (b) number and holder name (one audit row per field). Recommend (b): the payer checks the name before transferring. | US-051 T-051.3a enum (one extra value later) |

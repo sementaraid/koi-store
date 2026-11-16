@@ -32,6 +32,7 @@ item becomes a release when the owner asks for it.
 - Winner pays through the platform (Xendit, with xenPlatform for farmer payouts)
 - Proxy bidding and buy-it-now
 - WhatsApp claim notice template for the farmer and admin (MVP notices are on-site only, D-025)
+- Auto-confirm delivery N days after a lot is marked shipped (MVP: the lot stays `shipped` if the winner never marks it delivered, D-053)
 - KYC verification through http://api.co.id (Indonesian KYC API). Set aside for now, not in the MVP; likely the answer to the farm identity check later. Not scheduled. (Owner, 2026-11-15)
 
 Source: `mvp/plan.md`, Path to beta. Its upgrade steps (backup, rehearse,

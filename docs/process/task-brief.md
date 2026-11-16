@@ -49,7 +49,13 @@ brief, not in the agent's memory:
 
 - [ ] PII: mask anyone else's NIK/bank/phone; self-view stays full (D-045);
       admins are not exempt (D-042)
-- [ ] Every custom `/vendor/*` mutation starts with `validateSellerOpenStep`
+- [ ] Every custom `/vendor/*` mutation starts with `validateSellerOpenStep`.
+      One exception: the paid/shipped marks on a farmer's own sold lots check
+      ownership and "not `terminated`" instead (D-054)
+- [ ] Every error message a Koi app may show verbatim is Indonesian, written
+      on the backend, rupiah `id-ID` (`Rp1.100.000`). `@mercurjs/client` keeps
+      only `message` and `code`; never patch or wrap it to carry more (D-055).
+      Apps still key on `code`/status, never on message text
 - [ ] Money: whole-rupiah integers, `id-ID` formatting, never floats
 - [ ] Ledgers append-only; balances are sums, never stored counters
 - [ ] Every mutation is a workflow with compensation; routes stay thin
