@@ -11,6 +11,7 @@ import { EmptyFeed } from "@/components/cells/EmptyFeed/EmptyFeed"
 import { FeedGrid } from "@/components/atoms/FeedGrid/FeedGrid"
 import { FeedPagination } from "@/components/cells/FeedPagination/FeedPagination"
 import { LiveBand } from "@/components/cells/LiveBand/LiveBand"
+import { BidHistory } from "@/components/molecules/BidHistory/BidHistory"
 import { LotIdentity } from "@/components/molecules/LotIdentity/LotIdentity"
 import { MediaStage } from "@/components/molecules/MediaStage/MediaStage"
 import { SpecCell, SpecSheet } from "@/components/cells/SpecSheet/SpecSheet"
@@ -22,6 +23,7 @@ import { JoinAuction } from "@/components/sections/LotDetailsPage/components/Joi
 import { PlaceBid } from "@/components/sections/LotDetailsPage/components/PlaceBid"
 import { WonLotPanel } from "@/components/sections/LotDetailsPage/components/WonLotPanel"
 import type { LotPageProps } from "@/types/lot"
+import { toAuctionProduct } from "@/lib/adapters/lot"
 import { formatDeadline } from "@/lib/helpers/format-deadline"
 import { formatPrice } from "@/lib/helpers/format-price"
 import { formatRemaining, isClosing } from "@/lib/helpers/format-remaining"
@@ -33,6 +35,7 @@ import {
   lotStatus,
 } from "@/lib/helpers/filter-goods"
 import { useCountdown } from "@/hooks/use-countdown"
+import { useLotPoll } from "@/hooks/use-lot-poll"
 
 export type { LotPageProps, MediaItem } from "@/types/lot"
 
@@ -72,29 +75,37 @@ export function LotPage({
   ...rest
 }: LotPageProps) {
   const { listing, auction, info } = lot
-  const {
-    currentBid,
-    currency,
-    bidCount,
-    endsAt,
-    status,
-    cancelled,
-    sold,
-    openingBid,
-    bidStep,
-  } = auction
+  const { currency, openingBid, bidStep } = auction
+  /* US-045 AC1: the board follows the server while the lot can still change.
+     A closed or cancelled lot has nothing left to read, so the poll is off. */
+  const polled = useLotPoll(
+    lot.id,
+    auction.status !== "cancelled" && auction.sold === undefined
+  )
+  const live = polled ? toAuctionProduct(polled).auction : undefined
+
+  /* The poll's answer wins over the server props for everything the auction
+     changes; the static half of the page keeps the props. */
+  const currentBid = live?.currentBid ?? auction.currentBid
+  const bidCount = live?.bidCount ?? auction.bidCount
+  const bids = live?.bids ?? auction.bids
+  const status = live?.status ?? auction.status
+  const sold = live?.sold ?? auction.sold
+  /* `AuctionProduct` carries no `cancelled` flag (cancelled lots read
+     `status: "cancelled"`), so the status is the test. */
+  const cancelled = status === "cancelled"
+  /* `sold` only ever arrives on a closed lot (the adapter's own contract). */
+  const closed = sold !== undefined
+
   /* US-043 T-043.3: our own accepted bid answers with the lot's end time after
      the extend, so the clock moves at once — before, or without, the refresh.
      `router.refresh()` later supplies the same value as a prop; until then this
-     one wins, and a read that returns no value leaves the prop's clock alone. */
+     one wins, and a read that returns no value leaves the prop's clock alone.
+     US-045: a polled `end_time` (an extend by someone else) moves it too. */
   const [bidEndTime, setBidEndTime] = useState<string>()
-  const shownEnd = bidEndTime ?? endsAt
+  const shownEnd = bidEndTime ?? live?.endsAt ?? auction.endsAt
   const remaining = useCountdown(shownEnd)
   const closing = isClosing(remaining)
-  /* `sold` only ever arrives on a closed lot (the adapter's own contract), so
-     reading it off is the same test as `status === "ended"` without a second
-     flag to keep in step. */
-  const closed = sold !== undefined
 
   const {
     items,
@@ -266,6 +277,24 @@ export function LotPage({
                         />
                       </div>
 
+                      {/* US-044 (D-051): the trail, on open and closed lots
+                          alike. Rendered only when rows exist — an empty list
+                          would say the house published nothing, a different
+                          fact. A cancelled lot never reaches this branch
+                          (D-050); `bidder` is the server's mask, verbatim. */}
+                      <RenderIf when={bids?.length ? bids : null}>
+                        {(rows) => (
+                          <section className="flex flex-col gap-2">
+                            <h2 className={SECTION_LABEL}>Riwayat bid</h2>
+                            <BidHistory
+                              variant="inline"
+                              bids={rows}
+                              currency={currency}
+                            />
+                          </section>
+                        )}
+                      </RenderIf>
+
                       {/* The winner's own band (US-053 T-053.2): their row from
                           `GET /store/won-lots/:id` decides it, so a visitor
                           who did not win this lot never sees it. */}
@@ -300,9 +329,18 @@ export function LotPage({
                         {(control) => <JoinAuction {...control} />}
                       </RenderIf>
 
-                      <RenderIf when={bid}>
+                      {/* US-045: a poll can close the lot under the form, so
+                          the control goes with it. The polled price advances
+                          the field only while the bidder is not typing in it
+                          (`useLotPoll` pauses on `[data-bid-form]`), because
+                          `PlaceBid` remounts its field when the minimum moves. */}
+                      <RenderIf when={bid && !closed ? bid : null}>
                         {(control) => (
-                          <PlaceBid {...control} onEndTime={setBidEndTime} />
+                          <PlaceBid
+                            {...control}
+                            currentPrice={currentBid}
+                            onEndTime={setBidEndTime}
+                          />
                         )}
                       </RenderIf>
 

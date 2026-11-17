@@ -1,5 +1,8 @@
+"use client"
+
 import { cn } from "cn"
 import { Crown } from "lucide-react"
+import { useEffect, useState } from "react"
 
 import { Badge, RenderIf } from "@koi/ui"
 import type { AuctionProduct } from "@/types/product"
@@ -52,6 +55,18 @@ export function BidHistory({
   variant = "drawer",
   className,
 }: BidHistoryProps) {
+  /* The "lalu" clock starts on the client, after hydration, because the server
+     and the browser disagree on `Date.now()` by a minute boundary now and then
+     (US-045 fix: a text diff fails hydration). Until then the time cell is
+     empty, exactly as the server drew it. It then refreshes every minute so a
+     list left open does not go stale. A caller's `now` (tests) wins. */
+  const [clock, setClock] = useState<number>()
+  useEffect(() => {
+    setClock(Date.now())
+    const id = setInterval(() => setClock(Date.now()), 60_000)
+    return () => clearInterval(id)
+  }, [])
+  const shownNow = now ?? clock
   const sorted = [...(bids ?? [])].sort(
     (a, b) => toEpochMs(b.at) - toEpochMs(a.at)
   )
@@ -118,7 +133,7 @@ export function BidHistory({
             {formatPrice(bid.amount, currency)}
           </span>
           <span className="shrink-0 text-2xs text-muted-foreground tabular-nums">
-            {formatAgo(bid.at, now)}
+            {shownNow === undefined ? null : formatAgo(bid.at, shownNow)}
           </span>
         </li>
       ))}

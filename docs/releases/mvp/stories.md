@@ -16,14 +16,14 @@ are defined in `docs/product/overview.md`.
 
 ## Status as of 2026-11-17
 
-**Last accepted stories:** US-044 (Epic 4), qa PASS on both ACs, accepted
-2026-11-17. Before it: US-051, US-052 (shipped half), US-053 (Epic 5), qa
+**Last accepted stories:** US-045 (Epic 4), qa PASS fix round 1, accepted
+2026-11-17. Before it: US-044 (Epic 4), qa PASS on both ACs. Before that: US-051, US-052 (shipped half), US-053 (Epic 5), qa
 PASS on every in-scope AC, fix round 1, accepted 2026-11-17. Before them: US-043,
 US-050, then US-040, US-041, US-042 (Epic 4). T-030.8, T-032.6, T-032.7 and
 T-020.10 (seed fix) were accepted earlier. The `bid` model and the bid/join
 code are committed (`d67d3c8`).
 
-**Counts** (computed from this file, 2026-11-17; US-044, US-051, US-052, US-053 accepted):
+**Counts** (computed from this file, 2026-11-17; US-045 accepted):
 
 | Epic | Stories done | In progress | Todo | Parked | Blocked | Tasks done | Tasks open | Tasks parked |
 |---|---|---|---|---|---|---|---|---|
@@ -31,12 +31,12 @@ code are committed (`d67d3c8`).
 | 1 Wallet | 6 | 0 | 0 | 0 | 0 | 22 | 0 | 0 |
 | 2 Becoming a farmer | 2 | 0 | 0 | 0 | 0 | 11 | 5 | 0 |
 | 3 Auctions for farmers | 4 | 0 | 0 | 0 | 0 | 23 | 0 | 0 |
-| 4 Joining and bidding | 5 | 0 | 2 | 0 | 0 | 20 | 5 | 0 |
+| 4 Joining and bidding | 6 | 0 | 1 | 0 | 0 | 22 | 4 | 0 |
 | 5 Closing and after-sale | 4 | 0 | 6 | 2 | 0 | 15 | 29 | 4 |
 | 6 Admin operations | 0 | 0 | 6 | 0 | 0 | 0 | 22 | 0 |
 | 7 WhatsApp bot | 0 | 0 | 0 | 0 | 6 | 0 | 12 | 0 |
 | 8 Pilot | 0 | 0 | 1 | 0 | 0 | 0 | 5 | 0 |
-| **Total** | **24** | **0** | **15** | **2** | **6** | **100** | **78** | **4** |
+| **Total** | **25** | **0** | **14** | **2** | **6** | **102** | **77** | **4** |
 
 Epic 2's open tasks are US-021's T-021.2/.3/.4/.6 (follow-ups on a `done` story)
 and T-020.10 (seed an admin user). Blocked: US-080 – US-085 (mvp-Q12).
@@ -68,12 +68,15 @@ details are shown to the winner and the farmer sees the winner's WhatsApp. It
 contradicts D-052 (no phone either way), D-044 (on hold) and D-056.
 
 **Next in milestone order:**
-1. US-045 (polling, T-045.1) — ready, frontend only, no blocking question; the
-   only Epic 4 story with no dependency. US-046 next (T-046.1 needs Backend, the
-   rest waits on it).
+1. US-046 (live room), the last Epic 4 story. T-046.1 (backend live link) waits
+   on the owner's yes/no to the `mvp-Q43` proposal; T-046.2/.3 follow T-046.1
+   (T-046.2 is written to `mvp-Q42` option a, non-blocking). US-045 accepted.
+   **Ready alternatives while mvp-Q43 is open:** US-054 → US-055 (no blocking
+   question; lots reach `delivered` only through seeded data until payment is
+   decided, see Parked).
 2. Epic 5 next: US-054 → US-055 (needs US-053, now `done`), then US-057, US-060,
    US-061. US-056/US-058 parked; US-059's payment-strike part parked.
-3. US-043, US-050, US-051, US-052 (shipped), US-053, US-044 are accepted;
+3. US-043, US-050, US-051, US-052 (shipped), US-053, US-044, US-045 are accepted;
    nothing left there.
 T-020.10 can run any time; qa's admin browser checks need it.
 
@@ -1552,12 +1555,33 @@ with no bids (no heading; BidHistory's "belum diterbitkan" empty line not shown)
 Report PASS/FAIL per AC with file:line and command output. Don't change app code.
 ```
 
-### US-045 Prices update live · `todo`
+### US-045 Prices update live · `done (evidence: apps/storefront-koi/src/hooks/use-lot-poll.ts:26-99 (recursive setTimeout 36-38, pause on hidden tab / [data-bid-form] 43-50, 404 stop 56-60, closed/cancelled stop 67-70, silent backoff 73-77, visibility refetch 82-86, cleanup 91-95); src/lib/helpers/poll.ts:6,26-29 (LOT_POLL_MS=2000, 30 s cap) + poll.test.ts; LotPage.tsx:81,106; PlaceBid.tsx:77,124; BidHistory.tsx:63-68; grep WebSocket/EventSource clean; storefront bun run check tsc + 187/187 + lint clean; admin-koi tsc clean; live outbid 2516 ms POST→render no reload; 20 signed-out reloads 0 hydration errors; qa PASS fix round 1)`
 As a **bidder**, I want the price and countdown to update without reloading so
 that I see outbids quickly. *(Plan: Key flows: live updates)*
 - AC1: The lot page polls every few seconds. No websockets or SSE in the MVP.
-- [ ] T-045.1 [storefront] Polling on the lot page and live room *(live room part moves to T-046.2 — see Readiness)*
-- [ ] T-045.2 [qa] An outbid appears within one polling interval
+- [x] T-045.1 [storefront] Polling on the lot page and live room *(live room part moves to T-046.2 — see Readiness)*
+- [x] T-045.2 [qa] An outbid appears within one polling interval
+
+**Accepted 2026-11-17 (qa PASS, fix round 1).** AC1 checked against code: `use-lot-poll.ts:26-99` polls with a
+recursive `setTimeout` at `LOT_POLL_MS` (`poll.ts:6`, 2000 ms); no WebSocket/EventSource/`setInterval` in the hook,
+helper or `LotDetailsPage/**` (grep clean; the only `setInterval` is BidHistory's 60 s "lalu" clock, `BidHistory.tsx:66`,
+not a poller). Live: siti's outbid rendered on budi's page in 2516 ms with no reload.
+Fix round 1: bug 1 (stale own-bid price) fixed at `PlaceBid.tsx:77` (`Math.max(confirmed?.currentPrice ?? currentPrice,
+currentPrice)`), live 3.150.000 → outbid 3.250.000 → hint Rp 3.350.000 → 201; typed value survived an outbid while
+focused. Bug 2 (hydration diff on relative time) fixed at `BidHistory.tsx:63-68` (clock set after mount); 20 reloads,
+0 hydration errors, no undefined/NaN.
+Regression (qa): 0 polls while `[data-bid-form]` focused; cancelled lot 0 polls in 8 s; backoff 2031/4009/8008/16006 ms
+with last price kept, no toast; BidHistory callers `LotDetailsSheet.tsx:147`, `LiveRoom.tsx:231`, `LotPage.tsx:289`
+client-side; no new dependency.
+**Not verified in the accepting round:**
+- Hidden tab: simulated only (headless can't truly hide a tab): 0 requests in 7 s, refetch 6 ms after visible.
+- Closed-lot stop: live in round 0 only (close job closed the lot mid-view, board → "Harga akhir / Terjual", 0 polls
+  after); code `use-lot-poll.ts:67-70` unchanged since. Not re-run in fix round 1.
+- 30 s backoff cap: unit test only (`poll.test.ts`), not observed live.
+- Countdown following a server extend: code-read only (`LotPage.tsx:106` `shownEnd = bidEndTime ?? live?.endsAt ??
+  auction.endsAt`); no extend triggered in qa.
+- Live-room polling: out of this story; moved to US-046 T-046.2 (room is still demo data).
+Interval: 2 s is a proposed default, not a decision; `mvp-Q41` stays open, non-blocking (change is one line, `poll.ts:6`).
 
 **Readiness (2026-11-17): ready (`todo`), nothing blocks it. No backend task.**
 - No WebSocket/SSE in MVP; the lot page polls (plan `plan.md:249`, owner decision in force). One read, one screen.
@@ -1700,7 +1724,7 @@ Report PASS/FAIL per AC with file:line and command output; bugs with repro and e
 Screenshots and page snapshots land in `.playwright-mcp/`. Don't change app code.
 ```
 
-**Owner question raised by this section (not yet in the questions table):** `mvp-Q41` — is 2 s the
+**Owner question raised by this section (in the questions table, open, non-blocking):** `mvp-Q41` — is 2 s the
 polling interval for the MVP lot page, or another value (e.g. 3 s/5 s)? It blocks nothing; T-045.1 uses 2 s as a
 named constant, so a change is one line. Recommend 2 s.
 
@@ -1709,9 +1733,387 @@ As a **bidder**, I want a live screen with one lot at a time so that the auction
 feels like a live event. *(Plan: Live room)*
 - AC1: Shows one lot at a time: photo, current price, countdown, bid feed.
 - AC2: The farmer can add a YouTube or Instagram live link, which is shown on the page. No video system is built.
-- [ ] T-046.1 [backend] Live link field on the auction
-- [ ] T-046.2 [storefront] `live` page on real data, replacing `const/live.ts`
-- [ ] T-046.3 [storefront] Farmer area: set the live link
+- [ ] T-046.1 [backend] Live link field on the auction — column + migration, farmer write path, URL validation, public and vendor exposure, `codegen`
+- [ ] T-046.2 [storefront] `live` page on real data, replacing `const/live.ts` (ordered after T-046.1)
+- [ ] T-046.3 [storefront] Farmer area: set and clear the live link (ordered after T-046.1)
+- [ ] T-046.4 [qa] Both ACs in a browser, including a real polling update and the link rendering
+
+**Readiness (2026-11-17): ready (`todo`). Nothing decided is missing; one non-blocking owner question (mvp-Q42, below).**
+- Plan rule being built: `plan.md:250`. "No video system is built" + MVP out of scope "live video" (`plan.md:14`)
+  mean the link is **rendered as an outbound link**, never an `<iframe>` embed. If the owner wants an embed, that changes
+  T-046.2 only and adds no backend work.
+- **Storage.** A nullable `live_stream_url` column on our own `auction` model (auction module), not a Mercur custom field:
+  `customFields` in `medusa-config.ts:76-82` is configured for Mercur entities (`Seller`), and `auction` is a Medusa
+  module model owned by us with its own migrations (`src/modules/auction/migrations/`). A column is one generated
+  migration and is read by `query.graph` with no extra wiring; a custom field on our module is unverified in the docs.
+- **Who writes it.** The farmer, through `POST /vendor/auctions/:id/live-link` (member token + `x-seller-id`, D-003),
+  because `/vendor/*` owns the farmer's auctions and D-002 keeps admin screens in `apps/admin-koi` without inventing an
+  admin edit. No admin surface: nothing in the plan gives admin control of a farmer's broadcast.
+- **When it may be written.** Any status except `closed` and `cancelled` (409, Indonesian message). The current
+  draft-only `POST /vendor/auctions/:id` (`workflows/update-draft-auction.ts:32-87`) can't serve this: a live link is
+  only useful once the auction is `scheduled` or `live`. Refusing only the two terminal statuses is the smallest rule
+  that makes the feature work and invents no state (`open` for edits until the auction is done). Flagged for the owner
+  in the report; it is not a new status or transition.
+- **One lot at a time (AC1).** Today's `pickFeatured` (`const/live.ts:88-90`) already means explicit selection: `?lot=`
+  wins, else the first lot of a `live` auction, else the first open one. T-046.2 keeps that and adds no auto-rotation
+  or next-lot control. Rotation would be an addition the AC doesn't ask for; mvp-Q42 asks the owner whether they want it.
+- **Bidding is not in this story.** AC1 lists photo, price, countdown, bid feed. Placing bids is US-042's job on the lot
+  page; the room therefore renders the board read-only and links to the lot page. The room's current fake bid state
+  (`LiveRoom.tsx:96-141`, `onBid` writing local price/count) is demo-only and must go: it would show bids that never
+  happened.
+- **Polling is US-045's, not a second poller.** The room consumes `useLotPoll(lotId, enabled)` (`src/hooks/use-lot-poll.ts:26`),
+  which already returns the detail `StoreLot` (with `bids[]`, from `getLot`, `src/lib/data/lots.ts:281-289`). No new hook,
+  no second interval: `LOT_POLL_MS` (`src/lib/helpers/poll.ts:6`) stays the single cadence. US-045's `[data-bid-form]`
+  pause is inert in the room because the room has no bid form.
+- **Every response field AC1 needs already exists** except the link: `current_price`, `bid_count`, `bids[]`, `end_time`,
+  `sold`, `cancelled`, `auction.status`, `photos` (`src/api/store/lots/route.ts:17-47,66-72,98-152`; `[id]/route.ts:18-51`).
+  T-046.1 adds `auction.live_stream_url`; it is the only missing route/field, so it is ordered first.
+- **Demo data to delete.** `DEFAULT_AUCTION_LOTS` (`const/live.ts:111`), `bidsFor` (`:353`), `pickFeatured`'s demo docs
+  (`:88`), `DEFAULT_BROADCAST_TICKER` (`:49`), `DEFAULT_LIVE_STATS` (`:54`, the "Rp 1,42 M / 18ms" claims are fabricated),
+  `DEFAULT_BUY_NOW` (`:60`, buy-now is out of MVP scope). Keep `DEFAULT_LIVE_MEDIA` (`:32`) and `LIVE_TINT` (`:66`):
+  `ProductPage.tsx:10,73` and `LiveBand.tsx:4,44` still import them, and neither is demo *auction* data.
+- **Cross-cutting items in force:** D-051 (masked bidder rows, rendered verbatim), D-046 / D-050 (public statuses; a
+  cancelled or closed lot draws no price/bids and stops polling), D-055 (Indonesian copy, rupiah `id-ID`), D-003 (member
+  token + `x-seller-id`), `validateSellerOpenStep` on the custom `/vendor/*` mutation, `codegen` after the route change,
+  `bun run tsc` in both Koi apps, render check with the playwright MCP.
+
+#### Briefs
+
+```text
+Story: US-046 (task T-046.1)   Release: mvp
+Agent: backend   Expected: <=45 min
+
+## Acceptance criteria (verbatim)
+- AC2: The farmer can add a YouTube or Instagram live link, which is shown on the page. No video system is built.
+  (This task: the storage, the farmer's write path, the validation, and the field on the public and vendor responses.)
+
+## Decisions in force
+D-003: the write route is `/vendor/*`, member token + `x-seller-id`; identity from `req.seller_context`, never the body.
+D-002: no admin surface for this field in this story.
+D-055: every refusal shown to the farmer is Indonesian, from the backend, rupiah `id-ID`; apps key on `code`/status.
+CLAUDE.md §8/§9: append-only is irrelevant here; one mutation per step with compensation; a module is thin CRUD; routes only GET/POST/DELETE; no `any`.
+Plan out of scope "live video": store a URL only. No download, proxy, embed code or host check beyond the link itself.
+
+## Build
+1. Column. `src/modules/auction/models/auction.ts`: add `live_stream_url: model.text().nullable()` to the `auction` model
+   (after `rejection_reason`, :48). Generate the migration:
+   `bun x medusa db:generate auction` with DATABASE_URL inline (CLAUDE.md, packages/api guide: `bunx` does not exist in
+   the container, and the bare env URL lacks `sslmode`, so the CLI hangs). Then `bun x medusa db:migrate` the same way.
+   No hand-written migration. No backfill: existing rows stay null.
+2. Validation helper. `src/utils/live-stream.ts` exporting
+   `isLiveStreamUrl(value: string): boolean` and a co-located `src/utils/__tests__/live-stream.unit.spec.ts`.
+   Rule: parse with `new URL`; protocol `https:`; hostname lowercased and stripped of a leading `www.`/`m.` must be
+   `youtube.com`, `youtu.be` or `instagram.com`; pathname must be more than `/`. Everything else false (no `http:`,
+   no other hosts, no `youtube.com.evil.dev`, no `javascript:`).
+3. Body validator. `src/api/vendor/auctions/validators.ts`: add
+   `VendorSetAuctionLiveLink = z.object({ live_stream_url: z.string().trim().max(2048).nullable() }).strict()`
+   and `.refine(v => v.live_stream_url === null || isLiveStreamUrl(v.live_stream_url), { message: "Tautan siaran harus dari YouTube atau Instagram (https)." })`.
+   `null` clears the link. Register it in `src/api/middlewares.ts` next to the other `/vendor/auctions/:id` entries
+   (:445-449), method POST, matcher `/vendor/auctions/:id/live-link`.
+4. Workflow. `src/workflows/set-auction-live-link.ts`:
+   `validateSellerOpenStep({ seller_id })` → `acquireLockStep({ key: "auction:<id>", timeout: 10, ttl: 30 })`
+   (same key as submit/update, via `transform` at `update-draft-auction.ts:37-39`) → new read-only guard step
+   `getAuctionForLiveLinkStep` in `src/workflows/steps/auction.ts` (fields id, seller_id, status via query.graph;
+   404 for missing or another seller's auction, like `getDraftAuctionStep` :246-292; 409 code `auction_not_editable`,
+   Indonesian message, when status is `closed` or `cancelled`) → `setAuctionFieldsStep({ id, update: { live_stream_url } })`
+   (reuse :378-405; its compensation restores the previous value) → `releaseLockStep`.
+   Add `"live_stream_url"` to the `AuctionFields` pick union (:361-373). No `if`/loop in the composition function.
+5. Route. `src/api/vendor/auctions/[id]/live-link/route.ts`: `POST` → 200 `{ auction: VendorAuction }`
+   (`toVendorAuction(result)`), body type `VendorSetAuctionLiveLinkType`. Import `../../../../../types/seller-context`.
+   No GET (the field rides on the existing detail response).
+6. Exposure. Vendor: add `"live_stream_url"` to `AUCTION_FIELDS` (`src/api/vendor/auctions/route.ts:56-72`) and
+   `live_stream_url: string | null` to `VendorAuction` (:29-46) and `toVendorAuction` (:127-147).
+   Public: add `"auction.live_stream_url"` to `STORE_LOT_FIELDS` (`src/api/store/lots/route.ts:66-72`), add
+   `live_stream_url: string | null` to `StoreLot.auction` (:35-47) and to the mapper (:139-151). It appears on both the
+   feed and `GET /store/lots/:id`; a draft/pending/cancelled auction's lot still 404s, so its link can't leak.
+7. Run `bun run codegen` (new route: `vendor.auctions.$id.liveLink`).
+
+## Start from
+- src/workflows/update-draft-auction.ts:32-87 (validateSellerOpenStep + lock + guard + mutation + release)
+- src/workflows/steps/auction.ts:246-292 (guard shape), :361-405 (AuctionFields + setAuctionFieldsStep)
+- src/api/vendor/auctions/[id]/submit/route.ts:18-40 (POST with no body handling + envelope)
+- src/api/vendor/auctions/[id]/route.ts:60-74 (detail envelope), ../route.ts:56-72,127-147 (fields + mapper)
+- src/api/store/lots/route.ts:66-72,98-152 (public fields + mapper)
+- src/utils/mask.ts:1-15 + src/utils/__tests__/mask.unit.spec.ts (unit helper layout)
+- integration-tests/http/farmer-auctions.spec.ts:57-110 (seller + member + `x-seller-id` seeding)
+- integration-tests/http/store-lots.spec.ts:1-60 (publishable key in a spec)
+
+## Do not touch
+- apps/** (no frontend in this task)
+- the existing auction columns, the existing migrations, `src/workflows/{create-auction,submit-auction,update-draft-auction,place-bid}.ts`
+  (import only), `src/api/store/lots/[id]/route.ts` (it inherits the field through the shared mapper)
+- docs/
+
+## Spec
+packages/api/integration-tests/http/auction-live-link.spec.ts:
+- scheduled auction → 200, one row saved, `auction.live_stream_url` in the response; live auction → allowed
+- `{ live_stream_url: null }` clears a previously set link (200, null stored)
+- refused 400 with nothing saved: `http://youtube.com/x`, `https://youtube.com.evil.dev/x`, `https://tiktok.com/x`,
+  `https://instagram.com/` , `"  "`
+- another seller's auction → 404; closed → 409 `auction_not_editable`; cancelled → 409; value unchanged in the DB
+- seller pending_approval / suspended → 403 (validateSellerOpenStep)
+- `GET /vendor/auctions/:id` and `GET /vendor/auctions` carry the field
+- `GET /store/lots` and `GET /store/lots/:id` carry `auction.live_stream_url` for a public auction; a draft auction's
+  lot with a link is still 404; the response contains no other new key
+- identity only from the token: a body carrying `seller_id` is refused by `.strict()`
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p .                        → clean
+cd packages/api && bun run codegen                                → routes.d.ts has vendor.auctions.$id.liveLink
+cd packages/api && bun run test:integration:http -- auction-live-link → pass (alone)
+cd packages/api && bun run test:unit -- live-stream.unit             → pass
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + API contract (method, path, body, response, errors) + the migration file name.
+
+## Open questions
+none blocking. The editable-status rule (anything but closed/cancelled) is written above; say so if you find a reason
+a `pending_approval` auction must refuse it.
+```
+
+```text
+Story: US-046 (task T-046.2)   Release: mvp
+Agent: frontend (apps/storefront-koi)   Expected: <=45 min
+Starts after: T-046.1 has delivered its contract and codegen.
+Uses: US-045's `useLotPoll` (`src/hooks/use-lot-poll.ts:26`). Do not write a second poller.
+
+## Acceptance criteria (verbatim)
+- AC1: Shows one lot at a time: photo, current price, countdown, bid feed.
+- AC2: The farmer can add a YouTube or Instagram live link, which is shown on the page. No video system is built.
+  (UI: the link is shown as an outbound link when set; nothing when unset. No embed, no player.)
+
+## Decisions in force
+D-046 / D-050: the room only stages lots of `scheduled`/`live` auctions; a cancelled lot is never staged; a closed
+  lot keeps its last price but stops polling.
+D-051: bid rows are the API's masked `bidder` strings, rendered verbatim; never re-mask, never sort client-side.
+D-055: Indonesian copy, rupiah `id-ID` via `formatPrice`.
+D-005: `@koi/ui` only; data only through `src/lib/data`; typed client only, never raw `fetch`.
+US-045: `LOT_POLL_MS` is the only interval. No websocket, no SSE, no new dependency.
+
+## Pinned response shape (from T-046.1; consumed exactly as written)
+StoreLot = { id, title, description, photos: string[], ob, kb, current_price: number|null, end_time: ISO,
+             final_price: number|null, sold: boolean|null, cancelled: boolean, bid_count: number,
+             auction: { id, status: "scheduled"|"live"|"closed", start_at, end_at, join_fee, delivery_method,
+                        category: {id,name}|null, seller: {id,name,handle}|null,
+                        live_stream_url: string | null } }
+GET /store/lots?limit&offset&status  → { lots: StoreLot[], count, limit, offset }   (no `bids` on feed rows)
+GET /store/lots/:id                  → { lot: StoreLot & { bids: { bidder, amount, created_at }[] } }
+
+## Endpoint inventory
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| GET | /store/lots?limit=100 | yes, `packages/api/src/api/store/lots/route.ts:239-254` | no status → scheduled + live, `end_time` ASC; carries `bid_count`, `photos`, `auction.live_stream_url` |
+| GET | /store/lots/:id | yes, `src/api/store/lots/[id]/route.ts:18-57` | detail adds masked `bids[]`; 404 when the lot or its auction isn't public |
+| GET | /store/lots?limit=100 (the link field) | **partly** — `auction.live_stream_url` does not exist until T-046.1 | added by T-046.1, ordered first |
+No other route is read. No client auth: the room is public.
+
+## Build
+1. `app/(main)/live/page.tsx`: this is a server page (Next 15) — accept `searchParams: Promise<{ lot?: string }>`,
+   await it, pass `featuredId` to `<LivePage featuredId={...} />`. Keep the existing `<Suspense>`; `metadata` unchanged.
+2. `components/sections/LivePage/LivePage.tsx` (server): load `listLots({ limit: 100 })` (`src/lib/data/lots.ts:69-79`).
+   Load `getLot(featuredId)` instead when `featuredId` is given and is not in the list (one extra read; `null` on 404).
+   Pass `lots` (StoreLot[]) and `featuredId` into `LiveRoomPage`. No demo constants.
+3. `components/sections/LivePage/components/LiveRoomPage.tsx` (client): now owns the staged lot.
+   - `stagedId` = `featuredId` when it maps to a non-cancelled lot, else the first lot whose `auction.status === "live"`,
+     else the first non-cancelled lot whose auction is `scheduled`, else none (keep `pickFeatured`'s reading; update its
+     signature to the real lot type and delete the demo docs).
+   - `const polled = useLotPoll(stagedId, enabled)` with `enabled = !!stagedId && !staged.cancelled && staged.sold === null`.
+     Never call it with `""`.
+   - Prefer the polled lot's `current_price`, `bid_count`, `bids`, `end_time`, `sold`, `cancelled`, `auction.status`
+     over the server props, then map through `toAuctionProduct` (`src/lib/adapters/lot.ts:14-58`). Static fields
+     (photos, title, listing, seller) keep the server props.
+   - Delete the local `staged`/`place()` fake-bid state (`LiveRoom.tsx:96-141`) and the `bidsFor` fallback.
+4. `components/sections/LivePage/components/LiveRoom.tsx`: replace defaults with required real props.
+   - Drop `lots = DEFAULT_AUCTION_LOTS`, `media = DEFAULT_LIVE_MEDIA` (for the room; derive media from `lot.photos`),
+     `buyNow`, `ticker`, `stats` defaults. Keep `TRAIL_ROWS`.
+   - `BroadcastBar`: pass `liveCount` = number of `live` auctions in the list; pass no `stats` and no fabricated ticker
+     (the old "Escrow terkunci Rp 1,42 M / Latency 18ms" claims are gone). An optional short factual message is fine.
+   - Pass no `buyNow` (buy-now is out of MVP scope).
+   - Live link: when the staged lot's `auction.live_stream_url` is set, render one outbound link near the board —
+     `<a href={url} target="_blank" rel="noopener noreferrer">Tonton siaran langsung petani →</a>` (Indonesian; no iframe,
+     no player, no preview fetch). Nothing when unset.
+   - Board: `BidTerminal` with the polled lot, no `onBid`, no `myBid`, and a new `readOnly` prop (see below) so the raise
+     chips / bid button / buy-now / "Saldo cukup" line are not drawn. Under the board render a CTA
+     `Button`/`Link` to `lotHref(lot.id)`: "Pasang bid di halaman lot". The room does not place bids (US-042 owns that).
+   - `BidHistory variant="inline"` gets `lot.auction.bids?.slice(0, TRAIL_ROWS)`; keep the "Lihat detail & semua" sheet.
+   - Empty state (`staged` undefined): keep the block, replace the copy at `LiveRoom.tsx:258-279` (it promises
+     "setiap Selasa dan Jumat pukul 20.00 WIB", a schedule the plan doesn't have) with an honest one, e.g.
+     "Belum ada lelang yang sedang berlangsung." + "Lot yang sedang dibuka akan tampil di sini saat lelang dimulai."
+     + the button to `/lelang`.
+   - Keep `LotLayout`, `LotLiveStage`, `SpecSheet`, `LotTrustList`, `PageShell`; keep `RoomHref`/breadcrumb behaviour.
+5. `components/organisms/BidTerminal/BidTerminal.tsx`: add `readOnly?: boolean` (default `false`). When true, render the
+   identity, the band with the price and clock, and the `myBid` line; hide the raise row, the bid button, the
+   "Saldo cukup" line and the buy-now row. No other behaviour changes; `SpotlightStage` and any other caller keep the
+   default.
+6. `const/live.ts`: delete `DEFAULT_AUCTION_LOTS`, `bidsFor`, `DEFAULT_BROADCAST_TICKER`, `DEFAULT_LIVE_STATS`,
+   `DEFAULT_BUY_NOW`. Keep `DEFAULT_LIVE_MEDIA` (ProductPage imports it), `LIVE_TINT` (LiveBand imports it), `mediaFor`
+   (used for the room's media) and `TRAIL_ROWS`. Update the file header comment (demo-room note is obsolete).
+
+## Start from
+- components/sections/LivePage/components/{LiveRoomPage,LiveRoom}.tsx (the room, its props, the empty state)
+- components/sections/LotDetailsPage/components/LotPage.tsx:78-90,337-345 (prefer-polled-fields pattern from US-045)
+- src/hooks/use-lot-poll.ts:26-96 (call it, don't change it)
+- src/lib/adapters/lot.ts:14-58 (StoreLot → AuctionProduct)
+- src/lib/data/lots.ts:69-79 (listLots), :281-289 (getLot)
+- components/organisms/BidTerminal/BidTerminal.tsx:21-140,190-284 (props + control block)
+- components/cells/BroadcastBar/BroadcastBar.tsx:16-60 (message/liveCount/stats props)
+
+## Do not touch
+- packages/api/**, apps/admin-koi/**, `src/hooks/**`, `src/lib/helpers/poll.ts` (US-045)
+- `src/components/sections/LotDetailsPage/**`, `src/lib/adapters/lot.ts` (read only), `src/components/organisms/SpotlightStage/**`
+- `const/live.ts`'s `DEFAULT_LIVE_MEDIA` / `LIVE_TINT` (other screens import them)
+- the cart, the catalog, `akun/kebun/**` (T-046.3 owns the farmer form)
+
+## Definition of done
+cd apps/storefront-koi && bun run check                        → pass (tsc + node:test + lint)
+cd apps/admin-koi && bun run tsc                               → clean (T-046.1 changed `packages/api/src`)
+grep -rn "DEFAULT_AUCTION_LOTS\|bidsFor\|DEFAULT_LIVE_STATS\|DEFAULT_BUY_NOW\|DEFAULT_BROADCAST_TICKER" apps/storefront-koi/src
+  → no hits
+render-check skill (playwright MCP) on http://127.0.0.1:3001/live with a seeded live auction: photo, live price,
+  countdown and masked bid rows; no console/hydration error, no "undefined"/"NaN"/"[object Object]";
+  screenshot path recorded
+Poll proof: with /live open, a second seeded customer places a bid on the staged lot (`POST /store/bids` or the lot page);
+  price and the bid row change within one interval (~2 s, allow 4 s), no reload.
+Link proof: set a link on the staged auction (T-046.1 route or the T-046.3 form), reload /live → the link renders with
+  `href` equal to the stored URL, `target="_blank"`, and no iframe in the DOM.
+Empty proof: with no scheduled/live auction, /live shows the honest empty state.
+Report: standard header + render check result + screenshot paths. Don't commit.
+
+## Open questions
+none blocking. mvp-Q42 (auto-rotation) is not built: the room stages one lot, `?lot=` selects it, and that meets AC1.
+If the owner asks for rotation, it is a follow-up inside `LiveRoomPage`.
+```
+
+```text
+Story: US-046 (task T-046.3)   Release: mvp
+Agent: frontend (apps/storefront-koi)   Expected: <=30 min
+Starts after: T-046.1 has delivered its contract and codegen.
+
+## Acceptance criteria (verbatim)
+- AC2: The farmer can add a YouTube or Instagram live link, which is shown on the page. No video system is built.
+  (UI: the farmer sets or clears it; a rejected link shows the backend's Indonesian message; the saved value is shown.)
+
+## Decisions in force
+D-003: every `/vendor/*` call needs the member token + `x-seller-id`, through `vendorHeaders()` (`src/lib/data/vendor.ts`).
+D-055: show the server's message verbatim; key on status/code, never on message text.
+D-005: `@koi/ui` only; data only through `src/lib/data`; typed client only.
+The route accepts `draft`, `scheduled`, `live` and refuses `closed`/`cancelled` with 409 (T-046.1). The form is offered
+only for those statuses and shows the server's refusal otherwise.
+
+## Endpoint inventory
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| GET | /vendor/auctions/:id | yes, `packages/api/src/api/vendor/auctions/[id]/route.ts:60-74` | `{ auction: VendorAuction }`, carries `live_stream_url` after T-046.1 |
+| POST | /vendor/auctions/:id/live-link | **no** → T-046.1 (ordered first) | body `{ live_stream_url: string \| null }`; 200 `{ auction }`; 400 invalid URL; 403 farm not open; 404 not yours; 409 `auction_not_editable` |
+
+## Build
+1. `src/lib/data/auctions.ts`: add `live_stream_url: string | null` to `Auction` (:42-59), and
+   `setAuctionLiveLink(id, url: string | null): Promise<Result<Auction>>` calling
+   `sdk.vendor.auctions.$id.liveLink.mutate({ $id: id, live_stream_url: url, fetchOptions: { headers } })`
+   (same shape as `updateDraftAuction`, :216-239: `revalidatePath(ROUTES.farmHome)`, `ClientError.message` on failure).
+   `toAuctionDetail` (:104-111) spreads the route's auction, so the field flows through once `Auction` has it.
+2. `src/lib/helpers/live-stream-url.ts` + `.test.ts` (node:test, `.ts` imports): `isLiveStreamUrl(value)` with the same
+   rule as the backend (https; `youtube.com`, `youtu.be`, `instagram.com` after stripping a leading `www.`/`m.`;
+   non-empty path). Pure, no fetch. Cases: valid YouTube watch/short link, valid Instagram live link, `http://`, another
+   host, `youtube.com.evil.dev`, empty.
+3. `src/components/sections/AccountPage/components/LiveLinkForm.tsx`: one card, `react-hook-form` + zod like the existing
+   forms; field `live_stream_url` (URL input, `inputMode="url"`, placeholder `https://www.youtube.com/live/…`).
+   - Client pre-check with `isLiveStreamUrl` on non-empty input → inline error in Indonesian, e.g.
+     "Tautan harus dari YouTube atau Instagram (https)." Never block a clear.
+   - Buttons: "Simpan tautan" and, when a link exists, "Hapus tautan" (submits `null`). Busy state, success toast
+     "Tautan siaran tersimpan." / "Tautan siaran dihapus." (Indonesian).
+   - A failed call shows `result.error` (the backend message) as a toast; nothing is optimistically saved.
+   - Show the currently stored link as an outbound `<a target="_blank" rel="noopener noreferrer">` when set; show
+     "Belum ada tautan siaran." when not.
+   - Card copy explains the rule: "Tautan YouTube atau Instagram untuk siaran lelang. Tidak ada video yang diunggah ke
+     Koi Store." Do not promise an embed or a viewer.
+4. `src/components/sections/AccountPage/components/EditAuction.tsx`: render `<LiveLinkForm>` above the auction cards
+   when `auction.status` is `draft`, `scheduled` or `live`; for `closed`/`cancelled` render nothing (the auction is done).
+   Do not wire it into the draft-only `persist()` submit path. Keep the rest of the screen as it is.
+   Add `setAuction` update from the response so the shown link changes without a reload (the page already holds the
+   auction in `useState`).
+5. `src/const/routes.ts`: no new page route (the form lives on the existing auction detail page). Don't add one.
+
+## Start from
+- src/components/sections/AccountPage/components/EditAuction.tsx:71-84,212 (component + editable state + return)
+- src/components/sections/AccountPage/components/ReviewForm.tsx (form/card layout in the Farmer area)
+- src/lib/data/auctions.ts:42-59 (Auction type), :216-239 (updateDraftAuction: Result + revalidate + ClientError)
+- src/lib/helpers/auction-submit.ts + .test.ts (helper/test layout)
+- src/components/cells/SpecSheet, `@koi/ui` Card/FormField/Input/Button (the kit's own pieces)
+
+## Do not touch
+- packages/api/**, apps/admin-koi/**, `components/sections/LivePage/**` (T-046.2), `const/live.ts`
+- `updateDraftAuction` / `persist()` semantics, the submit button, the lots editor
+- `src/lib/helpers/poll.ts`, the lot page
+
+## Definition of done
+cd apps/storefront-koi && bun run check                        → pass
+cd apps/admin-koi && bun run tsc                               → clean
+render-check skill on http://127.0.0.1:3001/akun/kebun/lelang/<a scheduled or live auction id> signed in as
+  sakura.koi.farm@koi.dev:
+  - save a valid YouTube link → toast, link shown after submit; reload → still shown
+  - submit an invalid host → inline error, no toast of success, stored value unchanged
+  - clear it → "Belum ada tautan siaran."
+  screenshot paths recorded
+Report: standard header + render check result + screenshot paths. Don't commit.
+
+## Open questions
+none
+```
+
+```text
+Story: US-046 (task T-046.4)   Release: mvp
+Agent: qa   Expected: <=30 min
+
+Verify AC1, AC2. Decisions: D-046, D-050, D-051, D-055, D-003.
+Code under test: `packages/api/src/api/vendor/auctions/[id]/live-link/route.ts`, `src/workflows/set-auction-live-link.ts`,
+`src/utils/live-stream.ts`, `src/modules/auction/models/auction.ts` (+ migration), `src/api/store/lots/**`,
+`apps/storefront-koi/src/components/sections/LivePage/**`, `AccountPage/components/LiveLinkForm.tsx`,
+`lib/data/{lots,auctions}.ts`, `lib/helpers/live-stream-url.ts`.
+
+Commands (alone, nothing else on Jest): `cd packages/api && bun run test:integration:http -- auction-live-link`;
+`cd apps/storefront-koi && bun run check`; `cd apps/admin-koi && bun run tsc`.
+
+AC1, browser (render-check skill, playwright MCP):
+1. /live with a seeded live auction and bids → exactly one lot staged; its photo, current price, countdown and masked
+   bid rows are the API's values. Compare each against `curl` of `GET /store/lots/:id` for the same lot.
+2. Poll: place a bid from a second seeded customer while /live is open → price and bid row update within one interval
+   (~2 s, allow 4 s) with no reload.
+3. Masking (D-051): every bid row reads `Xxx***xx`; no full name, phone or customer id anywhere in the page source.
+4. No fake state: clicking anything on the room's board must not invent a price, a bid row or a count; the bid CTA
+   opens the lot page. Confirm no id/price appears without a matching API value.
+5. Empty state: with no scheduled/live auction, /live shows the honest empty state; grep the page for
+   "Selasa dan Jumat" and the demo figures ("1,42 M", "18ms") → none.
+6. A cancelled lot and a closed lot are never staged; polling stops once the staged lot closes (it shows the final
+   price and the API's `sold` label, no winner — D-046).
+7. `grep -rn "picsum\|Sakai Fish Farm" apps/storefront-koi/src/components/sections/LivePage` → none.
+
+AC2, backend + browser:
+8. Set a link through the farmer form as sakura.koi.farm@koi.dev on a `scheduled` and on a `live` auction → saved;
+   /live shows the link, `href` identical to the stored value, `target="_blank"`, and the page contains no `<iframe>`.
+9. Invalid links refused with the Indonesian message on the backend and in the form: `http://…`, another host,
+   `https://youtube.com.evil.dev/x`, `https://instagram.com/` → 400, nothing saved. Clearing with `null` works.
+10. Another seller's auction → 404; closed/cancelled → 409 and the stored value unchanged; a pending/suspended farm → 403.
+11. `curl GET /store/lots` and `/store/lots/:id`: `auction.live_stream_url` is present (null when unset); a draft
+    auction's lot is still 404; no winner, phone, email, `payment_details`, `custom_fields` in the body.
+
+Watch for: a second poller or a new interval constant; polling running after close/cancel or on an empty room;
+the old demo bids/figures resurfacing; an iframe or an embed-derived preview; the farmer form bypassing the module's
+status rule client-side only; the public route exposing the link of a non-public auction; copy that is not Indonesian;
+`bid_count` disagreeing with the rendered rows.
+
+Report PASS/FAIL per AC with file:line and command output; bugs with repro and expected/actual.
+Screenshots and page snapshots land in `.playwright-mcp/`. Don't change app code.
+```
+
+**Owner question raised by this section (not yet in the questions table):** `mvp-Q42` — "one lot at a time": is
+explicit selection enough (the room stages the tightest live lot, `?lot=` picks another, no rotation), or should the room
+auto-rotate to the next open lot when the staged one closes? T-046.2 ships the explicit-selection reading, because AC1
+asks for one lot at a time and not for a rotation. Non-blocking: rotation is a follow-up inside `LiveRoomPage`, no
+backend work. Recommend explicit selection.
+**Recorded, not a question:** the live link is a nullable `auction.live_stream_url` column, set by the farmer through
+`POST /vendor/auctions/:id/live-link` (member token + `x-seller-id`), writable until the auction is `closed`/`cancelled`,
+rendered as an outbound link (no embed, no player). If the owner wants an admin override or an embed, say so before
+T-046.2 is dispatched.
 
 ---
 
@@ -2905,3 +3307,5 @@ is built. Record the answer here, in `plan.md`, and as a decision in `docs/produ
 | mvp-Q39 | **Answered 2026-11-16 (D-057):** option (b), and one reveal records both fields: the winner's reveal returns the full `account_number` **and** full `holder_name`, with **one** `pii_reveal_audit` row (`field: "bank_account"`, not one row per field). **On hold with D-044** (owner, 2026-11-16: no farmer contact for now): intended rule, not built. Updated now so it is ready if D-044 returns: US-051 AC3, T-051.3a (body enum `"bank_account"`, response `{ account_number, holder_name }`), T-051.2a. *(Was: does the reveal include the account-holder name? Options (a) number only; (b) number and holder name.)* | none (was US-051 T-051.3a; those tasks are parked, not blocked) |
 | mvp-Q40 | **Open (2026-11-17, non-blocking).** The masked bidder name is derived at read time from the customer's current `first_name` + id, so a customer who renames themselves re-masks their own past bids on the next read. Options: (a) accept the derived mask — what T-044.1 builds; (b) snapshot the mask onto the `bid` row at placement time (new column + migration, stable forever). Recommend (a). *(Was: does the mask have to stay stable if a customer renames themselves?)* | none (was US-044 T-044.1) |
 | mvp-Q41 | **Open (2026-11-17, non-blocking).** Lot-page polling interval for US-045: 2 s (recommended, T-045.1 uses it via `LOT_POLL_MS`) or 3/5 s. No decision or plan line records one; T-045.1 defines it in one place, so a change is one line. *(Was: how many seconds between lot-page polls?)* | none (was US-045 T-045.1) |
+| mvp-Q42 | **Open (2026-11-17, non-blocking).** "One lot at a time" in the live room means what? Options: (a) explicit selection only — the room stages the lot of the tightest `live` auction, `?lot=` stages another, and nothing else appears when it closes until reload; (b) (a) plus a "lot berikutnya" control; (c) auto-rotate to the next open lot when the staged one closes. Recommend (a). T-046.2 is written to (a); (b)/(c) are frontend-only additions. *(Was: does the live room select or rotate lots?)* | US-046 T-046.2 |
+| mvp-Q43 | **Open (2026-11-17, non-blocking; proposal awaiting owner yes/no).** Live link storage and window: nullable `auction.live_stream_url` column (not a Mercur custom field — `customFields` covers `Seller` only, `medusa-config.ts:76-82`), farmer-written via `POST /vendor/auctions/:id/live-link` (D-003), writable in every status except `closed`/`cancelled`, rendered as an outbound link with no embed. Owner may instead want an admin override, a narrower window (only `scheduled`/`live`), or an embed. *(Was: who may set the farmer's live link, in which auction status, and is it stored as a column or a custom field?)* | US-046 T-046.1 |

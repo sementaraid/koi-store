@@ -31,6 +31,12 @@ import { formatPrice } from '@/lib/helpers/format-price';
  * `current_price`, the re-read supplies it. A rewritten 409 is keyed on its
  * status and re-reads the lot. No retract control (AC4).
  *
+ * Our own accepted bid is a floor, not a ceiling (US-045 fix): the control
+ * takes the higher of the price the response reported and the price the page
+ * now holds, so a later polled bid still advances the minimum and this line.
+ * `useLotPoll` pauses while the customer is typing in `[data-bid-form]`, so
+ * the remount the new minimum triggers never wipes an edit in progress.
+ *
  * The amount input is keyed to the minimum, so a new minimum (after a bid or
  * a re-read) remounts it prefilled without fighting the customer while they
  * type.
@@ -65,7 +71,10 @@ export function PlaceBid({
      why (D-046, D-050). */
   if (mode !== 'bid') return null;
 
-  const price = confirmed?.currentPrice ?? currentPrice;
+  /* Our own bid's price and the page's price both move: ours may be behind a
+     polled outbid (US-045 fix), and a poll can land before the refresh does.
+     The higher is the running price; the board's header reads the same one. */
+  const price = Math.max(confirmed?.currentPrice ?? currentPrice, currentPrice);
   const minimum = minimumNextBid({
     ob,
     kb,
@@ -112,21 +121,14 @@ export function PlaceBid({
   }
 
   return (
-    <form onSubmit={submit} className="grid gap-3" noValidate>
+    <form onSubmit={submit} className="grid gap-3" noValidate data-bid-form>
       <RenderIf when={confirmed}>
         {(bid) => (
           <p className="text-center text-xs text-muted-foreground">
-            Bid Anda {formatPrice(bid.amount)} tercatat
-            <RenderIf when={bid.currentPrice}>
-              {(now) => (
-                <>
-                  . Harga sekarang{' '}
-                  <span className="font-medium text-foreground tabular-nums">
-                    {formatPrice(now)}
-                  </span>
-                </>
-              )}
-            </RenderIf>
+            Bid Anda {formatPrice(bid.amount)} tercatat. Harga sekarang{' '}
+            <span className="font-medium text-foreground tabular-nums">
+              {formatPrice(price)}
+            </span>
             .
           </p>
         )}
