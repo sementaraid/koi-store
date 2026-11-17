@@ -36,6 +36,7 @@ import { getShell } from '@/lib/shell';
 import { listOrderGroups } from './AccountPage';
 import { countOpen } from './components/Orders';
 import { AccountFrame } from './components/AccountFrame';
+import { ClaimDecision } from './components/ClaimDecision';
 import { ClaimVideo } from './components/ClaimVideo';
 import { RevealAddress } from './components/RevealAddress';
 import { ShipLot } from './components/ShipLot';
@@ -204,6 +205,9 @@ function ClaimBlock({ claim }: { claim: VendorClaim }): ReactNode {
         <div className="mt-2">
           <ClaimVideo claimId={claim.id} />
         </div>
+      ) : null}
+      {claim.status === 'open' ? (
+        <ClaimDecision claimId={claim.id} remedy={claim.remedy} />
       ) : null}
     </div>
   );

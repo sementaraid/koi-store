@@ -73,7 +73,10 @@ import {
   captureVendorClaimStatus,
   VendorGetClaimsParams,
 } from "./vendor/claims/validators"
-import { AdminGetClaimsParams } from "./admin/claims/validators"
+import {
+  AdminDecideClaimBody,
+  AdminGetClaimsParams,
+} from "./admin/claims/validators"
 import {
   adminPiiMask,
   storePiiMask,
@@ -551,6 +554,18 @@ export default defineMiddlewares({
       method: ["GET"],
       matcher: "/admin/claims",
       middlewares: [validateAndTransformQuery(AdminGetClaimsParams, {})],
+    },
+    // US-055 T-055.1b: the admin's final decision on a disputed claim. Both
+    // take the written reason (AC2).
+    {
+      method: ["POST"],
+      matcher: "/admin/claims/:id/approve",
+      middlewares: [validateAndTransformBody(AdminDecideClaimBody)],
+    },
+    {
+      method: ["POST"],
+      matcher: "/admin/claims/:id/reject",
+      middlewares: [validateAndTransformBody(AdminDecideClaimBody)],
     },
     {
       method: ["POST"],

@@ -29,3 +29,33 @@ export function formatClaimOpenedAt(iso: string): string {
     timeZone: 'Asia/Jakarta'
   }).format(new Date(iso));
 }
+
+export type ClaimDecisionFailure = {
+  /** What the farmer reads under the buttons. */
+  message: string;
+  /** Whether the row is stale and must be re-read from the server. */
+  refresh: boolean;
+};
+
+/** Read one refused accept or dispute (US-055 T-055.2, AC1, D-055).
+ *
+ * @remarks
+ * Medusa rewrites a 409 body, so the status is the signal there and the app
+ * writes its own copy; a 404 refreshes too (the claim is gone). A 403 keeps the
+ * server's own Indonesian message (`validateSellerOpenStep`). */
+export function claimDecisionFailure(input: {
+  code?: string;
+  status?: number;
+  message: string;
+}): ClaimDecisionFailure {
+  if (input.status === 409) {
+    return { message: 'Klaim ini sudah diputuskan. Halaman diperbarui.', refresh: true };
+  }
+  if (input.status === 404) {
+    return { message: 'Klaim tidak ditemukan.', refresh: true };
+  }
+  return {
+    message: input.message || 'Gagal memproses klaim. Coba lagi.',
+    refresh: false
+  };
+}

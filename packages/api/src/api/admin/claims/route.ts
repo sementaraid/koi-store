@@ -14,7 +14,13 @@ import type { AdminGetClaimsParamsType } from "./validators"
 // US-054 T-054.1b (AC3, D-002, D-018, D-042, D-052): the admin-koi claim
 // queue. Same row as the farmer's plus the farm name, still masked PII only:
 // no phone, no address, no customer id, never the video key or a URL.
-export type AdminClaimListRow = ClaimListRow & { seller: { name: string } }
+// US-055 T-055.1b adds the admin decision fields to this row only (the farmer's
+// `toClaimListRows` is untouched).
+export type AdminClaimListRow = ClaimListRow & {
+  seller: { name: string }
+  decided_at: string | null
+  decision_reason: string | null
+}
 
 export type AdminClaimsResponse = {
   claims: AdminClaimListRow[]
@@ -29,6 +35,8 @@ type ClaimRecord = {
   status: string
   remedy: string
   created_at: Date | string
+  decided_at: Date | string | null
+  decision_reason: string | null
 }
 
 // Medusa's /admin auth rejects any non-admin actor before this runs (D-002).
@@ -43,7 +51,15 @@ export const GET = async (
 
   const { data, metadata } = await query.graph({
     entity: "claim",
-    fields: ["id", "lot_id", "status", "remedy", "created_at"],
+    fields: [
+      "id",
+      "lot_id",
+      "status",
+      "remedy",
+      "created_at",
+      "decided_at",
+      "decision_reason",
+    ],
     filters: { status },
     pagination: { skip: offset, take: limit, order: { created_at: "ASC" } },
   })
@@ -62,12 +78,29 @@ export const GET = async (
   ])
 
   const rows = toClaimListRows(claims, lots, winners)
+  // Same order and same length: toClaimListRows maps 1:1 over `claims`.
+  const decisionById = new Map(
+    claims.map((claim) => [
+      claim.id,
+      {
+        decided_at: claim.decided_at
+          ? new Date(claim.decided_at).toISOString()
+          : null,
+        decision_reason: claim.decision_reason,
+      },
+    ])
+  )
 
   res.json({
-    claims: rows.map((row) => ({
-      ...row,
-      seller: { name: lots.get(row.lot_id)?.auction?.seller?.name ?? "" },
-    })),
+    claims: rows.map((row) => {
+      const decision = decisionById.get(row.id)
+      return {
+        ...row,
+        seller: { name: lots.get(row.lot_id)?.auction?.seller?.name ?? "" },
+        decided_at: decision?.decided_at ?? null,
+        decision_reason: decision?.decision_reason ?? null,
+      }
+    }),
     count: metadata?.count ?? 0,
     limit,
     offset,

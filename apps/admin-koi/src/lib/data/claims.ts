@@ -1,6 +1,7 @@
 'use server';
 
 import { ClientError } from '@mercurjs/client';
+import { revalidatePath } from 'next/cache';
 
 import { ROUTES } from '@/const/routes';
 import { requireAdmin } from '@/lib/guard';
@@ -36,6 +37,9 @@ export type AdminClaim = {
   winner: { name: string };
   seller: { name: string };
   product: { title: string | null; thumbnail: string | null };
+  /** Set once an admin decides (US-055 AC2); null while disputed. */
+  decided_at: string | null;
+  decision_reason: string | null;
 };
 
 export type ClaimList = {
@@ -69,6 +73,50 @@ export const listClaims = async (
     return null;
   }
 };
+
+/** A refused decision, kept keyed on status because Medusa rewrites a 409
+    body (D-055). The helper turns it into the operator's copy. */
+export type ClaimDecisionResult =
+  | { success: true }
+  | { success: false; error: string; status?: number };
+
+async function decideClaim(
+  id: string,
+  reason: string,
+  decision: 'approve' | 'reject',
+  fallback: string
+): Promise<ClaimDecisionResult> {
+  await requireAdmin(ROUTES.claims);
+
+  const endpoint = sdk.admin.claims.$id[decision];
+
+  return endpoint
+    .mutate({
+      $id: id,
+      reason,
+      fetchOptions: { headers: { ...(await getAuthHeaders()) } }
+    })
+    .then(() => {
+      revalidatePath(ROUTES.claims);
+      return { success: true as const };
+    })
+    .catch((err: unknown) => ({
+      success: false as const,
+      error: err instanceof ClientError ? err.message : fallback,
+      status: err instanceof ClientError ? err.status : undefined
+    }));
+}
+
+/** Approve a disputed claim with the admin's written reason (US-055 AC2). The
+    decision is final; no money moves in this story. */
+export async function approveClaim(id: string, reason: string): Promise<ClaimDecisionResult> {
+  return decideClaim(id, reason, 'approve', 'Gagal menyetujui klaim.');
+}
+
+/** Reject a disputed claim with the admin's written reason (US-055 AC2). */
+export async function rejectClaim(id: string, reason: string): Promise<ClaimDecisionResult> {
+  return decideClaim(id, reason, 'reject', 'Gagal menolak klaim.');
+}
 
 /** The unboxing video bytes, base64-encoded, for the client to turn into a
  * blob URL.

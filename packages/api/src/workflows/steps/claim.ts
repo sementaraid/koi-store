@@ -3,7 +3,10 @@ import type { RemoteQueryFunction } from "@medusajs/framework/types"
 import { createStep, StepResponse } from "@medusajs/framework/workflows-sdk"
 import { MODERATION_MODULE } from "../../modules/moderation"
 import type ModerationModuleService from "../../modules/moderation/service"
-import type { ClaimRemedy } from "../../modules/moderation/models/claim"
+import type {
+  ClaimRemedy,
+  ClaimStatus,
+} from "../../modules/moderation/models/claim"
 import { PLATFORM_SETTING_DEFAULTS } from "../../modules/platform-settings/defaults"
 
 type Query = Omit<RemoteQueryFunction, symbol>
@@ -109,6 +112,197 @@ export const getClaimableLotStep = createStep(
       id: lot.id,
       seller_id: (lot.auction as { seller_id: string }).seller_id,
     })
+  }
+)
+
+export type GetDecidableClaimInput = {
+  // From req.seller_context, never the body (D-003).
+  seller_id: string
+  claim_id: string
+}
+
+export type DecidableClaim = { id: string }
+
+// US-055 T-055.1a (AC1, D-038, D-054): read-only guard, run under the
+// `claim:<id>` lock. Another farm's claim and an unknown claim are the same
+// 404 (no existence leak); any status but `open` is a 409, so a repeat of the
+// same decision and the wrong decision are both refused.
+export const getDecidableClaimStep = createStep(
+  "get-decidable-claim",
+  async (input: GetDecidableClaimInput, { container }) => {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const {
+      data: [claim],
+    } = await query.graph({
+      entity: "claim",
+      fields: ["id", "seller_id", "status"],
+      filters: { id: input.claim_id },
+    })
+    if (!claim || claim.seller_id !== input.seller_id) {
+      throw new MedusaError(MedusaError.Types.NOT_FOUND, "Klaim tidak ditemukan.")
+    }
+    if (claim.status !== "open") {
+      throw new MedusaError(
+        MedusaError.Types.CONFLICT,
+        "Klaim ini sudah diputuskan.",
+        "claim_already_decided"
+      )
+    }
+    return new StepResponse<DecidableClaim>({ id: claim.id })
+  }
+)
+
+export type DecideClaimStepInput = {
+  claim_id: string
+  status: "approved" | "disputed"
+}
+
+// US-055 T-055.1a: the farmer's decision, one mutation. Both timestamps are
+// the server's clock, set here and not in the route (CLAUDE.md §8).
+// `approved_at` is set only on accept; on dispute it stays null. Compensation
+// restores exactly the three fields this step changes, so a later failure
+// leaves the claim `open` again.
+export const decideClaimStep = createStep(
+  "decide-claim",
+  async (input: DecideClaimStepInput, { container }) => {
+    const service = container.resolve<ModerationModuleService>(MODERATION_MODULE)
+    const previous = await service.retrieveClaim(input.claim_id)
+    const now = new Date()
+    const [updated] = await service.updateClaims([
+      {
+        id: input.claim_id,
+        status: input.status,
+        farmer_decided_at: now,
+        ...(input.status === "approved" ? { approved_at: now } : {}),
+      },
+    ])
+    return new StepResponse(updated, {
+      id: input.claim_id,
+      previous: {
+        status: previous.status,
+        approved_at: previous.approved_at,
+        farmer_decided_at: previous.farmer_decided_at,
+      },
+    })
+  },
+  async (
+    compensation:
+      | {
+          id: string
+          previous: {
+            status: ClaimStatus
+            approved_at: Date | null
+            farmer_decided_at: Date | null
+          }
+        }
+      | undefined,
+    { container }
+  ) => {
+    if (!compensation) {
+      return
+    }
+    const service = container.resolve<ModerationModuleService>(MODERATION_MODULE)
+    await service.updateClaims([
+      { id: compensation.id, ...compensation.previous },
+    ])
+  }
+)
+
+export type GetAdminDecidableClaimInput = {
+  claim_id: string
+}
+
+// US-055 T-055.1b (AC2, D-038, D-055): read-only guard for the admin decision,
+// run under the `claim:<id>` lock. Only `disputed` is decidable; every other
+// status is a 409, which also makes the decision final (a second approve or
+// reject is refused). An unknown claim is 404.
+export const getAdminDecidableClaimStep = createStep(
+  "get-admin-decidable-claim",
+  async (input: GetAdminDecidableClaimInput, { container }) => {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const {
+      data: [claim],
+    } = await query.graph({
+      entity: "claim",
+      fields: ["id", "status"],
+      filters: { id: input.claim_id },
+    })
+    if (!claim) {
+      throw new MedusaError(MedusaError.Types.NOT_FOUND, "Klaim tidak ditemukan.")
+    }
+    if (claim.status !== "disputed") {
+      throw new MedusaError(
+        MedusaError.Types.CONFLICT,
+        "Klaim ini tidak sedang disengketakan.",
+        "claim_not_disputed"
+      )
+    }
+    return new StepResponse<DecidableClaim>({ id: claim.id })
+  }
+)
+
+export type DecideClaimAsAdminStepInput = {
+  claim_id: string
+  status: "approved" | "rejected"
+  // From req.auth_context.actor_id, never the body.
+  decided_by: string
+  reason: string
+}
+
+// US-055 T-055.1b (AC2, D-038, D-055): the admin's decision, one mutation.
+// `approved_at` is set only on approve, and always from the server's clock
+// (CLAUDE.md §8). Compensation restores exactly the fields this step changes,
+// so a later failure leaves the claim `disputed` with its previous decision
+// columns intact.
+export const decideClaimAsAdminStep = createStep(
+  "decide-claim-as-admin",
+  async (input: DecideClaimAsAdminStepInput, { container }) => {
+    const service = container.resolve<ModerationModuleService>(MODERATION_MODULE)
+    const previous = await service.retrieveClaim(input.claim_id)
+    const now = new Date()
+    const [updated] = await service.updateClaims([
+      {
+        id: input.claim_id,
+        status: input.status,
+        ...(input.status === "approved" ? { approved_at: now } : {}),
+        decided_by: input.decided_by,
+        decided_at: now,
+        decision_reason: input.reason,
+      },
+    ])
+    return new StepResponse(updated, {
+      id: input.claim_id,
+      previous: {
+        status: previous.status,
+        approved_at: previous.approved_at,
+        decided_by: previous.decided_by,
+        decided_at: previous.decided_at,
+        decision_reason: previous.decision_reason,
+      },
+    })
+  },
+  async (
+    compensation:
+      | {
+          id: string
+          previous: {
+            status: ClaimStatus
+            approved_at: Date | null
+            decided_by: string | null
+            decided_at: Date | null
+            decision_reason: string | null
+          }
+        }
+      | undefined,
+    { container }
+  ) => {
+    if (!compensation) {
+      return
+    }
+    const service = container.resolve<ModerationModuleService>(MODERATION_MODULE)
+    await service.updateClaims([
+      { id: compensation.id, ...compensation.previous },
+    ])
   }
 )
 

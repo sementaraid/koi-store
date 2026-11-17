@@ -1,6 +1,9 @@
 'use server';
 
 import { ClientError } from '@mercurjs/client';
+import { revalidatePath } from 'next/cache';
+
+import { ROUTES } from '@/const/routes';
 
 import { sdk } from '../client';
 import { vendorHeaders } from './vendor';
@@ -88,3 +91,41 @@ export const getClaimVideo = async (
     };
   }
 };
+
+export type ClaimDecisionResult =
+  | { success: true }
+  | { success: false; message: string; code?: string; status?: number };
+
+/** One decision, both endpoints (US-055 T-055.2, AC1).
+ *
+ * @remarks
+ * The claim's status is never flipped here: the server re-reads it after a
+ * success (`revalidatePath`) and a refused call answers with its reason. A 409
+ * (`claim_already_decided`) has its body rewritten by Medusa, so the status is
+ * the only signal and the app writes its own copy (D-055). */
+async function decideClaim(
+  id: string,
+  decision: 'accept' | 'dispute',
+  failure: string
+): Promise<ClaimDecisionResult> {
+  try {
+    const headers = await vendorHeaders();
+    const endpoint = sdk.vendor.claims.$id[decision];
+    await endpoint.mutate({ $id: id, fetchOptions: { headers } });
+    revalidatePath(ROUTES.farmSold);
+    return { success: true };
+  } catch (err: unknown) {
+    if (err instanceof ClientError) {
+      return { success: false, message: err.message, code: err.code, status: err.status };
+    }
+    return { success: false, message: failure };
+  }
+}
+
+/** The farmer accepts an `open` claim: straight to `approved`, no admin step. */
+export const acceptClaim = async (id: string): Promise<ClaimDecisionResult> =>
+  decideClaim(id, 'accept', 'Gagal menyetujui klaim. Coba lagi.');
+
+/** The farmer disputes an `open` claim: `open → disputed`, admin decides. */
+export const disputeClaim = async (id: string): Promise<ClaimDecisionResult> =>
+  decideClaim(id, 'dispute', 'Gagal mengajukan sengketa. Coba lagi.');

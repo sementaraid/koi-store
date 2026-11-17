@@ -10,3 +10,19 @@ export const AdminGetClaimsParams = z.object({
 })
 
 export type AdminGetClaimsParamsType = z.infer<typeof AdminGetClaimsParams>
+
+// US-055 T-055.1b (AC2, D-055): the admin's written reason, required and
+// non-blank. Not `z.string().min(1)`: Medusa's zod wrapper rewrites a missing
+// or `too_small` issue into English, so both cases would lose this Indonesian
+// message. Read as unknown, then narrowed below.
+export const AdminDecideClaimBody = z
+  .object({ reason: z.unknown().optional() })
+  .transform((body) => ({
+    reason: typeof body.reason === "string" ? body.reason.trim() : "",
+  }))
+  .refine((body) => body.reason.length > 0, {
+    message: "Alasan wajib diisi.",
+    path: ["reason"],
+  })
+
+export type AdminDecideClaimBodyType = z.infer<typeof AdminDecideClaimBody>

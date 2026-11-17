@@ -1,10 +1,23 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@koi/ui';
-import { getClaimVideo, type AdminClaim } from '@/lib/data/claims';
 import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  FormField
+} from '@koi/ui';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@koi/ui/primitives/tabs';
+import { approveClaim, getClaimVideo, rejectClaim, type AdminClaim } from '@/lib/data/claims';
+import {
+  claimDecisionFailure,
   claimRemedyLabel,
   claimStatusLabel,
   claimStatusTone,
@@ -13,51 +26,71 @@ import {
 
 /** Props for {@link ClaimQueue}. */
 export type ClaimQueueProps = {
-  /** Open claims, oldest first. */
-  claims: AdminClaim[];
-  /** How many are open in total; may exceed `claims.length`. */
-  total: number;
+  /** Disputed claims, oldest first. */
+  disputed: AdminClaim[];
+  /** How many disputed in total; may exceed `disputed.length`. */
+  disputedTotal: number;
+  /** Approved and rejected claims, oldest first. */
+  decided: AdminClaim[];
 };
 
 /**
- * The `/klaim` queue (US-054 AC3): every open dead-on-arrival claim with the
- * lot, the farm, the winner and the unboxing video.
+ * The `/klaim` queue (US-054 AC3, US-055 AC2): disputes first, each with the
+ * lot, the farm, the winner and the unboxing video, then the decisions already
+ * taken.
  *
  * @remarks
- * Read-only on purpose: US-055 brings the decision actions. There is no
- * "decided" tab because the route filters to `open` — a decided claim leaves
- * this list by its status.
+ * Only `disputed` claims carry a decision form. The decision is final
+ * (D-038), so the reason is required and the confirm copy says so; a decided
+ * claim sits in its own tab so it cannot be decided twice.
  */
-export function ClaimQueue({ claims, total }: ClaimQueueProps) {
+export function ClaimQueue({ disputed, disputedTotal, decided }: ClaimQueueProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Klaim DOA ({total})</CardTitle>
+        <CardTitle>Klaim DOA</CardTitle>
         <CardDescription>
           Tinjau video unboxing dari pemenang sebelum memutuskan sengketa.
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-3">
-        {total > claims.length ? (
-          <p className="text-sm text-muted-foreground">
-            Menampilkan {claims.length} dari {total} klaim. Selesaikan yang di atas untuk
-            melihat sisanya.
-          </p>
-        ) : null}
-        {claims.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Belum ada klaim DOA.</p>
-        ) : (
-          claims.map((claim) => <ClaimRow key={claim.id} claim={claim} />)
-        )}
+      <CardContent>
+        <Tabs defaultValue="disputed" className="gap-4">
+          <TabsList>
+            <TabsTrigger value="disputed">Sengketa ({disputed.length})</TabsTrigger>
+            <TabsTrigger value="decided">Sudah diputuskan ({decided.length})</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="disputed" className="grid gap-3">
+            {disputedTotal > disputed.length ? (
+              <p className="text-sm text-muted-foreground">
+                Menampilkan {disputed.length} dari {disputedTotal} sengketa. Selesaikan yang di
+                atas untuk melihat sisanya.
+              </p>
+            ) : null}
+            {disputed.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Tidak ada sengketa menunggu.</p>
+            ) : (
+              disputed.map((claim) => <DisputedRow key={claim.id} claim={claim} />)
+            )}
+          </TabsContent>
+
+          <TabsContent value="decided" className="grid gap-3">
+            {decided.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Belum ada klaim yang diputuskan.</p>
+            ) : (
+              decided.map((claim) => <DecidedRow key={claim.id} claim={claim} />)
+            )}
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
 }
 
-/** One open claim: the lot, the farm, the winner, and the video. */
-function ClaimRow({ claim }: { claim: AdminClaim }) {
+/** The lot, the farm, the winner and the video — shared by both tabs. */
+function ClaimFacts({ claim }: { claim: AdminClaim }) {
   return (
-    <div className="grid gap-3 rounded-md border border-border p-3">
+    <div className="grid gap-3">
       <div className="grid gap-1 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-4">
         <p className="text-base font-medium">{claim.product.title ?? 'Lot tanpa judul'}</p>
         <div className="grid gap-0.5 text-sm">
@@ -81,6 +114,112 @@ function ClaimRow({ claim }: { claim: AdminClaim }) {
         <p className="text-xs text-muted-foreground">Tidak ada video unboxing.</p>
       )}
     </div>
+  );
+}
+
+/** One disputed claim: the facts, the video, and the two final decisions. */
+function DisputedRow({ claim }: { claim: AdminClaim }) {
+  return (
+    <div className="grid gap-3 rounded-md border border-border p-3">
+      <ClaimFacts claim={claim} />
+      <DecisionForm id={claim.id} />
+    </div>
+  );
+}
+
+/** One decided claim: the facts and the reason the decision was taken. */
+function DecidedRow({ claim }: { claim: AdminClaim }) {
+  return (
+    <div className="grid gap-3 rounded-md border border-border p-3">
+      <ClaimFacts claim={claim} />
+      {claim.decision_reason ? (
+        <p className="text-sm">Alasan: {claim.decision_reason}</p>
+      ) : null}
+      {claim.decided_at ? (
+        <p className="text-xs text-muted-foreground">
+          Diputuskan {formatClaimDate(claim.decided_at)}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * The admin's decision (US-055 AC2): a written reason, then approve or reject.
+ *
+ * @remarks
+ * Both buttons share the one reason field; one decision at a time, and the
+ * resulting status comes from the server (a refresh re-reads it), never from an
+ * optimistic flip. A 409/404 refreshes the queue (`claimDecisionFailure`)
+ * because the row is stale.
+ */
+function DecisionForm({ id }: { id: string }) {
+  const router = useRouter();
+  const [reason, setReason] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function decide(decision: 'approve' | 'reject') {
+    const trimmed = reason.trim();
+    if (!trimmed) {
+      setError('Masukkan alasan keputusan');
+      return;
+    }
+    const confirmed =
+      decision === 'approve'
+        ? confirm('Setujui klaim ini? Keputusan bersifat final.')
+        : confirm('Tolak klaim ini? Keputusan bersifat final.');
+    if (!confirmed) return;
+
+    setBusy(true);
+    setError(null);
+    const result =
+      decision === 'approve' ? await approveClaim(id, trimmed) : await rejectClaim(id, trimmed);
+    setBusy(false);
+
+    if (result.success) {
+      toast.success(decision === 'approve' ? 'Klaim disetujui.' : 'Klaim ditolak.');
+      router.refresh();
+      return;
+    }
+
+    const info = claimDecisionFailure(result.status, result.error);
+    setError(info.message);
+    toast.error(info.message);
+    if (info.refresh) router.refresh();
+  }
+
+  return (
+    <form
+      onSubmit={(event) => event.preventDefault()}
+      className="grid gap-2"
+      noValidate
+    >
+      <FormField
+        label="Alasan keputusan"
+        hint="Tersimpan bersama keputusan ini dan menjadi catatan audit."
+        value={reason}
+        error={error ?? undefined}
+        onChange={(event) => {
+          setReason(event.target.value);
+          if (error) setError(null);
+        }}
+      />
+      <div className="flex flex-wrap items-center gap-2">
+        <Button type="button" size="sm" disabled={busy} onClick={() => decide('approve')}>
+          {busy ? 'Memproses…' : 'Setujui'}
+        </Button>
+        <Button
+          type="button"
+          variant="destructive"
+          size="sm"
+          disabled={busy}
+          onClick={() => decide('reject')}
+        >
+          Tolak
+        </Button>
+      </div>
+    </form>
   );
 }
 

@@ -44,6 +44,34 @@ export function claimRemedyLabel(remedy: ClaimRemedy): string {
   return REMEDY_LABEL[remedy] ?? remedy;
 }
 
+export type ClaimDecisionFailure = {
+  /** What the operator reads under the buttons. */
+  message: string;
+  /** Whether the row is stale and the queue must be re-read. */
+  refresh: boolean;
+};
+
+/** Read one refused admin decision (US-055 AC2, D-055).
+ *
+ * @remarks
+ * Medusa rewrites a 409 body, so the status is the signal and the app writes
+ * its own copy; a 404 refreshes too (the claim is gone). Every other refusal
+ * keeps the server's Indonesian message. */
+export function claimDecisionFailure(status: number | undefined, message: string): ClaimDecisionFailure {
+  if (status === 409) {
+    return { message: 'Klaim ini sudah diputuskan. Halaman diperbarui.', refresh: true };
+  }
+  if (status === 404) {
+    return { message: 'Klaim tidak ditemukan.', refresh: true };
+  }
+  return {
+    /* Medusa prefixes a validation error with "Invalid request: "; the
+       operator only needs the sentence after it (D-055). */
+    message: message.replace(/^Invalid request:\s*/, '') || 'Gagal memutuskan klaim. Coba lagi.',
+    refresh: false
+  };
+}
+
 /** The claim's open time in Jakarta time, like every other admin timestamp. */
 export function formatClaimDate(iso: string): string {
   return new Intl.DateTimeFormat('id-ID', {

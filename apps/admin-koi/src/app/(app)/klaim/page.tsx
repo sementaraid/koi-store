@@ -10,10 +10,29 @@ export const metadata: Metadata = {
   title: 'Klaim DOA'
 };
 
-/** The open dead-on-arrival claim queue (US-054 AC3). Read-only until US-055. */
+/**
+ * The dead-on-arrival claim queue (US-054 AC3, US-055 AC2).
+ *
+ * @remarks
+ * Three reads, one screen: the disputes the operator has to decide, and the
+ * approved/rejected claims as the audit trail. A decided claim leaves the
+ * disputed list because the route filters by status, so each tab is the
+ * server's answer, never an optimistic flip.
+ */
 export default async function ClaimsRoute() {
   await requireAdmin(ROUTES.claims);
-  const list = await listClaims('open');
+  const [disputed, approved, rejected] = await Promise.all([
+    listClaims('disputed'),
+    listClaims('approved'),
+    listClaims('rejected')
+  ]);
+
+  const decided =
+    approved && rejected
+      ? [...approved.claims, ...rejected.claims].sort((a, b) =>
+          (b.decided_at ?? '').localeCompare(a.decided_at ?? '')
+        )
+      : null;
 
   return (
     <div className="grid gap-6">
@@ -24,8 +43,12 @@ export default async function ClaimsRoute() {
         </p>
       </div>
 
-      {list ? (
-        <ClaimQueue claims={list.claims} total={list.count} />
+      {disputed && decided ? (
+        <ClaimQueue
+          disputed={disputed.claims}
+          disputedTotal={disputed.count}
+          decided={decided}
+        />
       ) : (
         <Card>
           <CardHeader>

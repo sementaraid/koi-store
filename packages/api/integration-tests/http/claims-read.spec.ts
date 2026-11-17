@@ -474,6 +474,8 @@ medusaIntegrationTestRunner({
           winner: { name: "Siti Rahmawati" },
           seller: { name: farm.seller.name },
           product: { title: null, thumbnail: null },
+          decision_reason: null,
+          decided_at: null,
         })
         expect(JSON.stringify(res.data)).not.toContain(disputed.id)
 

@@ -34,6 +34,15 @@ export const Claim = model
     // File Module key, not a URL (D-018): the unboxing video is private and
     // served only by the authenticated vendor/admin video routes.
     video_file_key: model.text(),
+    // US-055: the farmer's decision (accept or dispute) and the admin's
+    // decision on a dispute. All nullable; each is saved when the action
+    // happens, never recomputed (CLAUDE.md §8). `approved_at` starts US-056's
+    // resolution clock on both the farmer-accept and admin-approve paths.
+    approved_at: model.dateTime().nullable(),
+    farmer_decided_at: model.dateTime().nullable(),
+    decided_by: model.text().nullable(),
+    decided_at: model.dateTime().nullable(),
+    decision_reason: model.text().nullable(),
   })
   .indexes([
     // One claim per lot, whatever its status (mvp-Q44 a): the DB is the guard

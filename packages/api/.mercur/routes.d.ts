@@ -37,6 +37,8 @@ export type Routes = {
                     };
                 };
                 request: typeof import("@mercurjs/core/api/admin/claims/[id]/request/route");
+                approve: typeof import("../src/api/admin/claims/[id]/approve/route");
+                reject: typeof import("../src/api/admin/claims/[id]/reject/route");
                 video: typeof import("../src/api/admin/claims/[id]/video/route");
             };
         };
@@ -714,6 +716,8 @@ export type Routes = {
                     };
                 };
                 request: typeof import("@mercurjs/core/api/vendor/claims/[id]/request/route");
+                accept: typeof import("../src/api/vendor/claims/[id]/accept/route");
+                dispute: typeof import("../src/api/vendor/claims/[id]/dispute/route");
                 video: typeof import("../src/api/vendor/claims/[id]/video/route");
             };
         };

@@ -16,15 +16,16 @@ are defined in `docs/product/overview.md`.
 
 ## Status as of 2026-11-17
 
-**Last accepted stories:** US-054 (Epic 5), qa PASS on AC1–AC4, fix round 1,
-accepted 2026-11-17. Before it: US-045 (Epic 4), qa PASS fix round 1; US-044
+**Last accepted stories:** US-055 (Epic 5), qa PASS on AC1–AC2, accepted
+2026-11-17, plus the unplanned `@koi/ui` tab-orientation fix. Before it: US-054
+(Epic 5), qa PASS on AC1–AC4, fix round 1; US-045 (Epic 4), qa PASS fix round 1; US-044
 (Epic 4), qa PASS on both ACs; US-051, US-052 (shipped half), US-053 (Epic 5),
 qa PASS on every in-scope AC, fix round 1, accepted 2026-11-17. Before them:
 US-043, US-050, then US-040, US-041, US-042 (Epic 4). T-030.8, T-032.6, T-032.7
 and T-020.10 (seed fix) were accepted earlier. The `bid` model and the bid/join
 code are committed (`d67d3c8`).
 
-**Counts** (computed from this file, 2026-11-17; US-054 accepted):
+**Counts** (computed from this file, 2026-11-17; US-055 accepted):
 
 | Epic | Stories done | In progress | Todo | Parked | Blocked | Tasks done | Tasks open | Tasks parked |
 |---|---|---|---|---|---|---|---|---|
@@ -33,14 +34,15 @@ code are committed (`d67d3c8`).
 | 2 Becoming a farmer | 2 | 0 | 0 | 0 | 0 | 11 | 5 | 0 |
 | 3 Auctions for farmers | 4 | 0 | 0 | 0 | 0 | 23 | 0 | 0 |
 | 4 Joining and bidding | 6 | 0 | 1 | 0 | 0 | 22 | 4 | 0 |
-| 5 Closing and after-sale | 5 | 0 | 5 | 2 | 0 | 23 | 22 | 4 |
+| 5 Closing and after-sale | 6 | 0 | 4 | 2 | 0 | 28 | 21 | 4 |
 | 6 Admin operations | 0 | 0 | 6 | 0 | 0 | 0 | 22 | 0 |
 | 7 WhatsApp bot | 0 | 0 | 0 | 0 | 6 | 0 | 12 | 0 |
 | 8 Pilot | 0 | 0 | 1 | 0 | 0 | 0 | 5 | 0 |
-| **Total** | **26** | **0** | **13** | **2** | **6** | **110** | **70** | **4** |
+| Unplanned | 1 | 0 | 0 | 0 | 0 | 1 | 0 | 0 |
+| **Total** | **28** | **0** | **12** | **2** | **6** | **116** | **69** | **4** |
 
-Stories: 26 done of 47 (55%), 13 todo, 2 parked, 6 blocked. Tasks: 110 done of
-184 (60%), 70 open, 4 parked.
+Stories: 28 done of 48 (58%), 12 todo, 2 parked, 6 blocked. Tasks: 116 done of
+185 active (63%), 69 open, 4 parked.
 
 Epic 2's open tasks are US-021's T-021.2/.3/.4/.6 (follow-ups on a `done` story)
 and T-020.10 (seed an admin user). Blocked: US-080 – US-085 (mvp-Q12).
@@ -54,9 +56,8 @@ replaces it under escrow). US-052 is `done` for its shipped half only; AC1's
 pay" strike part. **Only newly blocked: none.** `mvp-Q37` and `mvp-Q39`
 answered (D-056, D-057).
 
-**Needed under either payment model (keep building):** US-054/US-055 (the claim
-window gates the payout), US-057, US-060, US-061. US-051, US-053 and US-052's
-shipped half are accepted.
+**Needed under either payment model (keep building):** US-057, US-060, US-061.
+US-054, US-055, US-051, US-053 and US-052's shipped half are accepted.
 
 **Payment model open (owner, 2026-11-16):** until it is decided, an auction can
 end with a winner but with **no in-app way to pay**. Owner is recalculating;
@@ -75,13 +76,10 @@ contradicts D-052 (no phone either way), D-044 (on hold) and D-056.
 1. US-046 (live room), the last Epic 4 story. T-046.1 (backend live link) waits
    on the owner's yes/no to the `mvp-Q43` proposal; T-046.2/.3 follow T-046.1
    (T-046.2 is written to `mvp-Q42` option a, non-blocking). US-045 accepted.
-   **Ready alternative while mvp-Q43 is open:** US-055 (its T-055.1a needs only
-   US-054's claim row, now `done`; `mvp-Q45` is open but non-blocking — T-055.1a
-   is written to its option (a), a suspended farm gets 403; lots reach
-   `delivered` only through seeded data until payment is decided, see Parked).
-2. Epic 5 next: **US-055** (T-055.1a ready; T-055.1b after it; T-055.2/.3 read
-   the routes it adds), then US-057, US-060, US-061. US-056/US-058 parked;
-   US-059's payment-strike part parked.
+   **Ready alternative while mvp-Q43 is open:** US-057 (ratings; nothing blocks
+   it). US-055 accepted 2026-11-17.
+2. Epic 5 next: **US-057**, then US-060, US-061. US-055 accepted 2026-11-17;
+   US-056/US-058 parked; US-059's payment-strike part parked.
 3. US-043, US-050, US-051, US-052 (shipped), US-053, US-054, US-044, US-045 are
    accepted; nothing left there.
 T-020.10 can run any time; qa's admin browser checks need it.
@@ -3526,18 +3524,42 @@ with repro and expected/actual.
 ```
 
 
-### US-055 Farmer responds and admin decides disputes · `todo`
+### US-055 Farmer responds and admin decides disputes · `done (evidence: packages/api/src/modules/moderation/models/claim.ts:41-45 + migrations/Migration20261117153728.ts:5-11; packages/api/src/workflows/steps/claim.ts:130-153 (farmer guard, 404/409 claim_already_decided), :165-208 (decideClaimStep, approved_at + farmer_decided_at), :219-242 (admin guard, disputed only), :257-306 (decision_reason, decided_by, decided_at); packages/api/src/workflows/{accept,dispute,approve,reject}-claim.ts:24-47; packages/api/src/api/vendor/claims/[id]/{accept,dispute}/route.ts:54-70/:17-31; packages/api/src/api/admin/claims/[id]/{approve,reject}/route.ts:74-100/:18-44; packages/api/src/api/admin/claims/validators.ts:14-28; packages/api/src/api/middlewares.ts:558-569; packages/api/src/api/admin/claims/route.ts:19-23,82-103; integration-tests/http/won-lot-claim-farmer-decisions.spec.ts + won-lot-claim-admin-decisions.spec.ts 9/9 each; storefront lib/data/claims.ts:95-131 + lib/helpers/farm-claim.ts:46-60 + SoldLotsPage.tsx:209 + components/ClaimDecision.tsx:39-74; admin-koi ClaimQueue.tsx:59-60,135-140 + app/(app)/klaim/page.tsx:24-51; packages/api tsc clean; storefront check 202/202; admin-koi check 36/36; render checks clean; qa PASS)`
 As a **farmer**, I want to accept or dispute a claim, and as an **admin**, I want
 to decide disputes, so that claims are fair. *(Plan: Dead-on-arrival claims 3; D-038)*
 - AC1: The farmer can accept, which moves the claim straight to `approved` with no admin step, or dispute (`open → disputed`) (D-038).
 - AC2: Only a disputed claim goes to admin, whose decision (`approved` or `rejected`) is final and saved with a reason.
-- [ ] T-055.1a [backend] Farmer decision: `open → approved` (accept) and `open → disputed`, with the claim columns that save both decisions and `approved_at`
-- [ ] T-055.1b [backend] Admin dispute decision: `disputed → approved | rejected`, written reason required, saved with who decided
-- [ ] T-055.2 [storefront] Farmer area claim review with the video and the two decision buttons
-- [ ] T-055.3 [admin] `/klaim` dispute screen: disputed queue, approve or reject with a reason, decided tab
-- [ ] T-055.4 [qa] Farmer accept gives `approved` directly; admin can't decide a claim that isn't `disputed`
+- [x] T-055.1a [backend] Farmer decision: `open → approved` (accept) and `open → disputed`, with the claim columns that save both decisions and `approved_at`
+- [x] T-055.1b [backend] Admin dispute decision: `disputed → approved | rejected`, written reason required, saved with who decided
+- [x] T-055.2 [storefront] Farmer area claim review with the video and the two decision buttons
+- [x] T-055.3 [admin] `/klaim` dispute screen: disputed queue, approve or reject with a reason, decided tab
+- [x] T-055.4 [qa] Farmer accept gives `approved` directly; admin can't decide a claim that isn't `disputed`
 
-**Readiness (2026-11-17): ready (`todo`). No decided rule is missing; no owner question blocks it.**
+**Accepted 2026-11-17** (qa PASS on AC1–AC2; the story has only AC1 and AC2).
+AC1 proven: accept runs lock → `validateSellerOpenStep` → `getDecidableClaimStep`
+(`status !== "open"` → 409 `claim_already_decided`) → `decideClaimStep` setting
+`approved` + `approved_at` + `farmer_decided_at` on the server clock; dispute
+sets `disputed` and leaves `approved_at` null (steps/claim.ts:165-208,
+accept-claim.ts, dispute-claim.ts). No admin step is involved on the accept
+path, and the farmer row carries no money and no video key (accept route
+:37-52). AC2 proven: `getAdminDecidableClaimStep` refuses every status but
+`disputed` with 409 `claim_not_disputed` and an unknown claim with 404
+(steps/claim.ts:219-242), so a second decision is always 409; approve/reject
+save `decision_reason`, `decided_by` (from `req.auth_context.actor_id`),
+`decided_at`, and `approved_at` only on approve (:257-306); the reason is
+trimmed and non-blank with the Indonesian 400 message
+(validators.ts:14-28). qa's live probes agree: repeat accept 409, dispute after
+accept 409, approve on approved 409, reject on rejected 409, another farm 404,
+blank reason 400, 5 concurrent accepts → one 200 and four 409, `rejected` keeps
+`approved_at` null, nothing reaches `resolved`/`confirmed`, no wallet row.
+Two open questions stay **non-blocking**: **mvp-Q44** — one claim per lot
+whatever its status (option a) is shipped and kept, so a rejected lot cannot be
+claimed again; **mvp-Q45** — the strict D-054 reading is built, so a suspended,
+pending or terminated farm gets 403 on accept and dispute (spec :369); option
+(b) would be a two-line guard change. **mvp-Q46** stays open too: no farmer note
+on a dispute.
+
+**Readiness (2026-11-17): accepted (`done`). No decided rule was missing; no owner question blocked it.**
 Checked: plan "Dead-on-arrival claims" 3 ("the farmer can accept ... or dispute; on a
 dispute, admin approves or rejects") and "Design rules" (claim statuses, D-055);
 D-038 (enum and who decides what); D-027 (closed = `confirmed`/`rejected`, inline
@@ -4206,6 +4228,23 @@ Fixes and small changes made during this release that aren't in the plan.
 **Pending cleanup (no story):** `apps/admin-koi/src/app/layout.tsx` has a
 formatting-only diff (import order, a split `robots` object) that isn't part of
 any story. Revert it when the owner approves; the classifier blocked the attempt.
+
+### US-094 Shared tab, separator and scroll-area orientation variants · `done (evidence: packages/ui/src/primitives/tabs.tsx:17,26,60,63; separator.tsx:14; scroll-area.tsx:38; grep -rn 'data-horizontal\|data-vertical' packages/ui/src apps/*/src → 0 matches; /klaim tab list 264×36 horizontal with the panel below, /saldo/topup 272×36, /katalog line underline 2 px on the selected tab, lot-sheet separator 383×1; packages/ui + storefront-koi + admin-koi tsc clean; storefront check 202/202; admin-koi check 36/36)`
+Found by qa while verifying US-055: the `/klaim` tab strip rendered as a
+vertical column.
+- AC1: A `@koi/ui` `Tabs`, `Separator` and `ScrollArea` bar lays out per its
+  `orientation` prop in both Koi apps.
+- [x] T-094.1 [ui] Replace the attribute-presence variant classes with
+  `data-[orientation=…]` / `group-data-[orientation=…]` so they match the DOM.
+
+**Root cause (verified — do not re-introduce):** `@base-ui/react` 1.9.0 emits
+only `data-orientation="horizontal"|"vertical"` (plus the Tailwind group variant
+on the parent), never the bare `data-horizontal` / `data-vertical` attributes
+that Tailwind's attribute-presence variants (`data-horizontal:`, `data-vertical:`,
+`group-data-horizontal/…`) target. Those classes never matched, so the tab list
+kept `flex-col` and the separator/scrollbar lost their size. Always write
+`data-[orientation=horizontal]:` (and `group-data-[orientation=horizontal]/tabs:`)
+in `@koi/ui`.
 
 ## Coverage matrix
 
