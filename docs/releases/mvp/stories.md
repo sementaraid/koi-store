@@ -4067,21 +4067,428 @@ Do not change app code. Report PASS/FAIL per AC with file:line and command
 output; bugs with repro and expected/actual.
 ```
 
-### US-056 Approved claims are resolved · `todo` (unparked 2026-11-17 by D-058; was parked on the payment model)
+### US-056 Approved claims are resolved · `todo` (unparked 2026-11-17 by D-058; briefs written 2026-11-17)
 **D-058 restores the direct path.** The MVP pays off-platform, so the 2026-11-16
 escrow note is void: the farmer refunds the winner directly or ships a
 replacement, exactly as AC1 says. No escrow, no platform refund, no ledger row;
-the platform records only the claim's state. Tasks T-056.1–.4 stay as written.
+the platform records only the claim's state.
 As a **winner**, I want an approved claim settled within 3 days so that I'm made
 whole. *(Plan: Dead-on-arrival claims 4–6; D-027, D-038, D-058)*
 - AC1: The farmer has 3 days to refund directly or ship a replacement, then marks it done (`approved → resolved`). The winner confirms (`resolved → confirmed`). The 3 days start when the claim becomes `approved`, on both paths (D-038).
 - AC2: Missing the 3 days, or refusing an approved claim, makes the farmer eligible for a strike (US-059).
 - AC3: The farmer stays responsible even if a courier caused the death.
 - AC4: If the winner doesn't confirm within 3 days of `resolved`, the existing scheduled job sets the claim to `confirmed` (D-027).
-- [ ] T-056.1 [backend] Claim resolution states + the farmer deadline check and the 3-day auto-confirm in the existing scheduled job (idempotent, batched)
-- [ ] T-056.2 [storefront] Mark done (farmer) and confirm (winner)
-- [ ] T-056.3 [admin] Overdue claims are flagged for a strike
-- [ ] T-056.4 [qa] A `resolved` claim older than 3 days becomes `confirmed` once; running the job twice changes nothing
+- [ ] T-056.1a [backend] `claim.resolved_at` + `confirmed_at`; `resolve` (`approved → resolved`) and `confirm` (`resolved → confirmed`) workflows and routes; `resolved_at`/`confirmed_at` on the farmer, winner-adjacent and admin claim rows, `approved_at` on the admin row
+- [ ] T-056.1b [backend] The 3-day auto-confirm job (`resolved → confirmed` after `resolved_at` + 3 days), idempotent, batched (new `src/jobs/confirm-claims.ts`, not `close-lots.ts`)
+- [ ] T-056.2a [storefront] Farmer marks an `approved` claim done on `/akun/kebun/terjual`
+- [ ] T-056.2b [storefront] Winner confirms a `resolved` claim on `/akun/menang`
+- [ ] T-056.3 [admin] Overdue `approved` claims flagged on `/klaim`'s approved tab (the flag only; the strike itself is US-059 T-059.2)
+- [ ] T-056.4 [qa] `approved → resolved → confirmed` in order; a `resolved` claim older than 3 days becomes `confirmed` once; running the job twice changes nothing; no money moves
+
+**Readiness 2026-11-17: ready (`todo`). Nothing blocks it.**
+- AC1/AC4 are decided: D-038 gives the enum and the clock start (`approved_at` on both paths),
+  D-027 the 3-day auto-confirm and the closed definition. No new claim state, no lot status
+  change, no ledger, wallet or payout code is touched.
+- **The job D-027 calls "existing" does not exist.** `src/jobs/` holds only `close-lots.ts`
+  and `start-auctions.ts`; neither looks at a claim. T-056.1b adds a new hourly job instead
+  of folding into `close-lots.ts`: that job runs every minute against `lot.end_time`
+  pressure, its `collectIds` is typed `lot | auction`, and its log line and its 12/12 spec
+  are about closing lots. A 3-day deadline does not need a per-minute tick.
+- **Suspended farm (D-054 literal, built that way):** resolving is neither paid nor shipped
+  and D-054 says a suspended farm "can't … do any other farmer action", so `resolve` starts
+  with `validateSellerOpenStep` and a suspended farm gets 403. This is the same shape
+  US-055 shipped before D-060 relaxed it; flagged in the report as a likely follow-up, not
+  a blocker (a decision is in force). The same reading makes a suspended farm unable to
+  report a non-payer in US-058 T-058.1.
+- **One question, non-blocking (`mvp-Q47`, raised in this run's report; the question table
+  is edited elsewhere and is not touched here):** AC2's "or refusing an approved claim" has no
+  state behind it — D-038's enum has no `refused` and adding one changes a decision. Built
+  as option (a): a refusal that is not acted on is the 3-day miss, so T-056.3 flags an
+  `approved` claim older than 3 days and nothing records a separate refusal. No column, so
+  the answer can change the copy without a migration.
+- AC3 needs no code: it is a policy statement (responsibility to the winner does not move
+  to the courier).
+
+**Every legal transition and every refusal (T-056.1a):**
+
+| From → to | Who | Route | Refused with |
+|---|---|---|---|
+| `approved → resolved` | farmer, own claim, farm `open` | `POST /vendor/claims/:id/resolve` | 404 unknown/another farm's; 403 any farm not `open` (pending, rejected, suspended, terminated); 409 `claim_not_approved` for any other status |
+| `resolved → confirmed` | the lot's winner | `POST /store/won-lots/:id/claims/confirm` | 404 unknown or another customer's (no leak); 409 `claim_not_resolved` for any other status, incl. a second confirm |
+| `resolved → confirmed` | the job, `resolved_at` + 3 days passed | — | only rows still `resolved`; the workflow re-checks under the lock |
+
+Resolving after the 3-day deadline stays **allowed** (AC2 makes the farmer strike-eligible,
+it does not block the fix). No lot status changes in this story: a lot stays at whatever
+`delivered`/`claimed` state it held.
+
+**Endpoint inventory (story)**
+
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| POST | /vendor/claims/:id/resolve | **no** (T-056.1a) | no body → 200 `{ claim: ClaimDecisionRow & { resolved_at, confirmed_at } }`; 403/404/409 |
+| POST | /store/won-lots/:id/claims/confirm | **no** (T-056.1a) | no body → 200 `{ claim: { id, lot_id, status: "confirmed", confirmed_at } }`; 404/409 |
+| GET | /vendor/claims | yes | rows gain `resolved_at`, `confirmed_at` (ISO or null) |
+| GET | /admin/claims?status=approved | yes | rows gain `approved_at`, `resolved_at`, `confirmed_at` (ISO or null) |
+
+#### Briefs
+
+```text
+Story: US-056 (task T-056.1a)   Release: mvp
+Agent: backend   Expected: <=45 min
+Starts after: US-055 T-055.1a/1b (claim decision columns and routes), D-058 in force.
+
+## Acceptance criteria
+- AC1: The farmer has 3 days to refund directly or ship a replacement, then marks it done (`approved → resolved`). The winner confirms (`resolved → confirmed`). The 3 days start when the claim becomes `approved`, on both paths (D-038).
+- AC2 (data half): the farmer's deadline is readable as `approved_at + 3 days`.
+
+## Decisions in force
+D-038: the enum is `open → approved | disputed`, `disputed → approved | rejected`,
+`approved → resolved → confirmed`; `approved_at` starts the clock. D-027: the auto-confirm
+(reaches `confirmed`) is T-056.1b's job, not this task. D-058: off-platform — this task
+changes claim columns only, no wallet read, no ledger row, no payout. D-054 literal: the
+resolve route keeps `validateSellerOpenStep` (a suspended farm gets 403), like US-055
+shipped before D-060. D-055: Indonesian messages; apps key on status, never message
+text (a 409 body is rewritten). CLAUDE.md §8: one workflow per transition, server clock
+saved in the step, compensation restores exactly the changed columns.
+
+## Build
+- Claim model (src/modules/moderation/models/claim.ts): `resolved_at: model.dateTime().nullable()`,
+  `confirmed_at: model.dateTime().nullable()`. Generate the migration
+  (`bunx medusa db:generate moderation`).
+- steps/claim.ts: `export const CLAIM_CONFIRM_WINDOW_MS = 3 * 24 * 60 * 60 * 1000` (one
+  constant; T-056.1b and admin-koi's flag mirror it).
+  - `getResolvableClaimStep({ seller_id, claim_id })`, read only, under the `claim:<id>`
+    lock: missing or `claim.seller_id !== seller_id` → NOT_FOUND "Klaim tidak ditemukan.";
+    `status !== "approved"` → CONFLICT "Klaim ini belum disetujui." code `claim_not_approved`.
+  - `resolveClaimStep({ claim_id })`: set `status: "resolved"`, `resolved_at: new Date()`
+    (server clock). Compensation restores the previous `status` and `resolved_at`.
+  - `getConfirmableClaimStep({ claim_id, winner_customer_id? })`: missing, or
+    `winner_customer_id` given and `!== claim.customer_id` → NOT_FOUND "Klaim tidak
+    ditemukan." (no existence leak); `status !== "resolved"` → CONFLICT "Klaim ini belum
+    ditandai selesai." code `claim_not_resolved`.
+  - `confirmClaimStep({ claim_id })`: `status: "confirmed"`, `confirmed_at: new Date()`.
+    Compensation restores `status` and `confirmed_at`. Same step serves T-056.1b's job,
+    which passes no `winner_customer_id`.
+- Workflows: src/workflows/resolve-claim.ts `{ seller_id, claim_id }` — lock →
+  `validateSellerOpenStep` → guard → mutate → release (D-054 literal; same order as
+  accept-claim.ts).
+  src/workflows/confirm-claim.ts `{ claim_id, winner_customer_id? }` — lock → guard →
+  mutate → release.
+- Routes: src/api/vendor/claims/[id]/resolve/route.ts — body-less, strict empty body
+  (paid/route.ts:24-31 shape), identity from `req.seller_context`, import
+  "../../../../../types/seller-context", respond `toClaimDecisionRow(result)`.
+  src/api/store/won-lots/[id]/claims/confirm/route.ts — body-less, identity from
+  `req.auth_context.actor_id`, respond `{ claim: { id, lot_id, status, confirmed_at } }`.
+- Row fields: `resolved_at`, `confirmed_at` on `ClaimDecisionRow` + `toClaimDecisionRow`
+  and on `ClaimListRow` + `toClaimListRows` (vendor and admin share it); `approved_at` on
+  `AdminClaimListRow` only (the admin mapper adds it from the same claim row). ISO or null.
+- middlewares.ts: `POST /store/won-lots/:id/claims/confirm` →
+  `authenticate("customer", ["bearer", "session"])`. No vendor entry (body-less, Mercur's
+  `/vendor/*` catch-all authenticates and resolves `seller_context`).
+- `bun run codegen`.
+
+## Start from
+- packages/api/src/workflows/accept-claim.ts (lock → guard → mutate → release)
+- packages/api/src/workflows/steps/claim.ts (guard + compensation pair to copy)
+- packages/api/src/api/store/won-lots/[id]/delivered/route.ts (store route, strict empty body)
+- packages/api/src/api/vendor/claims/[id]/accept/route.ts (vendor response mapper)
+
+## Do not touch
+- apps/**; the open/dispute/approve/reject workflows' behaviour (only the shared row
+  mappers); the lot model or `LOT_STATUSES`; money, wallet or ledger code; claim videos
+
+## Spec (packages/api/integration-tests/http/claim-resolution.spec.ts)
+Seed a `delivered` lot + claim through the module service (claims-read.spec.ts:134-199).
+- resolve an `approved` claim → 200 `resolved`, `resolved_at` ≈ now, `confirmed_at` null;
+  module read agrees
+- resolve twice → 409; resolve on `open` / `disputed` / `rejected` / `confirmed` → 409,
+  row unchanged; resolve a claim whose `approved_at` is 4 days old → 200 (the deadline does
+  not block the fix)
+- winner confirm → 200 `confirmed`, `confirmed_at` ≈ now; confirm again → 409; confirm on
+  `approved` / `open` / `disputed` / `rejected` → 409, row unchanged
+- confirm by another customer → 404 and unchanged; another farm resolves → 404;
+  pending / rejected / terminated farm → 403 (validateSellerOpenStep); suspended farm → 403
+  (D-054 literal, unchanged by D-060 which covers accept/dispute only)
+- no member token / no `x-seller-id` → 401; no customer token on confirm → 401
+- the lot row is untouched after both transitions (`status`, `winner_customer_id`,
+  `final_price`); no `wallet_transaction` row written and both wallets' summed balances
+  unchanged
+- forced failure after the mutation → previous columns restored (compensation)
+- serialised JSON of both 200s has no video key, no URL, no phone, no customer id
+
+## Cross-cutting checklist
+- [ ] Every mutation is a workflow step with compensation; timestamps from the server clock
+- [ ] `validateSellerOpenStep` first in the resolve workflow (D-054 literal, as accept-claim.ts)
+- [ ] PII: names only; never a customer id, phone, address, video key or URL (D-042/D-045/D-052)
+- [ ] D-055: Indonesian messages; apps key on status/code; a 409 body is rewritten
+- [ ] No money, no amount, no ledger row anywhere (D-058)
+- [ ] Route file reading `req.seller_context` imports `.../types/seller-context`
+- [ ] `bun run codegen`; `bun run tsc` clean in BOTH Koi apps
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean
+cd packages/api && bun run codegen → run; list the generated claim resolve/confirm route names
+cd packages/api && bun run test:integration:http -- claim-resolution → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + API contract (both routes, body, 200 shape, every error status +
+code) + migration name + the two new row fields.
+```
+
+```text
+Story: US-056 (task T-056.1b)   Release: mvp
+Agent: backend   Expected: <=30 min
+Starts after: T-056.1a (columns, `confirmClaimWorkflow`, `CLAIM_CONFIRM_WINDOW_MS`).
+
+## Acceptance criteria
+- AC4: If the winner doesn't confirm within 3 days of `resolved`, the existing scheduled job sets the claim to `confirmed` (D-027).
+
+## Decisions in force
+D-027 (3-day auto-confirm; this job is the "existing scheduled job" D-027 means — it does
+not exist yet, so it is created here). D-058 (no money). CLAUDE.md §9 (jobs: fetch by
+`{ id }`, run a workflow, be idempotent, batch large sets); §8 (no recomputation, server
+clock in the step).
+
+## Build
+- src/jobs/confirm-claims.ts (copy close-lots.ts:15-39 pagination): `PAGE = 50`, collect
+  ids first, filter `{ status: "resolved", resolved_at: { $lte: new Date(Date.now() -
+  CLAIM_CONFIRM_WINDOW_MS) } }`, order `{ id: "ASC" }`, then run
+  `confirmClaimWorkflow(container).run({ input: { claim_id: id } })` per id (no
+  `winner_customer_id`). Per-id try/catch: one failure logged, the rest run. One summary
+  log: `confirm-claims: found N, confirmed X, failed Y`.
+- `export const config = { name: "confirm-claims", schedule: "0 * * * *" }`. Comment why
+  hourly and why not `close-lots.ts` (3-day deadline; a different domain and log line).
+- No route, so no codegen.
+
+## Start from
+- packages/api/src/jobs/close-lots.ts (collect-then-process, per-id try/catch, summary log)
+- packages/api/src/workflows/confirm-claim.ts (T-056.1a)
+
+## Do not touch
+- apps/**; close-lots.ts / start-auctions.ts; the claim model (T-056.1a added the columns)
+
+## Spec (packages/api/integration-tests/http/confirm-claims-job.spec.ts)
+Seed `resolved` claims through the module service with explicit `resolved_at`.
+- one `resolved_at` = now − 3 days − 1 h and one = now − 3 days + 1 h → run the job →
+  the old one is `confirmed` with `confirmed_at` set, the young one untouched
+- run the same job again → second run finds 0 and changes nothing (idempotent)
+- a `resolved` claim with `resolved_at` in the future → untouched
+- a forced failure inside the workflow for one row (farmer-auctions.spec.ts:18-34 pattern)
+  → logged, the other rows still confirm
+- no `wallet_transaction` row and no amount field appears anywhere
+
+## Cross-cutting checklist
+- [ ] Job fetches ids then processes each by `{ id }`; no unbounded read
+- [ ] Idempotent: the filter plus the workflow's `status === "resolved"` re-check under the
+      `claim:<id>` lock; a re-run or overlapping tick changes nothing
+- [ ] Batched (PAGE 50); one failure does not stop the batch
+- [ ] No money, no ledger row (D-058); no lot status change
+- [ ] No route change → no codegen; `bun run tsc` clean in BOTH Koi apps
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean
+cd packages/api && bun run test:integration:http -- confirm-claims-job → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + the job's file, schedule and log line.
+```
+
+```text
+Story: US-056 (task T-056.2a)   Release: mvp
+Agent: frontend (storefront-koi)   Expected: <=35 min
+Starts after: T-056.1a and its codegen. May run parallel with T-056.2b.
+
+## Acceptance criteria
+- AC1 (farmer half): the farmer marks an approved claim done, `approved → resolved`.
+
+## Decisions in force
+D-038 (only `approved` offers this action), D-058 (off-platform: no amount, no "refund
+processed" copy — the farmer says the direct refund or replacement is done), D-055 (409
+body rewritten → the app writes its own copy; key on status), D-052 (no phone/address on
+this surface).
+
+## Endpoint inventory
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| GET | /vendor/claims | yes | rows gain `resolved_at`, `confirmed_at` (T-056.1a) |
+| POST | /vendor/claims/:id/resolve | no → T-056.1a, first | no body → 200 `{ claim: { id, lot_id, status: "resolved", approved_at, resolved_at, confirmed_at, decision_reason } }`; 403 `seller_terminated`; 404; 409 |
+
+## Build (one surface: the claim block on a sold-lot row)
+- src/lib/data/claims.ts: `resolveClaim(id)` beside `acceptClaim`/`disputeClaim`, same
+  result type and `vendorHeaders()`; `revalidatePath(ROUTES.farmSold)` on success.
+- src/lib/helpers/farm-claim.ts (+ .test.ts): `claimResolutionFailure({ status, code,
+  message })` → 409 "Klaim sudah berubah. Halaman diperbarui." (refresh), 404 "Klaim tidak
+  ditemukan." (refresh), 403 the server's Indonesian message, else the server's message.
+- SoldLotsPage ClaimBlock (SoldLotsPage.tsx:193-213): when `claim.status === 'approved'`
+  draw one button "Tandai klaim selesai" (client component beside `ClaimDecision.tsx`,
+  same `confirm` → busy → toast → `router.refresh()` shape). Confirm copy names the remedy,
+  e.g. "Sudah mengembalikan dana / mengirim ikan pengganti? Klaim akan ditutup dan pemenang
+  mengonfirmasi." Every other status renders exactly as today. No amount, no money wording.
+- `VendorClaim` type gains `resolved_at: string | null; confirmed_at: string | null`.
+
+## Start from
+- apps/storefront-koi/src/components/sections/AccountPage/components/ClaimDecision.tsx
+- apps/storefront-koi/src/lib/data/claims.ts (decideClaim)
+- apps/storefront-koi/src/lib/helpers/farm-claim.ts
+
+## Do not touch
+- packages/api; apps/admin-koi; WonLotsPage; the claim form or the video block
+
+## Cross-cutting checklist
+- [ ] D-055: 409/404 copy is the app's own; never key on message text
+- [ ] PII unchanged: names only, no phone/address (D-042/D-052)
+- [ ] No money, amount, ledger or "refund completed" text (D-058)
+- [ ] UI task: render check on the changed route, one submit (render-check skill)
+- [ ] `bun run check` clean; no raw `fetch`, no new route
+
+## Definition of done
+cd apps/storefront-koi && bun run check → pass
+render check (/akun/kebun/terjual as sakura.koi.farm@koi.dev, one seeded `approved`
+claim): button only on that claim, submit → row reads "Menunggu konfirmasi" → clean;
+screenshot path reported.
+Report: standard header + render check result + screenshot path.
+```
+
+```text
+Story: US-056 (task T-056.2b)   Release: mvp
+Agent: frontend (storefront-koi)   Expected: <=30 min
+Starts after: T-056.1a and its codegen. May run parallel with T-056.2a.
+
+## Acceptance criteria
+- AC1 (winner half): the winner confirms, `resolved → confirmed`.
+
+## Decisions in force
+D-038 (only `resolved` offers confirm), D-058 (nothing moves on the platform), D-055 (409
+→ the app's own copy; key on status). One surface: the won-lot row; the lot page's claim
+line stays read-only (do not add a second confirm button).
+
+## Endpoint inventory
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| GET | /store/won-lots | yes | rows carry `claim: { id, status, remedy, opened_at }` (unchanged) |
+| POST | /store/won-lots/:id/claims/confirm | no → T-056.1a, first | no body → 200 `{ claim: { id, lot_id, status: "confirmed", confirmed_at } }`; 404; 409 |
+
+## Build (one surface: the won-lot row on `/akun/menang`)
+- src/lib/data/lots.ts: `confirmClaim(lotId)` beside the claim POST (:310), customer
+  headers as there; `revalidatePath(ROUTES.wonLots)` on success; return
+  `{ success } | { message, code, status }`.
+- WonLotsPage.tsx claim block (:155-170): when `lot.claim?.status === 'resolved'` show
+  "Konfirmasi klaim selesai" (small client component copied from `MarkPaid.tsx`: confirm →
+  busy → toast → `router.refresh()`; 409 → "Klaim sudah dikonfirmasi. Halaman diperbarui."
+  + refresh; 404 → "Klaim tidak ditemukan." + refresh; else the server message). Other
+  statuses unchanged: the existing status line plus the open-claim link.
+- No money, no amount, no phone/address (D-052, D-058).
+
+## Start from
+- apps/storefront-koi/src/components/sections/AccountPage/components/MarkPaid.tsx
+- apps/storefront-koi/src/components/sections/AccountPage/WonLotsPage.tsx:150-175
+- apps/storefront-koi/src/lib/data/lots.ts:295-330 (the claim server action)
+
+## Do not touch
+- packages/api; apps/admin-koi; SoldLotsPage; the lot detail page's won panel; the claim form
+
+## Cross-cutting checklist
+- [ ] D-055: 409/404 copy is the app's own
+- [ ] PII unchanged: no farmer phone, no address change (D-052)
+- [ ] No money text or amount (D-058)
+- [ ] UI task: render check on `/akun/menang`, one confirm (render-check skill)
+- [ ] `bun run check` clean; no raw `fetch`
+
+## Definition of done
+cd apps/storefront-koi && bun run check → pass
+render check (/akun/menang as a seeded winner whose claim is `resolved`): button present,
+submit → status reads "Selesai" → clean; screenshot path reported.
+Report: standard header + render check result + screenshot path.
+```
+
+```text
+Story: US-056 (task T-056.3)   Release: mvp
+Agent: frontend (admin-koi)   Expected: <=35 min
+Starts after: T-056.1a (admin row carries `approved_at`).
+
+## Acceptance criteria
+- AC2 (visibility half): a farmer who misses the 3 days is visible to the admin as overdue.
+  The strike itself is US-059 T-059.2 — do not add a strike action here.
+
+## Decisions in force
+D-038/D-027 (3 days from `approved_at`), D-002 (this app only), D-055 (Indonesian copy),
+admin-koi rule (a punishing action needs a written reason — that action is US-059's, so
+this screen is read-only). `mvp-Q47` (US-056): D-038 has no "refused" state, so only the missed
+deadline is flagged.
+
+## Endpoint inventory
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| GET | /admin/claims?status=approved | yes | rows gain `approved_at`, `resolved_at`, `confirmed_at` (T-056.1a) |
+
+## Build (one surface: the approved tab of `/klaim`)
+- src/lib/helpers/claim-format.ts (+ .test.ts): `claimOverdue(approvedAt, now)` →
+  `{ overdue: boolean; label: string }`, 72 h window (mirror `CLAIM_CONFIRM_WINDOW_MS`),
+  label "Lewat tenggat 3 hari" or "Sisa 2 hari 4 jam"; unknown/null date → not overdue,
+  empty label.
+- src/lib/data/claims.ts: extend `AdminClaim` with `approved_at: string | null`
+  (`resolved_at`/`confirmed_at` optional if the decided list shows them).
+- ClaimQueue.tsx approved tab row: draw `approved_at` in Jakarta time and, when
+  `claimOverdue(...)`, an `attention` Badge with the label. No new route, no new nav item,
+  no strike button, no money text.
+
+## Start from
+- apps/admin-koi/src/lib/helpers/claim-format.ts
+- apps/admin-koi/src/components/ClaimQueue.tsx (decided row)
+- apps/admin-koi/src/components/TopupQueue.tsx:246-364 (badge/timestamp row shape)
+
+## Do not touch
+- packages/api; apps/storefront-koi; the disputed tab and its decision forms
+
+## Cross-cutting checklist
+- [ ] D-002: this app only; the page keeps `requireAdmin(ROUTES.claims)`
+- [ ] PII: names only — no phone, address, customer id (D-042/D-045)
+- [ ] D-055: Indonesian copy
+- [ ] No strike action, no money text (US-059 owns the strike; D-058 no money)
+- [ ] UI task: render check on `/klaim` with one 4-day-old and one fresh approved claim
+- [ ] `bun run check` clean
+
+## Definition of done
+cd apps/admin-koi && bun run check → pass
+render check (http://127.0.0.1:3002/klaim as admin@koi.dev, two seeded `approved` claims,
+`approved_at` 4 days apart set with psql): the older row shows the overdue badge, the
+fresh one does not → clean; screenshot path reported.
+Report: standard header + render check result + screenshot path.
+```
+
+```text
+Story: US-056 (task T-056.4)   Release: mvp
+Agent: qa   Expected: <=30 min
+Starts when: no backend agent and no other Jest run is active.
+
+## Acceptance criteria
+Verify AC1–AC4. AC3 is policy (no code) — say so rather than inventing a test.
+Decisions: D-027, D-038, D-054, D-058, D-060, D-055, D-042/D-045/D-052.
+Code under test: packages/api/src/workflows/{resolve-claim,confirm-claim}.ts,
+src/workflows/steps/claim.ts, src/jobs/confirm-claims.ts,
+src/api/vendor/claims/[id]/resolve/route.ts,
+src/api/store/won-lots/[id]/claims/confirm/route.ts, the three row mappers, and the two
+screens + `/klaim`.
+Commands (alone): bun run test:integration:http -- claim-resolution; then --
+confirm-claims-job. Then bun run check in both Koi apps.
+Seeding: lot + claim through the module service (claims-read.spec.ts:134-199); for the
+browser set `approved_at`/`resolved_at` with psql (never a test route).
+Browser (render-check): farmer resolves on /akun/kebun/terjual → row reads
+"Menunggu konfirmasi"; winner confirms on /akun/menang → "Selesai"; admin sees the overdue
+badge on the 4-day-old approved claim and not on the fresh one.
+Watch for: a skipped transition (`approved → confirmed` in one call) or a repeat returning
+200; `resolved_at` set on a non-resolution; `confirmed_at` from the job on a row that was
+not `resolved`; a second job run changing anything; any `wallet_transaction` row, amount
+field or money text (D-058); a lot `status`/`winner_customer_id`/`final_price` change;
+another farm resolving or another customer confirming and getting anything but 404;
+a suspended farm resolving (403, D-054 literal; if D-060 is extended to resolve, this
+becomes 200 — say which the code does rather than failing it).
+Do not change app code. Report PASS/FAIL per AC with file:line and command output; bugs
+with repro and expected/actual.
+```
+
+**Coverage:** AC1 → T-056.1a/.2a/.2b; AC2 → T-056.1a (data) + T-056.3 (flag), the strike
+itself US-059 T-059.2; AC3 → no code (policy); AC4 → T-056.1b/.1a. Plan "Dead-on-arrival
+claims 4–6" and "Claim statuses (D-027, D-038)" stay covered by US-054, US-055, US-056,
+US-061.
 
 ### US-057 Winner rates the farmer · `todo`
 **Status confirmed 2026-11-17:** unchanged by D-058/D-059/D-060/D-061; no blocking question (`mvp-Q40`/`mvp-Q46` are non-blocking); `todo` for Epic 5, after the paid loop.
@@ -4094,18 +4501,353 @@ can judge farms. *(Plan: Ratings)*
 - [ ] T-057.1 [backend] `farmer_rating` model + workflow + routes
 - [ ] T-057.2 [storefront] Rating form + display on the partner page
 
-### US-058 Farmer reports a winner who didn't pay · `todo` (unparked 2026-11-17 by D-058; was parked on the payment model)
+### US-058 Farmer reports a winner who didn't pay · `todo` (unparked 2026-11-17 by D-058; briefs written 2026-11-17)
 **D-058 sets the deadline.** The winner pays the farmer directly, off-platform,
 within 1×24 h of the lot closing, so the deadline is `closed_at` + 24 h (the same
-`pay_by` the winner's won-lot rows show). The 2026-11-16 escrow note is void:
-there is no invoice expiry, and the farmer can report once that deadline passes.
+`pay_by` the winner's won-lot rows show, `store/won-lots/route.ts:102,136`). The
+2026-11-16 escrow note is void: there is no invoice expiry, and the farmer reports
+once that deadline passes.
 As a **farmer**, I want to report a winner who didn't pay within 1×24 h so that
 admin can act. *(Plan: Winner doesn't pay; D-026, D-058)*
 - AC1: The farmer can report after the deadline. The admin reviews it and may give a strike.
 - AC2: Any offer to the second-highest bidder is fully off-platform. The platform records nothing about it and never reassigns the lot; winner and final price stay as saved at close (D-026).
-- [ ] T-058.1 [backend] Report model/state + routes
-- [ ] T-058.2 [storefront] Report button after the deadline
-- [ ] T-058.3 [admin] Report review that leads to a strike
+- [ ] T-058.1 [backend] `lot_report` model (one per lot) + `reportUnpaidLotWorkflow` + `POST /vendor/sold-lots/:id/report` + `pay_by`/`unpaid` on the sold-lot row
+- [ ] T-058.2 [storefront] "Laporkan belum dibayar" on a `won` sold lot once the deadline passes
+- [ ] T-058.3 [backend] `GET /admin/reports` (queue by status, per-winner by `winner_id`), names only
+- [ ] T-058.4 [admin] `/laporan` queue and a `/pengguna` "Laporan belum dibayar" tab (read-only; the strike is US-059 T-059.2)
+- [ ] T-058.5 [qa] The deadline gates the report; a second report is refused; the lot never changes; nothing about a second bidder is stored or shown
+
+**Readiness 2026-11-17: ready (`todo`). Nothing blocks it, and no new question.**
+- The deadline source is decided and already in the tree: `lot.closed_at` (US-050) + 24 h,
+  the same `PAY_WINDOW_MS` the winner's row uses. No setting, no new column for it.
+- D-026/D-037 fix what a report is: a record, never a lot change. D-027/D-038 govern only
+  claims; a lot report adds no claim state.
+- US-056's non-blocking `mvp-Q47` does not touch this story.
+
+**What the report needs, pinned:**
+
+| Question | Answer | Source |
+|---|---|---|
+| Which lot statuses qualify | `won` only. `paid`/`shipped`/`delivered`/`claimed` → 409 (the farmer was paid); `open`/`unsold`/`cancelled` → 409 (no winner) | D-058's `won → paid`; plan "Lot lifecycle" |
+| The deadline source | `closed_at` + 24 h, one shared constant, compared on the server; the app only mirrors it to hide the button | D-058; `store/won-lots/route.ts:102` |
+| Does a report change the lot? | **No.** `status` stays `won`; `winner_customer_id` and `final_price` untouched; the lot is never reassigned, and no second-bidder offer is recorded | D-026 (AC2); CLAUDE.md §8 |
+| Is there a report status? | One value, `open`. Only the admin leaves it, by giving a strike (US-059); the farmer has no transition after reporting | D-037; plan "Strikes" |
+| Idempotent? | **Yes, one report per lot** (unique index on `lot_id`); a second POST → 409 `lot_already_reported`, no second row | mvp-Q44's one-per-lot shape |
+| Does the report warn or punish the winner? | No. No notification, no ban, no strike on report; the admin acts | plan "Strikes" |
+| Money | None. No refund, no ledger row, no payout; a refund the farmer chooses is paid directly and is not recorded | D-058 |
+
+**Endpoint inventory (story)**
+
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| POST | /vendor/sold-lots/:id/report | **no** (T-058.1) | no body → 201 `{ report: { id, lot_id, status: "open", pay_by, reported_at } }`; 403 pending/rejected/terminated; 404 another farm's lot; 409 `lot_not_payable` / `pay_deadline_not_passed` / `lot_already_reported` |
+| GET | /vendor/sold-lots | yes | rows gain `pay_by: string \| null` and `unpaid: { reported_at: string } \| null` (T-058.1) |
+| GET | /admin/reports?status=open | **no** (T-058.3) | `{ reports: [{ id, lot_id, status, reported_at, pay_by, winner: { name }, seller: { name }, product: { title, thumbnail } }], count, limit, offset }` |
+| GET | /admin/reports?winner_id=:id | **no** (T-058.3) | same rows, all time (D-037) |
+
+#### Briefs
+
+```text
+Story: US-058 (task T-058.1)   Release: mvp
+Agent: backend   Expected: <=45 min
+Starts after: US-052 T-052.4 (`won` is a reachable state), D-058 in force.
+
+## Acceptance criteria
+- AC1: The farmer can report after the deadline. The admin reviews it and may give a strike.
+- AC2: Any offer to the second-highest bidder is fully off-platform. The platform records nothing about it and never reassigns the lot; winner and final price stay as saved at close (D-026).
+
+## Decisions in force
+D-058: the deadline is `closed_at` + 24 h compared on the server; no money moves.
+D-026: the report records only that the farmer reported; the lot keeps `won`, its
+`winner_customer_id` and `final_price`; nothing about a second bidder is stored.
+D-037: one report = one "unpaid win" (US-071's shill table reads this table); no count
+column here. D-054 literal: the paid/shipped exception does not cover this route, so it
+runs `validateSellerOpenStep` first and a suspended farm gets 403 — say so in the report
+(likely D-060-style follow-up, not a blocker). D-003: seller from `req.seller_context`.
+D-055: Indonesian messages. CLAUDE.md §9: thin module, thin typed route; §8: workflow with
+compensation, server clock.
+
+## Build
+- New model src/modules/moderation/models/lot-report.ts:
+  `LotReport { id: model.id({ prefix: "lrep" }).primaryKey(), lot_id: text, seller_id: text,
+  winner_customer_id: text, status: model.enum(["open"]).default("open") }`.
+  Indexes `{ on: ["lot_id"], unique: true }`, `{ on: ["winner_customer_id"] }`,
+  `{ on: ["seller_id", "status"] }`. Soft references only. Register it:
+  `MedusaService({ Claim, LotReport })` in service.ts. Migration
+  (`bunx medusa db:generate moderation`).
+- One constant: move `PAY_WINDOW_MS` out of `api/store/won-lots/route.ts:102` into
+  `src/utils/pay-window.ts` (`export const PAY_WINDOW_MS = 24 * 60 * 60 * 1000`) and import
+  it in both the won-lots route and this workflow — one number, not two.
+- steps/lot-report.ts:
+  - `getReportableLotStep({ seller_id, lot_id })`, read only, under the `lot:<id>` lock:
+    `query.graph` on `lot` fields `id, status, closed_at, winner_customer_id,
+    auction.seller_id`; missing or `auction.seller_id !== seller_id` → NOT_FOUND "Lot tidak
+    ditemukan."; `status !== "won"` → CONFLICT "Lot ini tidak bisa dilaporkan." code
+    `lot_not_payable`; no `closed_at` → CONFLICT same code; `Date.now() < closed_at + pay
+    window` → CONFLICT "Batas waktu pembayaran belum lewat." code `pay_deadline_not_passed`.
+  - `createLotReportStep({ lot_id, seller_id, winner_customer_id })`: insert one row; catch
+    `code === "23505"` → CONFLICT "Lot ini sudah dilaporkan." code `lot_already_reported`
+    (createClaimStep shape, steps/claim.ts:321-347). Compensation deletes the row.
+- Workflow src/workflows/report-unpaid-lot.ts `{ seller_id, lot_id }`: lock → `validateSellerOpenStep`
+  → guard → create → release; return the row.
+- Route src/api/vendor/sold-lots/[id]/report/route.ts: body-less, strict empty body (paid/route.ts:24-31),
+  `{ report: { id, lot_id, status, pay_by, reported_at } }` with `pay_by` = closed_at + 24 h
+  ISO and `reported_at` = the row's `created_at` ISO (no extra column). Import
+  `.../types/seller-context`.
+- `GET /vendor/sold-lots` (route.ts): read the page's reports in one `query.graph` on
+  `lot_report` filtered by the page's lot ids; add `pay_by` (closed_at + 24 h, ISO or null)
+  and `unpaid: { reported_at } | null` to `SoldLot` and `toSoldLots`.
+- middlewares.ts: no entry (no body; Mercur's `/vendor/*` catch-all authenticates and
+  resolves `seller_context`). `bun run codegen`.
+
+## Start from
+- packages/api/src/workflows/open-claim.ts + steps/claim.ts:321-347 (lock, guard, insert,
+  23505 → 409, compensating delete)
+- packages/api/src/workflows/mark-lot-sold-status.ts:87-118 (`getPayableLotStep`: same
+  ownership + status shape)
+- packages/api/src/api/vendor/sold-lots/route.ts (the row mapper to extend)
+
+## Do not touch
+- apps/**; the claim model or workflows; any lot column (`status`, `winner_customer_id`,
+  `final_price`); wallet, ledger or payout code; US-059's strike work
+
+## Spec (packages/api/integration-tests/http/vendor-unpaid-report.spec.ts)
+Seed a closed `won` lot through the module service with `closed_at` set.
+- `closed_at` = now − 25 h, status `won` → 201, row `open`; module read agrees
+- second POST → 409 `lot_already_reported`, still one row
+- `closed_at` = now − 23 h → 409 `pay_deadline_not_passed`, no row
+- `paid` / `shipped` / `delivered` → 409 `lot_not_payable`, no row; `open` / `unsold` /
+  `cancelled` → same
+- another seller's lot → 404, no row; unknown id → 404
+- pending / rejected / terminated farm → 403; suspended-after-approval farm → 403 (D-054
+  literal, which names paid and shipped only — note it in the report)
+- no member token / no `x-seller-id` → 401
+- after the report: lot `status` still `won`, `winner_customer_id` and `final_price`
+  unchanged; no `wallet_transaction` row; no second-bidder field anywhere
+- `GET /vendor/sold-lots` then carries `pay_by` and `unpaid.reported_at` on that row and
+  `unpaid: null` on another
+- forced failure after the insert → row deleted (compensation)
+- serialised JSON has no video key, URL, phone, address, customer id or amount
+
+## Cross-cutting checklist
+- [ ] `validateSellerOpenStep` first (D-054 names paid/shipped only; say so in the report)
+- [ ] PII: no customer id, phone, address or email in any response (D-042/D-045/D-052)
+- [ ] D-055: Indonesian messages for all three 409s and the 404
+- [ ] No money, ledger row or payout (D-058); the lot is never changed (AC2)
+- [ ] One mutation per step with compensation; timestamps from the server
+- [ ] Route imports `.../types/seller-context`; `bun run codegen`; `bun run tsc` clean in
+      BOTH Koi apps
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean
+cd packages/api && bun run codegen → run; list the generated report route name
+cd packages/api && bun run test:integration:http -- vendor-unpaid-report → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + API contract (route, body, 201 shape, every error status + code)
++ migration name + the two new sold-lot row fields.
+```
+
+```text
+Story: US-058 (task T-058.2)   Release: mvp
+Agent: frontend (storefront-koi)   Expected: <=35 min
+Starts after: T-058.1 and its codegen.
+
+## Acceptance criteria
+- AC1 (farmer half): the farmer can report once the deadline has passed.
+
+## Decisions in force
+D-058 (deadline `closed_at` + 24 h, carried as `pay_by`), D-055 (a 409 body is rewritten →
+the app writes its own copy; key on status), D-052 (no winner phone/address), D-026 (the
+report changes nothing about the lot).
+
+## Endpoint inventory
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| GET | /vendor/sold-lots | yes | rows gain `pay_by: string \| null` and `unpaid: { reported_at } \| null` (T-058.1) |
+| POST | /vendor/sold-lots/:id/report | no → T-058.1, first | no body → 201 `{ report: { id, lot_id, status: "open", pay_by, reported_at } }`; 403; 404; 409 `lot_not_payable` / `pay_deadline_not_passed` / `lot_already_reported` |
+
+## Build (one surface: a `won` sold-lot row on `/akun/kebun/terjual`)
+- src/lib/helpers/sold-lot-actions.ts (+ .test.ts): `canReportUnpaid({ status, payBy,
+  reportedAt, now })` → `{ show: boolean }` (status `won`, `pay_by` passed, no report yet);
+  `unpaidFailureInfo({ status, code, message })` → 409 "Laporan tidak bisa dikirim. Halaman
+  diperbarui." (refresh), 404 "Lot ini tidak ditemukan." (refresh), 403 the server's
+  Indonesian message, else the server's message.
+- SoldLotsPage.tsx `won` row: when `canReportUnpaid(...).show` draw "Laporkan belum
+  dibayar" (client component `ReportUnpaid.tsx` copied from `MarkPaid.tsx`: confirm
+  "Pemenang belum membayar sampai batas waktu? Laporkan ke admin." → busy → toast "Laporan
+  dikirim." → `router.refresh()`). When `unpaid` is present show "Dilaporkan {reported_at}"
+  and keep "Tandai sudah dibayar" (a late payment still settles the lot; the report never
+  blocks it). No amount, no refund or strike wording.
+- src/lib/data/sold-lots.ts: `reportUnpaidLot(id)` beside `markSoldLotPaid`, same result
+  shape and `revalidatePath(ROUTES.farmSold)`; extend the `SoldLot` type.
+
+## Start from
+- apps/storefront-koi/src/components/sections/AccountPage/components/MarkPaid.tsx
+- apps/storefront-koi/src/lib/helpers/sold-lot-actions.ts:49-74
+- apps/storefront-koi/src/components/sections/AccountPage/SoldLotsPage.tsx:260-340
+
+## Do not touch
+- packages/api; apps/admin-koi; WonLotsPage; the claim block
+
+## Cross-cutting checklist
+- [ ] D-055: 409/404 copy is the app's own; never key on message text
+- [ ] PII unchanged: winner's name only, no phone or address (D-052)
+- [ ] No money, amount, refund or strike text (D-058, US-059)
+- [ ] Button visibility reads the server's `pay_by`, never a client-side 24 h guess
+- [ ] UI task: render check on `/akun/kebun/terjual`, one report submit (render-check skill)
+- [ ] `bun run check` clean; no raw `fetch`
+
+## Definition of done
+cd apps/storefront-koi && bun run check → pass
+render check (/akun/kebun/terjual as sakura.koi.farm@koi.dev, one `won` lot with
+`closed_at` 25 h old and one 2 h old, set with psql): the button appears only on the old
+row, submit → "Dilaporkan …" and the pay action still present → clean; screenshot path
+reported.
+Report: standard header + render check result + screenshot path.
+```
+
+```text
+Story: US-058 (task T-058.3)   Release: mvp
+Agent: backend   Expected: <=30 min
+Starts after: T-058.1 (the `lot_report` model and its rows).
+
+## Acceptance criteria
+- AC1 (admin half): the admin can review a report. The strike is US-059.
+
+## Decisions in force
+D-002 (routes under `/admin/*`, admin-authenticated by Medusa's default), D-026 (no
+second-bidder field exists, so none is shown), D-037 (counts cover all time), D-042/D-045
+(the winner is a name only; the admin gains no way to read a customer id, phone or email),
+D-055 (Indonesian messages).
+
+## Build
+- src/api/admin/reports/validators.ts: `AdminGetReportsParams` — `status: z.enum(["open"])
+  .optional().default("open")`, `winner_id: z.string().optional()`, `limit`/`offset` exactly
+  like `AdminGetClaimsParams`.
+- src/api/admin/reports/route.ts, copying `api/admin/claims/route.ts`: one `query.graph` on
+  `lot_report` (`id, lot_id, status, created_at, winner_customer_id, seller_id`), filtered
+  by status and/or winner_id, newest first; then reuse `readClaimLotInfo` and
+  `winnersById` (import from `../vendor/claims/route`) for product title/thumbnail, farm
+  name and winner name. Rows: `{ id, lot_id, status, reported_at, pay_by, winner: { name },
+  seller: { name }, product: { title, thumbnail } }`; `pay_by` = the lot's `closed_at` +
+  `PAY_WINDOW_MS` (import the constant from T-058.1); `reported_at` = the row's `created_at`
+  ISO. Never select a phone, email or address.
+- middlewares.ts: `GET /admin/reports` → `validateAndTransformQuery(AdminGetReportsParams,
+  { defaults: [], isList: true, defaultLimit: 20 })`. `bun run codegen`.
+
+## Start from
+- packages/api/src/api/admin/claims/route.ts (the merged row to copy)
+- packages/api/src/api/vendor/claims/route.ts (`readClaimLotInfo`, `winnersById`)
+
+## Do not touch
+- apps/**; the report workflow or model (T-058.1); the claim routes; US-059
+
+## Spec (packages/api/integration-tests/http/admin-reports-read.spec.ts)
+Seed two `open` reports (and one on another winner) through the module service.
+- `?status=open` returns both, newest first, with the winner's and farm's names, no customer
+  id, no phone; `pay_by` = lot `closed_at` + 24 h
+- `?winner_id=<id>` returns only that winner's reports, all time
+- a report whose lot was later `paid` is still listed (the report is a record)
+- no admin token → 401/403
+- serialised JSON has no customer id, phone, email, address or amount
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean
+cd packages/api && bun run codegen → run; list the generated reports route name
+cd packages/api && bun run test:integration:http -- admin-reports-read → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + API contract (both queries, 200 shape, errors).
+```
+
+```text
+Story: US-058 (task T-058.4)   Release: mvp
+Agent: frontend (admin-koi)   Expected: <=45 min
+Starts after: T-058.3 and its codegen. Two surfaces (the queue and the per-account tab) read
+one route. The strike button is NOT here (US-059 T-059.2).
+
+## Acceptance criteria
+- AC1 (admin half): the admin reviews the report. The strike is US-059.
+
+## Decisions in force
+D-002 (this app only, `/admin/*`), D-026 (nothing about a second bidder is stored or
+shown), D-037 (every count covers all time), D-042/D-045 (the winner is a name only; an
+admin gains no new way to read a customer id), D-055 (Indonesian copy). admin-koi rule: a
+punishing action needs a written reason — that action is US-059's, so this screen is
+read-only.
+
+## Endpoint inventory
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| GET | /admin/reports?status=open | yes (T-058.3) | `{ reports: [{ id, lot_id, status, reported_at, pay_by, winner: { name }, seller: { name }, product: { title, thumbnail } }], count, limit, offset }` |
+| GET | /admin/reports?winner_id=:id | yes (T-058.3) | same rows, all time (D-037) |
+
+## Build
+- src/const/routes.ts: `reports: '/laporan'`. src/const/nav.ts: an "Antrean" item "Laporan
+  belum dibayar", `ready: true`. Leave `/pengguna` `ready: false` unless you also build the
+  tab (optional if time runs short — say so).
+- src/app/(app)/laporan/page.tsx: `requireAdmin(ROUTES.reports)`, one read,
+  `ReportQueue.tsx` (copy `ClaimQueue.tsx`'s row: product title + thumbnail, farm name,
+  reported time, `pay_by`, badge "Terbuka"). Empty copy "Tidak ada laporan menunggu."
+- src/lib/data/reports.ts: `listReports(status, limit, offset)` and
+  `listWinnerReports(winnerId)`, each calling `requireAdmin(ROUTES.reports)` first, with the
+  same narrowing cast as `listClaims`.
+- src/lib/helpers/report-format.ts (+ .test.ts): status label, `formatReportedAt`,
+  `reportDeadlineLabel(payBy)`.
+
+## Start from
+- apps/admin-koi/src/components/ClaimQueue.tsx (row to copy)
+- apps/admin-koi/src/app/(app)/klaim/page.tsx (page shape)
+- apps/admin-koi/src/lib/data/claims.ts (guarded read + cast)
+
+## Do not touch
+- apps/storefront-koi; US-059's strike model/actions; the claim queue's behaviour
+
+## Cross-cutting checklist
+- [ ] D-002: every server action calls `requireAdmin(ROUTES.reports)` itself
+- [ ] PII: names only — no customer id, phone, email or address (D-042/D-045/D-052)
+- [ ] D-055: Indonesian copy
+- [ ] No strike action, no money, no second-bidder field (D-026, US-059)
+- [ ] UI task: render check on `/laporan` with two seeded reports
+- [ ] `bun run check` clean; no raw `fetch`
+
+## Definition of done
+cd apps/admin-koi && bun run check → pass
+render check (http://127.0.0.1:3002/laporan as admin@koi.dev, two seeded `open` reports):
+both rows show winner name, farm, reported time and deadline; no phone or customer id in
+the page source → clean; screenshot path reported.
+Report: standard header + the route's API contract + render check result + screenshot path.
+```
+
+```text
+Story: US-058 (task T-058.5)   Release: mvp
+Agent: qa   Expected: <=30 min
+Starts when: no backend agent and no other Jest run is active.
+
+## Acceptance criteria
+Verify AC1–AC2. Decisions: D-026, D-037, D-054, D-058, D-055, D-042/D-045/D-052.
+Code under test: packages/api/src/modules/moderation/models/lot-report.ts,
+src/workflows/report-unpaid-lot.ts, src/workflows/steps/lot-report.ts,
+src/api/vendor/sold-lots/[id]/report/route.ts, src/api/vendor/sold-lots/route.ts,
+src/api/admin/reports/route.ts, and the two screens.
+Commands (alone): bun run test:integration:http -- vendor-unpaid-report; then --
+admin-reports-read. Then bun run check in both Koi apps.
+Seeding: a closed `won` lot through the module service with `closed_at` set; for the browser
+set `closed_at` with psql (never a test route).
+Browser (render-check): farmer reports on /akun/kebun/terjual after the deadline → row reads
+"Dilaporkan …" and "Tandai sudah dibayar" is still offered; the admin sees it on /laporan.
+Watch for: a report before the deadline returning 201; a second report creating a second
+row; a `paid`/`shipped` lot accepted; the lot's `status`, `winner_customer_id` or
+`final_price` changing (AC2); any second-bidder field, amount, ledger row or money text; a
+customer id, phone, email or address in any response or page source; a suspended farm
+reporting (403 per D-054 literal — if the code allows it, say which rule it applies rather
+than failing silently); a report that gives a strike or bans anyone (US-059's).
+Do not change app code. Report PASS/FAIL per AC with file:line and command output; bugs
+with repro and expected/actual.
+```
+
+**Coverage:** AC1 → T-058.1/.2/.3/.4; AC2 → T-058.1 (no lot change, no second-bidder
+field), T-058.4 (nothing shown about an offer), T-058.5. Plan "Winner doesn't pay" and the
+report half of "Strikes" are covered here; the strike and ban are US-059.
 
 ### US-059 Strikes and bans · `todo` (the "winner didn't pay" strike part is back in scope, 2026-11-17, D-058)
 As an **admin**, I want to give strikes after checking a report so that repeat
@@ -4411,4 +5153,5 @@ is built. Record the answer here, in `plan.md`, and as a decision in `docs/produ
 | mvp-Q44 | **Open (2026-11-17, non-blocking).** Can a winner file a second claim on the same lot? Shipped rule for US-054: one claim per lot whatever its status — unique index on `claim.lot_id` plus a 409; nothing in US-054 reaches `rejected` (US-055 does). Options: (a) keep one-claim-per-lot (recommended); (b) allow a new claim after a rejection (US-055 drops the index, one-line migration). US-054's ACs hold either way. *(Was: is a claim repeatable?)* | none (was US-054 T-054.1) |
 | mvp-Q45 | **Answered 2026-11-17 (D-060), option (b):** a farm suspended after approval may also accept or dispute a claim on its own sold lot — the D-054 exception (ownership + not `terminated`), not `validateSellerOpenStep`. `pending_approval`, a rejected registration and `terminated` still 403. Follow-up US-055 T-055.5 (the shipped spec case that asserts 403 for suspended changes to 200). *(Was: may a suspended farm accept or dispute a claim on its own sold lot?)* | none (was US-055 T-055.1a) |
 | mvp-Q46 | **Open (2026-11-17, non-blocking).** AC2 requires the admin's written reason; the plan says nothing about the farmer's dispute carrying a note. Shipped: no farmer note (the admin judges from the video and the claim facts). Options: (a) no farmer note (what T-055.2 builds); (b) an optional farmer note, one nullable column shown in the admin row. *(Was: does a dispute carry the farmer's own note?)* | US-055 T-055.2 |
+| mvp-Q47 | **Open (2026-11-17, non-blocking).** US-056 AC2 says "missing the 3 days, **or refusing an approved claim**", but D-038's enum has no `refused` state, so a refusal has nowhere to be recorded. Shipped: (a) no new state — a refusal not acted on is the 3-day miss, and T-056.3 flags `approved` older than 3 days. Options: (a) keep it (recommended; no column, so copy can change without a migration); (b) add a refusal state out of `approved` (new decision + enum change + migration; touches US-055's finality). *(Was: how is a farmer's explicit refusal of an approved claim recorded?)* | none (was US-056 T-056.3) |
 | — (payment model) | **Answered 2026-11-17 (D-058):** the MVP pays off-platform — the winner pays the farmer directly within 1×24 h, the farmer marks the lot paid (`won → paid`) then ships; the platform holds and pays out no money. Xendit escrow stays the planned beta direction, out of MVP scope. Un-parks US-056, US-058, US-059's payment strike and T-052.4; restores D-044/D-057 through D-059. *(Was: does the MVP pay in-app (Xendit escrow or wallet escrow), or off-platform?)* | none (was US-052 T-052.4, US-056, US-058, US-059) |
