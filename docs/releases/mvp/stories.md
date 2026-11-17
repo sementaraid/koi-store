@@ -19,13 +19,14 @@ are defined in `docs/product/overview.md`.
 **Last accepted stories:** US-055 (Epic 5), qa PASS on AC1–AC2, accepted
 2026-11-17, plus the unplanned `@koi/ui` tab-orientation fix. Before it: US-054
 (Epic 5), qa PASS on AC1–AC4, fix round 1; US-045 (Epic 4), qa PASS fix round 1; US-044
-(Epic 4), qa PASS on both ACs; US-051, US-052 (shipped half), US-053 (Epic 5),
+(Epic 4), qa PASS on both ACs; US-051, US-052 (shipped half, both re-opened
+2026-11-17 for the bank-reveal and paid halves, see below), US-053 (Epic 5),
 qa PASS on every in-scope AC, fix round 1, accepted 2026-11-17. Before them:
 US-043, US-050, then US-040, US-041, US-042 (Epic 4). T-030.8, T-032.6, T-032.7
 and T-020.10 (seed fix) were accepted earlier. The `bid` model and the bid/join
 code are committed (`d67d3c8`).
 
-**Counts** (computed from this file, 2026-11-17; US-055 accepted):
+**Counts** (computed from this file, 2026-11-17; D-058/D-059/D-060/D-061 in force):
 
 | Epic | Stories done | In progress | Todo | Parked | Blocked | Tasks done | Tasks open | Tasks parked |
 |---|---|---|---|---|---|---|---|---|
@@ -33,56 +34,69 @@ code are committed (`d67d3c8`).
 | 1 Wallet | 6 | 0 | 0 | 0 | 0 | 22 | 0 | 0 |
 | 2 Becoming a farmer | 2 | 0 | 0 | 0 | 0 | 11 | 5 | 0 |
 | 3 Auctions for farmers | 4 | 0 | 0 | 0 | 0 | 23 | 0 | 0 |
-| 4 Joining and bidding | 6 | 0 | 1 | 0 | 0 | 22 | 4 | 0 |
-| 5 Closing and after-sale | 6 | 0 | 4 | 2 | 0 | 28 | 21 | 4 |
+| 4 Joining and bidding | 6 | 0 | 1 | 0 | 0 | 22 | 5 | 0 |
+| 5 Closing and after-sale | 4 | 0 | 8 | 0 | 0 | 25 | 25 | 0 |
 | 6 Admin operations | 0 | 0 | 6 | 0 | 0 | 0 | 22 | 0 |
 | 7 WhatsApp bot | 0 | 0 | 0 | 0 | 6 | 0 | 12 | 0 |
 | 8 Pilot | 0 | 0 | 1 | 0 | 0 | 0 | 5 | 0 |
 | Unplanned | 1 | 0 | 0 | 0 | 0 | 1 | 0 | 0 |
-| **Total** | **28** | **0** | **12** | **2** | **6** | **116** | **69** | **4** |
+| **Total** | **26** | **0** | **16** | **0** | **6** | **113** | **74** | **0** |
 
-Stories: 28 done of 48 (58%), 12 todo, 2 parked, 6 blocked. Tasks: 116 done of
-185 active (63%), 69 open, 4 parked.
+Stories: 26 done of 48 (54%), 16 todo, 6 blocked, none parked.
+Tasks: 113 done of 187 active (60%), 74 open, none parked.
 
-Epic 2's open tasks are US-021's T-021.2/.3/.4/.6 (follow-ups on a `done` story)
-and T-020.10 (seed an admin user). Blocked: US-080 – US-085 (mvp-Q12).
-Epic 5 task count drops by one: T-051.3b dropped (D-052). US-051 unblocked by D-052 (2026-11-16).
+**Payment model decided (2026-11-17, D-058).** The MVP pays off-platform: the
+winner pays the farmer directly within 1×24 h, the farmer marks the lot paid
+(`won → paid`) and then ships; the platform holds and pays out no money. No
+wallet debit, no ledger type, no payout balance. Xendit escrow stays the planned
+beta direction, out of MVP scope. D-059 brings D-044 and D-057 back: the winner
+reveals the farmer's full account number and holder name on their own won lot,
+one logged reveal, no phone (D-052 stands).
 
-**Parked (2026-11-16, owner recalculating the payment model; not blocked by a question).**
-Stories: US-056, US-058. Tasks: T-051.1a, T-051.3a, T-051.2a (winner
-bank-account reveal; D-044 on hold), T-052.4 (mark paid; a Xendit webhook
-replaces it under escrow). US-052 is `done` for its shipped half only; AC1's
-`won → paid` half stays parked with T-052.4. Partial: US-059's "winner didn't
-pay" strike part. **Only newly blocked: none.** `mvp-Q37` and `mvp-Q39`
-answered (D-056, D-057).
+**Unparked on 2026-11-17:** US-056 and US-058 back to `todo`; T-052.4,
+T-051.1a, T-051.3a, T-051.2a back to `[ ]`; US-059's "winner didn't pay" strike
+part back in scope. **US-051 and US-052 are `todo` again**, not `done`: accepted
+halves stay accepted, but AC1/AC3's bank reveal (T-051.1a/.3a/.2a) and AC1's
+`won → paid` (T-052.4) are in scope again and unbuilt, so those ACs cannot pass.
+T-052.2 (paid button), T-052.3 (paid transition) and T-051.4 (bank reveal)
+were re-opened with them. US-046's readiness no longer waits on an owner
+answer: D-061 settles `mvp-Q43`.
 
-**Needed under either payment model (keep building):** US-057, US-060, US-061.
-US-054, US-055, US-051, US-053 and US-052's shipped half are accepted.
-
-**Payment model open (owner, 2026-11-16):** until it is decided, an auction can
-end with a winner but with **no in-app way to pay**. Owner is recalculating;
-planned direction (not a decision) is Xendit escrow (`docs/releases/README.md`,
-Ideas not yet planned). D-044 is on hold, so the 1×24 h payment deadline
-(US-058, strikes) can't work end to end. Stopgap options **not chosen**:
-(1) the pilot pays off-platform, as WhatsApp auctions do today; (2) wallet-held
-escrow without Xendit (a new money flow, needs owner approval).
+**Blocked by a question: none new.** US-080 – US-085 stay blocked (mvp-Q12).
 
 **Docs out of date (owner edit needed, not edited here):**
-`apps/storefront-koi/CLAUDE.md:97-98` still says the farmer's WhatsApp and bank
-details are shown to the winner and the farmer sees the winner's WhatsApp. It
-contradicts D-052 (no phone either way), D-044 (on hold) and D-056.
+- `apps/storefront-koi/CLAUDE.md:97-98` still says the farmer's WhatsApp and
+  bank details are shown to the winner and the farmer sees the winner's
+  WhatsApp. It contradicts D-052 (no phone either way), D-059 (winner sees the
+  bank account, logged reveal) and D-056.
+- `plan.md:11` still says how the winner pays the farmer "is open". D-058
+  answers it. The plan is approved, so only the owner edits it.
+- `docs/releases/README.md:32` still calls escrow the planned direction for the
+  MVP stories; D-058 keeps it for beta only.
 
 **Next in milestone order:**
-1. US-046 (live room), the last Epic 4 story. T-046.1 (backend live link) waits
-   on the owner's yes/no to the `mvp-Q43` proposal; T-046.2/.3 follow T-046.1
-   (T-046.2 is written to `mvp-Q42` option a, non-blocking). US-045 accepted.
-   **Ready alternative while mvp-Q43 is open:** US-057 (ratings; nothing blocks
-   it). US-055 accepted 2026-11-17.
-2. Epic 5 next: **US-057**, then US-060, US-061. US-055 accepted 2026-11-17;
-   US-056/US-058 parked; US-059's payment-strike part parked.
-3. US-043, US-050, US-051, US-052 (shipped), US-053, US-054, US-044, US-045 are
-   accepted; nothing left there.
-T-020.10 can run any time; qa's admin browser checks need it.
+1. **US-052 T-052.4 (backend, mark paid)** first. It is the shortest path to a
+   reachable `won → paid` and it unblocks the most: US-058's report needs the
+   paid state, US-056's `approved → resolved` needs a settled sale, and US-051's
+   `pay_by` deadline is only meaningful once the winner can be told to pay.
+   It shares `mark-lot-sold-status.ts` with the shipped half, so it keeps one
+   backend agent in one file. D-058; no policy question left.
+2. Then **US-051 T-051.1a → T-051.3a** (backend, both on `won-lots`): the masked
+   bank row and `pay_by`, then the one-reveal bank endpoint (D-059, D-057).
+   Reuses `createPiiRevealAuditStep`; same file family as T-051.6.
+3. Then storefront **T-051.2a + T-052.2** in parallel (both extend existing
+   pages: T-051.2a adds the bank reveal to `/akun/menang`, T-052.2 adds
+   "Tandai sudah dibayar" to `/akun/kebun/terjual`), then qa T-051.4 and T-052.3.
+4. Small backend swap in the same window: **US-055 T-055.5** (D-060), one guard
+   change in two workflows and one spec case.
+5. Then **US-058** (report a non-paying winner; deadline `closed_at` + 24 h) and
+   **US-056** (claim resolution, direct refund off-platform); then US-057,
+   US-059, US-060, US-061.
+6. **US-046** is fully ready but ordered after the paid loop: its live-link
+   read/write is independent of money, and D-061 removed its owner question.
+   Order when picked: T-046.1 → T-046.2 ‖ T-046.3 ‖ T-046.5 → T-046.4.
+US-053, US-054, US-055 remain `done`. T-020.10 can run any time; qa's admin
+browser checks need it.
 
 ## Epic 0: Foundations (Milestone 1)
 
@@ -1736,31 +1750,37 @@ named constant, so a change is one line. Recommend 2 s.
 As a **bidder**, I want a live screen with one lot at a time so that the auction
 feels like a live event. *(Plan: Live room)*
 - AC1: Shows one lot at a time: photo, current price, countdown, bid feed.
-- AC2: The farmer can add a YouTube or Instagram live link, which is shown on the page. No video system is built.
-- [ ] T-046.1 [backend] Live link field on the auction — column + migration, farmer write path, URL validation, public and vendor exposure, `codegen`
-- [ ] T-046.2 [storefront] `live` page on real data, replacing `const/live.ts` (ordered after T-046.1)
+- AC2: The farmer can add a YouTube or Instagram live link, which is shown on the page. No video system is built. The link is a plain nullable `auction.live_stream_url` column, written by the farmer through `POST /vendor/auctions/:id/live-link` in any status except `closed`/`cancelled`, writable from admin-koi too, and rendered as an outbound link only (no iframe, no embedded player; D-061).
+- [ ] T-046.1 [backend] `auction.live_stream_url` plain nullable column + migration, `POST /vendor/auctions/:id/live-link`, `POST /admin/auctions/:id/live-link`, URL validation, public and vendor exposure, `codegen`
+- [ ] T-046.2 [storefront] `live` page on real data, replacing `const/live.ts`, the link rendered as an outbound link (ordered after T-046.1)
 - [ ] T-046.3 [storefront] Farmer area: set and clear the live link (ordered after T-046.1)
-- [ ] T-046.4 [qa] Both ACs in a browser, including a real polling update and the link rendering
+- [ ] T-046.5 [admin] admin-koi live-link write on the `/lelang` queue row (ordered after T-046.1)
+- [ ] T-046.4 [qa] Both ACs in a browser, including a real polling update and the link rendering, plus the admin write
 
-**Readiness (2026-11-17): ready (`todo`). Nothing decided is missing; one non-blocking owner question (mvp-Q42, below).**
+**Readiness (2026-11-17; updated after D-061): ready (`todo`).** `mvp-Q43` is
+answered by D-061: a plain nullable `auction.live_stream_url` column (not a
+custom field), farmer write through `POST /vendor/auctions/:id/live-link` in any
+status except `closed`/`cancelled`, the same write in admin-koi (T-046.5),
+rendered as an outbound link with no embed and no host check beyond the
+YouTube/Instagram allow-list. `mvp-Q42` (explicit lot selection, option a) is a
+built choice and stays non-blocking.
 - Plan rule being built: `plan.md:250`. "No video system is built" + MVP out of scope "live video" (`plan.md:14`)
-  mean the link is **rendered as an outbound link**, never an `<iframe>` embed. If the owner wants an embed, that changes
-  T-046.2 only and adds no backend work.
+  mean the link is an **outbound link**, never an `<iframe>` embed (D-061).
 - **Storage.** A nullable `live_stream_url` column on our own `auction` model (auction module), not a Mercur custom field:
   `customFields` in `medusa-config.ts:76-82` is configured for Mercur entities (`Seller`), and `auction` is a Medusa
   module model owned by us with its own migrations (`src/modules/auction/migrations/`). A column is one generated
   migration and is read by `query.graph` with no extra wiring; a custom field on our module is unverified in the docs.
-- **Who writes it.** The farmer, through `POST /vendor/auctions/:id/live-link` (member token + `x-seller-id`, D-003),
-  because `/vendor/*` owns the farmer's auctions and D-002 keeps admin screens in `apps/admin-koi` without inventing an
-  admin edit. No admin surface: nothing in the plan gives admin control of a farmer's broadcast.
-- **When it may be written.** Any status except `closed` and `cancelled` (409, Indonesian message). The current
-  draft-only `POST /vendor/auctions/:id` (`workflows/update-draft-auction.ts:32-87`) can't serve this: a live link is
-  only useful once the auction is `scheduled` or `live`. Refusing only the two terminal statuses is the smallest rule
-  that makes the feature work and invents no state (`open` for edits until the auction is done). Flagged for the owner
-  in the report; it is not a new status or transition.
+- **Who writes it.** The farmer, through `POST /vendor/auctions/:id/live-link` (member token + `x-seller-id`, D-003).
+  The admin writes the same field through `POST /admin/auctions/:id/live-link` (admin token, D-002/D-061). Both reuse
+  one workflow; identity from `req.seller_context` / `req.auth_context`, never the body. admin-koi's only auction list
+  today is the `/lelang` approval queue (US-032, `pending_approval` rows), so T-046.5 puts the control there; a wider
+  admin auction list is a new screen no rule asks for.
+- **When it may be written.** Any status except `closed` and `cancelled` (409 with an Indonesian message, D-061). The
+  current draft-only `POST /vendor/auctions/:id` (`workflows/update-draft-auction.ts:32-87`) can't serve this: a live
+  link is only useful once the auction is `scheduled` or `live`.
 - **One lot at a time (AC1).** Today's `pickFeatured` (`const/live.ts:88-90`) already means explicit selection: `?lot=`
   wins, else the first lot of a `live` auction, else the first open one. T-046.2 keeps that and adds no auto-rotation
-  or next-lot control. Rotation would be an addition the AC doesn't ask for; mvp-Q42 asks the owner whether they want it.
+  or next-lot control. Rotation would be an addition the AC doesn't ask for; mvp-Q42 option (a) is what ships.
 - **Bidding is not in this story.** AC1 lists photo, price, countdown, bid feed. Placing bids is US-042's job on the lot
   page; the room therefore renders the board read-only and links to the lot page. The room's current fake bid state
   (`LiveRoom.tsx:96-141`, `onBid` writing local price/count) is demo-only and must go: it would show bids that never
@@ -1789,13 +1809,17 @@ Agent: backend   Expected: <=45 min
 
 ## Acceptance criteria (verbatim)
 - AC2: The farmer can add a YouTube or Instagram live link, which is shown on the page. No video system is built.
-  (This task: the storage, the farmer's write path, the validation, and the field on the public and vendor responses.)
+  (This task: the storage, the farmer's write path, the admin write, the validation, and the field on the public, vendor and admin responses.)
+  D-061 also adds the admin-koi write, `POST /admin/auctions/:id/live-link` (T-046.5 consumes it).
 
 ## Decisions in force
-D-003: the write route is `/vendor/*`, member token + `x-seller-id`; identity from `req.seller_context`, never the body.
-D-002: no admin surface for this field in this story.
-D-055: every refusal shown to the farmer is Indonesian, from the backend, rupiah `id-ID`; apps key on `code`/status.
-CLAUDE.md §8/§9: append-only is irrelevant here; one mutation per step with compensation; a module is thin CRUD; routes only GET/POST/DELETE; no `any`.
+D-061: a plain nullable `auction.live_stream_url` column (not a Mercur custom field); writable in any status except
+`closed`/`cancelled`; farmer writes through `/vendor/*`, admin through `/admin/*`; rendered as an outbound link only,
+no embed, no host check beyond the YouTube/Instagram allow-list.
+D-003: the farmer's route is `/vendor/*`, member token + `x-seller-id`; identity from `req.seller_context`, never the body.
+D-002: the admin route is `/admin/*` for admin-koi; nothing changes in `apps/admin`.
+D-055: every refusal shown to a user is Indonesian, from the backend, rupiah `id-ID`; apps key on `code`/status.
+CLAUDE.md §8/§9: one mutation per step with compensation; a module is thin CRUD; routes only GET/POST/DELETE; no `any`.
 Plan out of scope "live video": store a URL only. No download, proxy, embed code or host check beyond the link itself.
 
 ## Build
@@ -1809,37 +1833,47 @@ Plan out of scope "live video": store a URL only. No download, proxy, embed code
    Rule: parse with `new URL`; protocol `https:`; hostname lowercased and stripped of a leading `www.`/`m.` must be
    `youtube.com`, `youtu.be` or `instagram.com`; pathname must be more than `/`. Everything else false (no `http:`,
    no other hosts, no `youtube.com.evil.dev`, no `javascript:`).
-3. Body validator. `src/api/vendor/auctions/validators.ts`: add
-   `VendorSetAuctionLiveLink = z.object({ live_stream_url: z.string().trim().max(2048).nullable() }).strict()`
+3. Body validator. `src/api/vendor/auctions/validators.ts` (shared by both routes; the admin route imports it): add
+   `SetAuctionLiveLink = z.object({ live_stream_url: z.string().trim().max(2048).nullable() }).strict()`
    and `.refine(v => v.live_stream_url === null || isLiveStreamUrl(v.live_stream_url), { message: "Tautan siaran harus dari YouTube atau Instagram (https)." })`.
    `null` clears the link. Register it in `src/api/middlewares.ts` next to the other `/vendor/auctions/:id` entries
-   (:445-449), method POST, matcher `/vendor/auctions/:id/live-link`.
-4. Workflow. `src/workflows/set-auction-live-link.ts`:
-   `validateSellerOpenStep({ seller_id })` → `acquireLockStep({ key: "auction:<id>", timeout: 10, ttl: 30 })`
+   (:445-449), method POST, matcher `/vendor/auctions/:id/live-link`, and again for `/admin/auctions/:id/live-link`.
+4. Workflow. `src/workflows/set-auction-live-link.ts`, one workflow both routes call:
+   `acquireLockStep({ key: "auction:<id>", timeout: 10, ttl: 30 })`
    (same key as submit/update, via `transform` at `update-draft-auction.ts:37-39`) → new read-only guard step
    `getAuctionForLiveLinkStep` in `src/workflows/steps/auction.ts` (fields id, seller_id, status via query.graph;
    404 for missing or another seller's auction, like `getDraftAuctionStep` :246-292; 409 code `auction_not_editable`,
    Indonesian message, when status is `closed` or `cancelled`) → `setAuctionFieldsStep({ id, update: { live_stream_url } })`
    (reuse :378-405; its compensation restores the previous value) → `releaseLockStep`.
    Add `"live_stream_url"` to the `AuctionFields` pick union (:361-373). No `if`/loop in the composition function.
-5. Route. `src/api/vendor/auctions/[id]/live-link/route.ts`: `POST` → 200 `{ auction: VendorAuction }`
-   (`toVendorAuction(result)`), body type `VendorSetAuctionLiveLinkType`. Import `../../../../../types/seller-context`.
-   No GET (the field rides on the existing detail response).
+   `validateSellerOpenStep` goes in the **vendor route's** composition before the lock (a suspended farm gets 403 there,
+   D-054/task-brief checklist); the admin route does not run it, so an admin can still fix a suspended farm's link.
+5. Routes, both thin, same workflow:
+   - `src/api/vendor/auctions/[id]/live-link/route.ts`: `POST` → 200 `{ auction: VendorAuction }`
+     (`toVendorAuction(result)`), body type `SetAuctionLiveLinkType`. Import `../../../../../types/seller-context`.
+     Composition: `validateSellerOpenStep({ seller_id: req.seller_context.seller_id })` → the shared workflow.
+   - `src/api/admin/auctions/[id]/live-link/route.ts` (D-061, for admin-koi T-046.5): `POST` → 200 `{ auction: AdminAuction }`
+     (reuse `toAdminAuctions`), same body type. Medusa's `/admin/*` auth is the guard; the `seller_id` for the workflow
+     comes from the auction row read, never the body.
+   - No GET on either (the field rides on the existing detail and list responses).
 6. Exposure. Vendor: add `"live_stream_url"` to `AUCTION_FIELDS` (`src/api/vendor/auctions/route.ts:56-72`) and
    `live_stream_url: string | null` to `VendorAuction` (:29-46) and `toVendorAuction` (:127-147).
    Public: add `"auction.live_stream_url"` to `STORE_LOT_FIELDS` (`src/api/store/lots/route.ts:66-72`), add
    `live_stream_url: string | null` to `StoreLot.auction` (:35-47) and to the mapper (:139-151). It appears on both the
    feed and `GET /store/lots/:id`; a draft/pending/cancelled auction's lot still 404s, so its link can't leak.
-7. Run `bun run codegen` (new route: `vendor.auctions.$id.liveLink`).
+   Admin: `AdminAuction` already spreads `AUCTION_FIELDS`, so the admin list and detail carry the field with no new list.
+7. Run `bun run codegen` (new routes: `vendor.auctions.$id.liveLink`, `admin.auctions.$id.liveLink`).
 
 ## Start from
 - src/workflows/update-draft-auction.ts:32-87 (validateSellerOpenStep + lock + guard + mutation + release)
 - src/workflows/steps/auction.ts:246-292 (guard shape), :361-405 (AuctionFields + setAuctionFieldsStep)
 - src/api/vendor/auctions/[id]/submit/route.ts:18-40 (POST with no body handling + envelope)
 - src/api/vendor/auctions/[id]/route.ts:60-74 (detail envelope), ../route.ts:56-72,127-147 (fields + mapper)
+- src/api/admin/auctions/route.ts:18-35 (AdminAuction type + ADMIN_AUCTION_FIELDS; the admin detail reuse)
 - src/api/store/lots/route.ts:66-72,98-152 (public fields + mapper)
 - src/utils/mask.ts:1-15 + src/utils/__tests__/mask.unit.spec.ts (unit helper layout)
 - integration-tests/http/farmer-auctions.spec.ts:57-110 (seller + member + `x-seller-id` seeding)
+- integration-tests/http/admin-auction-approval.spec.ts (admin token seeding)
 - integration-tests/http/store-lots.spec.ts:1-60 (publishable key in a spec)
 
 ## Do not touch
@@ -1860,18 +1894,21 @@ packages/api/integration-tests/http/auction-live-link.spec.ts:
 - `GET /store/lots` and `GET /store/lots/:id` carry `auction.live_stream_url` for a public auction; a draft auction's
   lot with a link is still 404; the response contains no other new key
 - identity only from the token: a body carrying `seller_id` is refused by `.strict()`
+- admin (D-061): `POST /admin/auctions/:id/live-link` on a `scheduled` auction, even one whose farm is suspended → 200,
+  value saved, carried by `GET /admin/auctions`; closed → 409; bad host → 400; `null` clears; a customer/member token
+  → 401/403
 
 ## Definition of done
 cd packages/api && bun x tsc --noEmit -p .                        → clean
-cd packages/api && bun run codegen                                → routes.d.ts has vendor.auctions.$id.liveLink
+cd packages/api && bun run codegen                                → routes.d.ts has vendor.auctions.$id.liveLink and admin.auctions.$id.liveLink
 cd packages/api && bun run test:integration:http -- auction-live-link → pass (alone)
 cd packages/api && bun run test:unit -- live-stream.unit             → pass
 cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
-Report: standard header + API contract (method, path, body, response, errors) + the migration file name.
+Report: standard header + API contract (both routes: method, path, body, response, errors) + the migration file name.
 
 ## Open questions
-none blocking. The editable-status rule (anything but closed/cancelled) is written above; say so if you find a reason
-a `pending_approval` auction must refuse it.
+none blocking. D-061 fixes the storage (column), the window (any status but `closed`/`cancelled`) and the render
+(outbound link); say so if the admin route cannot share the workflow.
 ```
 
 ```text
@@ -1932,7 +1969,7 @@ No other route is read. No client auth: the room is public.
    - `BroadcastBar`: pass `liveCount` = number of `live` auctions in the list; pass no `stats` and no fabricated ticker
      (the old "Escrow terkunci Rp 1,42 M / Latency 18ms" claims are gone). An optional short factual message is fine.
    - Pass no `buyNow` (buy-now is out of MVP scope).
-   - Live link: when the staged lot's `auction.live_stream_url` is set, render one outbound link near the board —
+   - Live link (D-061): when the staged lot's `auction.live_stream_url` is set, render one outbound link near the board —
      `<a href={url} target="_blank" rel="noopener noreferrer">Tonton siaran langsung petani →</a>` (Indonesian; no iframe,
      no player, no preview fetch). Nothing when unset.
    - Board: `BidTerminal` with the polled lot, no `onBid`, no `myBid`, and a new `readOnly` prop (see below) so the raise
@@ -2000,8 +2037,9 @@ Starts after: T-046.1 has delivered its contract and codegen.
 D-003: every `/vendor/*` call needs the member token + `x-seller-id`, through `vendorHeaders()` (`src/lib/data/vendor.ts`).
 D-055: show the server's message verbatim; key on status/code, never on message text.
 D-005: `@koi/ui` only; data only through `src/lib/data`; typed client only.
-The route accepts `draft`, `scheduled`, `live` and refuses `closed`/`cancelled` with 409 (T-046.1). The form is offered
-only for those statuses and shows the server's refusal otherwise.
+D-061: the route accepts every status except `closed` and `cancelled` (409), so the form is offered for `draft`,
+`pending_approval`, `scheduled` and `live`, and is read-only for the two terminal statuses. The link renders as an
+outbound link only, no embed.
 
 ## Endpoint inventory
 | Method | Path | Exists? | Shape / owner |
@@ -2065,59 +2103,66 @@ none
 ```
 
 ```text
-Story: US-046 (task T-046.4)   Release: mvp
-Agent: qa   Expected: <=30 min
+Story: US-046 (task T-046.5)   Release: mvp
+Agent: frontend (apps/admin-koi)   Expected: <=30 min
+Starts after: T-046.1 delivered `admin.auctions.$id.liveLink` and codegen.
 
-Verify AC1, AC2. Decisions: D-046, D-050, D-051, D-055, D-003.
-Code under test: `packages/api/src/api/vendor/auctions/[id]/live-link/route.ts`, `src/workflows/set-auction-live-link.ts`,
-`src/utils/live-stream.ts`, `src/modules/auction/models/auction.ts` (+ migration), `src/api/store/lots/**`,
-`apps/storefront-koi/src/components/sections/LivePage/**`, `AccountPage/components/LiveLinkForm.tsx`,
-`lib/data/{lots,auctions}.ts`, `lib/helpers/live-stream-url.ts`.
+## Acceptance criteria
+- AC2: The farmer can add a YouTube or Instagram live link, which is shown on the page. No video system is built.
+  (This task: the admin-koi write required by D-061 — the admin can set or clear an auction's live link.)
 
-Commands (alone, nothing else on Jest): `cd packages/api && bun run test:integration:http -- auction-live-link`;
-`cd apps/storefront-koi && bun run check`; `cd apps/admin-koi && bun run tsc`.
+## Decisions in force
+D-061: the admin writes the same `auction.live_stream_url` through `POST /admin/auctions/:id/live-link`, any status but
+`closed`/`cancelled`; the value renders as an outbound link, no embed, no host check beyond the allow-list.
+D-002: admin surfaces live only in `apps/admin-koi`, through `/admin/*` routes.
+D-055: show the server's Indonesian message verbatim; key on status/code, never on message text.
+D-005: `@koi/ui` only; data only through `src/lib/data`; the typed `@mercurjs/client`, never raw `fetch`.
 
-AC1, browser (render-check skill, playwright MCP):
-1. /live with a seeded live auction and bids → exactly one lot staged; its photo, current price, countdown and masked
-   bid rows are the API's values. Compare each against `curl` of `GET /store/lots/:id` for the same lot.
-2. Poll: place a bid from a second seeded customer while /live is open → price and bid row update within one interval
-   (~2 s, allow 4 s) with no reload.
-3. Masking (D-051): every bid row reads `Xxx***xx`; no full name, phone or customer id anywhere in the page source.
-4. No fake state: clicking anything on the room's board must not invent a price, a bid row or a count; the bid CTA
-   opens the lot page. Confirm no id/price appears without a matching API value.
-5. Empty state: with no scheduled/live auction, /live shows the honest empty state; grep the page for
-   "Selasa dan Jumat" and the demo figures ("1,42 M", "18ms") → none.
-6. A cancelled lot and a closed lot are never staged; polling stops once the staged lot closes (it shows the final
-   price and the API's `sold` label, no winner — D-046).
-7. `grep -rn "picsum\|Sakai Fish Farm" apps/storefront-koi/src/components/sections/LivePage` → none.
+## Endpoint inventory
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| GET | /admin/auctions | yes (US-032) | queue rows already carry the auction; `live_stream_url` appears once T-046.1 lands |
+| POST | /admin/auctions/:id/live-link | after T-046.1 | body `{ live_stream_url: string \| null }` → 200 `{ auction: AdminAuction }`; 400 bad host (Indonesian), 409 `auction_not_editable` |
 
-AC2, backend + browser:
-8. Set a link through the farmer form as sakura.koi.farm@koi.dev on a `scheduled` and on a `live` auction → saved;
-   /live shows the link, `href` identical to the stored value, `target="_blank"`, and the page contains no `<iframe>`.
-9. Invalid links refused with the Indonesian message on the backend and in the form: `http://…`, another host,
-   `https://youtube.com.evil.dev/x`, `https://instagram.com/` → 400, nothing saved. Clearing with `null` works.
-10. Another seller's auction → 404; closed/cancelled → 409 and the stored value unchanged; a pending/suspended farm → 403.
-11. `curl GET /store/lots` and `/store/lots/:id`: `auction.live_stream_url` is present (null when unset); a draft
-    auction's lot is still 404; no winner, phone, email, `payment_details`, `custom_fields` in the body.
+## Build
+1. `src/lib/data/auctions.ts`: add `live_stream_url: string | null` to `AdminAuction`; add
+   `setAuctionLiveLink(id, url: string | null)` calling
+   `sdk.admin.auctions.$id.liveLink.mutate({ $id: id, live_stream_url: url, fetchOptions: { headers: getAuthHeaders() } })`,
+   mirroring the existing admin mutations (revalidate `/lelang`, `ClientError.message` on failure).
+2. One control on the `/lelang` queue row (`AuctionQueue.tsx`): the stored link as an outbound
+   `<a target="_blank" rel="noopener noreferrer">` when set, "Belum ada tautan siaran." when not, an input + "Simpan
+   tautan" and "Hapus tautan" (submits `null`). Client pre-check reuses the same host rule as the backend; a failed call
+   shows the server's Indonesian message. Offered in any status except `closed`/`cancelled`; otherwise read-only.
+   Keep the row's existing approve/reject behaviour untouched.
+3. No new nav entry and no new page: this is a control inside the existing queue row.
 
-Watch for: a second poller or a new interval constant; polling running after close/cancel or on an empty room;
-the old demo bids/figures resurfacing; an iframe or an embed-derived preview; the farmer form bypassing the module's
-status rule client-side only; the public route exposing the link of a non-public auction; copy that is not Indonesian;
-`bid_count` disagreeing with the rendered rows.
+## Start from
+- apps/admin-koi/src/components/AuctionQueue.tsx (the row + its server actions)
+- apps/admin-koi/src/lib/data/auctions.ts (AdminAuction, getAuctionQueue, the action shape)
+- apps/admin-koi/src/components/FarmQueue.tsx:257-313 (the reveal/link button pattern)
 
-Report PASS/FAIL per AC with file:line and command output; bugs with repro and expected/actual.
-Screenshots and page snapshots land in `.playwright-mcp/`. Don't change app code.
+## Do not touch
+- packages/api/**, apps/storefront-koi/**, the approve/reject flow, the `/lelang` page shell
+
+## Definition of done
+cd apps/admin-koi && bun run check                       → pass
+cd apps/storefront-koi && bun run tsc                    → clean
+render check (http://127.0.0.1:3002/lelang as admin@koi.dev) on a `pending_approval` and a `scheduled` auction:
+save a valid link, clear it, one invalid host → clean; screenshot paths recorded.
+Report: standard header + render check result + screenshot paths. Don't commit.
+
+## Open questions
+none
 ```
 
-**Owner question raised by this section (not yet in the questions table):** `mvp-Q42` — "one lot at a time": is
-explicit selection enough (the room stages the tightest live lot, `?lot=` picks another, no rotation), or should the room
-auto-rotate to the next open lot when the staged one closes? T-046.2 ships the explicit-selection reading, because AC1
-asks for one lot at a time and not for a rotation. Non-blocking: rotation is a follow-up inside `LiveRoomPage`, no
-backend work. Recommend explicit selection.
-**Recorded, not a question:** the live link is a nullable `auction.live_stream_url` column, set by the farmer through
-`POST /vendor/auctions/:id/live-link` (member token + `x-seller-id`), writable until the auction is `closed`/`cancelled`,
-rendered as an outbound link (no embed, no player). If the owner wants an admin override or an embed, say so before
-T-046.2 is dispatched.
+**`mvp-Q42` (answered as a built choice, not a blocker):** explicit selection. The room stages the tightest live lot,
+`?lot=` picks another, no rotation; AC1 asks for one lot at a time and not for rotation. Rotation would be a follow-up
+inside `LiveRoomPage` with no backend work. Option (a) is what T-046.2 ships.
+**`mvp-Q43` answered by D-061:** the live link is a plain nullable `auction.live_stream_url` column, set by the farmer
+through `POST /vendor/auctions/:id/live-link` (member token + `x-seller-id`) and by an admin through
+`POST /admin/auctions/:id/live-link`, writable until the auction is `closed`/`cancelled`, rendered as an outbound link
+(no embed, no player, no host check beyond the YouTube/Instagram allow-list). admin-koi exposes the write on its
+`/lelang` queue row (T-046.5).
 
 ---
 
@@ -2269,31 +2314,33 @@ rewritten on a second run; close without the `lot:<id>` lock; a store response n
 Report PASS/FAIL per AC with file:line and command output. Don't change app code.
 ```
 
-### US-051 Farmer sees the winner's name and address; winner sees their won lots · `done (evidence: packages/api/integration-tests/http/won-lots.spec.ts (6/6), vendor-sold-lots.spec.ts (16/16); packages/api/src/api/vendor/sold-lots/route.ts:17-19,42-54,61-103,105-148 (name + city/province only, no street/postal/phone selected); packages/api/src/workflows/reveal-winner-address.ts:34-47 (read then one audit row, record_type lot, field shipping_address); packages/api/src/workflows/steps/sold-lot.ts:61-119 (404 no-address before audit); packages/api/src/api/vendor/sold-lots/validators.ts:24 (enum = shipping_address only); packages/api/src/api/store/won-lots/route.ts:22-40,50-63,112-127 (seller id+name, has_shipping_address); apps/storefront-koi/src/components/sections/AccountPage/components/RevealAddress.tsx:39-41,81-95 (button only with an address, masked label from lib/helpers/sold-lot.ts:30); SoldLotsPage.tsx:82,244-247; WonLotsPage.tsx:83-92; LotDetailsPage/components/WonLotPanel.tsx:77-89 (add-address prompt); packages/api bun x tsc --noEmit exit 0; storefront bun run check exit 0 (182 tests); browser 8 render checks 200, /tmp/koi-render/recheck1/; qa PASS fix round 1)` (winner bank-account part `parked (owner reconsidering, 2026-11-16)`)
+### US-051 Farmer sees the winner's name and address; winner sees their won lots · `todo` (re-opened 2026-11-17 by D-059 for the winner's bank reveal; AC1/AC3 are in scope again and unbuilt, so AC1 cannot pass; AC2/AC4/AC5 and the no-contact part of AC6 were accepted 2026-11-17 with qa PASS, evidence below)
+**Accepted 2026-11-17 (qa PASS, fix round 1), still in force for AC2, AC4, AC5 and the address part of AC6:** packages/api/integration-tests/http/won-lots.spec.ts (6/6), vendor-sold-lots.spec.ts (16/16); packages/api/src/api/vendor/sold-lots/route.ts:17-19,42-54,61-103,105-148 (name + city/province only, no street/postal/phone selected); packages/api/src/workflows/reveal-winner-address.ts:34-47 (read then one audit row, record_type lot, field shipping_address); packages/api/src/workflows/steps/sold-lot.ts:61-119 (404 no-address before audit); packages/api/src/api/vendor/sold-lots/validators.ts:24 (enum = shipping_address only); packages/api/src/api/store/won-lots/route.ts:22-40,50-63,112-127 (seller id+name, has_shipping_address); apps/storefront-koi/src/components/sections/AccountPage/components/RevealAddress.tsx:39-41,81-95; SoldLotsPage.tsx:82,244-247; WonLotsPage.tsx:83-92; LotDetailsPage/components/WonLotPanel.tsx:77-89 (add-address prompt); packages/api bun x tsc --noEmit exit 0; storefront bun run check exit 0 (182 tests); browser 8 render checks 200, /tmp/koi-render/recheck1/.
 **Depends on:** US-092 (masking and the logged reveal).
 As a **farmer**, I want the winner's name and delivery address so that I can ship the fish; as a **winner**, I want
-my won lots listed so that I can see what I won and mark it delivered. *(Plan: Closing and winners, Delivery; D-044
-(on hold), D-052, D-056, D-057)*
-- AC1 *(parked, owner reconsidering, 2026-11-16; D-044 on hold)*: Only the winner of that lot sees the farmer's bank account (full, via the logged reveal, D-044) and nothing else, plus the 1×24 h deadline. No phone either way: no farmer phone or WhatsApp number, masked or full, and no `wa.me` link (D-052).
+my won lots listed so that I can see what I won, pay the farmer and mark it delivered. *(Plan: Closing and winners,
+Delivery; D-044 restored by D-059, D-052, D-056, D-057)*
+- AC1: Only the winner of that lot sees the farmer's bank account (full, via the logged reveal, D-044/D-059) and nothing else, plus the 1×24 h payment deadline from `closed_at` (D-058). No phone either way: no farmer phone or WhatsApp number, masked or full, and no `wa.me` link (D-052).
 - AC2: The farmer sees, for their own sold lots, the winner's name and the winner's default shipping address masked: `city` and `province` only; street lines and postal code are not sent (D-056). No winner phone, masked or full (D-052). *(Changed 2026-11-16, `mvp-Q37`: was "name only, no reveal".)*
-- AC3 *(parked with AC1; rule recorded by D-057, `mvp-Q39`)*: The farmer's bank account is shown masked; the winner reveals the full account number **and** full account-holder name for their own winning lot only, in one logged reveal (`field: "bank_account"`, one audit row) (D-044, D-057). Until the reveal, the winner sees a mask.
+- AC3: The farmer's bank account is shown masked on the winner's own won lot; the winner reveals the full account number **and** full account-holder name for their own winning lot only, in one logged reveal (`field: "bank_account"`, one audit row) (D-044, D-057, D-059). Until the reveal, the winner sees a mask and the account number is never in the list response.
 - AC4: Every reveal is recorded: who, when, which lot, which field (D-042, D-056).
 - AC5: The farmer reveals the winner's full default shipping address for their own sold lot only, through the logged reveal: one `pii_reveal_audit` row per reveal, `record_type: "lot"`, `record_id: <lot id>`, `field: "shipping_address"`. If the winner has no default shipping address, the row shows "Alamat belum diisi" with no reveal button, and a reveal call gets 404 with no audit row (D-056).
-- AC6: The winner sees their own won lots with no farmer contact (no bank account, no holder name, no phone). A winner with no default shipping address sees a prompt on the won lot to add one, linking to `/akun/alamat` (D-056).
-**PII (D-039, D-052, D-056):** the winner's full address is a narrow exception for the farmer of that lot, through the same logged reveal as the admin. No phone crosses between winner and farmer (D-052). The winner sees no farmer contact while D-044 is on hold.
-- [ ] T-051.1a [backend] `GET /store/won-lots`: the winner's own won lots, farm name, bank name, masked account number and holder name, 1×24 h deadline; no phone (D-052) *(parked (owner reconsidering, 2026-11-16): carries farmer bank details; replaced for now by T-051.6)*
-- [ ] T-051.3a [backend] `POST /store/won-lots/:id/reveal`: winner reveals the farmer's bank account number and holder name for their own lot, one audit row (D-057) *(parked (owner reconsidering, 2026-11-16))*
+- AC6: The winner sees their own won lots, and for each the farm name, bank name and the masked account number and holder name, but no farmer phone, masked or full (D-052, D-059). A winner with no default shipping address sees a prompt on the won lot to add one, linking to `/akun/alamat` (D-056).
+**PII (D-039, D-052, D-056, D-059):** the winner's full address is a narrow exception for the farmer of that lot, through the same logged reveal as the admin. The farmer's full bank account is a narrow exception for the winner of that lot, through the same logged reveal (D-059); the merchant's account is never in a list response and never partially shown. No phone crosses between winner and farmer (D-052).
+- [ ] T-051.1a [backend] `GET /store/won-lots`: the winner's own won lots, farm name, bank name, masked account number and holder name, 1×24 h deadline; no phone (D-052) *(unparked 2026-11-17, D-059; builds on the shipped T-051.6 row: add `pay_by` = `closed_at` + 24 h and the masked `seller.payment_details`)*
+- [ ] T-051.3a [backend] `POST /store/won-lots/:id/reveal`: winner reveals the farmer's bank account number and holder name for their own lot, one audit row (D-057) *(unparked 2026-11-17, D-059)*
 - [x] T-051.1b [backend] `GET /vendor/sold-lots`: the farmer's own sold lots with the winner's name and masked default shipping address (city + province, D-056); no phone (D-052)
-- T-051.3b *(dropped 2026-11-16, D-052: the farmer no longer reveals the winner's phone. Not built.)*
+- T-051.3b *(dropped 2026-11-16, D-052: the farmer no longer reveals the winner's phone. Not built. D-059 does not bring it back.)*
 - [x] T-051.5 [backend] `POST /vendor/sold-lots/:id/reveal`: the farmer reveals the winner's full default shipping address for their own sold lot; one audit row per reveal (D-056) *(new 2026-11-16)*
-- [x] T-051.6 [backend] `GET /store/won-lots` without farmer contact: the winner's own won lots plus `has_shipping_address` (D-056) *(new 2026-11-16; the no-contact version of T-051.1a)*
-- [ ] T-051.2a [storefront] Won lots page `/akun/menang` with the bank-account reveal *(parked (owner reconsidering, 2026-11-16); replaced for now by T-051.7)*
+- [x] T-051.6 [backend] `GET /store/won-lots` without farmer contact: the winner's own won lots plus `has_shipping_address` (D-056) *(new 2026-11-16; superseded in part by T-051.1a's new fields, the route and auth stay)*
+- [ ] T-051.2a [storefront] Won lots page `/akun/menang` with the bank-account reveal *(unparked 2026-11-17, D-059; builds on the shipped T-051.7 page)*
 - [x] T-051.7 [storefront] Won lots page `/akun/menang` with no farmer contact and the "add an address" prompt (D-056) *(new 2026-11-16; US-053 T-053.2 sits on it)*
 - [x] T-051.2b [storefront] Sold lots page in the Farmer area (winner's name, masked address, address reveal)
-- [x] T-051.4 [qa] Other users get 404 or no data; the full address is reachable only for the farmer's own sold lot and every reveal is audited; no farmer contact in any won-lot response or page; no phone in any won-lot or sold-lot response or page
+- [ ] T-051.4 [qa] Other users get 404 or no data; the full address and the full bank account are reachable only for the caller's own lot and every reveal is audited; no phone in any won-lot or sold-lot response or page *(re-opened 2026-11-17 for AC1/AC3 and T-051.1a/.3a/.2a; the AC2/AC5 half passed 2026-11-17)*
 
-**Accepted 2026-11-17 (qa PASS, fix round 1).** AC2, AC4, AC5, AC6 each checked
-against the code and the spec output above. Two non-bug notes from qa, recorded,
+**Accepted 2026-11-17 (qa PASS, fix round 1) for AC2, AC4, AC5 and the no-contact part of AC6.**
+Each checked against the code and the spec output above; AC1 and AC3 were parked then and are
+back in scope now (D-059). Two non-bug notes from qa, recorded,
 not fixed here:
 1. A terminated farm sees "Area petani belum terbuka / Akun ini belum punya
    kebun…" (`SoldLotsPage.tsx:287-300`) instead of terminated copy, because
@@ -2302,18 +2349,12 @@ not fixed here:
    The rule holds (no rows, no actions); copy follow-up, not a FAIL.
 2. Seeded Budi's default address has `province: null`, so his masked row shows
    only "Jakarta Selatan". Seed data, not a bug.
-PARKED, not part of this acceptance: T-051.1a, T-051.3a, T-051.2a (winner
-bank-account reveal; D-044 on hold) and AC1/AC3.
-
-**Under escrow** (owner's planned direction, 2026-11-16, not a decision): the winner pays the platform through Xendit,
-so the winner never needs the farmer's bank account; AC1, AC3, T-051.1a, T-051.3a and T-051.2a would be dropped.
-
-**Readiness (2026-11-16; superseded 2026-11-17, accepted): `todo` for the farmer side and the no-contact winner page; winner bank-account part
-`parked (owner reconsidering, 2026-11-16)`.** `mvp-Q37` answered by D-056 (farmer gets the winner's default shipping
-address, masked, full through a logged reveal). `mvp-Q39` answered by D-057 (number + holder name, one row), but it
-applies only if D-044 returns. Owner, same day: "for now don't show farmer contact" → D-044 on hold, winner bank tasks
-parked (not blocked by a question; the owner is recalculating the payment model).
-Build order: T-051.1b → T-051.5 → T-051.2b (farmer), T-051.6 → T-051.7 (winner), then T-051.4.
+**Re-opened 2026-11-17 (D-059); status `todo`.** D-059 ends the 2026-11-16 hold on D-044 and puts D-057 in force:
+the platform paying nobody (D-058) makes the winner the payer, so AC1, AC3, T-051.1a, T-051.3a and T-051.2a are back
+in scope and unbuilt, and the story is not `done` while AC1 fails. The earlier escrow note ("the winner never needs
+the farmer's bank account") is void. T-051.4 is re-opened for the bank-reveal cases only; AC2 and AC5 still stand on
+their 2026-11-17 PASS. Build order: T-051.1a → T-051.3a →
+T-051.2a → T-051.4. `mvp-Q37` → D-056 and `mvp-Q39` → D-057 (now in force) answer the two policy questions.
 **Depends on:** US-050 (winner_customer_id, final_price, `closed_at`).
 **Reuse, no second audit mechanism:** `createPiiRevealAuditStep` (`src/workflows/steps/pii-reveal.ts:66`, already
 generic: its comment names US-051) writes to `pii_reveal_audit` (`src/modules/pii-audit/models/pii-reveal-audit.ts`,
@@ -2481,18 +2522,20 @@ none
 ```
 
 ```text
-PARKED (owner reconsidering, 2026-11-16; D-044 on hold). Don't hand off. Kept for if D-044 returns; T-051.6 replaces it now.
+UNPARKED 2026-11-17 (D-059). Active. Adds the bank fields and `pay_by` to T-051.6's shipped route; its auth and paging stay.
 Story: US-051 (task T-051.1a)   Release: mvp
 Agent: backend   Expected: <=40 min
 Starts after: US-050 T-050.1 (winner_customer_id, final_price, closed_at).
 
 ## Acceptance criteria
-- AC1: Only the winner of that lot sees the farmer's bank account (full, via the logged reveal, D-044) and nothing else, plus the 1×24 h deadline. No phone either way: no farmer phone or WhatsApp number, masked or full, and no `wa.me` link (D-052).
-- AC3: The farmer's bank account is shown masked; the winner reveals the full account number for their own winning lot only, through the logged reveal (D-044). Until the reveal, the winner sees a mask.
+- AC1: Only the winner of that lot sees the farmer's bank account (full, via the logged reveal, D-044/D-059) and nothing else, plus the 1×24 h deadline (D-058). No phone either way: no farmer phone or WhatsApp number, masked or full, and no `wa.me` link (D-052).
+- AC3: The farmer's bank account is shown masked; the winner reveals the full account number for their own winning lot only, through the logged reveal (D-044/D-059). Until the reveal, the winner sees a mask and the account number is never in this list response.
 
 ## Decisions in force
-D-052: never select or return the farm's phone (seller.phone), masked or not. D-044: account masked here; full only via
-T-051.3a. D-046: this is the caller's own data, not a public route; store/lots/** stays winner-free.
+D-052: never select or return the farm's phone (seller.phone), masked or not. D-044 (back in force by D-059): account
+masked here; full only via T-051.3a. D-057: one reveal returns number + holder name, one row. D-058: `pay_by` =
+`closed_at` + 24 h; the winner pays the farmer directly. D-046: this is the caller's own data, not a public route;
+store/lots/** stays winner-free.
 D-055: messages a Koi app may show verbatim are Indonesian. Identity from req.auth_context.actor_id only.
 
 ## Build
@@ -2530,7 +2573,7 @@ none (mvp-Q39 answered by D-057: holder name masked here, full only through T-05
 ```
 
 ```text
-PARKED (owner reconsidering, 2026-11-16; D-044 and D-057 on hold). Don't hand off. Updated for D-057 so it is ready if D-044 returns.
+UNPARKED 2026-11-17 (D-059). Active; D-057 is in force.
 Story: US-051 (task T-051.3a)   Release: mvp
 Agent: backend   Expected: <=40 min
 Starts after: T-051.1a.
@@ -2540,7 +2583,7 @@ Starts after: T-051.1a.
 - AC4: Every reveal is recorded: who, when, which lot, which field (D-042, D-056).
 
 ## Decisions in force
-D-044: full bank account, winner's own lot only, logged reveal. D-057: one reveal returns number + holder name, one
+D-044 (back in force by D-059): full bank account, winner's own lot only, logged reveal. D-057: one reveal returns number + holder name, one
 audit row with field "bank_account". D-042: explicit, append-only audit row. D-052: no phone field in the enum. D-055: messages a Koi app may show verbatim are Indonesian.
 
 ## Build
@@ -2578,14 +2621,14 @@ none
 ```
 
 ```text
-PARKED (owner reconsidering, 2026-11-16; D-044 on hold). Don't hand off. T-051.7 replaces it now.
+UNPARKED 2026-11-17 (D-059). Active; builds on T-051.7's shipped page.
 Story: US-051 (task T-051.2a)   Release: mvp
 Agent: frontend (apps/storefront-koi)   Expected: <=45 min
 Starts after: T-051.1a and T-051.3a contracts.
 
 ## Acceptance criteria
-- AC1: Only the winner of that lot sees the farmer's bank account (full, via the logged reveal, D-044) and nothing else, plus the 1×24 h deadline. No phone either way: no farmer phone or WhatsApp number, masked or full, and no `wa.me` link (D-052).
-- AC3: The farmer's bank account is shown masked; the winner reveals the full account number for their own winning lot only, through the logged reveal (D-044). Until the reveal, the winner sees a mask.
+- AC1: Only the winner of that lot sees the farmer's bank account (full, via the logged reveal, D-044/D-059) and nothing else, plus the 1×24 h deadline (D-058). No phone either way: no farmer phone or WhatsApp number, masked or full, and no `wa.me` link (D-052).
+- AC3: The farmer's bank account is shown masked; the winner reveals the full account number **and** holder name for their own winning lot only, through the logged reveal (D-044/D-057/D-059). Until the reveal, the winner sees a mask.
 
 ## Endpoint inventory
 | Method | Path | Exists? | Shape / owner |
@@ -2596,8 +2639,8 @@ Starts after: T-051.1a and T-051.3a contracts.
 ## Build
 - Route /akun/menang (ROUTES.wonLots in const/routes.ts), requireCustomer guard; link from AccountNav.
 - Data: lib/data/lots.ts with getAuthHeaders(); typed sdk only, no raw fetch.
-- Rows: product, final price (formatPrice), pay-by deadline (formatDeadline), status label, farm name, bank name,
-  masked holder name, masked account number + "Tampilkan" button. The reveal fetches on click only (never on render:
+- Extends the shipped T-051.7 page: add the pay-by deadline (formatDeadline), bank name, masked holder name and masked
+  account number, plus a "Tampilkan" button. The reveal fetches on click only (never on render:
   each reveal writes an audit row), then shows the full number and holder name (D-057). Copy the behaviour of admin-koi FarmQueue.tsx:257-313;
   don't import from admin-koi. No phone, no WhatsApp button, no wa.me link (D-052).
 
@@ -2616,13 +2659,15 @@ none
 ```text
 Story: US-051 (task T-051.6)   Release: mvp
 Agent: backend   Expected: <=35 min
+(SHIPPED 2026-11-17. Superseded in part by T-051.1a, D-059: the same route gains `pay_by` and the masked bank details; its auth, paging and `has_shipping_address` stay.)
 Starts after: US-050 T-050.1 (winner_customer_id, final_price, closed_at).
 
 ## Acceptance criteria
 - AC6: The winner sees their own won lots with no farmer contact (no bank account, no holder name, no phone). A winner with no default shipping address sees a prompt on the won lot to add one, linking to `/akun/alamat` (D-056).
+  (Current AC6 after D-059 adds the masked bank details on the row; T-051.1a delivers that.)
 
 ## Decisions in force
-D-044 on hold (owner, 2026-11-16): no farmer contact; never select seller.phone or seller.payment_details. D-052: no
+D-044 (in force again, D-059): this no-contact row is T-051.6's, T-051.1a adds the masked bank details. Never select seller.phone. D-052: no
 phone either way. D-046: caller's own data, not a public route; store/lots/** stays winner-free. D-056: the prompt
 needs only whether the winner has a default shipping address. D-055: messages a Koi app may show verbatim are
 Indonesian. Identity from req.auth_context.actor_id only.
@@ -2634,7 +2679,7 @@ Indonesian. Identity from req.auth_context.actor_id only.
 - Response { lots: [{ id, status, final_price, closed_at, product: { title, thumbnail }, auction: { id, delivery_method },
   seller: { id, name } }], count, has_shipping_address: boolean }. has_shipping_address = the caller has an address with
   is_default_shipping = true (one query.graph on `customer`, fields addresses.is_default_shipping only).
-- No pay_by field: the payment deadline waits on the payment model (status block). bun run codegen.
+- No pay_by field here: T-051.1a adds it (and the masked bank details) to this same route (D-058/D-059). bun run codegen.
 
 ## Start from
 - packages/api/src/api/store/bids/route.ts (customer route, auth_context)
@@ -2666,6 +2711,7 @@ Starts after: T-051.6 contract.
 
 ## Acceptance criteria
 - AC6: The winner sees their own won lots with no farmer contact (no bank account, no holder name, no phone). A winner with no default shipping address sees a prompt on the won lot to add one, linking to `/akun/alamat` (D-056).
+  (Current AC6 after D-059 adds the masked bank details; T-051.2a adds them to this page.)
 
 ## Endpoint inventory
 | Method | Path | Exists? | Shape / owner |
@@ -2676,7 +2722,7 @@ Starts after: T-051.6 contract.
 - Route /akun/menang (ROUTES.wonLots in const/routes.ts), requireCustomer guard; link from AccountNav.
 - Data: lib/data/lots.ts with getAuthHeaders(); typed sdk only, no raw fetch.
 - Rows: product, final price (formatPrice), closed date, status label, farm name. No bank details, no phone, no
-  WhatsApp button, no wa.me link (D-044 on hold, D-052). No payment deadline (waits on the payment model).
+  WhatsApp button, no wa.me link (D-044, D-052). No payment deadline here: T-051.2a adds it with the bank reveal (D-058/D-059).
 - has_shipping_address false → a notice above the list ("Tambahkan alamat pengiriman utama agar peternak bisa mengirim
   ikanmu") with a link to ROUTES.addresses (/akun/alamat).
 
@@ -2696,47 +2742,52 @@ none
 ```text
 Story: US-051 (task T-051.4)   Release: mvp
 Agent: qa   Expected: <=30 min
-Runs after the five live build tasks (T-051.1b, .5, .2b, .6, .7). T-051.1a, .3a, .2a are parked: not tested.
+Runs after the live build tasks (T-051.1b, .5, .2b, .6, .7, .1a, .3a, .2a).
 
-Verify AC2, AC4, AC5, AC6 (AC1, AC3 parked). Decisions: D-039, D-042, D-044 (on hold), D-045, D-052, D-056.
+Verify AC1–AC6, focused on the re-opened AC1/AC3 and T-051.1a/.3a/.2a. Decisions: D-039, D-042, D-044 (in force, D-059), D-045, D-052, D-056, D-057, D-058.
 Code under test: src/api/store/won-lots/**, src/api/vendor/sold-lots/**, src/workflows/reveal-lot-address.ts,
-storefront /akun/menang and /akun/kebun/terjual.
+src/workflows/reveal-lot-contact.ts, storefront /akun/menang and /akun/kebun/terjual.
 Commands (alone): bun run test:integration:http -- won-lots; then -- sold-lots; then -- pii-reveal (regression);
 bun run check in apps/storefront-koi.
 Watch for: any phone (farm's, winner's or the address's, masked or full) or wa.me link in a response or page source;
-any farmer bank detail in a won-lot response or page; address_1, address_2 or postal_code in a sold-lots list response
-or page source before a reveal; a reveal that returns a value without an audit row (or writes two); another farmer
-reaching a lot (must be 404, no audit row); a reveal for a winner with no default address (404, no row); reveal fired
-on render; winner_customer_id or email in a vendor response; a second audit table.
+a full account number in a won-lot list response; pay_by not `closed_at` + 24 h; a bank reveal that returns a value
+without an audit row (or writes two, or one per field); another customer reaching a lot or a reveal (must be 404, no
+audit row); a reveal for a lot that is not the caller's own won lot; reveal fired on render; address_1, address_2 or
+postal_code in a sold-lots list response
+or page source before a reveal; a reveal for a winner with no default address (404, no row); winner_customer_id or
+email in a vendor response; a second audit table.
 Browser: render-check /akun/menang as the winner (with and without a default address) and /akun/kebun/terjual as the
 farmer (incl. one address reveal).
 Report PASS/FAIL per AC with file:line and command output. Don't change app code.
 ```
 
-### US-052 Farmer marks paid and shipped · `done (evidence: packages/api/integration-tests/http/vendor-sold-lots.spec.ts:488-637 (7/7 shipped cases; 16/16 file); packages/api/src/workflows/mark-lot-sold-status.ts:28-72 (paid-only guard 45-51, courier needs tracking 53-60, ownership 404 41-43, assertSellerNotTerminated 31, no validateSellerOpenStep); packages/api/src/workflows/steps/sold-lot.ts:25-42 (terminated 403 only); packages/api/integration-tests/http/farmer-auctions.spec.ts (create/submit/update still validateSellerOpenStep); apps/storefront-koi/src/components/sections/AccountPage/SoldLotsPage.tsx:221 (winner name), RevealAddress.tsx:81 (masked city+province), components/ShipLot.tsx:12,18,87-99 (resi required only for courier), no phone/wa.me anywhere; packages/api tsc exit 0; storefront bun run check exit 0 (182 tests); browser /akun/kebun/terjual incl. ship + suspended-farm ship, /tmp/koi-render/recheck1/; qa PASS fix round 1)` (paid half parked: T-052.4)
+### US-052 Farmer marks paid and shipped · `todo` (re-opened 2026-11-17 by D-058 for AC1's `won → paid` half, T-052.4; the shipped half was accepted 2026-11-17 with qa PASS, evidence below)
 **Depends on:** US-050 T-050.1; US-051 farmer side (T-051.1b, T-051.2b: the sold-lots page), US-092 (masking).
 As a **farmer**, I want to mark a lot paid and then shipped so that progress is
-tracked. *(Plan: Closing, Delivery; D-052, D-054)*
-- AC1: `won → paid → shipped`, in order only.
+tracked. *(Plan: Closing, Delivery; D-052, D-054, D-058)*
+- AC1: `won → paid → shipped`, in order only. The winner pays the farmer directly, off-platform, within 1×24 h; the farmer marks the lot paid (`POST /vendor/sold-lots/:id/paid`), then ships it. No wallet debit, no ledger row, no payout in the MVP (D-058).
 - AC2: Courier delivery requires a tracking number. Self-delivery doesn't.
 - AC3: While shipping, the farmer sees the winner's name and masked address (D-056, US-051); no winner phone, masked or full, and no reveal from this story (D-052). *(Changed 2026-11-16: was "phone masked, full through US-051's reveal".)*
 - AC4: A farm suspended after approval can still mark its own already-sold lots paid and shipped; a terminated farm can't (403). It still can't create auctions or lots (D-054).
-**Under escrow** (planned direction, 2026-11-16, not a decision): only the "paid" part changes: the farmer marking
-paid is replaced by a Xendit webhook, so T-052.4 (and AC1's `won → paid`) is parked. The shipped half, the sold-lots
-row and the tracking number are unchanged and buildable now.
+**Re-opened 2026-11-17 (D-058).** The 2026-11-16 escrow note is void: D-058 chose
+off-platform payment, so the farmer marking paid is the real `won → paid` step
+again and T-052.4 is active. The shipped half, the sold-lots row and the
+tracking number were accepted 2026-11-17 and stand.
 - [x] T-052.1 [backend] `lot.tracking_number` + mark-shipped workflow + `POST /vendor/sold-lots/:id/shipped` (the farmer must own the lot); `won → paid` is T-052.4 *(split 2026-11-16)*
-- [ ] T-052.4 [backend] mark-paid workflow + `POST /vendor/sold-lots/:id/paid` *(parked (payment model: Xendit escrow pending, 2026-11-16): under escrow a Xendit webhook sets paid, so AC1's `won → paid` route is not built now; re-parked at acceptance 2026-11-17 — no route exists under src/api/vendor/sold-lots/[id]/)*
-- [x] T-052.2 [storefront] Farmer area actions on the sold-lots page ("Tandai dikirim" builds now; "Tandai sudah dibayar" parked with T-052.4)
-- [x] T-052.3 [qa] States can't be skipped; no winner phone anywhere on the farmer's side (D-052); a suspended farm can finish its sold lots, a terminated one can't (D-054)
+- [ ] T-052.4 [backend] mark-paid workflow + `POST /vendor/sold-lots/:id/paid` *(unparked 2026-11-17, D-058: `won → paid` only, ownership + not `terminated`, no `validateSellerOpenStep`; no money moves)*
+- [ ] T-052.2 [storefront] Farmer area actions on the sold-lots page ("Tandai dikirim" accepted 2026-11-17; "Tandai sudah dibayar" re-opened with T-052.4) *(re-opened 2026-11-17, D-058)*
+- [ ] T-052.3 [qa] States can't be skipped; no winner phone anywhere on the farmer's side (D-052); a suspended farm can finish its sold lots, a terminated one can't (D-054); `won → paid` works and no money moves (D-058) *(re-opened 2026-11-17 for the paid cases; the shipped cases passed 2026-11-17)*
 
-**Accepted 2026-11-17 (qa PASS, fix round 1): the shipped half only (AC2, AC3,
-AC4; AC1's `shipped` half).** AC1's `won → paid` half stays parked with T-052.4
-(no `POST /vendor/sold-lots/:id/paid` exists), and US-056/US-058/US-059 stay out.
+**Accepted 2026-11-17 (qa PASS, fix round 1) for AC2, AC3, AC4 and AC1's `shipped` half.**
+AC1's `won → paid` half is active again — re-opened 2026-11-17 by D-058 with
+T-052.4 (no `POST /vendor/sold-lots/:id/paid` exists yet), so the story is `todo`
+until it lands. US-056, US-058 and US-059 are in scope again too; they stay out
+of this story.
 **Transitions checked:** the guard refuses anything but `paid`
 (`mark-lot-sold-status.ts:45-51`), so `won`, `open` and `shipped` all get 409
 unchanged (spec `:539`).
 
-**Readiness (2026-11-16; accepted 2026-11-17): ready (`todo`).** No open question blocks it (`mvp-Q34` → D-052, `mvp-Q36` → D-054).
+**Readiness (2026-11-16; shipped half accepted 2026-11-17; paid half re-opened 2026-11-17 by D-058): ready (`todo`).** No open question blocks it (`mvp-Q34` → D-052, `mvp-Q36` → D-054).
 Sequence: US-050 T-050.1 → US-051 T-051.1b, T-051.2b → this story. AC3 is met by US-051's farmer side (no phone in the
 row); this story adds no PII read.
 - **Transitions (plan "Lot lifecycle", "Design rules"):** `won → paid`, `paid → shipped`. Nothing else: no `won → shipped`,
@@ -2758,7 +2809,7 @@ row); this story adds no PII read.
 Story: US-052 (task T-052.1)   Release: mvp
 Agent: backend   Expected: <=45 min
 Starts after: US-050 T-050.1 (setLotFieldsStep, steps/lot.ts) and US-051 T-051.1b (GET /vendor/sold-lots, row shape).
-Split 2026-11-16: this brief builds `paid → shipped` only; `won → paid` is T-052.4, parked.
+Split 2026-11-16: this brief builds `paid → shipped` only; `won → paid` is T-052.4 (active again, D-058).
 
 ## Acceptance criteria
 - AC1 (shipped half): `paid → shipped` only, from `paid`; no skipped or backward state.
@@ -2818,16 +2869,17 @@ none
 Story: US-052 (task T-052.4)   Release: mvp
 Agent: backend   Expected: <=35 min
 Starts after: T-052.1 (the mark-lot-sold-status.ts workflow file and routes).
-PARKED (payment model: Xendit escrow pending, 2026-11-16). Don't hand off. Under escrow a Xendit webhook sets paid,
-so this route is likely dropped, not adapted.
+UNPARKED 2026-11-17 (D-058). Active. Off-platform payment: the farmer marks the lot paid, then ships.
 
 ## Acceptance criteria
 - AC1 (paid half): `won → paid`, in order only.
 - AC4: a suspended farm may still mark its own sold lots paid; a terminated farm can't (403) (D-054).
 
 ## Decisions in force
-plan "Lot lifecycle"; CLAUDE.md §8 explicit transitions. D-003: seller from req.seller_context. D-054: no
-validateSellerOpenStep; ownership (404) + status !== TERMINATED (403). D-055: Indonesian messages.
+plan "Lot lifecycle"; CLAUDE.md §8 explicit transitions. D-058: the winner pays the farmer directly, off-platform;
+this route moves the lot `won → paid` and moves no money (no wallet read, no ledger row, no payout). D-003: seller
+from req.seller_context. D-054: no validateSellerOpenStep; ownership (404) + status !== TERMINATED (403).
+D-055: Indonesian messages.
 
 ## Build
 - Same file as T-052.1: markLotPaidWorkflow({ seller_id, lot_id }): lock `lot:<id>` → same guard step, from-status
@@ -2838,6 +2890,7 @@ validateSellerOpenStep; ownership (404) + status !== TERMINATED (403). D-055: In
 ## Spec (sold-lots.spec.ts, describe "paid")
 - won → paid → 200, status paid; won → shipped → 409; paid twice → 409; another seller's lot → 404
 - suspended seller → 200; terminated → 403 (D-054)
+- no money moves: no `wallet_transaction` row written and both wallets' summed balances unchanged (D-058)
 
 ## Definition of done
 cd packages/api && bun x tsc --noEmit -p . → clean; bun run codegen; bun run test:integration:http -- sold-lots → pass (alone)
@@ -2850,7 +2903,7 @@ none
 ```text
 Story: US-052 (task T-052.2)   Release: mvp
 Agent: frontend (apps/storefront-koi)   Expected: <=40 min
-Starts after: T-052.1 contract and US-051 T-051.2b (the page).
+Starts after: T-052.4 contract (paid); the shipped half (T-052.1) is already built on US-051 T-051.2b's page.
 
 ## Acceptance criteria
 - AC1: `won → paid → shipped`, in order only.
@@ -2861,7 +2914,7 @@ Starts after: T-052.1 contract and US-051 T-051.2b (the page).
 | Method | Path | Exists? | Shape / owner |
 |---|---|---|---|
 | GET  | /vendor/sold-lots | after T-051.1b | rows incl. status, auction.delivery_method, tracking_number (T-052.1), winner.name (no phone, D-052) |
-| POST | /vendor/sold-lots/:id/paid | after T-052.1 | no body → { lot } ; 409 wrong status |
+| POST | /vendor/sold-lots/:id/paid | after T-052.4 | no body → { lot } ; 409 wrong status |
 | POST | /vendor/sold-lots/:id/shipped | after T-052.1 | { tracking_number? } → { lot } ; 400 tracking_number_required, 403 seller_terminated, 409 |
 
 ## Build
@@ -2886,11 +2939,12 @@ none
 ```text
 Story: US-052 (task T-052.3)   Release: mvp
 Agent: qa   Expected: <=30 min
-Verify AC1–AC4. Decisions: plan "Lot lifecycle", "Delivery", D-039, D-042, D-052, D-054.
+Verify AC1–AC4 (AC1's `won → paid` half included, re-opened by D-058). Decisions: plan "Lot lifecycle", "Delivery", D-039, D-042, D-052, D-054, D-058.
 Commands (alone): bun run test:integration:http -- sold-lots; bun run check in apps/storefront-koi.
 Watch for: any skipped or backward transition; courier shipped without tracking; another seller's lot changing; any
 winner phone (masked or full) in the list or page source; winner_customer_id/final_price changed; the paid/shipped
-workflows using validateSellerOpenStep (would lock out a suspended farm, D-054); a terminated farm let through.
+workflows using validateSellerOpenStep (would lock out a suspended farm, D-054); a terminated farm let through; the
+paid route moving money — any wallet read, ledger row or balance change (D-058).
 Browser: render-check /akun/kebun/terjual as the farmer, walk won → paid → shipped.
 ```
 
@@ -3534,6 +3588,16 @@ to decide disputes, so that claims are fair. *(Plan: Dead-on-arrival claims 3; D
 - [x] T-055.2 [storefront] Farmer area claim review with the video and the two decision buttons
 - [x] T-055.3 [admin] `/klaim` dispute screen: disputed queue, approve or reject with a reason, decided tab
 - [x] T-055.4 [qa] Farmer accept gives `approved` directly; admin can't decide a claim that isn't `disputed`
+- [ ] T-055.5 [backend] D-060 guard swap on accept and dispute: ownership + not `terminated` instead of `validateSellerOpenStep`, so a farm suspended after approval can decide its own claims; terminated, `pending_approval` and a rejected registration still 403 *(new 2026-11-17, D-060 answers mvp-Q45 option b; the spec case at :369 changes from 403 to 200 for a suspended farm)*
+
+**D-060 (2026-11-17) changes one expectation.** `mvp-Q45` is answered option (b):
+a farm suspended after approval may accept or dispute a claim on its own sold
+lot, because the admin only acts on `disputed` and a stranded `open` claim
+punishes the winner. The shipped guard is `validateSellerOpenStep`
+(`src/workflows/steps/validate-seller-open.ts:16`), so a suspended farm currently
+gets 403 — that one case changes (T-055.5). Terminated, `pending_approval` and a
+rejected registration still 403; ownership still returns 404 for another farm's
+claim. AC1/AC2 wording is unchanged and still met.
 
 **Accepted 2026-11-17** (qa PASS on AC1–AC2; the story has only AC1 and AC2).
 AC1 proven: accept runs lock → `validateSellerOpenStep` → `getDecidableClaimStep`
@@ -3556,7 +3620,8 @@ Two open questions stay **non-blocking**: **mvp-Q44** — one claim per lot
 whatever its status (option a) is shipped and kept, so a rejected lot cannot be
 claimed again; **mvp-Q45** — the strict D-054 reading is built, so a suspended,
 pending or terminated farm gets 403 on accept and dispute (spec :369); option
-(b) would be a two-line guard change. **mvp-Q46** stays open too: no farmer note
+(b) would be a two-line guard change. **Answered 2026-11-17 by D-060, option (b);
+follow-up T-055.5.** **mvp-Q46** stays open too: no farmer note
 on a dispute.
 
 **Readiness (2026-11-17): accepted (`done`). No decided rule was missing; no owner question blocked it.**
@@ -3570,10 +3635,10 @@ task-brief checklist (every custom `/vendor/*` mutation starts with
 - **Scope of the transitions.** This story moves a claim only `open → approved`,
   `open → disputed` (farmer) and `disputed → approved | rejected` (admin). Every
   other source status is a 409. `approved → resolved` and `resolved → confirmed`
-  are US-056 (parked); US-055 has **no route, no column and no timer** that
+  are US-056 (in scope again, D-058); US-055 has **no route, no column and no timer** that
   reaches `resolved` or `confirmed`, and nothing moves on a clock. The 3-day
   resolution clock and the auto-confirm job are US-056 T-056.1; the strike is
-  US-059 (parked part). No job or scheduler entry changes in this story.
+  US-059 (in scope again, D-058). No job or scheduler entry changes in this story.
 - **Decision is final (AC2).** A second decision on the same claim — the same one
   again, or the other one — is 409, never 200: the guard is `status` under the
   `claim:<id>` lock. Medusa rewrites a 409 body, so apps key on the status and
@@ -3607,7 +3672,7 @@ task-brief checklist (every custom `/vendor/*` mutation starts with
   rejection: **no timer is involved for it** — the timer US-056/US-061 own is
   the one after `resolved`. US-055 itself deletes no video and adds no cleanup
   job; US-061 reads the closed statuses later.
-- **No money (parked payment model).** Refund and replacement are US-056. No
+- **No money (D-058: the farmer settles off-platform).** Refund and replacement are US-056. No
   ledger row, no wallet read, no balance, no amount in any request or response.
 - **`mvp-Q44` still open, non-blocking, and unchanged.** This story reaches
   `rejected`; option (a) stays as shipped — one claim per lot whatever its
@@ -3615,14 +3680,10 @@ task-brief checklist (every custom `/vendor/*` mutation starts with
   `open-claim.ts`). Option (b) would be a follow-up (drop the unique index,
   widen the open-claim guard); no AC here reopens.
 - **Owner questions raised by this section (not in the questions table):**
-  `mvp-Q45` — D-054's literal text allows a suspended farm only to mark paid and
-  shipped, and the task-brief checklist makes every other `/vendor/*` mutation
-  run `validateSellerOpenStep`, so a suspended farm cannot accept or dispute and
-  its `open` claim has no decision path at all. This story follows the rule as
-  written (403 for a suspended farm). Options: (a) keep it strict (recommended
-  only if the admin is to get a decision path for `open` claims, which no story
-  has); (b) extend D-054 to claim decisions on own sold lots, since its purpose
-  is "a suspension punishes the farm, not the winner" (recommended). `mvp-Q46` —
+  `mvp-Q45` — **answered 2026-11-17 by D-060, option (b):** a farm suspended after
+  approval may accept or dispute on its own sold lot (ownership + not `terminated`);
+  follow-up T-055.5 swaps the guard. This story as shipped followed D-054's literal
+  text (403 for a suspended farm). `mvp-Q46` —
   AC2 requires a written reason from the admin; the plan says nothing about the
   farmer's dispute carrying a note. This story ships without one (the admin
   judges from the video and the claim facts). Options: (a) no farmer note (what
@@ -3666,7 +3727,7 @@ D-038: the farmer's two moves only from `open`; no `accepted` state; the admin
 decides only disputes (T-055.1b). D-054 + task-brief checklist: the accept and
 dispute routes are custom `/vendor/*` mutations, so the workflow starts with
 `validateSellerOpenStep` (the paid/shipped pair is the ONLY exception; see
-mvp-Q45). D-055: Indonesian messages. CLAUDE.md §8: workflow with compensation;
+mvp-Q45, later answered by D-060/T-055.5). D-055: Indonesian messages. CLAUDE.md §8: workflow with compensation;
 save the result when the action happens; identity from `req.seller_context`.
 
 ## Build
@@ -3705,10 +3766,10 @@ save the result when the action happens; identity from `req.seller_context`.
 - `bun run codegen` (T-055.2 and T-055.3 depend on the names).
 
 ## Cross-cutting checklist
-- [ ] `validateSellerOpenStep` first in both workflows (D-054 exception does NOT cover this; mvp-Q45)
+- [ ] `validateSellerOpenStep` first in both workflows (built as written and accepted; D-060 replaces it in T-055.5)
 - [ ] PII: response names only — no customer id, phone, address, video key or URL (D-018/D-042/D-045/D-052)
 - [ ] D-055: Indonesian messages; apps key on status/code, never message text; a 409 body is rewritten
-- [ ] No money, no amount, no ledger row (US-056 parked)
+- [ ] No money, no amount, no ledger row (US-056 settles off-platform, D-058)
 - [ ] One mutation per step, compensation on each; server clock saved in the step
 - [ ] Route file imports `.../types/seller-context`; `bun run codegen`; `bun run tsc` clean in BOTH Koi apps
 
@@ -3731,7 +3792,7 @@ claims-read.spec.ts:134-199 does (never a route).
   accept after dispute → 409
 - another farm's claim → 404, row unchanged (no existence leak)
 - terminated farm → 403; a `pending` farm → 403 (validateSellerOpenStep);
-  suspended farm → 403 (D-054 literal, mvp-Q45)
+  suspended farm → 403 (D-054 literal, mvp-Q45; built as written — D-060/T-055.5 changes this case to 200)
 - unknown claim id → 404; no member token / no `x-seller-id` → 401
 - forced failure after the update → previous status restored (compensation)
 - serialised JSON of both 200s has no video key, no URL, no phone, no customer id
@@ -3794,7 +3855,7 @@ CLAUDE.md §8: workflow with compensation; save the decision when it happens.
 ## Cross-cutting checklist
 - [ ] PII: names only; no customer id, phone, address, video key or URL (D-018/D-042/D-045/D-052)
 - [ ] D-055: Indonesian messages (the reason's 400 included); apps key on status/code; 409 body rewritten
-- [ ] No money, no amount, no ledger row (US-056 parked)
+- [ ] No money, no amount, no ledger row (US-056 settles off-platform, D-058)
 - [ ] Workflow with compensation; `decided_*` from `req.auth_context.actor_id` + the server clock
 - [ ] Route changes → `bun run codegen`; `bun run tsc` clean in BOTH Koi apps
 
@@ -3878,7 +3939,7 @@ copy; apps key on status). D-002/D-004 (storefront only; no admin surface here).
 ## Cross-cutting checklist
 - [ ] PII: names only; the winner's phone/address is never shown (D-042/D-052)
 - [ ] D-055: 409/403 copy is the app's own; key on status, never message text
-- [ ] No money, amount or "refund" text implying a payment already happened (US-056 parked)
+- [ ] No money, amount or "refund" text implying a payment already happened (US-056 settles off-platform, D-058)
 - [ ] UI task: render check on the changed route, submit one decision (render-check skill)
 - [ ] `bun run check` clean; no new route, no raw `fetch`
 
@@ -3957,7 +4018,7 @@ reason — here the reason is required by AC2 either way.
 - [ ] PII: rows carry names only — no phone, address, customer id; the video only via the admin route (D-018/D-042/D-045)
 - [ ] D-055: Indonesian copy; a 409 body is rewritten, so key on status and refresh
 - [ ] A written reason is required before either decision submits; confirm before submit
-- [ ] No money, amount or refund-completion text (US-056 parked)
+- [ ] No money, amount or refund-completion text (US-056 settles off-platform, D-058)
 - [ ] UI task: render check on `/klaim` including one approve and one reject (render-check skill)
 - [ ] `bun run check` clean; no raw `fetch`; no new nav entry
 
@@ -3997,21 +4058,22 @@ moves to the decided tab with the reason; admin rejects a third with a reason.
 Watch for: a repeat or illegal decision returning 200 (accept twice, accept after
 dispute, admin approve on `open`, reject after approve, any second decision);
 a blank reason accepted; `approved_at` set on a rejection or missing on a farmer
-accept; any ledger row, amount field or money text (US-056 is parked); a video
+accept; any ledger row, amount field or money text (US-056 settles off-platform, D-058); a video
 key/URL, phone or customer id in any response or row; a suspended farm allowed to
-decide (it must be 403 under D-054 as written — see mvp-Q45); a decision that
+decide (403 for pending/rejected/terminated; a farm suspended after approval may decide after D-060/T-055.5); a decision that
 reaches `resolved`/`confirmed` (nothing in this story may); another farm's claim
 visible or decidable (404).
 Do not change app code. Report PASS/FAIL per AC with file:line and command
 output; bugs with repro and expected/actual.
 ```
 
-### US-056 Approved claims are resolved · `parked (payment model: Xendit escrow pending, 2026-11-16)`
-**Under escrow** (planned direction, 2026-11-16, not a decision): the refund comes out of the held funds, not from the
-farmer directly, so AC1's "the farmer refunds directly" path is replaced by a platform refund from escrow. Replacement
-not designed; don't build the farmer-refund path.
+### US-056 Approved claims are resolved · `todo` (unparked 2026-11-17 by D-058; was parked on the payment model)
+**D-058 restores the direct path.** The MVP pays off-platform, so the 2026-11-16
+escrow note is void: the farmer refunds the winner directly or ships a
+replacement, exactly as AC1 says. No escrow, no platform refund, no ledger row;
+the platform records only the claim's state. Tasks T-056.1–.4 stay as written.
 As a **winner**, I want an approved claim settled within 3 days so that I'm made
-whole. *(Plan: Dead-on-arrival claims 4–6; D-027, D-038)*
+whole. *(Plan: Dead-on-arrival claims 4–6; D-027, D-038, D-058)*
 - AC1: The farmer has 3 days to refund directly or ship a replacement, then marks it done (`approved → resolved`). The winner confirms (`resolved → confirmed`). The 3 days start when the claim becomes `approved`, on both paths (D-038).
 - AC2: Missing the 3 days, or refusing an approved claim, makes the farmer eligible for a strike (US-059).
 - AC3: The farmer stays responsible even if a courier caused the death.
@@ -4022,6 +4084,7 @@ whole. *(Plan: Dead-on-arrival claims 4–6; D-027, D-038)*
 - [ ] T-056.4 [qa] A `resolved` claim older than 3 days becomes `confirmed` once; running the job twice changes nothing
 
 ### US-057 Winner rates the farmer · `todo`
+**Status confirmed 2026-11-17:** unchanged by D-058/D-059/D-060/D-061; no blocking question (`mvp-Q40`/`mvp-Q46` are non-blocking); `todo` for Epic 5, after the paid loop.
 **Depends on:** US-092 (masking on the public farm page).
 As a **winner**, I want to rate the farmer after shipping so that other buyers
 can judge farms. *(Plan: Ratings)*
@@ -4031,22 +4094,23 @@ can judge farms. *(Plan: Ratings)*
 - [ ] T-057.1 [backend] `farmer_rating` model + workflow + routes
 - [ ] T-057.2 [storefront] Rating form + display on the partner page
 
-### US-058 Farmer reports a winner who didn't pay · `parked (payment model: Xendit escrow pending, 2026-11-16)`
-**Under escrow** (planned direction, 2026-11-16, not a decision): the payment deadline comes from the Xendit invoice
-expiry, so "report after 1×24 h" and AC1's deadline are replaced by the invoice's expiry. Not designed; don't build the
-manual deadline check.
+### US-058 Farmer reports a winner who didn't pay · `todo` (unparked 2026-11-17 by D-058; was parked on the payment model)
+**D-058 sets the deadline.** The winner pays the farmer directly, off-platform,
+within 1×24 h of the lot closing, so the deadline is `closed_at` + 24 h (the same
+`pay_by` the winner's won-lot rows show). The 2026-11-16 escrow note is void:
+there is no invoice expiry, and the farmer can report once that deadline passes.
 As a **farmer**, I want to report a winner who didn't pay within 1×24 h so that
-admin can act. *(Plan: Winner doesn't pay; D-026)*
+admin can act. *(Plan: Winner doesn't pay; D-026, D-058)*
 - AC1: The farmer can report after the deadline. The admin reviews it and may give a strike.
 - AC2: Any offer to the second-highest bidder is fully off-platform. The platform records nothing about it and never reassigns the lot; winner and final price stay as saved at close (D-026).
 - [ ] T-058.1 [backend] Report model/state + routes
 - [ ] T-058.2 [storefront] Report button after the deadline
 - [ ] T-058.3 [admin] Report review that leads to a strike
 
-### US-059 Strikes and bans · `todo` (the "winner didn't pay" strike part parked with US-058, 2026-11-16)
+### US-059 Strikes and bans · `todo` (the "winner didn't pay" strike part is back in scope, 2026-11-17, D-058)
 As an **admin**, I want to give strikes after checking a report so that repeat
-offenders are banned. *(Plan: Strikes)*
-- AC1: Admin gives each strike with a reason (winner: didn't pay; farmer: didn't ship a paid lot, or refused an approved claim). *(The "winner didn't pay" reason is parked with US-058: under escrow the deadline comes from the Xendit invoice expiry. Farmer reasons build now.)*
+offenders are banned. *(Plan: Strikes; D-058)*
+- AC1: Admin gives each strike with a reason (winner: didn't pay; farmer: didn't ship a paid lot, or refused an approved claim). *(The "winner didn't pay" reason is in scope again: D-058 restores the 1×24 h deadline (`closed_at` + 24 h, US-058) and the farmer's report, so all three reasons build.)*
 - AC2: 2 active strikes = ban. A banned winner can't join or bid. A banned farmer can't create auctions.
 - AC3: Strikes expire after 6 months. Admin can remove a strike with a reason.
 - AC4: Every ban and every suspend needs a written reason, the same rule as a farm rejection (D-041). admin-koi refuses the action without one.
@@ -4339,11 +4403,12 @@ is built. Record the answer here, in `plan.md`, and as a decision in `docs/produ
 | mvp-Q36 | **Answered 2026-11-16 (D-054):** option (a), yes: a farm suspended after approval may still mark its already-sold lots paid and shipped; it can't create auctions or lots. The paid/shipped routes skip `validateSellerOpenStep` and check ownership + status not `terminated` (`SellerStatus.TERMINATED` exists in Mercur 2.3.7). *(Was: may a suspended farmer finish already-won lots?)* | none (was US-052 T-052.1) |
 | mvp-Q37 | **Answered 2026-11-16 (D-056):** option (a) with a logged reveal. The farmer ships to the winner's **default shipping address** (`customer_address.is_default_shipping = true`, at most one per customer in Medusa 2.21.2). Sold-lot row shows it masked: **city + province only**; `address_1`, `address_2` and `postal_code` are not sent (the `mask.ts` helpers keep leading/trailing chars, which leaks the house number, so none is used). Full address only through the farmer's logged reveal for their own sold lot (`pii_reveal_audit`, `record_type` `lot`, `field` `shipping_address`, one row per reveal). No default address → "Alamat belum diisi", no reveal (404, no row), and the winner's won-lot page prompts to add one (`/akun/alamat`). Relaxes D-052 for the address only; **no phone either way stands** (the customer's or the address's phone is never selected). Adds T-051.5 and tasks in US-051/US-052. *(Was: how does the farmer get the winner's delivery address with no phone? Options (a) the winner's default Medusa address (masked? full? reveal?); (b) the winner types an address on the won lot; (c) off-platform only.)* | none (was US-090 pilot readiness; added T-051.5, T-051.1b, T-051.2b, T-052.2) |
 | mvp-Q38 | **Open (2026-11-16, non-blocking; US-085 is already blocked by mvp-Q12).** The plan's WhatsApp **Win** message ("sends the farmer's WhatsApp and bank details", US-085 AC1) conflicts with D-052 (no farmer phone to the winner) and D-044 (the full bank account only through the logged reveal). Options: (a) the win message sends a link to `/akun/menang` and the 1×24 h deadline only; (b) it sends the full bank account, the message itself counting as a logged reveal; (c) it sends the masked account plus the link. Recommend (a). | US-085 |
-| mvp-Q39 | **Answered 2026-11-16 (D-057):** option (b), and one reveal records both fields: the winner's reveal returns the full `account_number` **and** full `holder_name`, with **one** `pii_reveal_audit` row (`field: "bank_account"`, not one row per field). **On hold with D-044** (owner, 2026-11-16: no farmer contact for now): intended rule, not built. Updated now so it is ready if D-044 returns: US-051 AC3, T-051.3a (body enum `"bank_account"`, response `{ account_number, holder_name }`), T-051.2a. *(Was: does the reveal include the account-holder name? Options (a) number only; (b) number and holder name.)* | none (was US-051 T-051.3a; those tasks are parked, not blocked) |
+| mvp-Q39 | **Answered 2026-11-16 (D-057), in force since 2026-11-17 (D-059):** option (b), one reveal records both fields — the winner's reveal returns the full `account_number` **and** full `holder_name`, with **one** `pii_reveal_audit` row (`field: "bank_account"`, not one per field). D-059 ends the D-044 hold, so the rule is live: US-051 AC3, T-051.1a, T-051.3a (body enum `"bank_account"`, response `{ account_number, holder_name }`), T-051.2a. *(Was: does the reveal include the account-holder name? Options (a) number only; (b) number and holder name.)* | none (was US-051 T-051.3a; unparked 2026-11-17) |
 | mvp-Q40 | **Open (2026-11-17, non-blocking).** The masked bidder name is derived at read time from the customer's current `first_name` + id, so a customer who renames themselves re-masks their own past bids on the next read. Options: (a) accept the derived mask — what T-044.1 builds; (b) snapshot the mask onto the `bid` row at placement time (new column + migration, stable forever). Recommend (a). *(Was: does the mask have to stay stable if a customer renames themselves?)* | none (was US-044 T-044.1) |
 | mvp-Q41 | **Open (2026-11-17, non-blocking).** Lot-page polling interval for US-045: 2 s (recommended, T-045.1 uses it via `LOT_POLL_MS`) or 3/5 s. No decision or plan line records one; T-045.1 defines it in one place, so a change is one line. *(Was: how many seconds between lot-page polls?)* | none (was US-045 T-045.1) |
-| mvp-Q42 | **Open (2026-11-17, non-blocking).** "One lot at a time" in the live room means what? Options: (a) explicit selection only — the room stages the lot of the tightest `live` auction, `?lot=` stages another, and nothing else appears when it closes until reload; (b) (a) plus a "lot berikutnya" control; (c) auto-rotate to the next open lot when the staged one closes. Recommend (a). T-046.2 is written to (a); (b)/(c) are frontend-only additions. *(Was: does the live room select or rotate lots?)* | US-046 T-046.2 |
-| mvp-Q43 | **Open (2026-11-17, non-blocking; proposal awaiting owner yes/no).** Live link storage and window: nullable `auction.live_stream_url` column (not a Mercur custom field — `customFields` covers `Seller` only, `medusa-config.ts:76-82`), farmer-written via `POST /vendor/auctions/:id/live-link` (D-003), writable in every status except `closed`/`cancelled`, rendered as an outbound link with no embed. Owner may instead want an admin override, a narrower window (only `scheduled`/`live`), or an embed. *(Was: who may set the farmer's live link, in which auction status, and is it stored as a column or a custom field?)* | US-046 T-046.1 |
+| mvp-Q42 | **Open (2026-11-17, non-blocking; option (a) is what T-046.2 ships).** "One lot at a time" in the live room means what? Options: (a) explicit selection only — the room stages the lot of the tightest `live` auction, `?lot=` stages another, and nothing else appears when it closes until reload; (b) (a) plus a "lot berikutnya" control; (c) auto-rotate to the next open lot when the staged one closes. Build choice is (a) until the owner says otherwise; (b)/(c) are frontend-only additions. *(Was: does the live room select or rotate lots?)* | none (T-046.2 builds (a)) |
+| mvp-Q43 | **Answered 2026-11-17 (D-061):** a plain nullable `auction.live_stream_url` column (not a Mercur custom field), written by the farmer through `POST /vendor/auctions/:id/live-link` and by an admin through `POST /admin/auctions/:id/live-link`, in any status except `closed`/`cancelled`; rendered as an outbound link, no iframe, no embedded player, no host check beyond the YouTube/Instagram allow-list. admin-koi exposes the write (T-046.5). Unblocks US-046 T-046.1. *(Was: who may set the farmer's live link, in which auction status, and is it stored as a column or a custom field?)* | none (was US-046 T-046.1) |
 | mvp-Q44 | **Open (2026-11-17, non-blocking).** Can a winner file a second claim on the same lot? Shipped rule for US-054: one claim per lot whatever its status — unique index on `claim.lot_id` plus a 409; nothing in US-054 reaches `rejected` (US-055 does). Options: (a) keep one-claim-per-lot (recommended); (b) allow a new claim after a rejection (US-055 drops the index, one-line migration). US-054's ACs hold either way. *(Was: is a claim repeatable?)* | none (was US-054 T-054.1) |
-| mvp-Q45 | **Open (2026-11-17, non-blocking; affects US-055 T-055.1a only).** D-054's literal text lets a suspended farm only mark paid and shipped, and the task-brief checklist puts `validateSellerOpenStep` on every other `/vendor/*` mutation — so a suspended farm cannot accept or dispute, leaving its `open` claim with no decision path at all (the admin routes only act on `disputed`). Options: (a) strict — what T-055.1a builds (403), only coherent if the admin gets a path for `open` claims, which no story has; (b) extend D-054 to claim decisions on the farm's own sold lots, matching its stated purpose ("a suspension punishes the farm, not the winner"). Recommend (b); it is a two-line change (ownership + not-`terminated` instead of `validateSellerOpenStep`). *(Was: may a suspended farm accept or dispute a claim on its own sold lot?)* | US-055 T-055.1a |
+| mvp-Q45 | **Answered 2026-11-17 (D-060), option (b):** a farm suspended after approval may also accept or dispute a claim on its own sold lot — the D-054 exception (ownership + not `terminated`), not `validateSellerOpenStep`. `pending_approval`, a rejected registration and `terminated` still 403. Follow-up US-055 T-055.5 (the shipped spec case that asserts 403 for suspended changes to 200). *(Was: may a suspended farm accept or dispute a claim on its own sold lot?)* | none (was US-055 T-055.1a) |
 | mvp-Q46 | **Open (2026-11-17, non-blocking).** AC2 requires the admin's written reason; the plan says nothing about the farmer's dispute carrying a note. Shipped: no farmer note (the admin judges from the video and the claim facts). Options: (a) no farmer note (what T-055.2 builds); (b) an optional farmer note, one nullable column shown in the admin row. *(Was: does a dispute carry the farmer's own note?)* | US-055 T-055.2 |
+| — (payment model) | **Answered 2026-11-17 (D-058):** the MVP pays off-platform — the winner pays the farmer directly within 1×24 h, the farmer marks the lot paid (`won → paid`) then ships; the platform holds and pays out no money. Xendit escrow stays the planned beta direction, out of MVP scope. Un-parks US-056, US-058, US-059's payment strike and T-052.4; restores D-044/D-057 through D-059. *(Was: does the MVP pay in-app (Xendit escrow or wallet escrow), or off-platform?)* | none (was US-052 T-052.4, US-056, US-058, US-059) |

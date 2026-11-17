@@ -65,6 +65,10 @@ The product-owner agent drafts entries. The owner approves them.
 | D-055 | 2026-11-16 | Error messages the Koi apps show verbatim are Indonesian, written on the backend, rupiah in `id-ID`; `@mercurjs/client` is not patched | In force |
 | D-056 | 2026-11-16 | The farmer gets the winner's default shipping address: masked (city + province) on the sold lot, full only through a logged reveal (answers `mvp-Q37`; relaxes D-052 for the address only, never the phone) | In force |
 | D-057 | 2026-11-16 | If the winner's bank reveal returns, it returns the account number and the account-holder name, both full, one audit row (answers `mvp-Q39`) | On hold with D-044: intended rule, not built |
+| D-058 | 2026-11-17 | The MVP pays off-platform: the winner pays the farmer directly within 1×24 h, the farmer marks the lot paid then ships; the platform holds and pays out no money (answers the payment-model question; un-parks US-056, US-058, US-059's strike and T-052.4) | In force |
+| D-059 | 2026-11-17 | D-044 returns: the winner reveals the farmer's full account number and holder name through the logged reveal on their own won lot; no phone, no `wa.me` (D-052 stands) | In force |
+| D-060 | 2026-11-17 | A farm suspended after approval may also accept or dispute claims on its own sold lots (ownership + not `terminated`, not `validateSellerOpenStep`); extends D-054 (answers `mvp-Q45`, option b) | In force |
+| D-061 | 2026-11-17 | The farmer's live link is a nullable `auction.live_stream_url` column, written through `/vendor/auctions/:id/live-link` and admin-koi in any status but `closed`/`cancelled`, rendered as an outbound link (answers `mvp-Q43`) | In force |
 
 ---
 
@@ -736,3 +740,60 @@ back, one reveal returns the full `account_number` **and** the full
   field.
 **Reason:** The payer checks the name on the account before transferring.
 **Source:** Owner, answer to `mvp-Q39` (2026-11-16).
+
+### D-058: The MVP pays off-platform; the farmer marks the lot paid
+**Status: In force (2026-11-17).** Supersedes the "payment model under review"
+note in `docs/releases/mvp/stories.md` and un-parks US-056, US-058, US-059's
+payment strike and T-052.4.
+**Decision:** The winner pays the farmer directly, outside the app, within
+1×24 h of the lot closing. The farmer marks the lot paid (`won → paid`,
+`POST /vendor/sold-lots/:id/paid`) and then ships it. The platform holds no
+money and pays out nothing in the MVP. No wallet debit, no new ledger type, no
+payout balance.
+- Xendit escrow (invoice/webhook in, xenPlatform out) stays the planned
+  direction for beta, still out of MVP scope per `plan.md:14`.
+- A platform-held "wallet escrow" was offered and not chosen.
+**Reason:** the goal is a shippable MVP; off-platform is what the plan already
+scoped, and it makes the 1×24 h deadline, the non-payment report and the
+strikes reachable end to end.
+**Source:** Owner, answer to the payment-model question (2026-11-17).
+
+### D-059: D-044 returns — the winner sees the farmer's bank account, logged
+**Status: In force (2026-11-17).** Ends the 2026-11-16 hold on D-044; D-057
+takes effect with it.
+**Decision:** The winning bidder, on their own won lot only, reveals the
+farmer's full `account_number` and `holder_name` through the existing logged
+reveal (one `pii_reveal_audit` row, `record_type: "lot"`,
+`field: "bank_account"`). No phone, no `wa.me` link — D-052 stands unchanged.
+The reveal is the only way; the account is never in a list response, never
+masked-and-partially-shown.
+**Reason:** D-058 makes the winner the payer, and a payer with no account
+number cannot pay.
+**Source:** Owner (2026-11-17), after D-058.
+
+### D-060: A farm suspended after approval may also decide its own claims
+**Status: In force (2026-11-17).** Extends D-054.
+**Decision:** Accepting or disputing a claim on a lot the farm itself sold uses
+the D-054 exception — ownership plus "not `terminated`" — not
+`validateSellerOpenStep`. `pending_approval`, a rejected registration and
+`terminated` still return 403. A suspension must not strand an `open` claim with
+no decision path, because the admin only acts on `disputed`.
+**Reason:** D-054's purpose is that a suspension punishes the farm, not the
+winner; a stranded claim punishes the winner.
+**Source:** Owner, answer to `mvp-Q45`, option (b) (2026-11-17).
+
+### D-061: The auction's live link is a plain column
+**Status: In force (2026-11-17).** Answers `mvp-Q43`.
+**Decision:** `auction.live_stream_url` is a nullable column on the auction
+model (not a Mercur custom field, not a field only reachable through admin).
+The farmer writes it through `POST /vendor/auctions/:id/live-link` in any status
+except `closed` and `cancelled`; admin-koi exposes the same write. It renders as
+an outbound link — no iframe, no embedded player, no host check beyond the
+stated YouTube/Instagram allow-list.
+- Owner considered a Mercur custom field for an independent `/dashboard`
+  fallback and a real `/dashboard` widget; both were rejected in favour of the
+  simpler column.
+**Reason:** one migration, direct reads, no side table; Mercur's own admin has
+no auction screen at all (verified: zero auction references in
+`@mercurjs/admin`), so a custom field would buy an API-level door, not a screen.
+**Source:** Owner, answer to `mvp-Q43` (2026-11-17).
