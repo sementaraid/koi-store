@@ -22,7 +22,7 @@ and T-020.10 (seed fix) were accepted earlier. The `bid` model and the bid/join
 code are still **uncommitted** — commit before US-050 T-050.1's migration builds
 on them.
 
-**Counts** (computed from this file, 2026-11-16):
+**Counts** (computed from this file, 2026-11-17; US-043 and US-050 accepted):
 
 | Epic | Stories done | In progress | Todo | Parked | Blocked | Tasks done | Tasks open | Tasks parked |
 |---|---|---|---|---|---|---|---|---|
@@ -30,12 +30,12 @@ on them.
 | 1 Wallet | 6 | 0 | 0 | 0 | 0 | 22 | 0 | 0 |
 | 2 Becoming a farmer | 2 | 0 | 0 | 0 | 0 | 11 | 5 | 0 |
 | 3 Auctions for farmers | 4 | 0 | 0 | 0 | 0 | 23 | 0 | 0 |
-| 4 Joining and bidding | 3 | 0 | 4 | 0 | 0 | 14 | 11 | 0 |
-| 5 Closing and after-sale | 0 | 0 | 10 | 2 | 0 | 0 | 44 | 4 |
+| 4 Joining and bidding | 4 | 0 | 3 | 0 | 0 | 17 | 8 | 0 |
+| 5 Closing and after-sale | 1 | 0 | 9 | 2 | 0 | 3 | 41 | 4 |
 | 6 Admin operations | 0 | 0 | 6 | 0 | 0 | 0 | 22 | 0 |
 | 7 WhatsApp bot | 0 | 0 | 0 | 0 | 6 | 0 | 12 | 0 |
 | 8 Pilot | 0 | 0 | 1 | 0 | 0 | 0 | 5 | 0 |
-| **Total** | **18** | **0** | **21** | **2** | **6** | **79** | **99** | **4** |
+| **Total** | **20** | **0** | **19** | **2** | **6** | **85** | **93** | **4** |
 
 Epic 2's open tasks are US-021's T-021.2/.3/.4/.6 (follow-ups on a `done` story)
 and the new T-020.10 (seed an admin user). Blocked: US-080 – US-085 (mvp-Q12).
@@ -1145,16 +1145,16 @@ Browser (after T-042.3): render-check skill on /lelang/<live lot id>, flows abov
 Report PASS/FAIL per AC with file:line and command output. Don't change app code.
 ```
 
-### US-043 Late bids extend the lot · `todo`
+### US-043 Late bids extend the lot · `done (evidence: packages/api/integration-tests/http/place-bid.spec.ts:342-429 (place-bid 17/17); packages/api/src/workflows/steps/bid.ts:130-136 (AC4 gate, 409 lot_ended), :268-292 (extend, never shortened :277, compensation); packages/api/src/workflows/place-bid.ts:50-55; apps/storefront-koi/src/components/sections/LotDetailsPage/components/LotPage.tsx:86-91,236; PlaceBid.tsx:97; live DB bid end_time − created_at = 5 min; live bid 30 s past end → 409, 0 rows; browser countdown 1m 18s → 4m 57s without reload; storefront check 174 tests; commit dd5f48a; qa PASS)`
 As a **bidder**, I want late bids to extend the lot so that nobody wins by sniping.
 *(Plan: Extend)*
 - AC1: A bid in the last 5 minutes (the setting) moves that lot's end time to 5 minutes after the bid.
 - AC2: It repeats until 5 minutes pass with no bid.
 - AC3: Each lot extends on its own. Other lots keep their end time.
 - AC4: A bid that arrives after the lot's end time is refused (409); the timer has ended, so the lot is no longer open for bids even before the close job runs. *(Plan: Lot lifecycle, "Open for bids --(timer ends)-->"; added 2026-11-16, see below.)*
-- [ ] T-043.1 [backend] Extend step in the place-bid workflow, plus the bid-after-end gate (AC4)
-- [ ] T-043.2 [qa] Extend applies per lot and uses the auction's setting at its start; a bid after end_time is refused
-- [ ] T-043.3 [storefront] Lot page shows the extended end time after a bid (re-read, no new route)
+- [x] T-043.1 [backend] Extend step in the place-bid workflow, plus the bid-after-end gate (AC4) — `steps/bid.ts:130-136,268-292`; `place-bid.spec.ts:342-353,400-429` (incl. compensation restores end_time); place-bid 17/17, backend tsc clean
+- [x] T-043.2 [qa] Extend applies per lot and uses the auction's setting at its start; a bid after end_time is refused — `place-bid.spec.ts:377-388` (snapshot 5 used after setting changed to 10), `:389-399` (other lot unchanged, auction.end_at unchanged), `:400-413` (409, nothing written); live 409 check; qa PASS
+- [x] T-043.3 [storefront] Lot page shows the extended end time after a bid (re-read, no new route) — `LotPage.tsx:86-91,236`, `PlaceBid.tsx:97`; storefront check 174 tests; browser countdown 1m 18s → 4m 57s, no reload
 
 **Readiness (2026-11-16):** ready once US-042 T-042.1 is accepted (the workflow it hooks into). No open question.
 **Brief checked against the built code (2026-11-16):** matches. `getBiddableLotStep` already reads and returns
@@ -1444,15 +1444,15 @@ feels like a live event. *(Plan: Live room)*
 
 ## Epic 5: Closing and after-sale (Milestone 5)
 
-### US-050 Lots close automatically · `todo`
+### US-050 Lots close automatically · `done (evidence: packages/api/integration-tests/http/close-lots-job.spec.ts:93-280 (12/12); packages/api/src/jobs/close-lots.ts:42-43,49-60,84 (every minute, open AND end_time <= now, per-id try/catch, one summary log); packages/api/src/workflows/steps/lot.ts:59-95 (guard open + auction live; winner amount DESC, created_at ASC); packages/api/src/workflows/close-lot.ts:18 (lock lot:<id>, same as place-bid); packages/api/src/workflows/close-auction.ts:27-36; Migration20261116164737 (closed_at); live tick "lots found 1, won 0, unsold 1, skipped 0, failed 0; auctions closed 1"; browser closed lot shows final price / "Tidak terjual", no winner (D-046); commit dd5f48a; qa PASS. Not verified: two concurrent ticks, one bad row in a real batch (code-read only))`
 As the **platform**, I want lots closed when their time ends so that winners are
 fixed. *(Plan: Closing and winners, Key flows)*
 - AC1: A job every minute closes lots past their end time.
 - AC2: Highest bid that isn't removed wins (`won`). No such bid gives `unsold`. A `cancelled` lot is never closed (D-035).
 - AC3: Winner, final price and close time are saved on the lot, never recomputed from bids.
-- [ ] T-050.1 [backend] Close-lot workflow + `closed_at` column (lock, guard, winner and price saved)
-- [ ] T-050.2 [backend] Close-auction workflow + the `close-lots` job running both (idempotent, batched): the auction becomes `closed` when all its lots are closed (`unsold`, `won` or later, or `cancelled`)
-- [ ] T-050.3 [qa] Running the job twice changes nothing; an extended lot isn't closed early
+- [x] T-050.1 [backend] Close-lot workflow + `closed_at` column (lock, guard, winner and price saved) — `close-lot.ts:18`, `steps/lot.ts:59-95`; Migration20261116164737 applied; `close-lots-job.spec.ts:93-196` (won, tie to earliest, unsold, cancelled/scheduled untouched, forced failure restores lot); close-lots-job 12/12
+- [x] T-050.2 [backend] Close-auction workflow + the `close-lots` job running both (idempotent, batched): the auction becomes `closed` when all its lots are closed (`unsold`, `won` or later, or `cancelled`) — `close-auction.ts:27-36`, `jobs/close-lots.ts:11-30` (paged ids), `:84`; `close-lots-job.spec.ts:197-237,268-280`; live tick logged one summary line
+- [x] T-050.3 [qa] Running the job twice changes nothing; an extended lot isn't closed early — `close-lots-job.spec.ts:137-146,210-228,238-267` (second run leaves updated_at and closed_at identical); qa PASS
 
 **Readiness (2026-11-16): ready (`todo`).** No open question blocks it. Starts after US-042 is accepted and committed
 (the `bid` table and `lot.bids` relation are uncommitted today, and T-050.1 adds a lot migration on top of them) and
@@ -2532,7 +2532,7 @@ table complete.
 | Wallet rules (integer, append-only, closed loop) | Epic 1 rules, US-010, US-013 |
 | Refunds in the MVP (farmer or admin cancel, D-034; none on rejection or lowered fee, D-020) | US-060, US-091, US-031 |
 | Fees and fee table (recomputed at submit, override cleared on rejection, D-032) | US-014, US-030, US-031, US-032, US-041 |
-| Lot lifecycle and statuses (incl. `cancelled`, D-035; a cancelled lot stays public as "Dibatalkan", D-050) | US-033, US-050, US-052, US-053, US-054, US-091, US-040 |
+| Lot lifecycle and statuses (incl. `cancelled`, D-035; a cancelled lot stays public as "Dibatalkan", D-050; bidding ends when the timer ends, US-043 AC4) | US-033, US-043, US-050, US-052, US-053, US-054, US-091, US-040 |
 | Auction statuses (`pending_approval`, rejection back to `draft`, D-031) | US-030, US-031, US-032, US-033, US-060 |
 | Claim statuses (D-027, D-038) | US-054, US-055, US-056, US-061 |
 | Structure (20 lots, 1–7 days, approval, rejection, approval refused after start D-049, join while scheduled or live D-048, public statuses D-046, cancelled lot public D-050) | US-015, US-030, US-032, US-040, US-041, US-091 |
