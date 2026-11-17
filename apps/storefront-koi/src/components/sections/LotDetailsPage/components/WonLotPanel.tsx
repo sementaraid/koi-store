@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge, Button, RenderIf } from '@koi/ui';
+import { Link } from '@/components/atoms';
+import { ROUTES } from '@/const/routes';
 import { markWonLotDelivered } from '@/lib/data/lots';
 import {
   deliverFailureInfo,
@@ -16,6 +18,9 @@ import {
 export type WonLotPanelProps = {
   lotId: string;
   status: string;
+  /** Whether the winner has a default shipping address (US-051 AC6, D-056).
+      `false` shows a prompt to add one, so the farmer has somewhere to ship. */
+  hasShippingAddress: boolean;
 };
 
 /**
@@ -30,7 +35,7 @@ export type WonLotPanelProps = {
  * server's row (`router.refresh()`), a stale 409 refreshes the same way, and
  * no payment copy is added (the paid state is escrow's to fill in later).
  */
-export function WonLotPanel({ lotId, status }: WonLotPanelProps) {
+export function WonLotPanel({ lotId, status, hasShippingAddress }: WonLotPanelProps) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,6 +73,17 @@ export function WonLotPanel({ lotId, status }: WonLotPanelProps) {
           {(text) => <Badge variant="info">{text}</Badge>}
         </RenderIf>
       </div>
+
+      <RenderIf when={!hasShippingAddress}>
+        {() => (
+          <p className="text-xs text-foreground">
+            Tambahkan alamat pengiriman utama agar peternak bisa mengirim ikanmu.{' '}
+            <Link href={ROUTES.addresses} className="font-medium underline">
+              Tambah alamat
+            </Link>
+          </p>
+        )}
+      </RenderIf>
 
       <RenderIf when={action === 'deliver'}>
         {() => (

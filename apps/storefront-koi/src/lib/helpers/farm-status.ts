@@ -24,6 +24,26 @@ export type FarmSellerStatus = {
   rejected_at?: Date | string | null;
 };
 
+export type FarmSoldLotsStatus = FarmSellerStatus & {
+  approved_at?: Date | string | null;
+};
+
+/** Whether the sold-lots list (US-051/US-052) should show rows and let the
+    farmer ship: an `open` seller, or one `suspended` *after* approval (D-054) —
+    a takedown, not the rejection of a registration that never had a sold lot.
+    `approved_at` set is what tells the two `suspended` cases apart, same as
+    the backend's own check (`assertSellerNotTerminated`, `middlewares.ts`
+    `refuseUnsuspendOfRejectedFarm`). `terminated` is always closed.
+
+    @remarks
+    Deliberately separate from {@link farmStatusInfo}'s `approved`, which still
+    gates the rest of the Farmer area (home, create/edit auction): those must
+    stay closed for a suspended farm. */
+export function soldLotsOpen(seller: FarmSoldLotsStatus): boolean {
+  if (seller.status === 'open') return true;
+  return seller.status === 'suspended' && Boolean(seller.approved_at);
+}
+
 /** The status page's copy for one seller. */
 export function farmStatusInfo(seller: FarmSellerStatus): FarmStatusInfo {
   switch (seller.status) {

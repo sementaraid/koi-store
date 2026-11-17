@@ -49,6 +49,7 @@ export type AccountFrameProps = {
 const NAV_ITEMS: Omit<AccountNavItem, 'count'>[] = [
   { label: 'Beranda akun', href: ROUTES.account },
   { label: 'Pesanan', href: ROUTES.orders },
+  { label: 'Lot dimenangkan', href: ROUTES.wonLots },
   { label: 'Saldo', href: ROUTES.wallet },
   { label: 'Top-up', href: ROUTES.topup },
   { label: 'Alamat', href: ROUTES.addresses },

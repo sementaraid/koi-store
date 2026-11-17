@@ -4,6 +4,7 @@ import type {
   MedusaResponse,
 } from "@medusajs/framework/http"
 import {
+  readHasShippingAddress,
   toWonLot,
   WON_LOT_FIELDS,
   WON_LOT_STATUSES,
@@ -19,17 +20,23 @@ export const GET = async (
   const customerId = req.auth_context.actor_id
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
 
-  const {
-    data: [row],
-  } = await query.graph({
-    entity: "lot",
-    fields: WON_LOT_FIELDS,
-    filters: {
-      id: req.params.id,
-      winner_customer_id: customerId,
-      status: [...WON_LOT_STATUSES],
+  const [
+    {
+      data: [row],
     },
-  })
+    has_shipping_address,
+  ] = await Promise.all([
+    query.graph({
+      entity: "lot",
+      fields: WON_LOT_FIELDS,
+      filters: {
+        id: req.params.id,
+        winner_customer_id: customerId,
+        status: [...WON_LOT_STATUSES],
+      },
+    }),
+    readHasShippingAddress(query, customerId),
+  ])
 
   if (!row) {
     throw new MedusaError(
@@ -38,5 +45,5 @@ export const GET = async (
     )
   }
 
-  res.json({ lot: toWonLot(row) })
+  res.json({ lot: toWonLot(row), has_shipping_address })
 }

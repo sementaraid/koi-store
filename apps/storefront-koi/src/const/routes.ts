@@ -34,6 +34,8 @@ export const ROUTES = {
   account: "/akun",
   /** Everything they have bought, newest first. */
   orders: "/akun/pesanan",
+  /** Lots they won at auction, with status and the farm's name (US-051 AC6). */
+  wonLots: "/akun/menang",
   /** Where their koi get delivered. */
   addresses: "/akun/alamat",
   /** What they have said about the farms they bought from. */

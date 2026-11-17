@@ -271,7 +271,11 @@ export function LotPage({
                           who did not win this lot never sees it. */}
                       <RenderIf when={wonLot}>
                         {(mine) => (
-                          <WonLotPanel lotId={mine.id} status={mine.status} />
+                          <WonLotPanel
+                            lotId={mine.id}
+                            status={mine.status}
+                            hasShippingAddress={mine.hasShippingAddress}
+                          />
                         )}
                       </RenderIf>
 

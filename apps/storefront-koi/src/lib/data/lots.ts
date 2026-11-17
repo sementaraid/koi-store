@@ -125,9 +125,12 @@ export const joinAuction = async (auctionId: string): Promise<JoinAuctionResult>
     );
 };
 
-/* US-053 T-053.2. `GET /store/won-lots/:id` — customer token only. The public
-   lot read hides the winner (D-046), so the winner's own status and the
-   "mark delivered" action come from here; a 404 means "not the winner". */
+/* US-053 T-053.2 / US-051 T-051.6-T-051.7. `GET /store/won-lots` and
+   `GET /store/won-lots/:id` — customer token only. The public lot read hides
+   the winner (D-046), so the winner's own status and the "mark delivered"
+   action come from here; a 404 means "not the winner". `seller` carries only
+   the farm name (no contact, D-044 on hold); `has_shipping_address` backs the
+   "add an address" prompt (D-056). */
 
 export type WonLot = {
   id: string;
@@ -138,6 +141,38 @@ export type WonLot = {
   delivered_at: string | null;
   auction: { id: string; delivery_method: string };
   product: { title: string | null; thumbnail: string | null };
+  seller: { id: string; name: string };
+};
+
+export type WonLotsPage = {
+  lots: WonLot[];
+  count: number;
+  limit: number;
+  offset: number;
+  has_shipping_address: boolean;
+};
+
+/** The caller's own won lots, newest closed first (T-051.7, `/akun/menang`).
+ *
+ * @remarks
+ * A failure reads as an empty, "no address" page rather than throwing: the
+ * list draws its own error state off the empty `lots` the same way the other
+ * account lists do. Never called signed out (the page itself guards that). */
+export const listWonLots = async (
+  { limit = 20, offset = 0 }: { limit?: number; offset?: number } = {}
+): Promise<WonLotsPage> => {
+  const headers = await getAuthHeaders();
+  if (!('authorization' in headers)) {
+    return { lots: [], count: 0, limit, offset, has_shipping_address: false };
+  }
+
+  return (
+    sdk.store.wonLots.query({
+      limit,
+      offset,
+      fetchOptions: { headers, cache: 'no-store' }
+    } as never) as unknown as Promise<WonLotsPage>
+  ).catch(() => ({ lots: [], count: 0, limit, offset, has_shipping_address: false }));
 };
 
 /** The caller's own won lot, or `null` when they are not its winner.
@@ -147,13 +182,15 @@ export type WonLot = {
  * request, while `null` here is the ordinary "not the winner" answer that keeps
  * the public view. Any other failure also reads as `null` — the page must still
  * draw. */
-export const getWonLot = async (id: string): Promise<WonLot | null> => {
+export const getWonLot = async (
+  id: string
+): Promise<{ lot: WonLot; has_shipping_address: boolean } | null> => {
   const headers = await getAuthHeaders();
   if (!('authorization' in headers)) return null;
 
   return sdk.store.wonLots.$id
     .query({ $id: id, fetchOptions: { headers, cache: 'no-store' } })
-    .then(({ lot }) => lot as WonLot)
+    .then((res) => res as { lot: WonLot; has_shipping_address: boolean })
     .catch(() => null);
 };
 

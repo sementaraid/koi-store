@@ -16,6 +16,7 @@ export { SettingsPage } from './AccountPage/SettingsPage';
 export { SoldLotsPage } from './AccountPage/SoldLotsPage';
 export { TopupPage } from './AccountPage/TopupPage';
 export { WalletPage } from './AccountPage/WalletPage';
+export { WonLotsPage } from './AccountPage/WonLotsPage';
 export { AuctionsPage } from './AuctionsPage/AuctionsPage';
 export { ForgotPasswordPage } from './AuthPage/ForgotPasswordPage';
 export { LoginPage } from './AuthPage/LoginPage';

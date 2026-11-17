@@ -11,6 +11,7 @@ import {
   Package,
   Settings,
   Sprout,
+  Trophy,
   Wallet
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
@@ -53,6 +54,7 @@ const SIGN_OUT_FORM_ID = 'akun-nav-keluar';
 const ICONS: Record<string, LucideIcon> = {
   [ROUTES.account]: LayoutDashboard,
   [ROUTES.orders]: Package,
+  [ROUTES.wonLots]: Trophy,
   [ROUTES.wallet]: Wallet,
   [ROUTES.topup]: Banknote,
   [ROUTES.addresses]: MapPin,

@@ -5,15 +5,18 @@ import {
   Modules,
 } from "@medusajs/framework/utils"
 import type { MedusaContainer } from "@medusajs/framework/types"
+import { MercurModules } from "@mercurjs/types"
 import { AUCTION_MODULE } from "../../src/modules/auction"
 import type AuctionModuleService from "../../src/modules/auction/service"
 import type { LotStatus } from "../../src/modules/auction/models/lot"
 
 jest.setTimeout(120 * 1000)
 
-// US-051 T-051.6 / US-053 T-053.2 (D-046, D-052): the winner's own won-and-
-// later lots, read only. Another customer's lot is absent and 404 by id; an
-// open lot is absent; no farmer contact and no other customer field.
+// US-051 T-051.6 / US-053 T-053.2 (D-046, D-052, D-056): the winner's own
+// won-and-later lots, read only. Another customer's lot is absent and 404 by
+// id; an open lot is absent; no farmer contact (phone/bank/holder) and no
+// other customer field. `seller` carries only id and name, and
+// `has_shipping_address` reflects the caller's own default shipping address.
 
 type HttpError = { response: { status: number } }
 const statusOf = (p: Promise<unknown>) =>
@@ -24,6 +27,8 @@ const statusOf = (p: Promise<unknown>) =>
 
 const DAY = 24 * 60 * 60 * 1000
 const WINNER_PHONE = "+6281111222333"
+const SELLER_PHONE = "+6289999000111"
+const STREET = "Jl. Raya Bogor 1"
 
 const jwt = (container: MedusaContainer, actor_id: string) => {
   const { http } = container.resolve(ContainerRegistrationKeys.CONFIG_MODULE)
@@ -49,12 +54,47 @@ medusaIntegrationTestRunner({
     const auctions = () =>
       getContainer().resolve<AuctionModuleService>(AUCTION_MODULE)
 
-    const customer = async () => {
+    // A seller with the private fields a leak would expose (D-052: phone must
+    // never reach the winner).
+    const seller = async () => {
+      const sellerModule = getContainer().resolve<{
+        createSellers: (
+          data: Record<string, unknown>[]
+        ) => Promise<{ id: string; name: string }[]>
+      }>(MercurModules.SELLER)
+      const [row] = await sellerModule.createSellers([
+        {
+          name: `Kebun ${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          email: `farm-${Date.now()}-${Math.random().toString(36).slice(2, 6)}@test.dev`,
+          phone: SELLER_PHONE,
+          currency_code: "idr",
+        },
+      ])
+      return row
+    }
+
+    // `withAddress` adds the default shipping address `has_shipping_address`
+    // reads (D-056): never selected here beyond that boolean.
+    const customer = async (withAddress = false) => {
       const container = getContainer()
       const [row] = await container.resolve(Modules.CUSTOMER).createCustomers([
         {
           email: `won-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@test.dev`,
           phone: WINNER_PHONE,
+          addresses: withAddress
+            ? [
+                {
+                  first_name: "Budi",
+                  last_name: "Santoso",
+                  address_1: STREET,
+                  city: "Bogor",
+                  province: "Jawa Barat",
+                  postal_code: "16111",
+                  country_code: "id",
+                  is_default_shipping: true,
+                },
+              ]
+            : [],
         },
       ])
       return {
@@ -70,11 +110,12 @@ medusaIntegrationTestRunner({
     const lot = async (
       status: LotStatus,
       winnerId: string | null,
-      closedOffsetMin = 0
+      closedOffsetMin = 0,
+      sellerId = "sel_won"
     ) => {
       const [event] = await auctions().createAuctions([
         {
-          seller_id: "sel_won",
+          seller_id: sellerId,
           fee_category_id: "feecat_won",
           start_at: new Date(Date.now() - 2 * DAY),
           end_at: new Date(Date.now() - DAY),
@@ -115,18 +156,20 @@ medusaIntegrationTestRunner({
     })
 
     it("lists only the caller's won-and-later lots, newest closed first", async () => {
-      const winner = await customer()
+      const farm = await seller()
+      const winner = await customer(true)
       const other = await customer()
-      const one = await lot("won", winner.id, 30)
-      const two = await lot("shipped", winner.id, 10)
-      await lot("paid", other.id)
-      await lot("open", null)
+      const one = await lot("won", winner.id, 30, farm.id)
+      const two = await lot("shipped", winner.id, 10, farm.id)
+      await lot("paid", other.id, 0, farm.id)
+      await lot("open", null, 0, farm.id)
 
       const res = await api.get("/store/won-lots", { headers: winner.headers })
       expect(res.status).toEqual(200)
       expect(res.data.count).toEqual(2)
       expect(res.data.limit).toEqual(20)
       expect(res.data.offset).toEqual(0)
+      expect(res.data.has_shipping_address).toEqual(true)
       expect(res.data.lots.map((l: { id: string }) => l.id)).toEqual([two, one])
 
       const shipped = res.data.lots[0]
@@ -139,21 +182,41 @@ medusaIntegrationTestRunner({
         delivered_at: null,
         auction: { id: expect.any(String), delivery_method: "courier" },
         product: { title: null, thumbnail: null },
+        seller: { id: farm.id, name: farm.name },
       })
     })
 
-    it("returns delivered_at on a delivered lot", async () => {
+    it("has_shipping_address is false with no default shipping address, true with one", async () => {
+      const winnerNoAddress = await customer()
+      await lot("won", winnerNoAddress.id)
+      const resNo = await api.get("/store/won-lots", {
+        headers: winnerNoAddress.headers,
+      })
+      expect(resNo.data.has_shipping_address).toEqual(false)
+
+      const winnerWithAddress = await customer(true)
+      await lot("won", winnerWithAddress.id)
+      const resYes = await api.get("/store/won-lots", {
+        headers: winnerWithAddress.headers,
+      })
+      expect(resYes.data.has_shipping_address).toEqual(true)
+    })
+
+    it("returns delivered_at and seller on a delivered lot", async () => {
+      const farm = await seller()
       const winner = await customer()
-      const lotId = await lot("delivered", winner.id)
+      const lotId = await lot("delivered", winner.id, 0, farm.id)
 
       const res = await api.get(`/store/won-lots/${lotId}`, {
         headers: winner.headers,
       })
       expect(res.status).toEqual(200)
+      expect(res.data.has_shipping_address).toEqual(false)
       expect(res.data.lot).toMatchObject({
         id: lotId,
         status: "delivered",
         delivered_at: expect.any(String),
+        seller: { id: farm.id, name: farm.name },
       })
     })
 
@@ -192,9 +255,10 @@ medusaIntegrationTestRunner({
       ).toEqual(401)
     })
 
-    it("returns no farmer contact and no other customer field (D-052)", async () => {
+    it("returns no farmer contact, no address and no other customer field (D-052, D-056)", async () => {
+      const farm = await seller()
       const winner = await customer()
-      const lotId = await lot("shipped", winner.id)
+      const lotId = await lot("shipped", winner.id, 0, farm.id)
 
       const res = await api.get("/store/won-lots", { headers: winner.headers })
       const json = JSON.stringify(res.data)
@@ -202,15 +266,17 @@ medusaIntegrationTestRunner({
         "phone",
         "bank",
         "holder",
+        "address_1",
         "winner_customer_id",
         winner.id,
         WINNER_PHONE,
-        "seller",
+        SELLER_PHONE,
+        STREET,
       ]) {
         expect(json).not.toContain(forbidden)
       }
-      // Only the auction id names the seller side.
-      expect(res.data.lots[0].auction.id).toBeTruthy()
+      // The farm name and id are the only seller fields; no other seller field.
+      expect(res.data.lots[0].seller).toEqual({ id: farm.id, name: farm.name })
       expect(
         JSON.stringify(
           (await api.get(`/store/won-lots/${lotId}`, { headers: winner.headers }))

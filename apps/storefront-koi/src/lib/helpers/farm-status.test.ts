@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { farmStatusInfo } from './farm-status.ts';
+import { farmStatusInfo, soldLotsOpen } from './farm-status.ts';
 
 test('pending registration waits for admin', () => {
   const info = farmStatusInfo({ status: 'pending_approval' });
@@ -51,4 +51,27 @@ test('an unknown status stays readable', () => {
   const info = farmStatusInfo({ status: 'something_new' });
   assert.equal(info.label, 'Tidak dikenal');
   assert.equal(info.approved, false);
+});
+
+test('sold lots: open is always open', () => {
+  assert.equal(soldLotsOpen({ status: 'open' }), true);
+});
+
+test('sold lots: a farm suspended after approval stays open (D-054)', () => {
+  assert.equal(
+    soldLotsOpen({ status: 'suspended', approved_at: '2026-11-01T00:00:00.000Z' }),
+    true
+  );
+});
+
+test('sold lots: a rejected registration (never approved) is closed', () => {
+  assert.equal(soldLotsOpen({ status: 'suspended', approved_at: null }), false);
+});
+
+test('sold lots: pending approval and terminated are closed', () => {
+  assert.equal(soldLotsOpen({ status: 'pending_approval' }), false);
+  assert.equal(
+    soldLotsOpen({ status: 'terminated', approved_at: '2026-11-01T00:00:00.000Z' }),
+    false
+  );
 });

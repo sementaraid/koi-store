@@ -35,7 +35,13 @@ export async function LotDetailsPage({ id }: { id: string }) {
      a signed-out visitor without calling the authenticated route, and null for
      anyone who did not win — both keep the ordinary public view. */
   const mine = storeLot.sold ? await getWonLot(id) : null;
-  const wonLot = mine ? { id: mine.id, status: mine.status } : undefined;
+  const wonLot = mine
+    ? {
+        id: mine.lot.id,
+        status: mine.lot.status,
+        hasShippingAddress: mine.has_shipping_address
+      }
+    : undefined;
 
   return (
     <LotDossier

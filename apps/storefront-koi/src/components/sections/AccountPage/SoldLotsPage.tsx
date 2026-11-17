@@ -22,7 +22,7 @@ import { getMyFarm, type FarmSeller } from '@/lib/data/farm';
 import { requireCustomer } from '@/lib/guard';
 import { formatDeadline } from '@/lib/helpers/format-deadline';
 import { formatPrice } from '@/lib/helpers/format-price';
-import { farmStatusInfo } from '@/lib/helpers/farm-status';
+import { farmStatusInfo, soldLotsOpen } from '@/lib/helpers/farm-status';
 import { soldLotStatusLabel } from '@/lib/helpers/sold-lot';
 import {
   shippedTrackingLabel,
@@ -49,9 +49,12 @@ export type SoldLotsPageProps = {
     masked to city + province and a per-row reveal for the full one.
  *
  * @remarks
- * Only an `open` seller gets a list; every other status sees the same closed
- * card the Farmer area home draws, worded by `farmStatusInfo`. A member cookie
- * that expired mid-session redirects to sign-in, as everywhere else here. */
+ * An `open` seller, or one `suspended` after approval (D-054), gets the list —
+ * the latter with a notice that the farm is suspended. Every other status
+ * (pending, rejected, terminated) sees the same closed card the Farmer area
+ * home draws, worded by `farmStatusInfo` ({@link soldLotsOpen}). A member
+ * cookie that expired mid-session redirects to sign-in, as everywhere else
+ * here. */
 export async function SoldLotsPage({ page: raw }: SoldLotsPageProps) {
   const [, { account, cart }, groups] = await Promise.all([
     requireCustomer(ROUTES.farmSold),
@@ -73,7 +76,11 @@ export async function SoldLotsPage({ page: raw }: SoldLotsPageProps) {
     failed = true;
   }
 
-  const approved = seller ? farmStatusInfo(seller).approved : false;
+  // D-054: a farm suspended *after* approval may still finish lots it already
+  // sold, so this list stays open for it (unlike the rest of the Farmer area,
+  // which `farmStatusInfo(seller).approved` keeps closed).
+  const open = seller ? soldLotsOpen(seller) : false;
+  const suspended = seller?.status === 'suspended' && open;
 
   const parsed = Number.parseInt(Array.isArray(raw) ? raw[0] : (raw ?? '1'), 10);
   const requested = Number.isNaN(parsed) ? 1 : Math.max(parsed, 1);
@@ -81,7 +88,7 @@ export async function SoldLotsPage({ page: raw }: SoldLotsPageProps) {
   let lots: SoldLot[] = [];
   let count = 0;
   let lotsFailed = false;
-  if (approved) {
+  if (open) {
     try {
       const result = await listSoldLots(PER_PAGE, (requested - 1) * PER_PAGE);
       lots = result.lots;
@@ -101,12 +108,13 @@ export async function SoldLotsPage({ page: raw }: SoldLotsPageProps) {
 
   const body = failed ? (
     <ErrorCard title="Gagal memuat status kebun" />
-  ) : approved ? (
+  ) : open ? (
     <SoldLots
       lots={lots}
       failed={lotsFailed}
       page={page}
       pageCount={pageCount}
+      suspended={suspended}
     />
   ) : (
     <Closed seller={seller} />
@@ -152,15 +160,31 @@ function SoldLots({
   lots,
   failed,
   page,
-  pageCount
+  pageCount,
+  suspended
 }: {
   lots: SoldLot[];
   failed: boolean;
   page: number;
   pageCount: number;
+  /** D-054: a farm suspended after approval. The list stays open, but the
+      farmer is told why it's worth checking the admin. */
+  suspended: boolean;
 }): ReactNode {
   return (
     <div className="grid gap-4">
+      <RenderIf when={suspended}>
+        {() => (
+          <div className="flex items-start gap-2 rounded-md border border-destructive-ink/30 bg-destructive/8 px-3 py-2">
+            <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0 text-destructive-ink" />
+            <p className="text-sm text-foreground">
+              Kebun Anda ditangguhkan; Anda tetap bisa menyelesaikan lot yang sudah
+              terjual.
+            </p>
+          </div>
+        )}
+      </RenderIf>
+
       <RenderIf when={failed}>
         {() => <ErrorCard title="Gagal memuat daftar lot terjual" />}
       </RenderIf>

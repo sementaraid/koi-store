@@ -14,15 +14,15 @@ are defined in `docs/product/overview.md`.
 
 ---
 
-## Status as of 2026-11-16
+## Status as of 2026-11-17
 
-**Last accepted stories:** US-040, US-041, US-042 (Epic 4), qa PASS on every AC
-and accepted the same day. US-033 was the pass before. T-030.8, T-032.6, T-032.7
-and T-020.10 (seed fix) were accepted earlier. The `bid` model and the bid/join
-code are still **uncommitted** — commit before US-050 T-050.1's migration builds
-on them.
+**Last accepted stories:** US-051, US-052 (shipped half), US-053 (Epic 5), qa
+PASS on every in-scope AC, fix round 1, accepted 2026-11-17. Before them: US-043,
+US-050, then US-040, US-041, US-042 (Epic 4). T-030.8, T-032.6, T-032.7 and
+T-020.10 (seed fix) were accepted earlier. The `bid` model and the bid/join
+code are committed (`d67d3c8`).
 
-**Counts** (computed from this file, 2026-11-17; US-043 and US-050 accepted):
+**Counts** (computed from this file, 2026-11-17; US-051, US-052, US-053 accepted):
 
 | Epic | Stories done | In progress | Todo | Parked | Blocked | Tasks done | Tasks open | Tasks parked |
 |---|---|---|---|---|---|---|---|---|
@@ -31,26 +31,27 @@ on them.
 | 2 Becoming a farmer | 2 | 0 | 0 | 0 | 0 | 11 | 5 | 0 |
 | 3 Auctions for farmers | 4 | 0 | 0 | 0 | 0 | 23 | 0 | 0 |
 | 4 Joining and bidding | 4 | 0 | 3 | 0 | 0 | 17 | 8 | 0 |
-| 5 Closing and after-sale | 1 | 0 | 9 | 2 | 0 | 3 | 41 | 4 |
+| 5 Closing and after-sale | 4 | 0 | 6 | 2 | 0 | 15 | 29 | 4 |
 | 6 Admin operations | 0 | 0 | 6 | 0 | 0 | 0 | 22 | 0 |
 | 7 WhatsApp bot | 0 | 0 | 0 | 0 | 6 | 0 | 12 | 0 |
 | 8 Pilot | 0 | 0 | 1 | 0 | 0 | 0 | 5 | 0 |
-| **Total** | **20** | **0** | **19** | **2** | **6** | **85** | **93** | **4** |
+| **Total** | **23** | **0** | **16** | **2** | **6** | **97** | **81** | **4** |
 
 Epic 2's open tasks are US-021's T-021.2/.3/.4/.6 (follow-ups on a `done` story)
-and the new T-020.10 (seed an admin user). Blocked: US-080 – US-085 (mvp-Q12).
+and T-020.10 (seed an admin user). Blocked: US-080 – US-085 (mvp-Q12).
 Epic 5 task count drops by one: T-051.3b dropped (D-052). US-051 unblocked by D-052 (2026-11-16).
 
 **Parked (2026-11-16, owner recalculating the payment model; not blocked by a question).**
-Stories: US-056, US-058. Tasks inside `todo` stories: T-051.1a, T-051.3a, T-051.2a
-(winner bank-account reveal; D-044 on hold), T-052.4 (mark paid; a Xendit webhook
-replaces it under escrow). Partial: US-059's "winner didn't pay" strike part.
-**Only newly blocked: none.** `mvp-Q37` and `mvp-Q39` answered (D-056, D-057).
+Stories: US-056, US-058. Tasks: T-051.1a, T-051.3a, T-051.2a (winner
+bank-account reveal; D-044 on hold), T-052.4 (mark paid; a Xendit webhook
+replaces it under escrow). US-052 is `done` for its shipped half only; AC1's
+`won → paid` half stays parked with T-052.4. Partial: US-059's "winner didn't
+pay" strike part. **Only newly blocked: none.** `mvp-Q37` and `mvp-Q39`
+answered (D-056, D-057).
 
-**Needed under either payment model (keep building):** US-043, US-050, US-051
-farmer side (T-051.1b, .5, .2b), the shipped half of US-052, US-053 (marking
-delivered becomes the payout trigger), US-054/US-055 (the claim window gates the
-payout), US-057, US-060, US-061.
+**Needed under either payment model (keep building):** US-054/US-055 (the claim
+window gates the payout), US-057, US-060, US-061. US-051, US-053 and US-052's
+shipped half are accepted.
 
 **Payment model open (owner, 2026-11-16):** until it is decided, an auction can
 end with a winner but with **no in-app way to pay**. Owner is recalculating;
@@ -66,16 +67,14 @@ details are shown to the winner and the farmer sees the winner's WhatsApp. It
 contradicts D-052 (no phone either way), D-044 (on hold) and D-056.
 
 **Next in milestone order:**
-1. US-043 T-043.1 (extend + the bid-after-end gate, the gap found while checking
-   the brief), T-043.2 in the same run, then T-043.3 (storefront).
-2. US-050 T-050.1 → T-050.2 (close workflows + `close-lots` job), T-050.3 qa.
-3. US-051: farmer side T-051.1b → T-051.5 → T-051.2b (sold lots, winner's name +
-   masked address, D-052/D-056); winner side T-051.6 → T-051.7 (won lots, no farmer
-   contact, D-044 on hold). T-051.1a/.3a/.2a parked.
-4. US-052 shipped half (T-052.1 split, T-052.2 shipped only, T-052.3), then US-053
-   T-053.1, T-053.2 (after T-051.7), T-053.3. T-052.4 (mark paid) parked.
-5. US-044 (D-051) can run anytime after US-042's commit; T-044.1 touches only the
-   store lot routes, no bid workflow.
+1. US-044 (D-051) T-044.1 → T-044.2 → T-044.3. Ready since 2026-11-17; no open
+   question, `bid` table and store lot routes exist (`d67d3c8`). T-044.1 touches
+   only the store lot routes, no bid workflow.
+2. US-045 (polling, T-045.1), US-046 (live room; T-046.1 needs Backend, the rest
+   waits on it) — Epic 4's last two.
+3. Epic 5 next: US-054 → US-055 (needs US-053, now `done`), then US-057, US-060,
+   US-061. US-056/US-058 parked; US-059's payment-strike part parked.
+4. US-043, US-050, US-051, US-052 (shipped), US-053 are accepted; nothing left.
 T-020.10 can run any time; qa's admin browser checks need it.
 
 ## Epic 0: Foundations (Milestone 1)
@@ -1304,123 +1303,237 @@ As a **customer**, I want other bidders shown masked so that identities stay pri
 - [ ] T-044.2 [storefront] `BidHistory` uses API data
 - [ ] T-044.3 [qa] No unmasked identity in any store response
 
-**Readiness (2026-11-16): ready (`todo`).** mvp-Q33 answered (D-051): format `Bud***x7`; full masked history on open
-and closed lots, which supersedes D-046 in part (the top row of a closed lot shows the winner's masked name; nothing
-else about the winner is exposed). Depends on US-042 T-042.1 (the `bid` table, awaiting qa) and US-040 T-040.1
-(`GET /store/lots(/:id)`, which this extends).
+**Readiness (2026-11-17): ready (`todo`), no open question blocks it.** mvp-Q33 answered (D-051): format `Bud***x7`;
+full masked history on open and closed lots, which supersedes D-046 in part (the top row of a closed lot shows the
+winner's masked name; nothing else about the winner is exposed). No decision newer than D-051 (D-052–D-057) changes
+this story. Prerequisites are met: US-042 T-042.1 (the `bid` table) and US-040 T-040.1 (`GET /store/lots(/:id)`) are
+both committed (`d67d3c8`).
 **US-040 unchanged:** `GET /store/lots` and `/store/lots/:id` today return no bids and no winner field
 (`STORE_LOT_FIELDS`, `packages/api/src/api/store/lots/route.ts:56`). Bid history is this story's job; US-040's ACs,
 tasks and qa brief stay as written.
 
 #### Briefs
 
+**Refreshed 2026-11-17 (step 1).** Ready, not blocked. US-040 and US-042 are committed (`d67d3c8`), so the `bid`
+table and `GET /store/lots(/:id)` exist today. No decision newer than D-051 (D-052 to D-057) changes this story;
+mvp-Q33 stays answered. Endpoint inventory: every route these screens read exists today; the only missing pieces are
+two response fields, added by T-044.1, which is ordered first. T-044.1 is read-only (no workflow, no migration) and
+leaves the bid workflow alone.
+Cross-cutting items that apply: D-039/D-042/D-045 (masking, admins not exempt, no self-view on a public route),
+D-055 (Indonesian copy), `codegen`, `tsc` in both Koi apps.
+
 ```text
 Story: US-044 (task T-044.1)   Release: mvp
 Agent: backend   Expected: <=45 min
-Starts after: US-042 T-042.1 accepted (mvp-Q33 answered, D-051).
+Starts after: nothing (US-040 and US-042 are committed; D-051 answered).
 
-## Acceptance criteria
-- AC1: every bidder shown as first 3 letters of first name + `***` + last 2 characters of the customer id, e.g. `Bud***x7`
-  (D-051); no phone digits; full name and customer id never in a store response; same bidder, same mask, per auction.
-- AC2: bid history (masked bidder, amount, time) on open and closed lots; closed lot has no winner id/name/`winner_*`
-  field (D-046); cancelled lot has no bids (D-050).
+## Acceptance criteria (verbatim)
+- AC1: Public pages and `/store/*` routes show every bidder as the first 3 letters of their first name + `***` + the
+  last 2 characters of their customer id, for example `Bud***x7` (D-051). No phone digits; the full name and the
+  customer id never appear in any store response; the same bidder shows the same mask on every row of an auction.
+- AC2: A lot's bid history shows masked bidder, amount and time, on open **and** closed lots (D-051). A closed lot
+  still returns no winner id, name or `winner_*` field (D-046). A cancelled lot shows no bids (D-050).
 
 ## Decisions in force
-D-051: the mask format and full masked history on open and closed lots (supersedes D-046 in part).
-D-039 / D-042 / D-045: no full PII to anyone else; the bidder's own row may say "Anda" (own record), never another's full name.
-D-046 (rest in force): a closed lot returns no winner_customer_id, winner name or any winner_* field.
-D-050: a cancelled lot returns no bids.
-CLAUDE.md §9: reads via query.graph; no cross-module service call (customer name via a query.graph on customer by id, or a link).
+- D-051: the mask is the first 3 letters of the first name + `***` + the last 2 characters of the customer id; no
+  phone digits; full history on open and closed lots; supersedes D-046 in part.
+- D-046 (rest): no winner id, name or any `winner_*` field on a public route, closed lot included.
+- D-050: a cancelled lot shows no bids.
+- D-039 / D-042 / D-045: no full PII of anyone else to anyone, admins included. D-045's self-view covers only the
+  customer's own record (`/store/customers/me`) and the farmer's own `/vendor/sellers*`, so a bid row is masked for
+  its own author too — no "Anda" branch in a store response.
+- CLAUDE.md §9: reads go through `query.graph`; the customer is a soft reference, so read first names in one batched
+  `query.graph` on `customer` (pattern: `src/api/vendor/sold-lots/route.ts:61-90`); no link, no service call.
+- CLAUDE.md §8: whole-rupiah integers; no stored counters — `bid_count` is computed on every read.
+
+## Endpoint inventory (all exist; only fields are new)
+| Method | Path | Exists? | Change |
+|---|---|---|---|
+| GET | /store/lots | yes, `src/api/store/lots/route.ts` | + `bid_count` |
+| GET | /store/lots/:id | yes, `src/api/store/lots/[id]/route.ts` | + `bid_count`, `bids` |
+| POST | /store/bids | yes, `src/api/store/bids/route.ts` | unchanged |
+
+## Response contract (pin this; T-044.2 consumes it)
+GET /store/lots → 200
+  { lots: [{ …current StoreLot fields…, bid_count: number }], count, limit, offset }   // no `bids` key
+GET /store/lots/:id → 200
+  { lot: { …current StoreLot fields…, bid_count: number,
+           bids: [{ bidder: string, amount: number, created_at: string /* ISO */ }] } }
+  - `bids` newest first (`created_at` DESC, tie `id` DESC); `amount` is whole rupiah, an integer.
+  - each row has exactly those three keys: no bid id, no customer id, no name, phone or email.
+  - no bids → `bids: []`, `bid_count: 0`. Cancelled lot → `bids: []`, `bid_count: 0` (D-050).
+  - closed lot → full history, same shape; no `winner_*` key anywhere (D-046).
 
 ## Build
-- GET /store/lots/:id adds `bid_count: number` and `bids: { bidder: string, amount: number, created_at: string }[]`
-  (newest first, cap 50). GET /store/lots adds `bid_count` only (the card tally).
-- `bidder` is built server-side by one helper `maskBidder(firstName, customerId)` in src/utils/mask.ts (D-051):
-  - name part = first 3 characters of the trimmed `customer.first_name` (the field `isProfileComplete` requires,
-    src/workflows/create-customer-wallet.ts:27). Shorter than 3 → keep what there is, no padding (`Al` → `Al***x7`).
-    Missing or blank → name part empty (`***x7`).
-  - id part = last 2 characters of `bid.customer_id` (Medusa customer id, `cus_` + ULID, e.g.
-    `cus_01M6V7FMYJDQ3DC4J4ZYQ5S09X` → `9x`), lowercased to match the owner's example. Stable per customer, not
-    derived from PII, never guessable back to the full id.
-  - The mask is a pure function of (first_name, customer_id): no randomness, no per-request salt, so one bidder
-    masks the same way on every row and every request in an auction.
-  - Never return customer_id, winner_customer_id, email, phone or the full name; the id itself stays on the server.
-- Same mask on open AND closed lots. Closed lot → full history (top row = winner's masked name, D-051), and still
-  no winner_customer_id or any winner_* field (D-046).
-- Cancelled lot → bids: [], bid_count: 0 (D-050).
-- Exclude removed bids once US-072 T-072.1 adds removal; leave a comment naming T-072.1 at the bids query.
-- bun run codegen.
+- `maskBidder(firstName: string | null | undefined, customerId: string)` in `src/utils/mask.ts`:
+  - name part = the first 3 characters of the trimmed `first_name`; fewer than 3 → keep what there is, no padding
+    (`Al` → `Al`); empty or missing → empty.
+  - id part = the last 2 characters of `customerId`, lowercased. Never derived from PII.
+  - result `${namePart}***${idPart}`: `Budi` + `cus_…S09X` → `Bud***9x`; blank name → `***9x`.
+  - pure: no randomness, no per-request salt — the same inputs give the same mask on every row and every request.
+  - derived at read time from the customer's current `first_name`; nothing is stored. Consequence: a customer who
+    later edits their first name re-masks their own rows together at the next read (AC1's one-mask-per-bidder rule
+    still holds within a response). Non-blocking; put to the owner with this brief (see the report).
+- Add `bids.id`, `bids.customer_id`, `bids.amount`, `bids.created_at` to `STORE_LOT_FIELDS` (`route.ts:56`); strip
+  them in the mapper so the feed sends no bid rows at all.
+- `toStoreLot` (`route.ts:84`): set `bid_count` (row count; 0 when cancelled). Build `bids` **only** in the `[id]`
+  handler: one batched `query.graph` (`entity: "customer"`, fields `id`, `first_name`, filters `id: ids`; no ids →
+  no query) plus `maskBidder`. The customer row never leaves the server.
+- Sort in JS: `created_at` DESC, tie `id` DESC. No cap and no pagination in the MVP; leave a comment naming the
+  ceiling: add a limit plus `has_more` when a lot can carry hundreds of bids.
+- Leave a comment at the bid mapper naming US-072 T-072.1: once `removed_at` exists, filter removed rows here.
+- Cancelled: force `bids: []` and `bid_count: 0` in the mapper; the rows stay in the DB.
+- Read-only: no new route, no workflow, no mutation, no migration. Run `bun run codegen`.
 
 ## Start from
-- packages/api/src/api/store/lots/route.ts (STORE_LOT_FIELDS, getPublicLots, the cancelled-lot nulling at :72)
-- packages/api/src/utils/mask.ts (helpers + style)
+- `src/api/store/lots/route.ts:56` (STORE_LOT_FIELDS), `:84-137` (toStoreLot), `:139-160` (toStoreLots batched
+  read), `:162-184` (getPublicLots)
+- `src/api/store/lots/[id]/route.ts` (the detail handler calling `getPublicLots`)
+- `src/api/vendor/sold-lots/route.ts:61-90` (a batched `query.graph` on customer by id list)
+- `src/utils/mask.ts`, `src/utils/__tests__/mask.unit.spec.ts` (helper and unit-spec style)
 
 ## Do not touch
-- apps/**; src/workflows/place-bid.ts; src/api/store/bids/**
+- `apps/**`; `src/workflows/**`; `src/api/store/bids/**`; `src/modules/**`; migrations; the vendor routes
 
-## Spec (store-lots.spec.ts)
-two customers bid → bids[].bidder matches /^.{0,3}\*\*\*[0-9a-z]{2}$/ and equals maskBidder(first_name, id);
-same customer → same string on every row; no customer_id/winner_customer_id/email/phone/full name anywhere in the JSON
-(stringify + regex on the customer ids and names); bid_count correct; cancelled lot → []; closed lot → full history,
-same masks, no winner_* key. Unit check for maskBidder: "Budi" → "Bud***", "Al" → "Al***", blank → "***" (+ id part).
+## Spec
+- `src/utils/__tests__/mask.unit.spec.ts`: `Budi` + `cus_…9x` → `Bud***9x`; `Al` → `Al***9x`; null/blank → `***9x`;
+  trimming; lowercased id part; two customers sharing a first name differ in the id part.
+- `packages/api/integration-tests/http/store-lots.spec.ts` (extend the file; keep the 8 specs):
+  - two customers (each with a `first_name`) bid on an open lot → the detail returns both bids, newest first,
+    `bidder === maskBidder(first_name, id)`; one customer's two bids give the same string.
+  - `JSON.stringify(body)` contains neither customer id, nor an email, phone, full first name or last name.
+  - feed rows carry `bid_count` and no `bids` key; the detail's `bid_count` equals `bids.length`.
+  - cancelled lot → `bids: []`, `bid_count: 0`, no bid data.
+  - closed lot (status `won`) → full history, same masks; no `winner` substring (extend `:290`).
+  - lot with no bids → `bids: []`, `bid_count: 0`.
+
+## Cross-cutting checklist
+- [ ] PII: no customer_id, email, phone or full name in either response (D-039, D-042, D-045)
+- [ ] Rupiah integers, never floats; `bid_count` computed from rows, never stored (CLAUDE.md §8)
+- [ ] Read-only: no workflow; no `validateSellerOpenStep` (no `/vendor/*` mutation)
+- [ ] `bun run codegen` after the route types change
+- [ ] no `req.seller_context` read → no seller-context type import
+- [ ] D-055: no new user-facing message (the existing 404 is never shown verbatim)
 
 ## Definition of done
-cd packages/api && bun x tsc --noEmit -p . → clean; bun run codegen; bun run test:integration:http -- store-lots → pass (alone)
+cd packages/api && bun x tsc --noEmit -p .                        → clean
+cd packages/api && bun run codegen                                → store lots response has bid_count/bids
+cd packages/api && bun run test:unit                              → mask unit spec passes
+cd packages/api && bun run test:integration:http -- store-lots    → old + new pass (run alone)
 cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
-Report: standard header + updated GET /store/lots(/:id) contract.
+Report: standard header + the final GET /store/lots(/:id) contract. Don't commit.
 
 ## Open questions
-none (mvp-Q33 answered, D-051)
+none blocking. mvp-Q40 (non-blocking, owner; asked in the step-1 report): a customer renaming themselves re-masks
+their past bids at the next read. Options: (a) accept — a derived mask, all rows move together (this brief);
+(b) snapshot the mask on the `bid` row at placement (new column + migration, stable forever).
 ```
 
 ```text
 Story: US-044 (task T-044.2)   Release: mvp
 Agent: frontend (apps/storefront-koi)   Expected: <=30 min
-Starts after: T-044.1 contract.
+Starts after: T-044.1 delivered the contract above (`codegen` run).
 
-## Acceptance criteria
-- AC1: every bidder shown masked as the API sends it, e.g. `Bud***x7` (D-051).
-- AC2: bid history (masked bidder, amount, time) on open and closed lots; none on a cancelled lot (D-050).
+## Acceptance criteria (verbatim)
+- AC1: Public pages and `/store/*` routes show every bidder as the first 3 letters of their first name + `***` + the
+  last 2 characters of their customer id, for example `Bud***x7` (D-051). No phone digits; the full name and the
+  customer id never appear in any store response; the same bidder shows the same mask on every row of an auction.
+- AC2: A lot's bid history shows masked bidder, amount and time, on open **and** closed lots (D-051). A closed lot
+  still returns no winner id, name or `winner_*` field (D-046). A cancelled lot shows no bids (D-050).
+
+## Decisions in force
+- D-051: render the API's mask exactly; the client never masks, re-masks or prettifies it.
+- D-046 (rest): a closed lot shows the history but no "Pemenang" label and no winner styling. BidHistory's existing
+  "Tertinggi" badge on the top row stays (highest bid, not a winner label; the masked top row is allowed, D-051).
+- D-050: a cancelled lot shows no history at all.
+- D-045: no self-view exception on a public page — the bidder's own row is masked like every other row.
+- D-055: copy is Indonesian; this screen shows no backend message.
 
 ## Endpoint inventory
 | Method | Path | Exists? | Shape / owner |
 |---|---|---|---|
-| GET | /store/lots/:id | yes; bids/bid_count added by T-044.1 | { lot: { …, bid_count, bids: [{ bidder, amount, created_at }] } } |
-| GET | /store/lots | yes; bid_count added by T-044.1 | card tally |
+| GET | /store/lots/:id | yes; `bid_count` + `bids` added by T-044.1 | `{ lot: { …, bid_count, bids: [{ bidder, amount, created_at }] } }` |
+| GET | /store/lots | yes; `bid_count` added by T-044.1 | `lots[].bid_count`; no `bids` key |
+| GET | /store/auctions/:id/join | yes | join state (unchanged) |
+| GET | /store/wallet | yes | balance (unchanged) |
+| GET | /vendor/sellers (member) | yes | farm (unchanged) |
+| GET | /store/won-lots/:id | yes | winner's own row (unchanged) |
+| POST | /store/bids | yes | unchanged; not read by this task |
+No missing route: T-044.1, ordered first, only adds fields.
 
 ## Build
-- lib/adapters/lot.ts: map bid_count → auction.bidCount, bids → auction.bids (AuctionBid: bidder, amount, at).
-  Remove the "US-044 owns bid counts" placeholder. Extend lot.test.ts.
-- Lot page: render BidHistory (components/molecules/BidHistory) from lot.auction.bids. Show `bidder` as the API sends it;
-  never mask or unmask client-side. Empty → the component's own empty state. Closed → full history, no "Pemenang"
-  label or winner highlight on the top row (D-046 rest). Cancelled → no history.
-- Don't touch LiveRoom's demo `bidsFor` (US-046).
+1. `lib/data/lots.ts`: `StoreLot` gains `bid_count: number` and `bids?: { bidder: string; amount: number;
+   created_at: string }[]` (present only on the detail fetch). Both fetchers stay as they are.
+2. `lib/adapters/lot.ts` `toAuctionProduct`: `bidCount: lot.bid_count`; `bids: lot.bids?.map((b) => ({ bidder:
+   b.bidder, amount: b.amount, at: b.created_at }))` — `undefined` when the key is absent, so feed rows stay
+   bids-less. Delete the "US-044 owns bid counts" placeholder (`lot.ts:56-58`). Extend `lib/adapters/lot.test.ts`
+   (`created_at` → `at`, `bid_count` → `bidCount`, absent `bids` → `undefined`).
+   Intended side effect: the feed card tally (`AuctionProductCard.tsx:79-84`) and the lot page tally
+   (`LotPage.tsx:199-204`) start rendering once `bid_count` exists.
+3. Lot page history, `components/sections/LotDetailsPage/components/LotPage.tsx`: inside the existing `!cancelled`
+   branch, after the OB/KB grid (`:250-267`) and before the won band (`:272`), add a section with the Indonesian
+   heading `Riwayat bid` (copy already used at `LiveRoom.tsx:215`) and
+   `<BidHistory bids={auction.bids} variant="inline" />`. Render the section only when `auction.bids?.length` —
+   never pass `[]` (BidHistory's empty line claims the house published nothing, a different fact). A cancelled lot
+   never reaches this branch (D-050); a closed lot does, with the same list.
+4. Render `bidder` verbatim. No masking, no "Anda", no name joining. Amount and time stay BidHistory's job
+   (`formatPrice`, `formatAgo`).
+
+## Start from
+- `lib/adapters/lot.ts:56-58` (the placeholder), `lib/adapters/lot.test.ts`
+- `components/sections/LotDetailsPage/components/LotPage.tsx:250-280` (the insertion point)
+- `components/molecules/BidHistory/BidHistory.tsx` (props `bids`, `variant="inline"`)
 
 ## Do not touch
-- packages/api/**, LivePage/**, const/live.ts
+- `packages/api/**`; `components/sections/LivePage/**`; `const/live.ts`; the BidHistory component; the PlaceBid
+  prefill (its approved heuristic stays)
+
+## Cross-cutting checklist
+- [ ] PII: only the server's mask is rendered; no customer id, name, phone or email on the screen
+- [ ] Indonesian copy; rupiah via `formatPrice` (`id-ID`)
+- [ ] No new route, component, helper or dependency
+- [ ] `bun run tsc` in both Koi apps (T-044.1 changed `packages/api/src`)
+- [ ] UI task: run the render check on the changed route
 
 ## Definition of done
-cd apps/storefront-koi && bun run check → pass
-render-check skill on /lelang/<lot with bids>: history shows masked names, Rupiah amounts, times; no "undefined".
-Report: standard header + screenshot path, or "browser NOT verified" with the reason.
+cd apps/storefront-koi && bun run check            → pass (tsc + node:test + lint)
+cd apps/admin-koi && bun run tsc                   → clean
+render-check skill on /lelang/<lot with bids> (signed out) → heading "Riwayat bid", masks in the `Bud***x7` shape,
+rupiah amounts, no "undefined"/NaN, no hydration error; then one closed lot with bids.
+If the dev DB has no lot with bids (`seed-koi.ts:62` seeds no auctions), say "browser NOT verified" with the reason
+and paste the `curl` of `/store/lots/:id` showing the JSON.
+Report: standard header + screenshot path(s). Don't commit.
 
 ## Open questions
-none (mvp-Q33 answered, D-051)
+none
 ```
 
 ```text
 Story: US-044 (task T-044.3)   Release: mvp
 Agent: qa   Expected: <=30 min
 
-Verify AC1–AC2. Decisions: D-051, D-039, D-042, D-045, D-046 (in part), D-050.
-Code under test: src/utils/mask.ts (bidder helper), src/api/store/lots/{route,[id]/route}.ts; storefront lib/adapters/lot.ts, lot page.
-Commands (alone): cd packages/api && bun run test:integration:http -- store-lots; cd apps/storefront-koi && bun run check.
-Check every /store/* response that carries a bid (GET /store/lots, /store/lots/:id, POST /store/bids) for customer_id,
-email, phone, first/last name — none may appear for another customer. POST /store/bids returns only the caller's own bid.
-Watch for: a mask other than `Bud***x7` (D-051), phone digits in it, one bidder masked two ways in an auction; on a
-closed lot any winner_customer_id / winner_* field or "winner" label (the masked top row itself is allowed, D-051);
-a closed lot whose history differs from an open lot's format; bids shown on a cancelled lot (D-050).
-Browser: render-check on /lelang and /lelang/<lot with bids>.
+Verify AC1–AC2. Decisions: D-051, D-046 (rest), D-050, D-039, D-042, D-045 (scope), D-055.
+Code under test: `packages/api/src/utils/mask.ts` (`maskBidder`), `src/api/store/lots/route.ts`,
+`src/api/store/lots/[id]/route.ts`; `apps/storefront-koi` `lib/data/lots.ts`, `lib/adapters/lot.ts`, `LotPage.tsx`.
+Commands (alone, nothing else on Jest): `cd packages/api && bun run test:unit`;
+`cd packages/api && bun run test:integration:http -- store-lots`; `cd apps/storefront-koi && bun run check`;
+`cd apps/admin-koi && bun run tsc`.
+
+AC1 — read every store response that can carry a bid: `GET /store/lots`, `GET /store/lots/:id`, `POST /store/bids`.
+None may hold another customer's `customer_id`, email, phone, first or last name. Every `bidder` matches
+`/^.{0,3}\*\*\*[0-9a-z]{2}$/` and equals `maskBidder(first_name, customer_id)`; one customer, one string, per lot.
+AC2 — open lot: masked bidder + amount + time, newest first. Closed lot: the same list and masks, and no
+`winner_customer_id`, `winner_*` field or "Pemenang" text. Cancelled lot: no bids, `bid_count` 0.
+Allowed, not a bug: the masked top row of a closed lot (D-051) and BidHistory's "Tertinggi" badge (highest bid,
+not a winner label).
+
+Watch for: a mask built from the phone or a full name; one customer masked two ways inside one lot; a raw id or name
+on the page; a closed lot's history differing in format from an open lot's; bids on a cancelled lot; `bid_count`
+disagreeing with the rendered rows; the storefront re-masking or prettifying the string; `bids` leaking on the feed;
+`bid_count` stored or overwritten anywhere.
+
+Browser: render-check `/lelang` and `/lelang/<lot with bids>` signed out, plus one closed lot with bids, and one lot
+with no bids (no heading; BidHistory's "belum diterbitkan" empty line not shown).
 Report PASS/FAIL per AC with file:line and command output. Don't change app code.
 ```
 
@@ -1590,7 +1703,7 @@ rewritten on a second run; close without the `lot:<id>` lock; a store response n
 Report PASS/FAIL per AC with file:line and command output. Don't change app code.
 ```
 
-### US-051 Farmer sees the winner's name and address; winner sees their won lots · `todo` (winner bank-account part `parked (owner reconsidering, 2026-11-16)`)
+### US-051 Farmer sees the winner's name and address; winner sees their won lots · `done (evidence: packages/api/integration-tests/http/won-lots.spec.ts (6/6), vendor-sold-lots.spec.ts (16/16); packages/api/src/api/vendor/sold-lots/route.ts:17-19,42-54,61-103,105-148 (name + city/province only, no street/postal/phone selected); packages/api/src/workflows/reveal-winner-address.ts:34-47 (read then one audit row, record_type lot, field shipping_address); packages/api/src/workflows/steps/sold-lot.ts:61-119 (404 no-address before audit); packages/api/src/api/vendor/sold-lots/validators.ts:24 (enum = shipping_address only); packages/api/src/api/store/won-lots/route.ts:22-40,50-63,112-127 (seller id+name, has_shipping_address); apps/storefront-koi/src/components/sections/AccountPage/components/RevealAddress.tsx:39-41,81-95 (button only with an address, masked label from lib/helpers/sold-lot.ts:30); SoldLotsPage.tsx:82,244-247; WonLotsPage.tsx:83-92; LotDetailsPage/components/WonLotPanel.tsx:77-89 (add-address prompt); packages/api bun x tsc --noEmit exit 0; storefront bun run check exit 0 (182 tests); browser 8 render checks 200, /tmp/koi-render/recheck1/; qa PASS fix round 1)` (winner bank-account part `parked (owner reconsidering, 2026-11-16)`)
 **Depends on:** US-092 (masking and the logged reveal).
 As a **farmer**, I want the winner's name and delivery address so that I can ship the fish; as a **winner**, I want
 my won lots listed so that I can see what I won and mark it delivered. *(Plan: Closing and winners, Delivery; D-044
@@ -1604,19 +1717,32 @@ my won lots listed so that I can see what I won and mark it delivered. *(Plan: C
 **PII (D-039, D-052, D-056):** the winner's full address is a narrow exception for the farmer of that lot, through the same logged reveal as the admin. No phone crosses between winner and farmer (D-052). The winner sees no farmer contact while D-044 is on hold.
 - [ ] T-051.1a [backend] `GET /store/won-lots`: the winner's own won lots, farm name, bank name, masked account number and holder name, 1×24 h deadline; no phone (D-052) *(parked (owner reconsidering, 2026-11-16): carries farmer bank details; replaced for now by T-051.6)*
 - [ ] T-051.3a [backend] `POST /store/won-lots/:id/reveal`: winner reveals the farmer's bank account number and holder name for their own lot, one audit row (D-057) *(parked (owner reconsidering, 2026-11-16))*
-- [ ] T-051.1b [backend] `GET /vendor/sold-lots`: the farmer's own sold lots with the winner's name and masked default shipping address (city + province, D-056); no phone (D-052)
+- [x] T-051.1b [backend] `GET /vendor/sold-lots`: the farmer's own sold lots with the winner's name and masked default shipping address (city + province, D-056); no phone (D-052)
 - T-051.3b *(dropped 2026-11-16, D-052: the farmer no longer reveals the winner's phone. Not built.)*
-- [ ] T-051.5 [backend] `POST /vendor/sold-lots/:id/reveal`: the farmer reveals the winner's full default shipping address for their own sold lot; one audit row per reveal (D-056) *(new 2026-11-16)*
-- [ ] T-051.6 [backend] `GET /store/won-lots` without farmer contact: the winner's own won lots plus `has_shipping_address` (D-056) *(new 2026-11-16; the no-contact version of T-051.1a)*
+- [x] T-051.5 [backend] `POST /vendor/sold-lots/:id/reveal`: the farmer reveals the winner's full default shipping address for their own sold lot; one audit row per reveal (D-056) *(new 2026-11-16)*
+- [x] T-051.6 [backend] `GET /store/won-lots` without farmer contact: the winner's own won lots plus `has_shipping_address` (D-056) *(new 2026-11-16; the no-contact version of T-051.1a)*
 - [ ] T-051.2a [storefront] Won lots page `/akun/menang` with the bank-account reveal *(parked (owner reconsidering, 2026-11-16); replaced for now by T-051.7)*
-- [ ] T-051.7 [storefront] Won lots page `/akun/menang` with no farmer contact and the "add an address" prompt (D-056) *(new 2026-11-16; US-053 T-053.2 sits on it)*
-- [ ] T-051.2b [storefront] Sold lots page in the Farmer area (winner's name, masked address, address reveal)
-- [ ] T-051.4 [qa] Other users get 404 or no data; the full address is reachable only for the farmer's own sold lot and every reveal is audited; no farmer contact in any won-lot response or page; no phone in any won-lot or sold-lot response or page
+- [x] T-051.7 [storefront] Won lots page `/akun/menang` with no farmer contact and the "add an address" prompt (D-056) *(new 2026-11-16; US-053 T-053.2 sits on it)*
+- [x] T-051.2b [storefront] Sold lots page in the Farmer area (winner's name, masked address, address reveal)
+- [x] T-051.4 [qa] Other users get 404 or no data; the full address is reachable only for the farmer's own sold lot and every reveal is audited; no farmer contact in any won-lot response or page; no phone in any won-lot or sold-lot response or page
+
+**Accepted 2026-11-17 (qa PASS, fix round 1).** AC2, AC4, AC5, AC6 each checked
+against the code and the spec output above. Two non-bug notes from qa, recorded,
+not fixed here:
+1. A terminated farm sees "Area petani belum terbuka / Akun ini belum punya
+   kebun…" (`SoldLotsPage.tsx:287-300`) instead of terminated copy, because
+   Mercur's `GET /vendor/sellers` filters out `terminated` sellers, so
+   `getMyFarm()` returns null (`apps/storefront-koi/src/lib/data/farm.ts:52-69`).
+   The rule holds (no rows, no actions); copy follow-up, not a FAIL.
+2. Seeded Budi's default address has `province: null`, so his masked row shows
+   only "Jakarta Selatan". Seed data, not a bug.
+PARKED, not part of this acceptance: T-051.1a, T-051.3a, T-051.2a (winner
+bank-account reveal; D-044 on hold) and AC1/AC3.
 
 **Under escrow** (owner's planned direction, 2026-11-16, not a decision): the winner pays the platform through Xendit,
 so the winner never needs the farmer's bank account; AC1, AC3, T-051.1a, T-051.3a and T-051.2a would be dropped.
 
-**Readiness (2026-11-16): `todo` for the farmer side and the no-contact winner page; winner bank-account part
+**Readiness (2026-11-16; superseded 2026-11-17, accepted): `todo` for the farmer side and the no-contact winner page; winner bank-account part
 `parked (owner reconsidering, 2026-11-16)`.** `mvp-Q37` answered by D-056 (farmer gets the winner's default shipping
 address, masked, full through a logged reveal). `mvp-Q39` answered by D-057 (number + holder name, one row), but it
 applies only if D-044 returns. Owner, same day: "for now don't show farmer contact" → D-044 on hold, winner bank tasks
@@ -2021,7 +2147,7 @@ farmer (incl. one address reveal).
 Report PASS/FAIL per AC with file:line and command output. Don't change app code.
 ```
 
-### US-052 Farmer marks paid and shipped · `todo`
+### US-052 Farmer marks paid and shipped · `done (evidence: packages/api/integration-tests/http/vendor-sold-lots.spec.ts:488-637 (7/7 shipped cases; 16/16 file); packages/api/src/workflows/mark-lot-sold-status.ts:28-72 (paid-only guard 45-51, courier needs tracking 53-60, ownership 404 41-43, assertSellerNotTerminated 31, no validateSellerOpenStep); packages/api/src/workflows/steps/sold-lot.ts:25-42 (terminated 403 only); packages/api/integration-tests/http/farmer-auctions.spec.ts (create/submit/update still validateSellerOpenStep); apps/storefront-koi/src/components/sections/AccountPage/SoldLotsPage.tsx:221 (winner name), RevealAddress.tsx:81 (masked city+province), components/ShipLot.tsx:12,18,87-99 (resi required only for courier), no phone/wa.me anywhere; packages/api tsc exit 0; storefront bun run check exit 0 (182 tests); browser /akun/kebun/terjual incl. ship + suspended-farm ship, /tmp/koi-render/recheck1/; qa PASS fix round 1)` (paid half parked: T-052.4)
 **Depends on:** US-050 T-050.1; US-051 farmer side (T-051.1b, T-051.2b: the sold-lots page), US-092 (masking).
 As a **farmer**, I want to mark a lot paid and then shipped so that progress is
 tracked. *(Plan: Closing, Delivery; D-052, D-054)*
@@ -2032,12 +2158,19 @@ tracked. *(Plan: Closing, Delivery; D-052, D-054)*
 **Under escrow** (planned direction, 2026-11-16, not a decision): only the "paid" part changes: the farmer marking
 paid is replaced by a Xendit webhook, so T-052.4 (and AC1's `won → paid`) is parked. The shipped half, the sold-lots
 row and the tracking number are unchanged and buildable now.
-- [ ] T-052.1 [backend] `lot.tracking_number` + mark-shipped workflow + `POST /vendor/sold-lots/:id/shipped` (the farmer must own the lot); `won → paid` is T-052.4 *(split 2026-11-16)*
-- [ ] T-052.4 [backend] mark-paid workflow + `POST /vendor/sold-lots/:id/paid` *(parked (payment model: Xendit escrow pending, 2026-11-16): under escrow a Xendit webhook sets paid, so AC1's `won → paid` route is not built now)*
-- [ ] T-052.2 [storefront] Farmer area actions on the sold-lots page ("Tandai dikirim" builds now; "Tandai sudah dibayar" parked with T-052.4)
-- [ ] T-052.3 [qa] States can't be skipped; no winner phone anywhere on the farmer's side (D-052); a suspended farm can finish its sold lots, a terminated one can't (D-054)
+- [x] T-052.1 [backend] `lot.tracking_number` + mark-shipped workflow + `POST /vendor/sold-lots/:id/shipped` (the farmer must own the lot); `won → paid` is T-052.4 *(split 2026-11-16)*
+- [ ] T-052.4 [backend] mark-paid workflow + `POST /vendor/sold-lots/:id/paid` *(parked (payment model: Xendit escrow pending, 2026-11-16): under escrow a Xendit webhook sets paid, so AC1's `won → paid` route is not built now; re-parked at acceptance 2026-11-17 — no route exists under src/api/vendor/sold-lots/[id]/)*
+- [x] T-052.2 [storefront] Farmer area actions on the sold-lots page ("Tandai dikirim" builds now; "Tandai sudah dibayar" parked with T-052.4)
+- [x] T-052.3 [qa] States can't be skipped; no winner phone anywhere on the farmer's side (D-052); a suspended farm can finish its sold lots, a terminated one can't (D-054)
 
-**Readiness (2026-11-16): ready (`todo`).** No open question blocks it (`mvp-Q34` → D-052, `mvp-Q36` → D-054).
+**Accepted 2026-11-17 (qa PASS, fix round 1): the shipped half only (AC2, AC3,
+AC4; AC1's `shipped` half).** AC1's `won → paid` half stays parked with T-052.4
+(no `POST /vendor/sold-lots/:id/paid` exists), and US-056/US-058/US-059 stay out.
+**Transitions checked:** the guard refuses anything but `paid`
+(`mark-lot-sold-status.ts:45-51`), so `won`, `open` and `shipped` all get 409
+unchanged (spec `:539`).
+
+**Readiness (2026-11-16; accepted 2026-11-17): ready (`todo`).** No open question blocks it (`mvp-Q34` → D-052, `mvp-Q36` → D-054).
 Sequence: US-050 T-050.1 → US-051 T-051.1b, T-051.2b → this story. AC3 is met by US-051's farmer side (no phone in the
 row); this story adds no PII read.
 - **Transitions (plan "Lot lifecycle", "Design rules"):** `won → paid`, `paid → shipped`. Nothing else: no `won → shipped`,
@@ -2195,15 +2328,15 @@ workflows using validateSellerOpenStep (would lock out a suspended farm, D-054);
 Browser: render-check /akun/kebun/terjual as the farmer, walk won → paid → shipped.
 ```
 
-### US-053 Winner marks delivered · `todo`
+### US-053 Winner marks delivered · `done (evidence: packages/api/integration-tests/http/won-lot-delivered.spec.ts (6/6); packages/api/src/workflows/mark-lot-delivered.ts:23-53 (winner only 34-36 → 404, shipped only 37-43 → 409, delivered_at saved 47-51), :58-78 (lock lot:<id>); packages/api/src/api/store/won-lots/[id]/delivered/route.ts:16-52 (identity from auth_context, strict empty body); apps/storefront-koi/src/lib/data/lots.ts:201-210; components/sections/LotDetailsPage/components/WonLotPanel.tsx:88 (deliver button, shipped only), wired from LotPage.tsx:274 via LotDossier.tsx:40; packages/api tsc exit 0; storefront bun run check exit 0 (182 tests); browser delivered-after.png, /tmp/koi-render/recheck1/; qa PASS fix round 1)`
 As a **winner**, I want to mark the fish delivered so that the sale completes and
 the claim window starts. *(Plan: Delivery)*
 - AC1: Only the winner can mark `shipped → delivered`.
-- [ ] T-053.1 [backend] `lot.delivered_at` + delivered workflow + `POST /store/won-lots/:id/delivered`
-- [ ] T-053.2 [storefront] Button on the won lot *(unblocked 2026-11-16, D-052; starts after US-051 T-051.7, its page now that T-051.2a is parked)*
-- [ ] T-053.3 [qa] Only the winner, only from `shipped`; `delivered_at` saved *(new task 2026-11-16: the story had no qa task)*
+- [x] T-053.1 [backend] `lot.delivered_at` + delivered workflow + `POST /store/won-lots/:id/delivered`
+- [x] T-053.2 [storefront] Button on the won lot *(unblocked 2026-11-16, D-052; starts after US-051 T-051.7, its page now that T-051.2a is parked)*
+- [x] T-053.3 [qa] Only the winner, only from `shipped`; `delivered_at` saved *(new task 2026-11-16: the story had no qa task)*
 
-**Readiness (2026-11-16): `todo`; T-053.1 ready, T-053.2 ready after US-051 T-051.7 (mvp-Q34 → D-052; T-051.2a is
+**Readiness (2026-11-16; accepted 2026-11-17): `todo`; T-053.1 ready, T-053.2 ready after US-051 T-051.7 (mvp-Q34 → D-052; T-051.2a is
 parked, so the page is T-051.7's no-contact `/akun/menang`).** The rule is plain: plan "Delivery" (the
 winner marks it delivered) and the lifecycle `shipped → delivered`. `delivered_at` is saved because the claim window
 runs "within 4 hours of marking it delivered" (plan "Dead-on-arrival claims" 1, US-054 AC1); the lot has no such
@@ -2610,3 +2743,4 @@ is built. Record the answer here, in `plan.md`, and as a decision in `docs/produ
 | mvp-Q37 | **Answered 2026-11-16 (D-056):** option (a) with a logged reveal. The farmer ships to the winner's **default shipping address** (`customer_address.is_default_shipping = true`, at most one per customer in Medusa 2.21.2). Sold-lot row shows it masked: **city + province only**; `address_1`, `address_2` and `postal_code` are not sent (the `mask.ts` helpers keep leading/trailing chars, which leaks the house number, so none is used). Full address only through the farmer's logged reveal for their own sold lot (`pii_reveal_audit`, `record_type` `lot`, `field` `shipping_address`, one row per reveal). No default address → "Alamat belum diisi", no reveal (404, no row), and the winner's won-lot page prompts to add one (`/akun/alamat`). Relaxes D-052 for the address only; **no phone either way stands** (the customer's or the address's phone is never selected). Adds T-051.5 and tasks in US-051/US-052. *(Was: how does the farmer get the winner's delivery address with no phone? Options (a) the winner's default Medusa address (masked? full? reveal?); (b) the winner types an address on the won lot; (c) off-platform only.)* | none (was US-090 pilot readiness; added T-051.5, T-051.1b, T-051.2b, T-052.2) |
 | mvp-Q38 | **Open (2026-11-16, non-blocking; US-085 is already blocked by mvp-Q12).** The plan's WhatsApp **Win** message ("sends the farmer's WhatsApp and bank details", US-085 AC1) conflicts with D-052 (no farmer phone to the winner) and D-044 (the full bank account only through the logged reveal). Options: (a) the win message sends a link to `/akun/menang` and the 1×24 h deadline only; (b) it sends the full bank account, the message itself counting as a logged reveal; (c) it sends the masked account plus the link. Recommend (a). | US-085 |
 | mvp-Q39 | **Answered 2026-11-16 (D-057):** option (b), and one reveal records both fields: the winner's reveal returns the full `account_number` **and** full `holder_name`, with **one** `pii_reveal_audit` row (`field: "bank_account"`, not one row per field). **On hold with D-044** (owner, 2026-11-16: no farmer contact for now): intended rule, not built. Updated now so it is ready if D-044 returns: US-051 AC3, T-051.3a (body enum `"bank_account"`, response `{ account_number, holder_name }`), T-051.2a. *(Was: does the reveal include the account-holder name? Options (a) number only; (b) number and holder name.)* | none (was US-051 T-051.3a; those tasks are parked, not blocked) |
+| mvp-Q40 | **Open (2026-11-17, non-blocking).** The masked bidder name is derived at read time from the customer's current `first_name` + id, so a customer who renames themselves re-masks their own past bids on the next read. Options: (a) accept the derived mask — what T-044.1 builds; (b) snapshot the mask onto the `bid` row at placement time (new column + migration, stable forever). Recommend (a). *(Was: does the mask have to stay stable if a customer renames themselves?)* | none (was US-044 T-044.1) |
