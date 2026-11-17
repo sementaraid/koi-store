@@ -8,6 +8,7 @@ import {
   PUBLIC_AUCTION_STATUSES,
   type StoreGetLotsParamsType,
 } from "./validators"
+import { maskBidder } from "../../../utils/mask"
 
 // US-040 AC3 (D-046, D-050). The storefront is lot-centric: `/lelang` lists
 // lots and `/lelang/[id]` takes a lot id, so these are the public reads. No
@@ -29,6 +30,8 @@ export type StoreLot = {
   // claimed, false for unsold.
   sold: boolean | null
   cancelled: boolean
+  // US-044 (D-051): computed from the rows on every read, never stored.
+  bid_count: number
   auction: {
     id: string
     status: string
@@ -50,11 +53,22 @@ export type StoreLotsResponse = {
   offset: number
 }
 
-export type StoreLotResponse = { lot: StoreLot }
+// US-044 (D-051): the detail-only bid history. Exactly these three keys, never
+// a bid id, customer id or name.
+export type StoreBid = { bidder: string; amount: number; created_at: string }
+
+export type StoreLotDetail = StoreLot & { bids: StoreBid[] }
+
+export type StoreLotDetailResponse = { lot: StoreLotDetail }
 
 // The raw lot status (`won`, `paid`, …) stays private: it would tell who won.
+// `bids.*` rides along for `bid_count`; the feed mapper never re-emits a row.
 export const STORE_LOT_FIELDS = [
   "id",
+  "bids.id",
+  "bids.customer_id",
+  "bids.amount",
+  "bids.created_at",
   "ob",
   "kb",
   "current_price",
@@ -100,6 +114,7 @@ const toStoreLot = (
     | undefined
   const status = row.status as string
   const cancelled = status === "cancelled"
+  const bids = (row.bids ?? []) as { id: string }[]
 
   return {
     id: row.id as string,
@@ -119,6 +134,8 @@ const toStoreLot = (
           ? false
           : null,
     cancelled,
+    // D-050: a cancelled lot shows no bids, so neither the count nor the rows.
+    bid_count: cancelled ? 0 : bids.length,
     auction: {
       id: auction.id as string,
       status: auction.status as string,
@@ -165,7 +182,7 @@ export const getPublicLots = async (
   limit: number,
   offset: number,
   order: "ASC" | "DESC"
-): Promise<{ lots: StoreLot[]; count: number }> => {
+): Promise<{ lots: StoreLot[]; count: number; rows: StoreLotRow[] }> => {
   const query = scope.resolve(ContainerRegistrationKeys.QUERY)
   const { data, metadata } = await query.graph({
     entity: "lot",
@@ -173,7 +190,48 @@ export const getPublicLots = async (
     filters,
     pagination: { skip: offset, take: limit, order: { end_time: order } },
   })
-  return { lots: await toStoreLots(scope, data), count: metadata?.count ?? 0 }
+  return {
+    lots: await toStoreLots(scope, data),
+    count: metadata?.count ?? 0,
+    rows: data,
+  }
+}
+
+// US-044 (D-051). One batched read of the bidders' first names (soft reference,
+// no link), then mask. The customer row never leaves the server.
+// ponytail: no cap or pagination — fine for an MVP lot's few hundred bids; add a
+// limit plus `has_more` when a lot can carry more.
+export const toStoreBids = async (
+  scope: MedusaContainer,
+  rows: { id: string; customer_id: string; amount: number; created_at: string }[]
+): Promise<StoreBid[]> => {
+  const ids = [...new Set(rows.map((b) => b.customer_id))]
+  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
+  const { data: customers } = ids.length
+    ? await query.graph({
+        entity: "customer",
+        fields: ["id", "first_name"],
+        filters: { id: ids },
+      })
+    : { data: [] }
+  const names = new Map(
+    (customers as { id: string; first_name?: string | null }[]).map((c) => [
+      c.id,
+      c.first_name,
+    ])
+  )
+
+  return [...rows]
+    .sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() -
+          new Date(a.created_at).getTime() || b.id.localeCompare(a.id)
+    )
+    .map((bid) => ({
+      bidder: maskBidder(names.get(bid.customer_id), bid.customer_id),
+      amount: Number(bid.amount),
+      created_at: new Date(bid.created_at).toISOString(),
+    }))
 }
 
 // No status → the open feed: scheduled + live, soonest end first. status=closed

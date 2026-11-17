@@ -29,6 +29,18 @@ export const maskName = (value: string | null | undefined) => {
   return v && v.split(/\s+/).map((w) => keepEnds(w, 1, 0)).join(" ")
 }
 
+// US-044 (D-051): a public bidder. First 3 letters of the trimmed first name
+// (unpadded) + `***` + the last 2 characters of the customer id, lowercased.
+// Derived at read time, nothing stored, so the same inputs always give the
+// same mask. Budi + cus_…S09X → Bud***9x; blank name → ***9x.
+export const maskBidder = (
+  firstName: string | null | undefined,
+  customerId: string
+) =>
+  `${(firstName ?? "").trim().slice(0, 3)}***${customerId
+    .slice(-2)
+    .toLowerCase()}`
+
 // Phone: the +62 country code (when present) and the last 3 digits.
 // +6281234567890 → +62********890, 081234567890 → *********890
 export const maskPhone = (value: string | null | undefined) => {

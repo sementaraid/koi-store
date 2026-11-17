@@ -53,9 +53,14 @@ export function toAuctionProduct(lot: StoreLot): AuctionProduct {
       endsAt: lot.end_time,
       openingBid: lot.ob,
       bidStep: lot.kb,
-      /* US-044 owns bid counts and the trail; neither exists yet. */
-      bidCount: undefined,
-      bids: undefined,
+      /* US-044 (D-051): the feed carries `bid_count` but never `bids`; only
+         the detail fetch has rows. `bidder` is the server's mask — verbatim. */
+      bidCount: lot.bid_count,
+      bids: lot.bids?.map((bid) => ({
+        bidder: bid.bidder,
+        amount: bid.amount,
+        at: bid.created_at
+      })),
       /* For the lot page's "Terjual" / "Tidak terjual" label (T-040.2b).
          `closed` is `lot.sold !== null`, so the cast below is exact. */
       ...(closed ? { sold: lot.sold as boolean } : {}),

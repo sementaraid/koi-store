@@ -31,6 +31,11 @@ export type StoreLot = {
       claimed, false unsold. */
   sold: boolean | null;
   cancelled: boolean;
+  /** US-044 (D-051): computed on every read, never stored. 0 when cancelled. */
+  bid_count: number;
+  /** US-044: `GET /store/lots/:id` only; absent on feed rows. Masked
+      `bidder`, whole-rupiah `amount`, newest first. */
+  bids?: { bidder: string; amount: number; created_at: string }[];
   auction: {
     id: string;
     status: string;

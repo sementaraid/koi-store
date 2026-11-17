@@ -22,6 +22,7 @@ const lot = (over: Partial<StoreLot> = {}): StoreLot => ({
   final_price: null,
   sold: null,
   cancelled: false,
+  bid_count: 3,
   auction: {
     id: "auc_1",
     status: "live",
@@ -62,6 +63,28 @@ test("a closed unsold lot shows the last price and sold false", () => {
   assert.equal(out.auction.status, "ended")
   assert.equal(out.auction.currentBid, 1_500_000)
   assert.equal(out.auction.sold, false)
+})
+
+test("the feed's bid_count becomes bidCount; no bids key stays undefined", () => {
+  const out = toAuctionProduct(lot())
+  assert.equal(out.auction.bidCount, 3)
+  assert.equal(out.auction.bids, undefined)
+})
+
+test("the detail's bids map to { bidder, amount, at }, mask verbatim (D-051)", () => {
+  const out = toAuctionProduct(
+    lot({
+      bid_count: 2,
+      bids: [
+        { bidder: "Bud***9x", amount: 1_500_000, created_at: "2026-11-19T10:00:00.000Z" },
+        { bidder: "Al***7y", amount: 1_400_000, created_at: "2026-11-19T09:00:00.000Z" }
+      ]
+    })
+  )
+  assert.deepEqual(out.auction.bids, [
+    { bidder: "Bud***9x", amount: 1_500_000, at: "2026-11-19T10:00:00.000Z" },
+    { bidder: "Al***7y", amount: 1_400_000, at: "2026-11-19T09:00:00.000Z" }
+  ])
 })
 
 test("a cancelled lot has no price, no clock, cancelled true (D-050)", () => {

@@ -6,20 +6,20 @@ import type {
 import { PUBLIC_AUCTION_STATUSES } from "../validators"
 import {
   getPublicLots,
-  type StoreLot,
-  type StoreLotResponse,
+  toStoreBids,
+  type StoreLotDetailResponse,
 } from "../route"
-
-type StoreLotByIdResponse = StoreLotResponse
 
 // US-040 AC3 (D-046, D-050). 404 when the lot is missing OR its auction isn't
 // public, so a draft lot id can't leak. A cancelled lot inside a public auction
 // is a 200 with `cancelled: true`.
+// US-044 (D-051): the detail adds the masked bid history. A cancelled lot has
+// no bids (D-050); the rows stay in the DB.
 export const GET = async (
   req: AuthenticatedMedusaRequest,
-  res: MedusaResponse<StoreLotByIdResponse>
+  res: MedusaResponse<StoreLotDetailResponse>
 ) => {
-  const { lots } = await getPublicLots(
+  const { lots, rows } = await getPublicLots(
     req.scope,
     {
       id: req.params.id,
@@ -29,7 +29,7 @@ export const GET = async (
     0,
     "ASC"
   )
-  const lot: StoreLot | undefined = lots[0]
+  const lot = lots[0]
   if (!lot) {
     throw new MedusaError(
       MedusaError.Types.NOT_FOUND,
@@ -37,5 +37,16 @@ export const GET = async (
     )
   }
 
-  res.json({ lot })
+  // US-072 T-072.1: filter removed bids here once `removed_at` exists.
+  const bidRows =
+    (rows[0].bids as
+      | { id: string; customer_id: string; amount: number; created_at: string }[]
+      | undefined) ?? []
+
+  res.json({
+    lot: {
+      ...lot,
+      bids: lot.cancelled ? [] : await toStoreBids(req.scope, bidRows),
+    },
+  })
 }

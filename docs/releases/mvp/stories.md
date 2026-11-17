@@ -16,13 +16,14 @@ are defined in `docs/product/overview.md`.
 
 ## Status as of 2026-11-17
 
-**Last accepted stories:** US-051, US-052 (shipped half), US-053 (Epic 5), qa
+**Last accepted stories:** US-044 (Epic 4), qa PASS on both ACs, accepted
+2026-11-17. Before it: US-051, US-052 (shipped half), US-053 (Epic 5), qa
 PASS on every in-scope AC, fix round 1, accepted 2026-11-17. Before them: US-043,
 US-050, then US-040, US-041, US-042 (Epic 4). T-030.8, T-032.6, T-032.7 and
 T-020.10 (seed fix) were accepted earlier. The `bid` model and the bid/join
 code are committed (`d67d3c8`).
 
-**Counts** (computed from this file, 2026-11-17; US-051, US-052, US-053 accepted):
+**Counts** (computed from this file, 2026-11-17; US-044, US-051, US-052, US-053 accepted):
 
 | Epic | Stories done | In progress | Todo | Parked | Blocked | Tasks done | Tasks open | Tasks parked |
 |---|---|---|---|---|---|---|---|---|
@@ -30,12 +31,12 @@ code are committed (`d67d3c8`).
 | 1 Wallet | 6 | 0 | 0 | 0 | 0 | 22 | 0 | 0 |
 | 2 Becoming a farmer | 2 | 0 | 0 | 0 | 0 | 11 | 5 | 0 |
 | 3 Auctions for farmers | 4 | 0 | 0 | 0 | 0 | 23 | 0 | 0 |
-| 4 Joining and bidding | 4 | 0 | 3 | 0 | 0 | 17 | 8 | 0 |
+| 4 Joining and bidding | 5 | 0 | 2 | 0 | 0 | 20 | 5 | 0 |
 | 5 Closing and after-sale | 4 | 0 | 6 | 2 | 0 | 15 | 29 | 4 |
 | 6 Admin operations | 0 | 0 | 6 | 0 | 0 | 0 | 22 | 0 |
 | 7 WhatsApp bot | 0 | 0 | 0 | 0 | 6 | 0 | 12 | 0 |
 | 8 Pilot | 0 | 0 | 1 | 0 | 0 | 0 | 5 | 0 |
-| **Total** | **23** | **0** | **16** | **2** | **6** | **97** | **81** | **4** |
+| **Total** | **24** | **0** | **15** | **2** | **6** | **100** | **78** | **4** |
 
 Epic 2's open tasks are US-021's T-021.2/.3/.4/.6 (follow-ups on a `done` story)
 and T-020.10 (seed an admin user). Blocked: US-080 – US-085 (mvp-Q12).
@@ -67,14 +68,13 @@ details are shown to the winner and the farmer sees the winner's WhatsApp. It
 contradicts D-052 (no phone either way), D-044 (on hold) and D-056.
 
 **Next in milestone order:**
-1. US-044 (D-051) T-044.1 → T-044.2 → T-044.3. Ready since 2026-11-17; no open
-   question, `bid` table and store lot routes exist (`d67d3c8`). T-044.1 touches
-   only the store lot routes, no bid workflow.
-2. US-045 (polling, T-045.1), US-046 (live room; T-046.1 needs Backend, the rest
-   waits on it) — Epic 4's last two.
-3. Epic 5 next: US-054 → US-055 (needs US-053, now `done`), then US-057, US-060,
+1. US-045 (polling, T-045.1) — ready, frontend only, no blocking question; the
+   only Epic 4 story with no dependency. US-046 next (T-046.1 needs Backend, the
+   rest waits on it).
+2. Epic 5 next: US-054 → US-055 (needs US-053, now `done`), then US-057, US-060,
    US-061. US-056/US-058 parked; US-059's payment-strike part parked.
-4. US-043, US-050, US-051, US-052 (shipped), US-053 are accepted; nothing left.
+3. US-043, US-050, US-051, US-052 (shipped), US-053, US-044 are accepted;
+   nothing left there.
 T-020.10 can run any time; qa's admin browser checks need it.
 
 ## Epic 0: Foundations (Milestone 1)
@@ -1291,7 +1291,7 @@ Browser: render-check on a live lot close to its end, as a joined customer.
 Report PASS/FAIL per AC with file:line and command output. Don't change app code.
 ```
 
-### US-044 Bidders are masked · `todo`
+### US-044 Bidders are masked · `done (evidence: packages/api/integration-tests/http/store-lots.spec.ts:476-655 (14/14, 7 new cases at :476,:523,:552,:577,:589,:612); packages/api/src/utils/mask.ts:36-42; packages/api/src/utils/__tests__/mask.unit.spec.ts:40-52; packages/api/src/api/store/lots/route.ts:66-72,117,138,204-235; packages/api/src/api/store/lots/[id]/route.ts:40-51; apps/storefront-koi/src/lib/data/lots.ts:35,38; apps/storefront-koi/src/lib/adapters/lot.ts:56-62; LotPage.tsx:278-291; bun run test:unit 17/17; storefront bun run check 187/187; render check /lelang open signed out + as budi, closed won, no-bid, cancelled — 5 routes 200, 0 issues; qa PASS)`
 As a **customer**, I want other bidders shown masked so that identities stay private.
 *(Plan: Bidding)*
 - AC1: Public pages and `/store/*` routes show every bidder as the first 3 letters of their first name + `***` + the
@@ -1299,11 +1299,26 @@ As a **customer**, I want other bidders shown masked so that identities stay pri
   customer id never appear in any store response; the same bidder shows the same mask on every row of an auction.
 - AC2: A lot's bid history shows masked bidder, amount and time, on open **and** closed lots (D-051). A closed lot
   still returns no winner id, name or `winner_*` field (D-046). A cancelled lot shows no bids (D-050).
-- [ ] T-044.1 [backend] The store response returns only the masked name, never raw identity
-- [ ] T-044.2 [storefront] `BidHistory` uses API data
-- [ ] T-044.3 [qa] No unmasked identity in any store response
+- [x] T-044.1 [backend] The store response returns only the masked name, never raw identity
+- [x] T-044.2 [storefront] `BidHistory` uses API data
+- [x] T-044.3 [qa] No unmasked identity in any store response
 
-**Readiness (2026-11-17): ready (`todo`), no open question blocks it.** mvp-Q33 answered (D-051): format `Bud***x7`;
+**Acceptance (2026-11-17): accepted. qa PASS on AC1 and AC2.** Spot-checked: `maskBidder` first-name
+`slice(0,3)` + `***` + lowercased `customerId.slice(-2)` (`src/utils/mask.ts:36-42`); `toStoreBids` one batched
+`query.graph` on `customer` (fields `id`, `first_name` only), sort `created_at` DESC tie `id` DESC, three keys only
+(`route.ts:204-235`); `bid_count` from `rows.length`, 0 when cancelled (`route.ts:117,138`);
+feed never re-emits `bids` (`STORE_LOT_FIELDS` `route.ts:66-72`); detail forces `bids: []` on a cancelled lot
+(`[id]/route.ts:49`); storefront maps `bid_count`/`bids` and renders `bidder` verbatim (`lib/adapters/lot.ts:56-62`,
+`LotPage.tsx:278-291`). Re-ran: `bun run test:unit` 17/17; `bun run test:integration:http -- store-lots` 14/14
+(7 new cases at `:476,:523,:552,:577,:589,:612`, old 8 kept); storefront `bun run check` 187/187 + ESLint clean;
+`packages/api` and `apps/admin-koi` `tsc` clean.
+**Recorded:** the feed carries `bid_count` with no `bids` key; the mask is derived at read time from the customer's
+current `first_name` + id, nothing stored (`mask.ts:32-35` comment). mvp-Q40 stays **open, non-blocking**;
+recommendation (a) accept the derived mask.
+**Citation slips (not AC failures):** qa cited unit cases at `:40-52` (they are `:40-52`, `// US-044` at `:39`) and the
+mask at `route.ts:206-239` (helper is `:204-235`); both ranges overlap and the substance matches.
+
+**Readiness (2026-11-17): built and accepted (was `todo`).** mvp-Q33 answered (D-051): format `Bud***x7`;
 full masked history on open and closed lots, which supersedes D-046 in part (the top row of a closed lot shows the
 winner's masked name; nothing else about the winner is exposed). No decision newer than D-051 (D-052–D-057) changes
 this story. Prerequisites are met: US-042 T-042.1 (the `bid` table) and US-040 T-040.1 (`GET /store/lots(/:id)`) are
@@ -1541,8 +1556,153 @@ Report PASS/FAIL per AC with file:line and command output. Don't change app code
 As a **bidder**, I want the price and countdown to update without reloading so
 that I see outbids quickly. *(Plan: Key flows: live updates)*
 - AC1: The lot page polls every few seconds. No websockets or SSE in the MVP.
-- [ ] T-045.1 [storefront] Polling on the lot page and live room
+- [ ] T-045.1 [storefront] Polling on the lot page and live room *(live room part moves to T-046.2 — see Readiness)*
 - [ ] T-045.2 [qa] An outbid appears within one polling interval
+
+**Readiness (2026-11-17): ready (`todo`), nothing blocks it. No backend task.**
+- No WebSocket/SSE in MVP; the lot page polls (plan `plan.md:249`, owner decision in force). One read, one screen.
+- Poll interval: **no decision or plan line records one.** This section uses **2 s** as the proposed default
+  (flagged for the owner, see below). If the owner records a different value, change `LOT_POLL_MS` only.
+- Every field polling needs exists today in `GET /store/lots/:id`:
+  `current_price`, `bid_count`, `bids[]`, `end_time`, `sold`, `cancelled`, `auction.status`, `final_price`
+  (`packages/api/src/api/store/lots/route.ts:17-64`, `[id]/route.ts:18-51`; US-040 + US-044 committed).
+  `GET /store/lots` already exists too (not needed by this task). **No missing route or field → no backend task.**
+- Live room is still demo data: `LiveRoomPage` reads `DEFAULT_AUCTION_LOTS` from `src/const/live.ts`
+  (`components/sections/LivePage/components/LiveRoomPage.tsx:4,17-18`), so polling it now would poll nothing real.
+  **T-045.1 is scoped to the lot page only; live-room polling belongs to US-046 T-046.2** (which replaces the const).
+- US-044 T-044.2 (real `BidHistory` on the lot page) already sits in the working tree (`LotPage.tsx:275-286`
+  renders `auction.bids`; `lib/adapters/lot.ts:57-62` maps them). T-045.1 starts once that task is accepted and
+  must not touch `BidHistory/**` itself.
+- Cross-cutting items in force for both briefs: D-055 (Indonesian copy, rupiah `id-ID`), no new dependency,
+  `bun run tsc` in both Koi apps, render check with the playwright MCP.
+
+```text
+Story: US-045 (task T-045.1)   Release: mvp
+Agent: frontend (apps/storefront-koi)   Expected: <=30 min
+Starts after: US-044 T-044.2 accepted (BidHistory on real data); no backend contract needed.
+
+## Acceptance criteria (verbatim)
+- AC1: The lot page polls every few seconds. No websockets or SSE in the MVP.
+
+## Decisions in force
+- No WebSocket, no SSE (plan `plan.md:249`; owner decision in force). Polling only.
+- D-046 / D-050: a closed or cancelled lot stops polling; the closed view still shows final price / sold label, never a winner.
+- D-051: bid history is the API's masked rows, unchanged by this task.
+- D-055: no new user-visible message from polling (failures are silent, last good data stays); any copy added is Indonesian.
+- CLAUDE.md: data only through `src/lib/data` server actions (never raw `fetch`, never `sdk` in a component); no new dependency.
+
+Poll interval: 2 s. Define it once as `export const LOT_POLL_MS = 2000` in `src/lib/helpers/poll.ts` (so the test
+imports it); do not scatter the number.
+
+## Endpoint inventory (every row exists; nothing to build on the backend)
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| GET | /store/lots/:id | yes, `packages/api/src/api/store/lots/[id]/route.ts:18-51` | `{ lot: { current_price, bid_count, bids: [{bidder, amount, created_at}], end_time, sold, cancelled, final_price, auction: { status, … } } }` |
+| GET | /store/lots | yes, `route.ts:241-256` | not read by this task |
+| POST | /store/bids | yes, `src/api/store/bids/route.ts` | our own bid, unchanged; it already calls `router.refresh()` |
+No "Exists? no" row. No `codegen` needed (no route change).
+
+## Build (one surface: the lot page)
+1. New `src/hooks/use-lot-poll.ts` (client hook), pattern from `src/hooks/use-countdown.ts:26-56`:
+   - `useLotPoll(lotId, enabled)`; state starts `null`; on each tick call the existing server action `getLot(lotId)`
+     (`src/lib/data/lots.ts:281-289`). Keep the last successful `StoreLot` in state.
+   - `getLot` rethrows every non-404 failure (`lots.ts:285-288`) and returns `null` on 404, so the hook wraps the
+     call in `try/catch`: any throw is the failure path below; a `null` means the lot left the public feed, so stop
+     polling (`enabled`-style local flag) and keep the last good data.
+   - Timer is a recursive `setTimeout`, never `setInterval`, so a failure can back off. First tick after
+     `LOT_POLL_MS`, not immediately (the server already rendered fresh data).
+   - One tick MUST skip the request when: `document.visibilityState !== "visible"`; `document.activeElement` is inside
+     `[data-bid-form]` (the bid input is being used, so do not clobber it); or `enabled` is false.
+   - On failure: keep the last good `StoreLot` (no error UI, no toast, no console noise) and back off
+       2 → 4 → 8 → 16 → 30 s (cap), reset to `LOT_POLL_MS` on success. This is the "no polling storm" rule.
+   - Listen to `visibilitychange` and refetch immediately when the tab becomes visible.
+   - Clean up the timeout and the listener on unmount. No websockets, no SSE, no new dependency.
+   - Extract the delay math as a pure `pollDelayMs(attempt)` in `src/lib/helpers/poll.ts` with a colocated
+     `poll.test.ts` (`node:test`; helper imports use the `.ts` extension). Keep the hook thin.
+2. `src/components/sections/LotDetailsPage/components/LotPage.tsx` (no `'use client'` of its own; it is inside the
+   client boundary via `LotDossier.tsx:1` and already uses `useCountdown`, so hooks are allowed there):
+   - `const polled = useLotPoll(lot.id, !cancelled && !closed)`; map it with the existing `toAuctionProduct`
+     (`src/lib/adapters/lot.ts`, no change) and prefer its `currentBid`, `bidCount`, `bids`, `endsAt`, `status`,
+     `sold` over the server props. `AuctionProduct` has no `cancelled`/`finalPrice` field: derive
+     `cancelled` from `status === "cancelled"` and `closed` from `sold !== undefined`, as `LotPage.tsx:95-98` does.
+     Everything static (listing, info, media) keeps the server props.
+   - `shownEnd` stays `bidEndTime ?? endsAt`: the PlaceBid `onEndTime` value still wins; a polled `end_time` after
+     an extend now also moves the countdown within one interval (reuse `useCountdown`, no new timer).
+   - Render `<PlaceBid>` only when `bid && !closed && !cancelled`; when a poll flips the lot to sold, the control
+     disappears and polling stops (`enabled` false).
+   - Do NOT poll with `router.refresh()`: it re-renders server components and remounts the bid field mid-typing.
+     Keep PlaceBid on its server-provided `bid` prop; only its `currentPrice` may advance from the polled value while
+     the form is not focused (the hook already pauses while it is). The pause is required, not cosmetic: PlaceBid
+     keys its `FormField` on `minimum` (`PlaceBid.tsx:136`), so a new price remounts the input and would wipe what
+     the customer typed.
+3. `PlaceBid.tsx`: add only `data-bid-form` to the existing `<form>` (`:115`) as the pause marker. Do not change its
+   submit, toast or `router.refresh()` logic.
+4. Live room: **do not touch** `LivePage/**` or `const/live.ts`; US-046 T-046.2 owns real data and its polling.
+
+## Start from
+- `src/hooks/use-countdown.ts:26-56` (effect + cleanup pattern)
+- `src/lib/data/lots.ts:281-289` (`getLot`)
+- `src/components/sections/LotDetailsPage/components/LotPage.tsx:91-98,239-248,322-326` (clock state, closed flag, bid slot)
+- `src/lib/adapters/lot.ts` (`toAuctionProduct`, unchanged)
+- `src/lib/helpers/*.test.ts` (node:test layout)
+
+## Do not touch
+- `packages/api/**`, `apps/admin-koi/**`, `LivePage/**`, `const/live.ts` (US-046), `BidHistory/**` (US-044),
+  `PlaceBid` submit/toast logic, any helper or adapter outside `poll.ts`.
+
+## Definition of done
+cd apps/storefront-koi && bun run check                    -> pass (tsc + node:test incl. poll.test.ts + lint)
+cd apps/admin-koi && bun run tsc                           -> clean
+render-check skill with the playwright MCP on `/lelang/<lot with bids>` signed out:
+  price, bid count and "Riwayat bid" render; no console error, no hydration warning, no "undefined"/NaN;
+  screenshot path recorded.
+Update proof: with the page open and a second seeded customer placing a bid (UI or `POST /store/bids`), the price and
+  history change within one interval (~2 s, allow 4 s) with no page reload and without moving focus.
+Paused proof: focus the amount field and type digits; an outbid from the other account must leave the typed value
+  and focus intact (poll skipped while the form has focus).
+Report: standard header + render check result + screenshot path. Don't commit.
+
+## Open questions
+none blocking. The 2 s interval is a proposed default, not a recorded decision; use it and report it.
+```
+
+```text
+Story: US-045 (task T-045.2)   Release: mvp
+Agent: qa   Expected: <=30 min
+Verify AC1. Decisions: D-046, D-050, D-051, D-055; no WebSocket/SSE.
+Code under test: `apps/storefront-koi/src/hooks/use-lot-poll.ts`, `src/lib/helpers/poll.ts` (+ `.test.ts`),
+`components/sections/LotDetailsPage/components/{LotPage,PlaceBid}.tsx`, `src/lib/data/lots.ts`.
+Commands (alone, nothing else on Jest): `cd apps/storefront-koi && bun run check`;
+`cd apps/admin-koi && bun run tsc`. No backend spec: no file under `packages/api` changed.
+
+Prove, with evidence:
+1. Interval and update: open `/lelang/<open live lot the signed-in customer joined>` as a second seeded customer
+   (`*@koi.dev` / `supersecret`; join via the page first if needed). Bid from the second account (UI or
+   `POST /store/bids` with that account's cookie). The first page's price, bid count and history change within one
+   interval: measure POST -> render, PASS at <= 2 s + one tick (allow 4 s); no reload.
+2. Hidden tab: open a second tab and bring it to front so the lot tab is hidden. Observe via the playwright MCP
+   network log that no `/store/lots/:id` request starts while hidden; returning to the tab fetches at once.
+3. Closed lot: a lot whose `end_time` passes while the page is open (the close job runs every minute) must stop
+   polling; the board switches to the final price / "Terjual" / "Tidak terjual" and the bid control disappears.
+   If no lot can be made to close within the window, report this bullet "code-read only" with file:line and say why.
+4. Mid-typing: focus the amount input, type digits, then outbid from the other account. Assert the typed value,
+   selection and focus are unchanged, and no layout jump (same element positions).
+5. No console errors, no hydration mismatch and no "undefined"/"NaN"/"[object Object]" in the page on the lot route.
+6. Failures: stop the backend or block the request briefly; the page keeps its last price, shows no error toast,
+   logs no unhandled rejection, and request spacing backs off (2 → 4 → 8 s observed) instead of one request per 2 s.
+
+Watch for: `router.refresh()` used as the poller (remounts the field); `setInterval` with no cleanup, or a timer still
+running after navigating away or after close/cancel; requests continuing while the tab is hidden; a new dependency
+for polling; the history re-sorted or re-masked client-side; a polled price overriding the bidder's own just-placed
+bid toast/confirmation; the countdown not following a server extend.
+
+Report PASS/FAIL per AC with file:line and command output; bugs with repro and expected/actual.
+Screenshots and page snapshots land in `.playwright-mcp/`. Don't change app code.
+```
+
+**Owner question raised by this section (not yet in the questions table):** `mvp-Q41` — is 2 s the
+polling interval for the MVP lot page, or another value (e.g. 3 s/5 s)? It blocks nothing; T-045.1 uses 2 s as a
+named constant, so a change is one line. Recommend 2 s.
 
 ### US-046 Live bidding room · `todo`
 As a **bidder**, I want a live screen with one lot at a time so that the auction
@@ -2744,3 +2904,4 @@ is built. Record the answer here, in `plan.md`, and as a decision in `docs/produ
 | mvp-Q38 | **Open (2026-11-16, non-blocking; US-085 is already blocked by mvp-Q12).** The plan's WhatsApp **Win** message ("sends the farmer's WhatsApp and bank details", US-085 AC1) conflicts with D-052 (no farmer phone to the winner) and D-044 (the full bank account only through the logged reveal). Options: (a) the win message sends a link to `/akun/menang` and the 1×24 h deadline only; (b) it sends the full bank account, the message itself counting as a logged reveal; (c) it sends the masked account plus the link. Recommend (a). | US-085 |
 | mvp-Q39 | **Answered 2026-11-16 (D-057):** option (b), and one reveal records both fields: the winner's reveal returns the full `account_number` **and** full `holder_name`, with **one** `pii_reveal_audit` row (`field: "bank_account"`, not one row per field). **On hold with D-044** (owner, 2026-11-16: no farmer contact for now): intended rule, not built. Updated now so it is ready if D-044 returns: US-051 AC3, T-051.3a (body enum `"bank_account"`, response `{ account_number, holder_name }`), T-051.2a. *(Was: does the reveal include the account-holder name? Options (a) number only; (b) number and holder name.)* | none (was US-051 T-051.3a; those tasks are parked, not blocked) |
 | mvp-Q40 | **Open (2026-11-17, non-blocking).** The masked bidder name is derived at read time from the customer's current `first_name` + id, so a customer who renames themselves re-masks their own past bids on the next read. Options: (a) accept the derived mask — what T-044.1 builds; (b) snapshot the mask onto the `bid` row at placement time (new column + migration, stable forever). Recommend (a). *(Was: does the mask have to stay stable if a customer renames themselves?)* | none (was US-044 T-044.1) |
+| mvp-Q41 | **Open (2026-11-17, non-blocking).** Lot-page polling interval for US-045: 2 s (recommended, T-045.1 uses it via `LOT_POLL_MS`) or 3/5 s. No decision or plan line records one; T-045.1 defines it in one place, so a change is one line. *(Was: how many seconds between lot-page polls?)* | none (was US-045 T-045.1) |

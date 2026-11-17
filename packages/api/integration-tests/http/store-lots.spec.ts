@@ -9,6 +9,7 @@ import { AUCTION_MODULE } from "../../src/modules/auction"
 import type AuctionModuleService from "../../src/modules/auction/service"
 import type { AuctionStatus } from "../../src/modules/auction/models/auction"
 import type { LotStatus } from "../../src/modules/auction/models/lot"
+import { maskBidder } from "../../src/utils/mask"
 
 jest.setTimeout(120 * 1000)
 
@@ -140,6 +141,38 @@ medusaIntegrationTestRunner({
       )
       return { auction, lots: created, products }
     }
+
+    const createCustomer = async (firstName: string, lastName: string) => {
+      const [row] = await getContainer()
+        .resolve(Modules.CUSTOMER)
+        .createCustomers([
+          {
+            email: `bidder-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@test.dev`,
+            first_name: firstName,
+            last_name: lastName,
+            phone: "+628111000222",
+          },
+        ])
+      return row as { id: string; first_name: string }
+    }
+
+    const addBid = async (lotId: string, customerId: string, amount: number) => {
+      const [row] = await auctions().createBids([
+        { lot_id: lotId, customer_id: customerId, amount, source: "web" },
+      ])
+      return row
+    }
+
+    // US-044 (D-051): the same order the route promises, so a same-timestamp
+    // tie does not make the spec flaky.
+    const newestFirst = <T extends { id: string; created_at: string | Date }>(
+      rows: T[]
+    ) =>
+      [...rows].sort(
+        (a, b) =>
+          Date.parse(String(b.created_at)) - Date.parse(String(a.created_at)) ||
+          b.id.localeCompare(a.id)
+      )
 
     beforeEach(async () => {
       const [key] = await getContainer()
@@ -437,6 +470,189 @@ medusaIntegrationTestRunner({
       const json = JSON.stringify(one.data)
       expect(json).toContain(seller.id)
       expect(json).toContain(seller.handle)
+    })
+
+    // US-044 (D-051): masked bid history.
+    it("returns masked bids newest first on an open lot (AC1, AC2)", async () => {
+      const seller = await createSeller()
+      const category = await createCategory("h")
+      const live = await seed({ status: "live", seller, category, lots: [{}] })
+      const lotId = live.lots[0].id
+      const budi = await createCustomer("Budi", "Santoso")
+      const siti = await createCustomer("Siti", "Rahma")
+      await addBid(lotId, budi.id, 1_100_000)
+      await addBid(lotId, siti.id, 1_200_000)
+      await addBid(lotId, budi.id, 1_300_000)
+
+      const names = new Map([
+        [budi.id, "Budi"],
+        [siti.id, "Siti"],
+      ])
+      const expected = newestFirst(await auctions().listBids({ lot_id: lotId }))
+
+      const one = await api.get(`/store/lots/${lotId}`, { headers: storeHeaders })
+      expect(one.status).toEqual(200)
+      expect(one.data.lot.bid_count).toEqual(3)
+      expect(one.data.lot.bids).toEqual(
+        expected.map((bid) => ({
+          bidder: maskBidder(names.get(bid.customer_id)!, bid.customer_id),
+          amount: Number(bid.amount),
+          created_at: new Date(bid.created_at).toISOString(),
+        }))
+      )
+      // The same bidder shows the same mask on every row.
+      expect(one.data.lot.bids[0].bidder).toEqual(
+        one.data.lot.bids[2].bidder
+      )
+
+      const json = JSON.stringify(one.data)
+      for (const value of [
+        budi.id,
+        siti.id,
+        "Budi",
+        "Siti",
+        "Santoso",
+        "Rahma",
+        "+628111000222",
+        "bidder-",
+      ]) {
+        expect(json).not.toContain(value)
+      }
+    })
+
+    it("masks the same bidder identically and keeps only bidder, amount and created_at (AC1, AC2)", async () => {
+      const seller = await createSeller()
+      const category = await createCategory("i")
+      const live = await seed({ status: "live", seller, category, lots: [{}] })
+      const lotId = live.lots[0].id
+      const budi = await createCustomer("Budi", "Santoso")
+      await addBid(lotId, budi.id, 1_100_000)
+      await addBid(lotId, budi.id, 1_200_000)
+
+      const one = await api.get(`/store/lots/${lotId}`, { headers: storeHeaders })
+      const bids = one.data.lot.bids as {
+        bidder: string
+        amount: number
+        created_at: string
+      }[]
+      expect(bids).toHaveLength(2)
+      expect(new Set(bids.map((b) => b.bidder)).size).toEqual(1)
+      expect(bids[0].bidder).toEqual(maskBidder("Budi", budi.id))
+      for (const bid of bids) {
+        expect(Object.keys(bid).sort()).toEqual([
+          "amount",
+          "bidder",
+          "created_at",
+        ])
+        expect(Number.isInteger(bid.amount)).toBe(true)
+        expect(Number.isNaN(Date.parse(bid.created_at))).toBe(false)
+      }
+    })
+
+    it("feed rows carry bid_count and no bids key (AC1)", async () => {
+      const seller = await createSeller()
+      const category = await createCategory("j")
+      const live = await seed({
+        status: "live",
+        seller,
+        category,
+        lots: [{}, {}],
+      })
+      const bidder = await createCustomer("Budi", "Santoso")
+      await addBid(live.lots[0].id, bidder.id, 1_100_000)
+
+      const res = await api.get("/store/lots", { headers: storeHeaders })
+      const withBid = res.data.lots.find(
+        (l: { id: string }) => l.id === live.lots[0].id
+      )
+      const withoutBid = res.data.lots.find(
+        (l: { id: string }) => l.id === live.lots[1].id
+      )
+      expect(withBid.bid_count).toEqual(1)
+      expect(withoutBid.bid_count).toEqual(0)
+      expect("bids" in withBid).toBe(false)
+      expect(JSON.stringify(res.data)).not.toContain(bidder.id)
+    })
+
+    it("returns no bids for a lot without bids (AC2)", async () => {
+      const seller = await createSeller()
+      const category = await createCategory("k")
+      const live = await seed({ status: "live", seller, category, lots: [{}] })
+
+      const one = await api.get(`/store/lots/${live.lots[0].id}`, {
+        headers: storeHeaders,
+      })
+      expect(one.data.lot.bids).toEqual([])
+      expect(one.data.lot.bid_count).toEqual(0)
+    })
+
+    it("shows no bids on a cancelled lot (AC2, D-050)", async () => {
+      const seller = await createSeller()
+      const category = await createCategory("l")
+      const live = await seed({
+        status: "live",
+        seller,
+        category,
+        lots: [{ status: "cancelled", cancel_reason: "ikan sakit" }],
+      })
+      const lotId = live.lots[0].id
+      const bidder = await createCustomer("Budi", "Santoso")
+      await addBid(lotId, bidder.id, 1_200_000)
+
+      const one = await api.get(`/store/lots/${lotId}`, { headers: storeHeaders })
+      expect(one.status).toEqual(200)
+      expect(one.data.lot.cancelled).toEqual(true)
+      expect(one.data.lot.bids).toEqual([])
+      expect(one.data.lot.bid_count).toEqual(0)
+      const json = JSON.stringify(one.data)
+      expect(json).not.toContain(bidder.id)
+      expect(json).not.toContain(maskBidder("Budi", bidder.id))
+    })
+
+    it("keeps the full masked history on a closed lot, no winner field (AC2, D-046, D-051)", async () => {
+      const seller = await createSeller()
+      const category = await createCategory("m")
+      const closed = await seed({
+        status: "closed",
+        seller,
+        category,
+        lots: [{ status: "won", final_price: 2_000_000, winner_customer_id: null }],
+      })
+      const lotId = closed.lots[0].id
+      const budi = await createCustomer("Budi", "Santoso")
+      const siti = await createCustomer("Siti", "Rahma")
+      await addBid(lotId, budi.id, 1_900_000)
+      await addBid(lotId, siti.id, 2_000_000)
+      // The winner is the top bidder (D-051 supersedes D-046 in part).
+      const [saved] = await auctions().updateLots([
+        { id: lotId, winner_customer_id: siti.id },
+      ])
+
+      const one = await api.get(`/store/lots/${lotId}`, { headers: storeHeaders })
+      expect(one.status).toEqual(200)
+      expect(one.data.lot.bid_count).toEqual(2)
+      expect(one.data.lot.bids).toHaveLength(2)
+      expect(one.data.lot.bids[0]).toEqual({
+        bidder: maskBidder("Siti", siti.id),
+        amount: 2_000_000,
+        created_at: expect.any(String),
+      })
+      expect(one.data.lot.bids[1].bidder).toEqual(maskBidder("Budi", budi.id))
+
+      const list = await api.get("/store/lots?status=closed", {
+        headers: storeHeaders,
+      })
+      const listed = list.data.lots.find((l: { id: string }) => l.id === lotId)
+      expect(listed.bid_count).toEqual(2)
+      expect("bids" in listed).toBe(false)
+
+      for (const body of [list.data, one.data]) {
+        const json = JSON.stringify(body)
+        expect(json).not.toContain("winner")
+        expect(json).not.toContain(budi.id)
+        expect(json).not.toContain(siti.id)
+      }
+      expect(saved.winner_customer_id).toEqual(siti.id)
     })
   },
 })
