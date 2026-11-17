@@ -23,6 +23,18 @@ test('each won-and-later status has its own Indonesian line', () => {
   assert.equal(wonLotStatusLabel('claimed'), 'Klaim diajukan');
 });
 
+test('a delivered lot with the caller own claim says so (US-054)', () => {
+  assert.equal(
+    wonLotStatusLabel('delivered', { status: 'open' }),
+    'Sudah diterima — klaim diajukan'
+  );
+  assert.equal(
+    wonLotStatusLabel('delivered', { status: 'disputed' }),
+    'Sudah diterima — Disengketakan'
+  );
+  assert.equal(wonLotStatusLabel('delivered', null), 'Sudah diterima');
+});
+
 test('a status outside won-and-later has no line and no action', () => {
   assert.equal(wonLotStatusLabel('open'), null);
   assert.equal(wonLotAction('open'), null);

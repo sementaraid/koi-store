@@ -5,6 +5,7 @@ import type {
 } from "@medusajs/framework/http"
 import type { RemoteQueryFunction } from "@medusajs/framework/types"
 import type { LotStatus } from "../../../modules/auction/models/lot"
+import { readClaimWindowHours } from "../../../workflows/steps/claim"
 import type { StoreGetWonLotsParamsType } from "./validators"
 
 type Query = Omit<RemoteQueryFunction, symbol>
@@ -19,6 +20,23 @@ type Query = Omit<RemoteQueryFunction, symbol>
 // winner's default shipping address is the same address every farmer ships
 // to (D-056).
 
+// US-054 T-054.1b: the caller's own claim on the lot, never its file key or
+// URL (D-018). `opened_at` is the claim row's created_at.
+export type WonLotClaim = {
+  id: string
+  status: string
+  remedy: string
+  opened_at: string
+  has_video: boolean
+}
+
+// Per-row values the shared mapper can't get from the lot row alone.
+export type WonLotExtras = {
+  // delivered_at + claim_window_hours; null unless the lot is `delivered`.
+  claim_window_ends_at: string | null
+  claim: WonLotClaim | null
+}
+
 export type WonLot = {
   id: string
   status: string
@@ -29,7 +47,7 @@ export type WonLot = {
   auction: { id: string; delivery_method: string }
   product: { title: string | null; thumbnail: string | null }
   seller: { id: string; name: string }
-}
+} & WonLotExtras
 
 export type StoreWonLotsResponse = {
   lots: WonLot[]
@@ -74,7 +92,10 @@ export const WON_LOT_STATUSES = [
 const iso = (value: unknown): string | null =>
   value ? new Date(value as string).toISOString() : null
 
-export const toWonLot = (row: Record<string, unknown>): WonLot => {
+export const toWonLot = (
+  row: Record<string, unknown>,
+  extras: WonLotExtras
+): WonLot => {
   const auction = (row.auction ?? {}) as Record<string, unknown>
   const seller = auction.seller as
     | { id?: string; name?: string }
@@ -103,7 +124,63 @@ export const toWonLot = (row: Record<string, unknown>): WonLot => {
       id: seller?.id as string,
       name: (seller?.name ?? "") as string,
     },
+    ...extras,
   }
+}
+
+// US-054 T-054.1b: `claim_window_ends_at` and the caller's own `claim`, read
+// for a whole page in one query (plus the shared settings read), never per
+// row. `video_file_key` is never selected (D-018); every claim row has one
+// (POST requires the upload), so `has_video` is true by construction.
+export const readWonLotExtras = async (
+  query: Query,
+  rows: Record<string, unknown>[],
+  customerId: string
+): Promise<Map<string, WonLotExtras>> => {
+  const ids = rows.map((row) => row.id as string)
+  if (!ids.length) return new Map()
+
+  const [windowHours, { data: claims }] = await Promise.all([
+    readClaimWindowHours(query),
+    query.graph({
+      entity: "claim",
+      fields: ["id", "lot_id", "status", "remedy", "created_at"],
+      filters: { lot_id: ids, customer_id: customerId },
+    }),
+  ])
+
+  const claimByLot = new Map<string, WonLotClaim>()
+  for (const claim of claims as {
+    id: string
+    lot_id: string
+    status: string
+    remedy: string
+    created_at: Date | string
+  }[]) {
+    claimByLot.set(claim.lot_id, {
+      id: claim.id,
+      status: claim.status,
+      remedy: claim.remedy,
+      opened_at: new Date(claim.created_at).toISOString(),
+      has_video: true,
+    })
+  }
+
+  const byId = new Map<string, WonLotExtras>()
+  for (const row of rows) {
+    const deliveredAt = iso(row.delivered_at)
+    const endsAt =
+      row.status === "delivered" && deliveredAt
+        ? new Date(
+            new Date(deliveredAt).getTime() + windowHours * 60 * 60 * 1000
+          ).toISOString()
+        : null
+    byId.set(row.id as string, {
+      claim_window_ends_at: endsAt,
+      claim: claimByLot.get(row.id as string) ?? null,
+    })
+  }
+  return byId
 }
 
 // D-056: whether the caller has a default shipping address. One query,
@@ -149,8 +226,19 @@ export const GET = async (
     readHasShippingAddress(query, customerId),
   ])
 
+  // One query over the page's ids, not one per row (T-054.1b).
+  const rowExtras = await readWonLotExtras(query, data, customerId)
+
   res.json({
-    lots: data.map(toWonLot),
+    lots: data.map((row) =>
+      toWonLot(
+        row,
+        rowExtras.get(row.id as string) ?? {
+          claim_window_ends_at: null,
+          claim: null,
+        }
+      )
+    ),
     count: metadata?.count ?? 0,
     limit,
     offset,

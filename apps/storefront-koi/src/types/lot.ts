@@ -53,6 +53,16 @@ export type LotPageProps = ComponentProps<"div"> &
     bid?: BidControl
     /** The winner's own row for this lot (US-053 T-053.2, US-051 AC6); omitted
         unless the signed-in visitor won it. `hasShippingAddress` backs the
-        "add an address" prompt (D-056). */
-    wonLot?: { id: string; status: string; hasShippingAddress: boolean }
+        "add an address" prompt (D-056). US-054 adds the claim window and the
+        caller's own claim. */
+    wonLot?: {
+      id: string
+      status: string
+      hasShippingAddress: boolean
+      claimWindowEndsAt: string | null
+      claim: { status: string; remedy: string; opened_at: string } | null
+      /** The server's clock at render (US-054): keeps the window copy equal on
+          both sides of hydration. */
+      now: number
+    }
   }

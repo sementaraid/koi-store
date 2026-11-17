@@ -137,6 +137,16 @@ export const joinAuction = async (auctionId: string): Promise<JoinAuctionResult>
    the farm name (no contact, D-044 on hold); `has_shipping_address` backs the
    "add an address" prompt (D-056). */
 
+/** The caller's own claim on this lot (US-054 T-054.1b). Never its file key or
+    URL (D-018): `has_video` is what the screen gets. */
+export type WonLotClaim = {
+  id: string;
+  status: string;
+  remedy: string;
+  opened_at: string;
+  has_video: boolean;
+};
+
 export type WonLot = {
   id: string;
   status: string;
@@ -144,6 +154,10 @@ export type WonLot = {
   closed_at: string | null;
   tracking_number: string | null;
   delivered_at: string | null;
+  /** AC1: `delivered_at + claim_window_hours`, or null when not delivered. */
+  claim_window_ends_at: string | null;
+  /** AC4: the caller's own claim, whatever its status, or null. */
+  claim: WonLotClaim | null;
   auction: { id: string; delivery_method: string };
   product: { title: string | null; thumbnail: string | null };
   seller: { id: string; name: string };
@@ -220,6 +234,51 @@ export const markWonLotDelivered = async (id: string): Promise<MarkDeliveredResu
       return { success: false, message: err.message, code: err.code, status: err.status };
     }
     return { success: false, message: 'Gagal menandai lot diterima. Coba lagi.' };
+  }
+};
+
+export type OpenClaimResult =
+  | { success: true }
+  | { success: false; message: string; code?: string; status?: number };
+
+/** The winner opens a dead-on-arrival claim on one of their `delivered` lots
+    (US-054 AC1–AC4). The server owns the window, the file rules and the
+    one-claim guard; this only carries the multipart request.
+ *
+ * @remarks
+ * The body is an explicit `FormData` (`fetchOptions.body`): the client sends it
+ * as multipart unchanged (`hasExplicitFormData`), and the route's generated
+ * request type is its `validatedBody` only — the `video` input type lives in
+ * the route's own validators, not in the codegen graph. Same multipart wire
+ * shape as `createTopupRequest`, which can pass the File in the payload
+ * because its route types the request as `StoreCreateTopupRequestInput`. */
+export const openClaim = async (
+  lotId: string,
+  remedy: 'refund' | 'replacement',
+  video: File
+): Promise<OpenClaimResult> => {
+  const headers = await getAuthHeaders();
+  if (!('authorization' in headers)) {
+    return { success: false, message: 'Sesi Anda telah berakhir. Masuk lagi.' };
+  }
+
+  const body = new FormData();
+  body.append('video', video);
+  body.append('remedy', remedy);
+
+  try {
+    await sdk.store.wonLots.$id.claims.mutate({
+      $id: lotId,
+      remedy,
+      fetchOptions: { headers, body }
+    });
+    revalidatePath(lotHref(lotId));
+    return { success: true };
+  } catch (err: unknown) {
+    if (err instanceof ClientError) {
+      return { success: false, message: err.message, code: err.code, status: err.status };
+    }
+    return { success: false, message: 'Gagal mengajukan klaim. Coba lagi.' };
   }
 };
 

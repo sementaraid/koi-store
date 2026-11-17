@@ -183,6 +183,9 @@ medusaIntegrationTestRunner({
         auction: { id: expect.any(String), delivery_method: "courier" },
         product: { title: null, thumbnail: null },
         seller: { id: farm.id, name: farm.name },
+        // US-054 T-054.1b: shipped, so no window and no claim yet.
+        claim_window_ends_at: null,
+        claim: null,
       })
     })
 

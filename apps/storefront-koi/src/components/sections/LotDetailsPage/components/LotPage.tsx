@@ -304,6 +304,9 @@ export function LotPage({
                             lotId={mine.id}
                             status={mine.status}
                             hasShippingAddress={mine.hasShippingAddress}
+                            claimWindowEndsAt={mine.claimWindowEndsAt}
+                            claim={mine.claim}
+                            now={mine.now}
                           />
                         )}
                       </RenderIf>

@@ -45,7 +45,7 @@ export const NAV: NavGroup[] = [
         href: ROUTES.claims,
         label: 'Klaim DOA',
         hint: 'Tinjau video unboxing dan putuskan sengketa.',
-        ready: false
+        ready: true
       }
     ]
   },

@@ -3,14 +3,20 @@
    the authenticated `GET /store/won-lots/:id` instead; only the winner gets a
    row back. Pure decisions here, so the states can be tested without a browser. */
 
+import { claimStatusLabel } from './claim.ts';
+
 /** The one action a won lot offers: `shipped → delivered` (AC1). */
 export function wonLotAction(status: string): 'deliver' | null {
   return status === 'shipped' ? 'deliver' : null;
 }
 
 /** The winner's own status line for a won lot. `null` means the status is
-    outside won-and-later, which the authenticated route never returns. */
-export function wonLotStatusLabel(status: string): string | null {
+    outside won-and-later, which the authenticated route never returns.
+    US-054: a delivered lot with the caller's own claim says so. */
+export function wonLotStatusLabel(
+  status: string,
+  claim?: { status: string } | null
+): string | null {
   switch (status) {
     case 'won':
       // Payment is not built in this release (T-052.4 parked): say only this.
@@ -20,7 +26,10 @@ export function wonLotStatusLabel(status: string): string | null {
     case 'shipped':
       return 'Sedang dikirim';
     case 'delivered':
-      return 'Sudah diterima';
+      if (!claim) return 'Sudah diterima';
+      return claim.status === 'open'
+        ? 'Sudah diterima — klaim diajukan'
+        : `Sudah diterima — ${claimStatusLabel(claim.status)}`;
     case 'claimed':
       return 'Klaim diajukan';
     default:

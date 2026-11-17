@@ -8,6 +8,11 @@ import { FeedPagination } from '@/components/cells/FeedPagination/FeedPagination
 import { ROUTES, lotHref } from '@/const/routes';
 import { listWonLots } from '@/lib/data/lots';
 import { requireCustomer } from '@/lib/guard';
+import {
+  claimStatusLabel,
+  claimWindowInfo,
+  remedyLabel
+} from '@/lib/helpers/claim';
 import { formatDeadline } from '@/lib/helpers/format-deadline';
 import { formatPrice } from '@/lib/helpers/format-price';
 import { soldLotStatusLabel } from '@/lib/helpers/sold-lot';
@@ -78,6 +83,10 @@ function WonLots({
   page: number;
   pageCount: number;
 }): ReactNode {
+  /* Server-rendered once, so both the claim window copy and anything the client
+     paints from it agree (same rule as the lot page's `now`). */
+  const now = Date.now();
+
   return (
     <div className="grid gap-4">
       <RenderIf when={lots.length && !hasShippingAddress}>
@@ -100,6 +109,13 @@ function WonLots({
             <Card className="px-5 py-1">
               {list.map((lot) => {
                 const status = soldLotStatusLabel(lot.status);
+                /* US-054: the caller's own claim state. A delivered lot without
+                   one still has its window copy; the row links to the lot page,
+                   where the claim form lives. */
+                const claimWindow =
+                  lot.status === 'delivered' && !lot.claim
+                    ? claimWindowInfo(lot.claim_window_ends_at, now)
+                    : null;
                 return (
                   <Link
                     key={lot.id}
@@ -136,6 +152,26 @@ function WonLots({
 
                     <div className="grid min-w-[160px] justify-end gap-2 text-right">
                       <Badge variant={status.tone}>{status.label}</Badge>
+                      {lot.claim ? (
+                        <div className="grid gap-1">
+                          <Badge variant="urgent">Klaim diajukan</Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {claimStatusLabel(lot.claim.status)} ·{' '}
+                            {remedyLabel(lot.claim.remedy)}
+                          </span>
+                        </div>
+                      ) : claimWindow ? (
+                        <span className="text-xs text-muted-foreground">
+                          {claimWindow.open ? (
+                            <>
+                              {claimWindow.label} ·{' '}
+                              <span className="font-medium underline">Ajukan klaim</span>
+                            </>
+                          ) : (
+                            claimWindow.label
+                          )}
+                        </span>
+                      ) : null}
                       <RenderIf when={lot.final_price}>
                         {(price) => (
                           <span className="text-sm font-bold text-foreground tabular-nums">

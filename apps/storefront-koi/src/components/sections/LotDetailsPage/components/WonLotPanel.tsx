@@ -1,47 +1,98 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 
-import { Badge, Button, RenderIf } from '@koi/ui';
+import { Badge, Button, FormField, RenderIf } from '@koi/ui';
 import { Link } from '@/components/atoms';
 import { ROUTES } from '@/const/routes';
-import { markWonLotDelivered } from '@/lib/data/lots';
+import { markWonLotDelivered, openClaim } from '@/lib/data/lots';
+import {
+  claimFailureInfo,
+  claimStatusLabel,
+  claimWindowInfo,
+  CLAIM_VIDEO_MAX_BYTES,
+  remedyLabel
+} from '@/lib/helpers/claim';
 import {
   deliverFailureInfo,
   wonLotAction,
   wonLotStatusLabel
 } from '@/lib/helpers/won-lot';
 
-/** Props for {@link WonLotPanel}: the winner's own row (US-053 T-053.2). */
+/** Props for {@link WonLotPanel}: the winner's own row (US-053 T-053.2,
+    US-054 T-054.2a). */
 export type WonLotPanelProps = {
   lotId: string;
   status: string;
   /** Whether the winner has a default shipping address (US-051 AC6, D-056).
       `false` shows a prompt to add one, so the farmer has somewhere to ship. */
   hasShippingAddress: boolean;
+  /** US-054 AC1: `delivered_at + claim_window_hours`, null when not delivered. */
+  claimWindowEndsAt: string | null;
+  /** US-054 AC4: the caller's own claim on this lot, whatever its status. */
+  claim: { status: string; remedy: string; opened_at: string } | null;
+  /** The server's clock at render. The window copy is drawn from this rather
+      than `Date.now()`, so server and client render the same text. */
+  now: number;
 };
 
+/** One remedy choice as a labelled radio. */
+function RemedyOption({
+  value,
+  current,
+  label
+}: {
+  value: 'refund' | 'replacement';
+  current: 'refund' | 'replacement';
+  label: string;
+}) {
+  return (
+    <label className="flex cursor-pointer items-center gap-2 text-sm">
+      <input
+        type="radio"
+        name="remedy"
+        value={value}
+        defaultChecked={current === value}
+        className="size-4 accent-primary"
+      />
+      {label}
+    </label>
+  );
+}
+
 /**
- * The winner's own band on a won lot's page (US-053 T-053.2, AC1).
+ * The winner's own band on a won lot's page (US-053 T-053.2, US-054
+ * T-054.2a).
  *
  * @remarks
  * Only the winner's row reaches here: the page asks `GET /store/won-lots/:id`
  * for a signed-in customer, and a 404 (not the winner) keeps the ordinary
- * public view. A `shipped` lot gets "Tandai sudah diterima" behind a confirm;
- * every other won-and-later status gets its own line and no action — payment
- * is not built in this release (T-052.4 parked). A success re-reads the
- * server's row (`router.refresh()`), a stale 409 refreshes the same way, and
- * no payment copy is added (the paid state is escrow's to fill in later).
+ * public view. A `shipped` lot gets "Tandai sudah diterima" behind a confirm.
+ * A `delivered` lot inside the claim window and without a claim gets the
+ * dead-on-arrival form (AC1, AC2); once a claim exists, or the window has
+ * passed, that form is replaced by a line. The server is the guard either way:
+ * a success re-reads the server's row (`router.refresh()`), and a stale 409
+ * refreshes the same way.
  */
-export function WonLotPanel({ lotId, status, hasShippingAddress }: WonLotPanelProps) {
+export function WonLotPanel({
+  lotId,
+  status,
+  hasShippingAddress,
+  claimWindowEndsAt,
+  claim,
+  now
+}: WonLotPanelProps) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fileWarning, setFileWarning] = useState<string | null>(null);
 
   const label = wonLotStatusLabel(status);
   const action = wonLotAction(status);
+  const window = claimWindowInfo(claimWindowEndsAt, now);
+  const showClaimForm = status === 'delivered' && !claim && window.open;
 
   async function deliver() {
     if (!confirm('Tandai ikan ini sudah Anda terima?')) return;
@@ -58,6 +109,51 @@ export function WonLotPanel({ lotId, status, hasShippingAddress }: WonLotPanelPr
     }
 
     const info = deliverFailureInfo(result);
+    setError(info.message);
+    toast.error(info.message);
+    if (info.refresh) router.refresh();
+  }
+
+  function onFileChange(files: FileList | null) {
+    const file = files?.[0];
+    setFileWarning(
+      file && file.size > CLAIM_VIDEO_MAX_BYTES
+        ? 'Ukuran video maksimal 100 MB. Pilih video yang lebih kecil.'
+        : null
+    );
+  }
+
+  async function submitClaim(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const video = form.get('video');
+    const remedy = form.get('remedy');
+
+    if (!(video instanceof File) || video.size === 0) {
+      setError('Video unboxing wajib diunggah.');
+      return;
+    }
+    if (video.size > CLAIM_VIDEO_MAX_BYTES) {
+      setError('Ukuran video maksimal 100 MB. Pilih video yang lebih kecil.');
+      return;
+    }
+    if (remedy !== 'refund' && remedy !== 'replacement') {
+      setError('Pilih pengembalian dana atau ikan pengganti.');
+      return;
+    }
+
+    setBusy(true);
+    setError(null);
+    const result = await openClaim(lotId, remedy, video);
+    setBusy(false);
+
+    if (result.success) {
+      toast.success('Klaim diajukan.');
+      router.refresh();
+      return;
+    }
+
+    const info = claimFailureInfo(result);
     setError(info.message);
     toast.error(info.message);
     if (info.refresh) router.refresh();
@@ -102,6 +198,59 @@ export function WonLotPanel({ lotId, status, hasShippingAddress }: WonLotPanelPr
               ) : null}
             </div>
           </>
+        )}
+      </RenderIf>
+
+      {/* US-054 AC4: the winner already has a claim on this lot. */}
+      <RenderIf when={status === 'delivered' && claim ? claim : null}>
+        {(mine) => (
+          <p className="text-xs text-foreground">
+            Klaim diajukan — status: {claimStatusLabel(mine.status)}. Pilihan:{' '}
+            {remedyLabel(mine.remedy)}.
+          </p>
+        )}
+      </RenderIf>
+
+      {/* US-054 AC1: delivered, no claim, and the window has passed. */}
+      <RenderIf when={status === 'delivered' && !claim && !window.open ? window.label : null}>
+        {(text) => <p className="text-xs text-muted-foreground">{text}</p>}
+      </RenderIf>
+
+      <RenderIf when={showClaimForm}>
+        {() => (
+          <form onSubmit={submitClaim} className="grid gap-2" noValidate>
+            <p className="text-xs text-muted-foreground">
+              Ikan mati atau sakit saat diterima? Ajukan klaim dengan video unboxing.
+              {window.label ? ` ${window.label}.` : ''}
+            </p>
+
+            <fieldset className="flex flex-col gap-1.5">
+              <legend className="text-sm font-medium">Pilihan penyelesaian</legend>
+              <RemedyOption value="refund" current="refund" label="Pengembalian dana" />
+              <RemedyOption value="replacement" current="replacement" label="Ikan pengganti" />
+            </fieldset>
+
+            <FormField
+              label="Video unboxing"
+              type="file"
+              name="video"
+              accept="video/mp4,video/webm,video/quicktime"
+              hint="MP4, WebM, atau QuickTime. Maksimal 100 MB."
+              error={fileWarning ?? undefined}
+              onChange={(e) => onFileChange(e.target.files)}
+            />
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button type="submit" size="sm" disabled={busy}>
+                {busy ? 'Mengirim…' : 'Ajukan klaim'}
+              </Button>
+              {error ? (
+                <span role="alert" className="text-xs text-destructive-ink">
+                  {error}
+                </span>
+              ) : null}
+            </div>
+          </form>
         )}
       </RenderIf>
     </div>

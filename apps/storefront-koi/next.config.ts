@@ -17,8 +17,9 @@ const nextConfig: NextConfig = {
          server action, which goes through one POST — Next's 1 MB default
          refused it. Each file is capped at 5 MB by the form and the upload
          route (`MAX_FARM_FILE_BYTES`); the payload is the seven of them at
-         most. Same ceiling as the API's own upload limit per file. */
-      bodySizeLimit: '40mb'
+         most. A claim's unboxing video (US-054, up to 100 MB) also goes
+         through a server action, so the ceiling is above that. */
+      bodySizeLimit: '110mb'
     }
   },
   images: {

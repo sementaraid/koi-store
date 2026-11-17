@@ -5,6 +5,7 @@ import type {
 } from "@medusajs/framework/http"
 import {
   readHasShippingAddress,
+  readWonLotExtras,
   toWonLot,
   WON_LOT_FIELDS,
   WON_LOT_STATUSES,
@@ -45,5 +46,14 @@ export const GET = async (
     )
   }
 
-  res.json({ lot: toWonLot(row), has_shipping_address })
+  // US-054 T-054.1b: claim window end + the caller's own claim on this lot.
+  const extras = await readWonLotExtras(query, [row], customerId)
+
+  res.json({
+    lot: toWonLot(
+      row,
+      extras.get(row.id as string) ?? { claim_window_ends_at: null, claim: null }
+    ),
+    has_shipping_address,
+  })
 }

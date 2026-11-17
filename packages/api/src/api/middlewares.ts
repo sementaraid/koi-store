@@ -65,6 +65,16 @@ import {
   FarmRegistrationAdditionalData,
 } from "./utils/farm-registration"
 import {
+  CLAIM_VIDEO_MAX_BYTES,
+  CLAIM_VIDEO_MIME_TYPES,
+  StoreCreateClaimBody,
+} from "./store/won-lots/[id]/claims/validators"
+import {
+  captureVendorClaimStatus,
+  VendorGetClaimsParams,
+} from "./vendor/claims/validators"
+import { AdminGetClaimsParams } from "./admin/claims/validators"
+import {
   adminPiiMask,
   storePiiMask,
   vendorPiiMask,
@@ -88,23 +98,51 @@ const screenshotUpload = multer({
 }).single("screenshot")
 
 // multer's own errors (file too large, unexpected field) would surface as 500;
-// they are client mistakes, so report them as 400.
+// they are client mistakes, so report them as 400. `message` localises the
+// text (D-055) for uploads whose error the Koi apps show verbatim.
 const clientErrorsAsBadRequest = (
   upload: (
     req: MedusaRequest,
     res: MedusaResponse,
     cb: (err?: unknown) => void
-  ) => void
+  ) => void,
+  message?: (err: multer.MulterError) => string
 ) =>
   (req: MedusaRequest, res: MedusaResponse, next: MedusaNextFunction) =>
     upload(req, res, (err?: unknown) => {
       if (err instanceof multer.MulterError) {
-        return next(new MedusaError(MedusaError.Types.INVALID_DATA, err.message))
+        return next(
+          new MedusaError(
+            MedusaError.Types.INVALID_DATA,
+            message?.(err) ?? err.message
+          )
+        )
       }
       next(err)
     })
 
 const parseScreenshot = clientErrorsAsBadRequest(screenshotUpload)
+
+// US-054 T-054.1a (AC2, D-055): the unboxing video, video-only, up to 100 MB.
+const claimVideoUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: CLAIM_VIDEO_MAX_BYTES, files: 1 },
+  fileFilter: (_req, file, cb) =>
+    CLAIM_VIDEO_MIME_TYPES.includes(file.mimetype)
+      ? cb(null, true)
+      : cb(
+          new MedusaError(
+            MedusaError.Types.INVALID_DATA,
+            "Video harus berformat MP4, WebM, atau QuickTime."
+          )
+        ),
+}).single("video")
+
+const parseClaimVideo = clientErrorsAsBadRequest(claimVideoUpload, (err) =>
+  err.code === "LIMIT_FILE_SIZE"
+    ? "Ukuran video maksimal 100 MB."
+    : "Unggahan video tidak valid."
+)
 
 // US-020 T-020.5: the registration photos, uploaded before the seller exists.
 const farmFileUpload = multer({
@@ -259,6 +297,13 @@ export default defineMiddlewares({
       matcher: "/vendor",
       middlewares: [vendorPiiMask],
     },
+    // US-054 T-054.1b: Mercur owns GET /vendor/claims with a strict query
+    // validator that 400s `status`; a method-less matcher (global) runs before
+    // it, so the farmer's `?status=` is captured and removed first.
+    {
+      matcher: "/vendor/claims",
+      middlewares: [captureVendorClaimStatus],
+    },
     // ---------------------------------------------------------------------
     {
       method: ["POST"],
@@ -296,6 +341,17 @@ export default defineMiddlewares({
       method: ["POST"],
       matcher: "/store/won-lots/:id/delivered",
       middlewares: [authenticate("customer", ["bearer", "session"])],
+    },
+    // US-054 T-054.1a: the winner opens a claim on a delivered lot. Auth
+    // first, so an anonymous request never gets its body parsed.
+    {
+      method: ["POST"],
+      matcher: "/store/won-lots/:id/claims",
+      middlewares: [
+        authenticate("customer", ["bearer", "session"]),
+        parseClaimVideo,
+        validateAndTransformBody(StoreCreateClaimBody),
+      ],
     },
     // US-051 T-051.6 / US-053 T-053.2: the caller's own won lots, read only.
     // Customer token; no farmer contact in either response (D-052).
@@ -471,6 +527,13 @@ export default defineMiddlewares({
       matcher: "/vendor/sold-lots/:id/shipped",
       middlewares: [validateAndTransformBody(VendorMarkLotShipped)],
     },
+    // US-054 T-054.1b: the farmer's claim queue. Mercur's /vendor catch-all
+    // authenticates the member; only the query is validated.
+    {
+      method: ["GET"],
+      matcher: "/vendor/claims",
+      middlewares: [validateAndTransformQuery(VendorGetClaimsParams, {})],
+    },
     // US-032. Admin-authenticated by Medusa's /admin default (D-002).
     {
       method: ["GET"],
@@ -482,6 +545,12 @@ export default defineMiddlewares({
           defaultLimit: 20,
         }),
       ],
+    },
+    // US-054 T-054.1b: the admin-koi claim queue. Status defaults to `open`.
+    {
+      method: ["GET"],
+      matcher: "/admin/claims",
+      middlewares: [validateAndTransformQuery(AdminGetClaimsParams, {})],
     },
     {
       method: ["POST"],

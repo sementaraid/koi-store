@@ -18,10 +18,13 @@ import { EmptyFeed } from '@/components/cells/EmptyFeed/EmptyFeed';
 import { FeedPagination } from '@/components/cells/FeedPagination/FeedPagination';
 import { ROUTES } from '@/const/routes';
 import { listSoldLots, type SoldLot } from '@/lib/data/sold-lots';
+import { listVendorClaims, type VendorClaim } from '@/lib/data/claims';
 import { getMyFarm, type FarmSeller } from '@/lib/data/farm';
 import { requireCustomer } from '@/lib/guard';
 import { formatDeadline } from '@/lib/helpers/format-deadline';
 import { formatPrice } from '@/lib/helpers/format-price';
+import { remedyLabel } from '@/lib/helpers/claim';
+import { farmerClaimStatus, formatClaimOpenedAt } from '@/lib/helpers/farm-claim';
 import { farmStatusInfo, soldLotsOpen } from '@/lib/helpers/farm-status';
 import { soldLotStatusLabel } from '@/lib/helpers/sold-lot';
 import {
@@ -33,6 +36,7 @@ import { getShell } from '@/lib/shell';
 import { listOrderGroups } from './AccountPage';
 import { countOpen } from './components/Orders';
 import { AccountFrame } from './components/AccountFrame';
+import { ClaimVideo } from './components/ClaimVideo';
 import { RevealAddress } from './components/RevealAddress';
 import { ShipLot } from './components/ShipLot';
 
@@ -86,22 +90,43 @@ export async function SoldLotsPage({ page: raw }: SoldLotsPageProps) {
   const requested = Number.isNaN(parsed) ? 1 : Math.max(parsed, 1);
 
   let lots: SoldLot[] = [];
+  let claims: VendorClaim[] = [];
   let count = 0;
   let lotsFailed = false;
+  let claimsFailed = false;
   if (open) {
-    try {
-      const result = await listSoldLots(PER_PAGE, (requested - 1) * PER_PAGE);
-      lots = result.lots;
-      count = result.count;
-    } catch (err) {
-      if (err instanceof ClientError && err.status === 401) {
-        redirect(
-          `${ROUTES.login}?sessionExpired=true&redirect=${encodeURIComponent(ROUTES.farmSold)}`
-        );
-      }
+    /* US-054 T-054.2c: one extra vendor read for the whole page, never one per
+       row. ponytail: one generous page of claims (the API caps at 100); swap
+       to per-lot reads when a farm's claim history passes that. */
+    const [lotsResult, claimsResult] = await Promise.all([
+      listSoldLots(PER_PAGE, (requested - 1) * PER_PAGE).catch((err: unknown) => {
+        if (err instanceof ClientError && err.status === 401) {
+          redirect(
+            `${ROUTES.login}?sessionExpired=true&redirect=${encodeURIComponent(ROUTES.farmSold)}`
+          );
+        }
+        return null;
+      }),
+      listVendorClaims(100, 0)
+    ]);
+
+    if (lotsResult) {
+      lots = lotsResult.lots;
+      count = lotsResult.count;
+    } else {
       lotsFailed = true;
     }
+
+    if ('value' in claimsResult) {
+      claims = claimsResult.value.claims;
+    } else {
+      claimsFailed = true;
+    }
   }
+
+  /* Merge the two lists by `lot_id`; the sold-lot read stays the page's main
+     read, so a lot with no claim renders exactly as before. */
+  const claimsByLot = new Map(claims.map((claim) => [claim.lot_id, claim]));
 
   const pageCount = Math.max(1, Math.ceil(count / PER_PAGE));
   const page = Math.min(requested, pageCount);
@@ -111,7 +136,9 @@ export async function SoldLotsPage({ page: raw }: SoldLotsPageProps) {
   ) : open ? (
     <SoldLots
       lots={lots}
+      claimsByLot={claimsByLot}
       failed={lotsFailed}
+      claimsFailed={claimsFailed}
       page={page}
       pageCount={pageCount}
       suspended={suspended}
@@ -155,16 +182,48 @@ function ErrorCard({ title }: { title: string }): ReactNode {
   );
 }
 
+/** US-054 T-054.2c (AC3): the "Klaim DOA" block under one sold-lot row.
+ *
+ * @remarks
+ * Visible only when the lot has a claim; a lot without one renders exactly as
+ * before. Names only — the backend never sends the winner's phone or address
+ * here (D-052), and the clip is fetched on click (D-018). */
+function ClaimBlock({ claim }: { claim: VendorClaim }): ReactNode {
+  const status = farmerClaimStatus(claim.status);
+  return (
+    <div className="basis-full rounded-xl border border-border bg-muted/40 px-3 py-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-sm font-bold text-foreground">Klaim DOA</p>
+        <Badge variant={status.tone}>{status.label}</Badge>
+        <span className="text-xs text-muted-foreground">{remedyLabel(claim.remedy)}</span>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Diajukan {formatClaimOpenedAt(claim.opened_at)} oleh {claim.winner.name || 'pemenang'}
+      </p>
+      {claim.has_video ? (
+        <div className="mt-2">
+          <ClaimVideo claimId={claim.id} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 /** The list itself. */
 function SoldLots({
   lots,
+  claimsByLot,
   failed,
+  claimsFailed,
   page,
   pageCount,
   suspended
 }: {
   lots: SoldLot[];
+  /** US-054 T-054.2c: the page's claims, keyed by `lot_id`. */
+  claimsByLot: Map<string, VendorClaim>;
   failed: boolean;
+  claimsFailed: boolean;
   page: number;
   pageCount: number;
   /** D-054: a farm suspended after approval. The list stays open, but the
@@ -189,6 +248,10 @@ function SoldLots({
         {() => <ErrorCard title="Gagal memuat daftar lot terjual" />}
       </RenderIf>
 
+      <RenderIf when={!failed && claimsFailed}>
+        {() => <ErrorCard title="Gagal memuat klaim" />}
+      </RenderIf>
+
       <RenderIf when={!failed && lots.length ? lots : null}>
         {(list) => (
           <>
@@ -197,6 +260,7 @@ function SoldLots({
                 const status = soldLotStatusLabel(lot.status);
                 const action = soldLotAction(lot.status);
                 const tracking = shippedTrackingLabel(lot.status, lot.tracking_number);
+                const claim = claimsByLot.get(lot.id);
                 return (
                   <div
                     key={lot.id}
@@ -255,6 +319,8 @@ function SoldLots({
                         />
                       ) : null}
                     </div>
+
+                    {claim ? <ClaimBlock claim={claim} /> : null}
                   </div>
                 );
               })}

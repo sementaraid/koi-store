@@ -8,14 +8,19 @@ const CONTENT_TYPE: Record<string, string> = {
   webp: "image/webp",
 }
 
-// D-017/D-018: private uploads (KTP photos, transfer screenshots) are never
-// exposed as a URL; admin routes stream them through here. 404 when the
-// provider no longer has the file.
-export const sendPrivateImage = async (
+// US-054 T-054.1b: the video types the claim upload accepts (AC2).
+const VIDEO_CONTENT_TYPE: Record<string, string> = {
+  mp4: "video/mp4",
+  webm: "video/webm",
+  mov: "video/quicktime",
+}
+
+const sendPrivateFile = async (
   req: MedusaRequest,
   res: MedusaResponse,
   fileKey: string,
-  notFoundMessage: string
+  notFoundMessage: string,
+  contentTypes: Record<string, string>
 ) => {
   // The File Module provider exposes file keys, not DB rows; this is the
   // documented way to read a stored file (getAsBuffer / getDownloadStream).
@@ -28,15 +33,33 @@ export const sendPrivateImage = async (
   }
 
   const ext = fileKey.split(".").pop() ?? ""
-  // Only the four image types are streamed; anything else is a download. A row
+  // Only the listed types are streamed; anything else is a download. A row
   // written outside the upload path must not render as HTML/SVG in the browser.
   // hasOwnProperty: a key ending in ".constructor" must not resolve to Object's prototype.
-  const imageType = Object.prototype.hasOwnProperty.call(CONTENT_TYPE, ext)
-    ? CONTENT_TYPE[ext]
+  const contentType = Object.prototype.hasOwnProperty.call(contentTypes, ext)
+    ? contentTypes[ext]
     : undefined
-  res.setHeader("Content-Type", imageType ?? "application/octet-stream")
-  if (!imageType) res.setHeader("Content-Disposition", "attachment")
+  res.setHeader("Content-Type", contentType ?? "application/octet-stream")
+  if (!contentType) res.setHeader("Content-Disposition", "attachment")
   // Never let a browser or proxy cache this; it is per-request private data.
   res.setHeader("Cache-Control", "private, no-store")
   res.send(bytes)
 }
+
+// D-017/D-018: private uploads (KTP photos, transfer screenshots) are never
+// exposed as a URL; admin routes stream them through here. 404 when the
+// provider no longer has the file.
+export const sendPrivateImage = (
+  req: MedusaRequest,
+  res: MedusaResponse,
+  fileKey: string,
+  notFoundMessage: string
+) => sendPrivateFile(req, res, fileKey, notFoundMessage, CONTENT_TYPE)
+
+// US-054 T-054.1b: the claim's unboxing video, same private read, video types.
+export const sendPrivateVideo = (
+  req: MedusaRequest,
+  res: MedusaResponse,
+  fileKey: string,
+  notFoundMessage: string
+) => sendPrivateFile(req, res, fileKey, notFoundMessage, VIDEO_CONTENT_TYPE)

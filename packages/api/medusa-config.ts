@@ -65,6 +65,11 @@ module.exports = withMercur({
       resolve: './src/modules/pii-audit',
     },
 
+    // US-054 (D-038): dead-on-arrival claims on delivered lots.
+    {
+      resolve: './src/modules/moderation',
+    },
+
     // US-020 (T-020.1). Farm registration data that Mercur's seller has no
     // column for. D-017: the KTP photo key and NIK are private; the farm photos
     // are public and will show on auction pages. The module creates the linked

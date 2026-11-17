@@ -16,14 +16,15 @@ are defined in `docs/product/overview.md`.
 
 ## Status as of 2026-11-17
 
-**Last accepted stories:** US-045 (Epic 4), qa PASS fix round 1, accepted
-2026-11-17. Before it: US-044 (Epic 4), qa PASS on both ACs. Before that: US-051, US-052 (shipped half), US-053 (Epic 5), qa
-PASS on every in-scope AC, fix round 1, accepted 2026-11-17. Before them: US-043,
-US-050, then US-040, US-041, US-042 (Epic 4). T-030.8, T-032.6, T-032.7 and
-T-020.10 (seed fix) were accepted earlier. The `bid` model and the bid/join
+**Last accepted stories:** US-054 (Epic 5), qa PASS on AC1–AC4, fix round 1,
+accepted 2026-11-17. Before it: US-045 (Epic 4), qa PASS fix round 1; US-044
+(Epic 4), qa PASS on both ACs; US-051, US-052 (shipped half), US-053 (Epic 5),
+qa PASS on every in-scope AC, fix round 1, accepted 2026-11-17. Before them:
+US-043, US-050, then US-040, US-041, US-042 (Epic 4). T-030.8, T-032.6, T-032.7
+and T-020.10 (seed fix) were accepted earlier. The `bid` model and the bid/join
 code are committed (`d67d3c8`).
 
-**Counts** (computed from this file, 2026-11-17; US-045 accepted):
+**Counts** (computed from this file, 2026-11-17; US-054 accepted):
 
 | Epic | Stories done | In progress | Todo | Parked | Blocked | Tasks done | Tasks open | Tasks parked |
 |---|---|---|---|---|---|---|---|---|
@@ -32,11 +33,14 @@ code are committed (`d67d3c8`).
 | 2 Becoming a farmer | 2 | 0 | 0 | 0 | 0 | 11 | 5 | 0 |
 | 3 Auctions for farmers | 4 | 0 | 0 | 0 | 0 | 23 | 0 | 0 |
 | 4 Joining and bidding | 6 | 0 | 1 | 0 | 0 | 22 | 4 | 0 |
-| 5 Closing and after-sale | 4 | 0 | 6 | 2 | 0 | 15 | 29 | 4 |
+| 5 Closing and after-sale | 5 | 0 | 5 | 2 | 0 | 23 | 22 | 4 |
 | 6 Admin operations | 0 | 0 | 6 | 0 | 0 | 0 | 22 | 0 |
 | 7 WhatsApp bot | 0 | 0 | 0 | 0 | 6 | 0 | 12 | 0 |
 | 8 Pilot | 0 | 0 | 1 | 0 | 0 | 0 | 5 | 0 |
-| **Total** | **25** | **0** | **14** | **2** | **6** | **102** | **77** | **4** |
+| **Total** | **26** | **0** | **13** | **2** | **6** | **110** | **70** | **4** |
+
+Stories: 26 done of 47 (55%), 13 todo, 2 parked, 6 blocked. Tasks: 110 done of
+184 (60%), 70 open, 4 parked.
 
 Epic 2's open tasks are US-021's T-021.2/.3/.4/.6 (follow-ups on a `done` story)
 and T-020.10 (seed an admin user). Blocked: US-080 – US-085 (mvp-Q12).
@@ -71,13 +75,15 @@ contradicts D-052 (no phone either way), D-044 (on hold) and D-056.
 1. US-046 (live room), the last Epic 4 story. T-046.1 (backend live link) waits
    on the owner's yes/no to the `mvp-Q43` proposal; T-046.2/.3 follow T-046.1
    (T-046.2 is written to `mvp-Q42` option a, non-blocking). US-045 accepted.
-   **Ready alternatives while mvp-Q43 is open:** US-054 → US-055 (no blocking
-   question; lots reach `delivered` only through seeded data until payment is
-   decided, see Parked).
-2. Epic 5 next: US-054 → US-055 (needs US-053, now `done`), then US-057, US-060,
-   US-061. US-056/US-058 parked; US-059's payment-strike part parked.
-3. US-043, US-050, US-051, US-052 (shipped), US-053, US-044, US-045 are accepted;
-   nothing left there.
+   **Ready alternative while mvp-Q43 is open:** US-055 (its T-055.1a needs only
+   US-054's claim row, now `done`; `mvp-Q45` is open but non-blocking — T-055.1a
+   is written to its option (a), a suspended farm gets 403; lots reach
+   `delivered` only through seeded data until payment is decided, see Parked).
+2. Epic 5 next: **US-055** (T-055.1a ready; T-055.1b after it; T-055.2/.3 read
+   the routes it adds), then US-057, US-060, US-061. US-056/US-058 parked;
+   US-059's payment-strike part parked.
+3. US-043, US-050, US-051, US-052 (shipped), US-053, US-054, US-044, US-045 are
+   accepted; nothing left there.
 T-020.10 can run any time; qa's admin browser checks need it.
 
 ## Epic 0: Foundations (Milestone 1)
@@ -2966,27 +2972,1017 @@ Watch for: a non-winner or the farmer able to mark delivered; delivered from any
 missing or overwritten on a repeat.
 ```
 
-### US-054 Winner opens a dead-on-arrival claim · `todo`
+### US-054 Winner opens a dead-on-arrival claim · `done (evidence: packages/api/src/modules/moderation/models/claim.ts:4-11,26-44 (enum, remedy, unique lot_id); packages/api/src/workflows/open-claim.ts:35-72 + steps/claim.ts:52-113 (window from settings, delivered-only, 409s, guards before upload), :127-149 (insert, 23505 → 409, compensating delete); packages/api/src/api/store/won-lots/[id]/claims/route.ts:33-40 (zero-byte 400), :42-64 (responds without the key); packages/api/src/api/middlewares.ts:127-145 (video-only multer, 100 MB), :345-358 (auth before parse); packages/api/src/api/store/won-lots/route.ts:130-181 (claim_window_ends_at + own claim, one query); packages/api/src/api/vendor/claims/route.ts:19-36, packages/api/src/api/admin/claims/route.ts:31-74 (status default open, seller name, masked); packages/api/src/api/utils/private-image.ts:12-17,76-82 (video types, private/no-store); packages/api/integration-tests/http/won-lot-claims.spec.ts:200,211,266-288,290,318 (9/9); claims-read.spec.ts:347,489,525-526 (15/15 re-check, 9/9); storefront WonLotPanel.tsx:94-95,219 + lib/helpers/claim.ts:31-46; WonLotsPage.tsx:155-170; SoldLotsPage.tsx:191-210 + ClaimVideo.tsx:17-40; admin-koi ClaimQueue.tsx + lib/helpers/claim-format.ts:12-14; next.config.ts:14-25 (110mb); packages/api tsc + test:unit 17/17 + test:integration:modules 10/10; storefront check 198/198; admin-koi check 33/33; render checks clean; qa PASS fix round 1)`
 As a **winner**, I want to claim within 4 hours if the fish arrives dead or sick
 so that I get a refund or a replacement. *(Plan: Dead-on-arrival claims 1–3, Design rules; D-025, D-027)*
 - AC1: A claim is allowed only within the claim window (4 h, a setting) after delivered.
 - AC2: It needs an unboxing video (up to 100 MB) and a remedy choice: full refund or replacement.
 - AC3: The farmer and admin are notified on the site only: the claim appears in the Farmer area and in the admin-koi claim queue. No WhatsApp message is sent (D-025).
 - AC4: A new claim has status `open`. The claim enum is `open → approved | disputed`, `disputed → approved | rejected`, `approved → resolved → confirmed` (D-038).
-- [ ] T-054.1 [backend] Moderation module: `claim` model with the D-038 status enum + open-claim workflow; video stored on the VPS file provider
-- [ ] T-054.2 [storefront] Claim form with video upload and size limit; open claims listed in the Farmer area
-- [ ] T-054.4 [admin] `/klaim` queue lists open claims
-- [ ] T-054.3 [qa] Late claims and oversized videos are rejected on the server; a new claim is `open` and shows in the Farmer area and the admin queue
+- [x] T-054.1 [backend] `claim` model in a new Moderation module (D-038 enum, remedy, video key) + migration
+- [x] T-054.1a [backend] Open-claim workflow (window from `claim_window_hours`, delivered only, video then row) + `POST /store/won-lots/:id/claims` with the 100 MB multer entry
+- [x] T-054.1b [backend] Read routes: winner's `claim` + `claim_window_ends_at` on the won-lot rows, `GET /vendor/claims`, `GET /admin/claims`, and the two private video routes (`/vendor/claims/:id/video`, `/admin/claims/:id/video`)
+- [x] T-054.2a [storefront] Claim form on the won lot page: remedy + video (100 MB), window shown from `GET /store/won-lots/:id`
+- [x] T-054.2b [storefront] Winner's claim state on `/akun/menang` rows ("Klaim diajukan" badge, row label)
+- [x] T-054.2c [storefront] Farmer sees claims on `/akun/kebun/terjual` (own lots only, video via a member-token read route)
+- [x] T-054.4 [admin] `/klaim` queue lists open claims
+- [x] T-054.3 [qa] Late claims and oversized videos are rejected on the server; a new claim is `open` and shows in the Farmer area and the admin queue
+
+**Accepted 2026-11-17** (qa PASS on AC1–AC4, fix round 1). Two bugs fixed in round 1: a zero-byte video now 400 with no row and no file (`claims/[id]/claims/route.ts:35-40`, spec `won-lot-claims.spec.ts:266-288`), and the admin claim labels now match D-027/D-038 (`resolved` → "Menunggu konfirmasi", `confirmed` → "Selesai", `claim-format.ts:12-14`). Open, non-blocking: **mvp-Q44** — one claim per lot whatever its status is shipped and kept (option a; unique index on `claim.lot_id`), US-055 changes it only if the owner picks (b); **mvp-Q45** — a suspended farm's decision path, which blocks nothing here and only shapes US-055 T-055.1a.
+
+**Readiness (2026-11-17): ready (`todo`). Nothing decided is missing; no owner question blocks it.**
+Checked: plan "Dead-on-arrival claims" 1–3 and "Design rules"; D-025 (on-site only), D-027
+(closed = `confirmed`/`rejected`; enum superseded), D-038 (enum `open → approved | disputed`,
+`disputed → approved | rejected`, `approved → resolved → confirmed`), D-002 (admin screens
+only in `admin-koi`), D-018/D-040 (private uploads outside `static/`, store routes never
+return a key or URL), D-039/D-042/D-045/D-052 (no phone either way, admins masked),
+D-054 (farmer action on own sold lots checks ownership + not `terminated`), D-055
+(Indonesian messages), plan Settings (D-010: `claim_window_hours` in the settings table;
+already read/writable at `packages/api/src/api/admin/settings/route.ts:32-33`,
+`apps/admin-koi/src/components/SettingsForm.tsx:122`).
+- **The claim window is enforced on the open-claim route only; there is no job.** A window
+  that has closed is a 409 on POST, nothing scans for missed windows, and no status is
+  moved by a timer in this story (US-055/US-056 own the later states; US-061 the cleanup).
+- **Payment model parked (2026-11-16).** No in-app route reaches `paid` (T-052.4) or
+  `delivered` except US-053, so specs and qa must seed a `paid`/`delivered` lot directly:
+  create `auction` + `lot` through `AuctionModuleService` the way
+  `packages/api/integration-tests/http/won-lot-delivered.spec.ts:81-113` does, and for the
+  browser set `status='delivered', delivered_at=now()` with `psql` (or the module service)
+  on seeded rows. **Do not add a mark-paid or mark-delivered test route.** Today's dev DB
+  already has the seed shape: `lot_01M7HJP86Y1H1MC28B4HJK3J2F` is `won` by budi
+  (`cus_01M6V7FMYJDQ3DC4J4ZYQ5S09X`) on Sakura's closed auction — one `psql` update makes
+  it the render-check lot; check the ids before using them, they are not stable.
+- **No money in this story.** Refund and replacement are US-056 (parked); the remedy is a
+  saved choice string only. No ledger row, no wallet read, no balance.
+- **Video storage:** File Module, `access: "private"` (local provider → `private-uploads/`,
+  `packages/api/medusa-config.ts:111-126`), so claim videos are private like KTP (D-017).
+  Production private storage is `T-090.3`, launch-only.
+- **Farmer video access needs a route pair.** D-018's "never a key or URL" means the
+  farmer's list returns `has_video: true`, and the bytes come from an authenticated
+  member-token route. It is a read route on a sold lot, so it checks ownership +
+  `assertSellerNotTerminated` (D-054), not `validateSellerOpenStep`.
+- **No queue count / notification table.** "Notified" (AC3) = the claim exists in both
+  queues; no message table, no email, no WhatsApp (D-025).
+- **`mvp-Q44` raised (owner, non-blocking for this story).** The plan says nothing about a
+  second claim on the same lot. US-054 ships with "one claim per lot, whatever its
+  status": a unique index on `claim.lot_id` plus a 409 in the workflow. Nothing in US-054
+  can move a claim to `rejected` — US-055 does. If the owner later wants "the winner may
+  open a new claim after a rejection", US-055 changes its guard and drops that unique
+  index (a one-line migration); no AC of this story reopens.
+
+#### Endpoint inventory
+
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| POST | `/store/won-lots/:id/claims` | no | T-054.1a. multipart: `video` (File, ≤100 MB, MP4/WebM/QuickTime), `remedy` (`refund`\|`replacement`). 201 `{ claim: { id, lot_id, status, remedy, opened_at } }`; 400 invalid remedy/video/type/size (Indonesian message preserved); 404 not the winner; 409 for window closed, lot not `delivered`, or a claim already exists (Medusa rewrites the 409 body — the app renders its own copy and refreshes; D-055) |
+| GET | `/store/won-lots/:id` | yes | `packages/api/src/api/store/won-lots/[id]/route.ts`. **Extend** each `WonLot` row with `claim_window_ends_at: string \| null` and `claim: { id, status, remedy, opened_at, has_video } \| null` (the caller's own claim on that lot). Keep every existing field. Apply the same two fields to `GET /store/won-lots` rows through the shared `toWonLot`. No separate winner claims route: the row carries it |
+| GET | `/vendor/claims` | no | T-054.1b. Farmer's own claims, newest first: `{ claims: [{ id, lot_id, status, remedy, opened_at, has_video, winner: { name }, product: { title, thumbnail } }], count, limit, offset }`. No phone, no street address, no customer id (D-052/D-045) |
+| GET | `/vendor/claims/:id/video` | no | T-054.1b. Raw bytes of the private file, member token + `x-seller-id`; ownership + not `terminated` (D-054); 404 otherwise. Mirrors `src/api/admin/topup-requests/[id]/screenshot/route.ts` |
+| GET | `/admin/claims` | no | T-054.1b. Open claims queue: `{ claims: [{ id, lot_id, status, remedy, opened_at, has_video, winner: { name }, seller: { name }, product: { title, thumbnail } }], count, limit, offset }`, `status` filter defaulting to `open`. Masked PII only (D-042) |
+| GET | `/admin/claims/:id/video` | no | T-054.1b. Raw bytes, admin token; `/admin/*` is admin-authenticated by default (D-002) |
+
+Every "no" row is a backend task in this story, ordered before the screen that reads it.
+No frontend task starts before its route exists and `bun run codegen` has run.
+
+#### Briefs (run order)
+
+T-054.1 → T-054.1a → T-054.1b → T-054.2a/T-054.2b (storefront, one agent) or
+T-054.4 (admin-koi, parallel) → T-054.2c (storefront, after T-054.1b) → T-054.3.
+One backend agent at a time; qa starts only when no backend or qa Jest run is active.
+
+```text
+Story: US-054 (task T-054.1)   Release: mvp
+Agent: backend   Expected: <=35 min
+
+## Acceptance criteria
+- AC4: A new claim has status `open`. The claim enum is `open → approved | disputed`, `disputed → approved | rejected`, `approved → resolved → confirmed` (D-038).
+- AC2: It needs an unboxing video (up to 100 MB) and a remedy choice: full refund or replacement.
+  (this task: the video key and remedy columns only)
+
+## Decisions in force
+D-038: the status enum exactly as written; no `accepted`. Plan "Custom modules" Moderation
+row: `claim` (lot, video, remedy, status, farmer and admin decisions). No money column of
+any kind (US-056 parked). D-018/D-017: video is a private file, stored as a provider key.
+
+## Build
+New module src/modules/moderation/ (index.ts exporting MODERATION_MODULE = "moderation",
+service.ts MedusaService({ Claim }), models/claim.ts, migrations/). Register in
+medusa-config.ts after the pii-audit entry. One model, no service methods yet:
+- id (prefix "claim"), lot_id (text, soft reference — no FK into the auction module),
+  customer_id (text, the winner who opened it), seller_id (text, the farmer owning the lot,
+  saved at open so a list filters by it without walking links),
+  remedy enum ["refund","replacement"], status enum
+  ["open","approved","disputed","rejected","resolved","confirmed"] default "open",
+  video_file_key text (not null). No `opened_at` column: the row's own `created_at` is the
+  open time, and every response maps it to `opened_at` (same value, one column fewer).
+  Later states (US-055/US-056) add their own timestamps to this table, not to `lot`.
+- Indexes: `lot_id` **unique** (one claim per lot — the DB is the guard against two
+  simultaneous POSTs, with the workflow's check as the friendly 409), [seller_id, status],
+  [customer_id]. Named checks only if you add one (DML emits duplicate names otherwise,
+  see src/modules/auction/models/lot.ts).
+- Migration via `medusa db:generate moderation` (DATABASE_URL=…koi-store?sslmode=disable).
+  Do not add columns to `lot`; the later states add no column here.
+
+## Start from
+- packages/api/src/modules/pii-audit/{index.ts,service.ts,models/*}
+- packages/api/src/modules/auction/models/lot.ts (named enum, soft refs)
+- packages/api/medusa-config.ts:60-68 (module registration)
+
+## Do not touch
+- src/api/**; src/workflows/**; src/links/**; apps/**; any existing module
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean
+cd packages/api && bun x medusa db:generate moderation → migration created (list it)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + the model's fields/enums.
+
+## Open questions
+none
+```
+
+```text
+Story: US-054 (task T-054.1a)   Release: mvp
+Agent: backend   Expected: <=45 min
+Starts after: T-054.1 (moderation module exists).
+
+## Acceptance criteria
+- AC1: A claim is allowed only within the claim window (4 h, a setting) after delivered.
+- AC2: It needs an unboxing video (up to 100 MB) and a remedy choice: full refund or replacement.
+- AC4: A new claim has status `open`. The claim enum is `open → approved | disputed`, `disputed → approved | rejected`, `approved → resolved → confirmed` (D-038).
+
+## Decisions in force
+Plan "Dead-on-arrival claims" 1–2; D-010 (setting from the table, not env);
+D-018/D-040 (private upload, no key or URL in any response);
+D-055 (Indonesian messages); CLAUDE.md §8 (workflow with compensation, save the result
+when the action happens). The window counts from `lot.delivered_at` (US-053).
+
+## Build
+- validators.ts in src/api/store/won-lots/[id]/claims/:
+  CLAIM_VIDEO_MIME_TYPES = ["video/mp4","video/webm","video/quicktime"] (AC2 says video;
+  an image is not accepted) and CLAIM_VIDEO_MAX_BYTES = 100 * 1024 * 1024. Body zod:
+  remedy z.enum(["refund","replacement"]); multipart sends text, so no coercion needed.
+  Type StoreCreateClaimInput = { remedy } & { video: Blob }, like
+  src/api/store/topup-requests/validators.ts:29-31.
+- middlewares.ts: claimVideoUpload = multer({ storage: memoryStorage(),
+  limits: { fileSize: CLAIM_VIDEO_MAX_BYTES, files: 1 }, fileFilter: type in list });
+  reuse clientErrorsAsBadRequest (:88-104) so a big file is 400, not 500. Entry:
+  POST /store/won-lots/:id/claims → [authenticate("customer",["bearer","session"]),
+  parseClaimVideo, validateAndTransformBody(StoreCreateClaimBody)] — auth before parsing.
+- Workflow src/workflows/open-claim.ts openClaimWorkflow({ customer_id, lot_id,
+  remedy, video: { filename, mimeType, content(base64) } }):
+  lock `lot:<id>` → readClaimedLotStep (read only): lot missing or
+  winner_customer_id !== customer_id → 404 "Lot tidak ditemukan."; status !== "delivered"
+  or delivered_at is null → CONFLICT "Klaim hanya untuk lot yang sudah diterima." (409;
+  the app keys on status, D-055); now > delivered_at + claim_window_hours → CONFLICT
+  "Batas waktu klaim sudah lewat." Read claim_window_hours with the settings read pattern in
+  src/workflows/steps/auction.ts:20-50 (getAuctionSettingsStep), falling back to
+  PLATFORM_SETTING_DEFAULTS.claim_window_hours (4). Also refuse a second claim: any
+  existing claim for that lot, whatever its status, → CONFLICT "Lot ini sudah punya
+  klaim." (one claim per lot; see readiness `mvp-Q44`) → uploadFilesStep({ files: [{ filename:
+  `unboxing.${ext}`, mimeType, content, access: "private" }] }) (copy
+  src/workflows/create-topup-request.ts:46-52) → createClaimStep (one
+  moderation.claim row per lot; compensation deletes it) → release. The upload's own
+  compensation deletes the file when the insert fails: wrap the row step in a
+  fail-if-exists guard the same shape as createTopupRequestStep.
+- Route POST: req.file required (else 400 "Video unboxing wajib diunggah."), content:
+  file.buffer.toString("base64"), res 201 with { claim: { id, lot_id, status, remedy,
+  opened_at } }. Never return video_file_key (D-018).
+- No job, no scheduler change (US-056/US-061 own later states).
+
+## Start from
+- packages/api/src/workflows/create-topup-request.ts (upload + compensating insert)
+- packages/api/src/api/store/topup-requests/route.ts:36-110 (multer + route)
+- packages/api/src/api/store/won-lots/[id]/delivered/route.ts (winner-only, thin)
+- packages/api/src/workflows/mark-lot-delivered.ts:23-78 (lock + guard + compensation)
+
+## Do not touch
+- apps/**; src/modules/auction/**; src/api/vendor/**; src/api/admin/**; T-054.1's model
+  beyond what this task needs (no new column without a migration)
+
+## Spec (packages/api/integration-tests/http/won-lot-claims.spec.ts)
+Seed a `delivered` lot per T-054.1 readiness (module service, not a route).
+- winner, delivered 1 h ago, valid video + remedy refund → 201, status open,
+  opened_at ≈ now, exactly one claim row, one private file
+- delivered 5 h ago → 409, no row, no file; a settings row with claim_window_hours: 8
+  → same lot 201 (proves the setting is read)
+- another customer → 404; anonymous → 401; lot still `shipped`/`won` → 409
+- remedy "cash" → 400; no file → 400; 101 MB file → 400; a .jpg upload → 400
+- second claim on the same lot → 409, still one row
+- forced failure after the upload → no claim row and the file is gone
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean; bun run codegen
+cd packages/api && bun run test:integration:http -- won-lot-claims → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + API contract (method, path, multipart fields, response, errors).
+
+## Open questions
+none
+```
+
+```text
+Story: US-054 (task T-054.1b)   Release: mvp
+Agent: backend   Expected: <=45 min
+Starts after: T-054.1a (claims can exist).
+
+## Acceptance criteria
+- AC3: The farmer and admin are notified on the site only: the claim appears in the Farmer area and in the admin-koi claim queue. No WhatsApp message is sent (D-025).
+- AC1 (visibility of the window): the winner's lot row carries when the window ends (supports AC1's UI half on the lot page).
+
+## Decisions in force
+D-002 (admin screens read /admin/* only), D-018/D-040 (bytes only through an
+authenticated route; lists carry has_video, never a key or URL), D-042 (admin sees masked
+PII; this story's admin list shows the winner's NAME only and no phone/address at all —
+nothing to mask), D-045, D-052 (no phone either way), D-054 (farmer read on own sold
+lots: ownership + assertSellerNotTerminated, NOT validateSellerOpenStep), D-055.
+
+## Build (all reads use query.graph; no workflow)
+Every `opened_at` in a response is the claim row's `created_at`, ISO-serialised.
+- Extend the shared `toWonLot` mapper (GET /store/won-lots and /store/won-lots/:id):
+  claim_window_ends_at = delivered_at + claim_window_hours (ISO; null unless status is
+  `delivered` and delivered_at set) and `claim` = the caller's own claim on that lot as
+  { id, status, remedy, opened_at, has_video } | null (latest row if several; the POST
+  allows one). Read both with one extra query over the page's lot ids, not per row; no
+  file key ever selected. Keep every existing field. Share the settings read with
+  T-054.1a's step, don't copy it.
+- GET /vendor/claims: as the inventory shows. seller_id filter, optional status filter,
+  order opened_at DESC, limit/offset (Zod default 20 max 100, copy
+  src/api/vendor/sold-lots/validators.ts). Each row adds product { title, thumbnail } via
+  the lot → product link and winner { name } from the customer (first_name + last_name,
+  the winnersById pattern in src/api/vendor/sold-lots/route.ts:61-112 — no phone, no
+  address field selected). Add `import "../../../types/seller-context"` (the file reads
+  req.seller_context). Call assertSellerNotTerminated (D-054).
+- GET /admin/claims: same row + seller { name }; status filter default "open"; order
+  opened_at ASC (arrival order, like src/api/admin/auctions/route.ts:103).
+- GET /vendor/claims/:id/video and GET /admin/claims/:id/video: look the claim up,
+  check ownership (vendor) or admin default, then send the bytes. Copy
+  src/api/utils/private-image.ts but extend the CONTENT type map with mp4/webm/mov
+  (video/mp4, video/webm, video/quicktime) and keep non-listed types as an attachment.
+  Rename nothing existing; add a sibling helper or parameterise sendPrivateImage.
+- middlewares.ts: no new entry for the won-lot GETs (they exist). Vendor GET
+  /vendor/claims with validateAndTransformQuery (Mercur's /vendor catch-all
+  authenticates the member); admin GET /admin/claims with validateAndTransformQuery. No
+  body middleware on the two video routes.
+- bun run codegen (all the screens read these).
+
+## Start from
+- packages/api/src/api/store/won-lots/{route.ts,[id]/route.ts} (toWonLot)
+- packages/api/src/api/vendor/sold-lots/route.ts:61-112 (winner name, one query)
+- packages/api/src/api/admin/topup-requests/route.ts (admin list shape/pagination)
+- packages/api/src/api/admin/topup-requests/[id]/screenshot/route.ts + utils/private-image.ts
+
+## Do not touch
+- apps/**; the open-claim workflow; lot model columns; wallet/ledger
+
+## Spec (packages/api/integration-tests/http/claims-read.spec.ts)
+- won-lot row carries `claim` (status open, has_video true) and claim_window_ends_at =
+  delivered_at + 4 h; another customer's lot → 404; anonymous → 401
+- farmer sees only own sold lots' claims; another farm's claim absent; terminated farm →
+  403; suspended farm → 200 (D-054)
+- admin list defaults to `open`; a disputed claim is absent by default and present with
+  ?status=disputed
+- no response anywhere contains a video key, a URL, a customer id or a phone (assert on
+  serialised JSON, like integration-tests/http/pii-leaks.spec.ts)
+- video routes: owner 200 with video/mp4 and private,no-store; other farm 404; customer
+  token on /admin/claims/:id/video → 401/403
+- claim_window_ends_at is null on a `shipped` lot
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean; bun run codegen
+cd packages/api && bun run test:integration:http -- claims-read won-lots → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + every response shape above, verbatim.
+
+## Open questions
+none
+```
+
+```text
+Story: US-054 (task T-054.2a)   Release: mvp
+Agent: frontend (storefront-koi)   Expected: <=40 min
+Starts after: T-054.1b (routes and codegen exist).
+
+## Acceptance criteria
+- AC1: A claim is allowed only within the claim window (4 h, a setting) after delivered.
+- AC2: It needs an unboxing video (up to 100 MB) and a remedy choice: full refund or replacement.
+
+## Decisions in force
+D-052 (the form shows no farmer contact), D-055 (server messages shown verbatim; 409
+copy written in the app), D-002/D-004 (storefront only).
+
+## Endpoint inventory
+| Method | Path | Exists? | Shape |
+|---|---|---|---|
+| GET | /store/won-lots/:id | yes | lot.claim_window_ends_at: string\|null, lot.claim: { id, status, remedy, opened_at, has_video }\|null + existing row (T-054.1b) |
+| POST | /store/won-lots/:id/claims | yes (T-054.1a) | multipart { video, remedy } → 201 { claim: { id, lot_id, status, remedy, opened_at } } |
+
+## Build (one surface: the claim form)
+- src/lib/helpers/claim.ts (pure, + .test.ts): claimWindowInfo(endsAt, now) →
+  { open: boolean; label: string } ("Sisa waktu klaim: 3 jam 12 menit" / "Batas waktu
+  klaim sudah lewat"), remedyLabel('refund'|'replacement'), claimFailureInfo({status,
+  code, message}) → 409 → "Status lot atau klaim sudah berubah. Halaman diperbarui." with
+  refresh true (all three 409 reasons share Medusa's rewritten body, so the copy is
+  generic; the form's own pre-check already covers the ordinary cases), 404 → "Lot ini
+  bukan lot yang Anda menangkan." with refresh true, 400 → the server's message. Mirror
+  won-lot.ts:38-53.
+  Video cap 100 * 1024 * 1024 and the accepted type list live here too (display only; the
+  server decides).
+- src/lib/data/lots.ts (extend, don't create a new file): openClaim(lotId, remedy, file)
+  using the client path `bun run codegen` produced for POST /store/won-lots/:id/claims —
+  read `.mercur/routes.d.ts` / `packages/api/.mercur` and use the exact name (expected
+  shape `sdk.store.wonLots.$id.claims.mutate({ $id, remedy, video: file, fetchOptions })`;
+  if codegen named it differently, fix the call, never the route).
+  @mercurjs/client turns a payload holding a File into multipart itself (topups.ts:88-99).
+  Return { success } | { message, code, status }.
+- WonLotPanel.tsx: when status === 'delivered', claim is null and the window is open,
+  draw an "Ajukan klaim" form: remedy radio (Pengembalian dana / Ikan pengganti), a file
+  input accepting video/mp4,video/webm,video/quicktime, a client-side >100 MB warning,
+  submit disabled while busy, a result toast + router.refresh(). When `claim` exists,
+  draw "Klaim diajukan" (status label) and no form. When the window closed, draw the
+  closed line and no form. Past `claim_window_ends_at` the form hides itself (AC1 in the
+  UI; the server is the guard).
+- Thread the two new fields through LotPage.tsx's getWonLot mapping (:270-310) and
+  WonLotPanel's props.
+- **Next body limit.** The upload goes through a server action, and
+  `apps/storefront-koi/next.config.ts:14-22` caps it at 40 MB (set for farm photos). A
+  100 MB video is refused before it reaches the API. Raise `bodySizeLimit` to `'110mb'`
+  in the same file and say so in the report. This is the one config change; nothing else
+  in next.config.ts.
+- **Then the backend body limit.** Express's default `json`/`urlencoded` limit does not
+  apply to a multer multipart body, but Medusa's own router sets `express.json({ limit:
+  "1mb" })` for JSON only — multipart is streamed to multer, so no backend config change
+  is expected. Do not raise any global body limit pre-emptively; if the render check's
+  submit fails at ~1 MB, report it as a bug against T-054.1a with the exact response,
+  don't patch around it.
+
+## Start from
+- apps/storefront-koi/src/components/sections/LotDetailsPage/components/WonLotPanel.tsx
+  (:38-109 button + confirm + failure branch)
+- apps/storefront-koi/src/lib/data/lots.ts:186-218 (getWonLot, markWonLotDelivered)
+- apps/storefront-koi/src/lib/data/topups.ts:88-120 (File through the typed client)
+- apps/storefront-koi/src/components/sections/AccountPage/components/ShipLot.tsx (form shape)
+
+## Do not touch
+- packages/api; apps/admin-koi; /akun/menang; /akun/kebun/terjual (T-054.2b/.2c)
+
+## Definition of done
+cd apps/storefront-koi && bun run check → pass
+render check (render-check skill) on /lelang/<seeded delivered lot> as budi@koi.dev
+(seeded delivered lot per readiness), incl. one real submit of a small mp4 → clean;
+screenshots in /tmp/koi-render/
+Report: standard header + render check result + screenshot path.
+
+## Open questions
+none
+```
+
+```text
+Story: US-054 (task T-054.2b)   Release: mvp
+Agent: frontend (storefront-koi)   Expected: <=35 min
+Starts after: T-054.1b. Same agent as T-054.2a is fine if both fit one run; otherwise alone.
+
+## Acceptance criteria
+- AC3: The farmer and admin are notified on the site only: the claim appears in the Farmer area and in the admin-koi claim queue. No WhatsApp message is sent (D-025).
+  (this task shows the winner that their own claim is filed)
+- AC4: A new claim has status `open`. The claim enum is `open → approved | disputed`, `disputed → approved | rejected`, `approved → resolved → confirmed` (D-038).
+
+## Decisions in force
+D-055; D-046/D-051 (no winner identity leaks on public routes; this is the winner's own
+account page, so their own row is theirs).
+
+## Endpoint inventory
+| Method | Path | Exists? | Shape |
+|---|---|---|---|
+| GET | /store/won-lots | yes | rows keep status `delivered`; the shared mapper gains `claim` (T-054.1b) |
+
+## Build (one surface: the winner's lists)
+- src/lib/helpers/won-lot.ts: wonLotStatusLabel gains an optional `claim` argument; for
+  `delivered` with a claim it reads "Sudah diterima — klaim diajukan" (open) or the claim
+  status label, otherwise as today. Keep the existing signature callable and testable;
+  extend won-lot.test.ts.
+- WonLotsPage.tsx (apps/storefront-koi/src/components/sections/AccountPage/WonLotsPage.tsx):
+  a "Klaim diajukan" badge on rows whose `claim` is set, linking to the lot page. Change
+  nothing else on the row.
+- No status flip, no optimistic update: the row comes from the server (revalidatePath
+  already on the claim submit in T-054.2a).
+
+## Start from
+- apps/storefront-koi/src/components/sections/AccountPage/WonLotsPage.tsx:83-110
+- apps/storefront-koi/src/lib/helpers/won-lot.ts (labels + failure info)
+
+## Do not touch
+- apps/admin-koi; packages/api; the lot page form (T-054.2a)
+
+## Definition of done
+cd apps/storefront-koi && bun run check → pass
+render check on /akun/menang as a winner with an open claim → clean
+Report: standard header + render check result.
+
+## Open questions
+none
+```
+
+```text
+Story: US-054 (task T-054.2c)   Release: mvp
+Agent: frontend (storefront-koi)   Expected: <=45 min
+Starts after: T-054.1b. Run after T-054.2a/.2b (one storefront agent at a time).
+
+## Acceptance criteria
+- AC3: The farmer and admin are notified on the site only: the claim appears in the Farmer area and in the admin-koi claim queue. No WhatsApp message is sent (D-025).
+  (this task: the Farmer area half)
+
+## Decisions in force
+D-052/D-045 (the farmer sees the winner's NAME only — no phone, no street address),
+D-054 (a suspended farm still sees its claims), D-055, D-018 (video bytes through the
+member-token route, never a URL).
+
+## Endpoint inventory
+| Method | Path | Exists? | Shape |
+|---|---|---|---|
+| GET | /vendor/claims | yes (T-054.1b) | { claims: [{ id, lot_id, status, remedy, opened_at, has_video, winner: { name }, product: { title, thumbnail } }], count, limit, offset } |
+| GET | /vendor/claims/:id/video | yes (T-054.1b) | raw bytes |
+| GET | /store/won-lots | yes | unchanged |
+
+## Build (one surface: the farmer's sold-lot list)
+- src/lib/data/claims.ts (new, small): listVendorClaims(limit, offset) through the
+  codegen-produced vendor client path for GET /vendor/claims (expected `sdk.vendor.claims`;
+  check `.mercur/routes.d.ts` and use the exact name) with vendorHeaders(); getClaimVideo(id) returning base64 +
+  contentType exactly like apps/admin-koi/src/lib/data/topups.ts:132-167 (Accept not
+  JSON so @mercurjs/client hands back the Response). Base64 through the server action is
+  fine for the MVP; no proxy or streaming layer.
+- SoldLotsPage.tsx (/akun/kebun/terjual): for a row whose lot has claims, draw a
+  "Klaim DOA" block under the existing row: status badge (open → "Klaim masuk", others
+  labelled per claim status), remedy label, opened_at in Asia/Jakarta (existing
+  shipping-date.ts style), the winner's name from the claim row, and a "Lihat video
+  unboxing" button that loads the bytes on click and renders a blob URL in a <video>
+  (revoke on unmount, copy ScreenshotView's lifecycle in TopupQueue.tsx:166-230).
+  A lot with no claim renders exactly as today.
+- Merge the two lists by lot_id; the sold-lots call stays the page's main read (one extra
+  vendor read on the page, no per-row calls).
+- Keep the claims inside /akun/kebun/terjual (AC3 says "the Farmer area"; this page is
+  it). No new route, no nav change.
+
+## Start from
+- apps/storefront-koi/src/components/sections/AccountPage/SoldLotsPage.tsx:180-290
+- apps/storefront-koi/src/lib/data/sold-lots.ts (vendorHeaders + { value }|{ error })
+- apps/admin-koi/src/components/TopupQueue.tsx:158-230 (blob URL lifecycle)
+
+## Do not touch
+- packages/api; apps/admin-koi; the winner's screens
+
+## Definition of done
+cd apps/storefront-koi && bun run check → pass
+render check on /akun/kebun/terjual as sakura.koi.farm@koi.dev with a seeded claim on one
+of its sold lots → clean; a row with no claim unchanged
+Report: standard header + render check result + screenshot path.
+
+## Open questions
+none
+```
+
+```text
+Story: US-054 (task T-054.4)   Release: mvp
+Agent: frontend (admin-koi)   Expected: <=40 min
+Starts after: T-054.1b. May run in parallel with the storefront tasks.
+
+## Acceptance criteria
+- AC3: The farmer and admin are notified on the site only: the claim appears in the Farmer area and in the admin-koi claim queue. No WhatsApp message is sent (D-025).
+  (this task: the admin queue half)
+
+## Decisions in force
+D-002 (this app only), D-042 (masked PII; the queue shows the winner's name and the farm
+name, no phone/address), D-018 (video bytes via the admin route), D-055.
+
+## Endpoint inventory
+| Method | Path | Exists? | Shape |
+|---|---|---|---|
+| GET | /admin/claims | yes (T-054.1b) | { claims: [{ id, lot_id, status, remedy, opened_at, has_video, winner: { name }, seller: { name }, product: { title, thumbnail } }], count, limit, offset } |
+| GET | /admin/claims/:id/video | yes (T-054.1b) | raw bytes |
+
+## Build (one surface: the open-claims queue)
+- src/lib/data/claims.ts (new): every export calls requireAdmin(ROUTES.claims) first;
+  listClaims(status = 'open', limit, offset) and getClaimVideo(id) → base64 + contentType
+  through the codegen-produced admin client paths (check `packages/api/.mercur/routes.d.ts`
+  for the exact names; expected `sdk.admin.claims` and
+  `sdk.admin.claims.$id.video.query`), following apps/admin-koi/src/lib/data/topups.ts:132-167
+  for the raw-Response read (Accept not JSON). Base64 in a server-action response is fine
+  for the MVP; do not add a proxy route handler or a streaming layer for it.
+- src/app/(app)/klaim/page.tsx (new route, matching ROUTES.claims '/klaim'): reuse the
+  queue shape from FarmQueue.tsx (loading, empty, error, pagination) and TopupQueue.tsx's
+  decision card layout, but read-only — no decision buttons (US-055 brings them). Each
+  claim shows: product title, farm name, winner name, status badge, remedy label,
+  opened_at Asia/Jakarta, "Lihat video unboxing" (blob URL in a <video>, revoke on
+  unmount).
+- src/const/nav.ts: the "Klaim DOA" item at :44-49 already points at ROUTES.claims with
+  the right label — set its `ready: false` to `true`.
+- Empty state text: "Belum ada klaim DOA."
+
+## Start from
+- apps/admin-koi/src/components/FarmQueue.tsx (queue shape)
+- apps/admin-koi/src/components/TopupQueue.tsx:100-230 (card + private image lifecycle)
+- apps/admin-koi/src/lib/data/topups.ts:1-60 (requireAdmin + list)
+
+## Do not touch
+- apps/storefront-koi; packages/api; US-055's decision actions
+
+## Definition of done
+cd apps/admin-koi && bun run check → pass
+render check on http://127.0.0.1:3002/klaim as admin@koi.dev → clean; screenshots in
+/tmp/koi-render/
+Report: standard header + render check result + screenshot path.
+
+## Open questions
+none
+```
+
+```text
+Story: US-054 (task T-054.3)   Release: mvp
+Agent: qa   Expected: <=30 min
+Starts when: no backend agent and no other Jest run is active.
+
+## Acceptance criteria
+Verify AC1–AC4. Decisions: D-025, D-027, D-038, D-054, D-055, D-018/D-040, D-042.
+Code under test: packages/api/src/modules/moderation/**,
+src/workflows/open-claim.ts, src/api/store/won-lots/**, src/api/vendor/claims/**,
+src/api/admin/claims/**, and the four screens.
+Commands (alone): bun run test:integration:http -- won-lot-claims; then -- claims-read.
+Then bun run check in both Koi apps.
+Seeding: a `delivered` lot through the module service (won-lot-delivered.spec.ts:81-113);
+for the browser, set status/delivered_at on a seeded lot with psql. Never call a mark-paid
+or mark-delivered route — none exists and none may be added.
+Browser (render-check): winner files a claim on the lot page; farmer sees it on
+/akun/kebun/terjual with the video; admin sees it on /klaim.
+Watch for: a claim outside 4 h accepted (try 5 h, and 8 h with claim_window_hours=8);
+a >100 MB file reaching the workflow (expect 400, no file left in private-uploads/);
+a second claim on the same lot; any response carrying video_file_key or a URL; another
+winner's or farm's claim visible; a phone, customer id or street address in the farmer or
+admin row; the farmer's video route served to another farm; a suspended farm blocked from
+seeing claims (it must not be, D-054); money touched anywhere (it must not be);
+dev-server file-watcher restart after an upload (a `curl 000` right after writing a file
+is that, not a bug — retry once).
+Do not change app code. Report PASS/FAIL per AC with file:line and command output; bugs
+with repro and expected/actual.
+```
+
 
 ### US-055 Farmer responds and admin decides disputes · `todo`
 As a **farmer**, I want to accept or dispute a claim, and as an **admin**, I want
 to decide disputes, so that claims are fair. *(Plan: Dead-on-arrival claims 3; D-038)*
 - AC1: The farmer can accept, which moves the claim straight to `approved` with no admin step, or dispute (`open → disputed`) (D-038).
 - AC2: Only a disputed claim goes to admin, whose decision (`approved` or `rejected`) is final and saved with a reason.
-- [ ] T-055.1 [backend] Claim decision workflows + routes (store for the farmer, admin for disputes); transitions follow D-038 only; `approved_at` saved on both paths
-- [ ] T-055.2 [storefront] Farmer area claim review with the video
-- [ ] T-055.3 [admin] `/klaim` dispute screen
+- [ ] T-055.1a [backend] Farmer decision: `open → approved` (accept) and `open → disputed`, with the claim columns that save both decisions and `approved_at`
+- [ ] T-055.1b [backend] Admin dispute decision: `disputed → approved | rejected`, written reason required, saved with who decided
+- [ ] T-055.2 [storefront] Farmer area claim review with the video and the two decision buttons
+- [ ] T-055.3 [admin] `/klaim` dispute screen: disputed queue, approve or reject with a reason, decided tab
 - [ ] T-055.4 [qa] Farmer accept gives `approved` directly; admin can't decide a claim that isn't `disputed`
+
+**Readiness (2026-11-17): ready (`todo`). No decided rule is missing; no owner question blocks it.**
+Checked: plan "Dead-on-arrival claims" 3 ("the farmer can accept ... or dispute; on a
+dispute, admin approves or rejects") and "Design rules" (claim statuses, D-055);
+D-038 (enum and who decides what); D-027 (closed = `confirmed`/`rejected`, inline
+in D-038); D-002 (admin screen only in `admin-koi`); D-042/D-045/D-052 (names only,
+no phone); D-018/D-040 (video bytes only, never a key or URL); D-054 +
+task-brief checklist (every custom `/vendor/*` mutation starts with
+`validateSellerOpenStep`; the paid/shipped pair is the only exception).
+- **Scope of the transitions.** This story moves a claim only `open → approved`,
+  `open → disputed` (farmer) and `disputed → approved | rejected` (admin). Every
+  other source status is a 409. `approved → resolved` and `resolved → confirmed`
+  are US-056 (parked); US-055 has **no route, no column and no timer** that
+  reaches `resolved` or `confirmed`, and nothing moves on a clock. The 3-day
+  resolution clock and the auto-confirm job are US-056 T-056.1; the strike is
+  US-059 (parked part). No job or scheduler entry changes in this story.
+- **Decision is final (AC2).** A second decision on the same claim — the same one
+  again, or the other one — is 409, never 200: the guard is `status` under the
+  `claim:<id>` lock. Medusa rewrites a 409 body, so apps key on the status and
+  refresh; the app writes its own copy (D-055).
+- **New columns (T-055.1a's migration only; T-055.1b adds none).** `approved_at`
+  (nullable, set by farmer accept **and** admin approve — US-056's clock starts
+  here), `farmer_decided_at` (nullable, accept or dispute), `decided_by`
+  (nullable, admin user id), `decided_at` (nullable, admin decision time),
+  `decision_reason` (nullable, the admin's written reason). The plan's Moderation
+  row already carries "farmer and admin decisions"; no money column, no amount.
+- **Legal transitions, and what the others return.** Every row below is checked
+  under the `claim:<id>` lock and before any write; the step returns 404 for an
+  unknown claim or (farmer routes) another farm's claim, and 409 for an illegal
+  source status. A repeat of the same call is always 409.
+
+  | Route | From | To | Saves |
+  |---|---|---|---|
+  | POST /vendor/claims/:id/accept | `open` | `approved` | `approved_at`, `farmer_decided_at` |
+  | POST /vendor/claims/:id/dispute | `open` | `disputed` | `farmer_decided_at` (approved_at stays null) |
+  | POST /admin/claims/:id/approve | `disputed` | `approved` | `approved_at`, `decided_by`, `decided_at`, `decision_reason` |
+  | POST /admin/claims/:id/reject | `disputed` | `rejected` | `decided_by`, `decided_at`, `decision_reason` (approved_at stays null) |
+
+  From `approved`, `rejected`, `resolved`, `confirmed` every one of the four
+  routes is 409 `claim_already_decided` / `claim_not_disputed`; from `open` the
+  two admin routes are 409 `claim_not_disputed`; from `disputed` the two farmer
+  routes are 409 `claim_already_decided`. `resolved` and `confirmed` are never
+  reachable in this story (US-056).
+- **Closed now vs. later.** D-027/D-038 call a claim closed when it is
+  `confirmed` or `rejected`, and "closed" gates the 30-day video deletion
+  (US-061). So a claim this story rejects is closed at the moment of the
+  rejection: **no timer is involved for it** — the timer US-056/US-061 own is
+  the one after `resolved`. US-055 itself deletes no video and adds no cleanup
+  job; US-061 reads the closed statuses later.
+- **No money (parked payment model).** Refund and replacement are US-056. No
+  ledger row, no wallet read, no balance, no amount in any request or response.
+- **`mvp-Q44` still open, non-blocking, and unchanged.** This story reaches
+  `rejected`; option (a) stays as shipped — one claim per lot whatever its
+  status, so a rejected lot cannot be claimed again (the existing 409 in
+  `open-claim.ts`). Option (b) would be a follow-up (drop the unique index,
+  widen the open-claim guard); no AC here reopens.
+- **Owner questions raised by this section (not in the questions table):**
+  `mvp-Q45` — D-054's literal text allows a suspended farm only to mark paid and
+  shipped, and the task-brief checklist makes every other `/vendor/*` mutation
+  run `validateSellerOpenStep`, so a suspended farm cannot accept or dispute and
+  its `open` claim has no decision path at all. This story follows the rule as
+  written (403 for a suspended farm). Options: (a) keep it strict (recommended
+  only if the admin is to get a decision path for `open` claims, which no story
+  has); (b) extend D-054 to claim decisions on own sold lots, since its purpose
+  is "a suspension punishes the farm, not the winner" (recommended). `mvp-Q46` —
+  AC2 requires a written reason from the admin; the plan says nothing about the
+  farmer's dispute carrying a note. This story ships without one (the admin
+  judges from the video and the claim facts). Options: (a) no farmer note (what
+  this story builds); (b) an optional farmer note, a new nullable column shown in
+  the admin row. Both are non-blocking.
+
+#### Endpoint inventory
+
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| GET | `/vendor/claims` | yes (T-054.1b) | unchanged row; `?status=` already filters (open, disputed, approved, rejected) |
+| GET | `/vendor/claims/:id/video` | yes (T-054.1b) | unchanged: raw bytes, member token + `x-seller-id`, ownership + not `terminated` |
+| POST | `/vendor/claims/:id/accept` | no | T-055.1a. No body. 200 `{ claim: { id, lot_id, status: "approved", remedy, opened_at, approved_at, farmer_decided_at, decision_reason: null } }`; 403 `validateSellerOpenStep` message; 404 `"Klaim tidak ditemukan."` (not the caller's claim); 409 `claim_already_decided` (status not `open`; Medusa rewrites the body) |
+| POST | `/vendor/claims/:id/dispute` | no | T-055.1a. No body. Same 200 shape with `status: "disputed"`, `approved_at: null`; same 403/404/409 |
+| GET | `/admin/claims` | yes (T-054.1b) | T-055.1b **extends** each row with `decision_reason: string \| null`, `decided_at: string \| null`. `?status=` already accepts every enum value; `disputed`, `approved`, `rejected` now occur |
+| GET | `/admin/claims/:id/video` | yes (T-054.1b) | unchanged |
+| POST | `/admin/claims/:id/approve` | no | T-055.1b. Body `{ reason: string }` (trim, min 1). 200 `{ claim: { id, lot_id, status: "approved", remedy, opened_at, approved_at, farmer_decided_at, decision_reason, decided_by, decided_at } }`; 400 blank reason (Indonesian message); 404 `"Klaim tidak ditemukan."`; 409 `claim_not_disputed` (status not `disputed`) |
+| POST | `/admin/claims/:id/reject` | no | T-055.1b. Body `{ reason }`. Same shape with `status: "rejected"`, `approved_at: null`; same 400/404/409 |
+
+No `GET /store/won-lots*` change: the winner's row already carries `claim.status`
+and the labels for `disputed`, `approved` and `rejected` exist
+(`lib/helpers/claim.ts:61-77`). The admin's reason is saved, not returned to the
+winner (AC2 asks for it to be saved; nothing asks for it to be shown).
+
+#### Briefs (run order)
+
+T-055.1a → T-055.1b → T-055.2 (storefront) ‖ T-055.3 (admin-koi) → T-055.4.
+One backend agent at a time; codegen runs in each backend task before its screen
+starts; qa starts only when no other Jest run is active.
+
+```text
+Story: US-055 (task T-055.1a)   Release: mvp
+Agent: backend   Expected: <=45 min
+Starts after: US-054 T-054.1b (GET /vendor/claims and the claim row exist).
+
+## Acceptance criteria
+- AC1: The farmer can accept, which moves the claim straight to `approved` with no admin step, or dispute (`open → disputed`) (D-038).
+
+## Decisions in force
+D-038: the farmer's two moves only from `open`; no `accepted` state; the admin
+decides only disputes (T-055.1b). D-054 + task-brief checklist: the accept and
+dispute routes are custom `/vendor/*` mutations, so the workflow starts with
+`validateSellerOpenStep` (the paid/shipped pair is the ONLY exception; see
+mvp-Q45). D-055: Indonesian messages. CLAUDE.md §8: workflow with compensation;
+save the result when the action happens; identity from `req.seller_context`.
+
+## Build
+- Model (src/modules/moderation/models/claim.ts): add nullable
+  `approved_at` (dateTime), `farmer_decided_at` (dateTime), `decided_by` (text),
+  `decided_at` (dateTime), `decision_reason` (text). No enum change, no index
+  change. Migration: edit the model, then
+  `DATABASE_URL=…koi-store?sslmode=disable bun x medusa db:generate moderation`;
+  exactly one new migration, list it. T-055.1b adds no column.
+- src/workflows/steps/claim.ts (extend, don't rewrite): one read-only guard step
+  `getDecidableClaimStep({ claim_id, seller_id })`, run under the
+  `claim:<id>` lock: claim missing or `claim.seller_id !== seller_id` → NOT_FOUND
+  "Klaim tidak ditemukan."; `claim.status !== "open"` → CONFLICT
+  "Klaim ini sudah diputuskan." with code `claim_already_decided` (409). One
+  mutation step `decideClaimStep({ claim_id, status, farmer_decided_at })`:
+  `updateClaims` with the new status; on `approved` also `approved_at` (the
+  server's `new Date()`, set in the step, not the route); compensation restores
+  exactly the fields it changed (copy the previous row's status/approved_at/
+  farmer_decided_at into the StepResponse compensation payload — the shape
+  `steps/decide-topup-request.ts:34-70` uses).
+- Workflows src/workflows/accept-claim.ts `acceptClaimWorkflow({ seller_id,
+  claim_id })` and src/workflows/dispute-claim.ts `disputeClaimWorkflow(same)`.
+  Composition: lock → `validateSellerOpenStep({ seller_id })` → guard → decide →
+  release. No `if`/loop in the composition body (a shared helper for the two is
+  fine only if it keeps that shape; two short workflows are simpler).
+- Routes src/api/vendor/claims/[id]/accept/route.ts and .../dispute/route.ts,
+  thin: identity from `req.seller_context!.seller_id`; `import
+  "../../../../../types/seller-context"` in BOTH files (depth matches the I/O
+  video route); run the workflow; respond with the row from the step result (or
+  one `query.graph` read) in the inventory's 200 shape. Never select
+  `video_file_key`.
+- middlewares.ts: no entry needed (Mercur's `/vendor/*` catch-all authenticates
+  the member and resolves `seller_context`; no body). If codegen shows Mercur's
+  own `claims.$id` routes taking precedence, say so in the report rather than
+  changing Mercur code.
+- `bun run codegen` (T-055.2 and T-055.3 depend on the names).
+
+## Cross-cutting checklist
+- [ ] `validateSellerOpenStep` first in both workflows (D-054 exception does NOT cover this; mvp-Q45)
+- [ ] PII: response names only — no customer id, phone, address, video key or URL (D-018/D-042/D-045/D-052)
+- [ ] D-055: Indonesian messages; apps key on status/code, never message text; a 409 body is rewritten
+- [ ] No money, no amount, no ledger row (US-056 parked)
+- [ ] One mutation per step, compensation on each; server clock saved in the step
+- [ ] Route file imports `.../types/seller-context`; `bun run codegen`; `bun run tsc` clean in BOTH Koi apps
+
+## Start from
+- packages/api/src/workflows/decide-topup-request.ts + steps/decide-topup-request.ts:34-70
+- packages/api/src/workflows/mark-lot-sold-status.ts:23-42 (lock + read-only guard)
+- packages/api/src/workflows/open-claim.ts (claim module access + lock key shape)
+- packages/api/src/api/vendor/claims/[id]/video/route.ts (seller context import)
+
+## Do not touch
+- apps/**; src/api/admin/**; src/api/store/**; the open-claim workflow; lot columns
+
+## Spec (packages/api/integration-tests/http/won-lot-claim-farmer-decisions.spec.ts)
+Seed `delivered` lot + claim through the module service, exactly as
+claims-read.spec.ts:134-199 does (never a route).
+- accept on `open` → 200 `approved`, `approved_at` ≈ now, `farmer_decided_at` set,
+  `decided_by`/`decision_reason` null; module read agrees
+- dispute on `open` → 200 `disputed`, `approved_at` null
+- accept twice → second 409 and no second change; dispute after accept → 409;
+  accept after dispute → 409
+- another farm's claim → 404, row unchanged (no existence leak)
+- terminated farm → 403; a `pending` farm → 403 (validateSellerOpenStep);
+  suspended farm → 403 (D-054 literal, mvp-Q45)
+- unknown claim id → 404; no member token / no `x-seller-id` → 401
+- forced failure after the update → previous status restored (compensation)
+- serialised JSON of both 200s has no video key, no URL, no phone, no customer id
+  (assert on JSON, like integration-tests/http/pii-leaks.spec.ts)
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean
+cd packages/api && bun run codegen → run; list the generated claim route names
+cd packages/api && bun run test:integration:http -- won-lot-claim-farmer-decisions → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + API contract (method, path, body, 200 shape, every error
+status + code) + migration name.
+```
+
+```text
+Story: US-055 (task T-055.1b)   Release: mvp
+Agent: backend   Expected: <=45 min
+Starts after: T-055.1a (columns exist, codegen has run).
+
+## Acceptance criteria
+- AC2: Only a disputed claim goes to admin, whose decision (`approved` or `rejected`) is final and saved with a reason.
+
+## Decisions in force
+D-038 (`disputed → approved | rejected`, admin only). D-002 (route under
+`/admin/*`, admin-authenticated by Medusa's default). D-042/D-045 (admin sees
+names only — the row already carries no phone; keep it that way). D-018/D-040
+(no key/URL in any response). D-055 (Indonesian messages; the reason is
+required and non-blank, like `api/admin/topup-requests/validators.ts:26-28`).
+CLAUDE.md §8: workflow with compensation; save the decision when it happens.
+
+## Build
+- validators.ts in src/api/admin/claims/: `AdminDecideClaimBody` =
+  `z.object({ reason: z.string().trim().min(1, "Alasan wajib diisi.") })`.
+- src/workflows/steps/claim.ts: one read-only guard
+  `getAdminDecidableClaimStep({ claim_id })` under the `claim:<id>` lock:
+  missing → NOT_FOUND "Klaim tidak ditemukan."; `status !== "disputed"` →
+  CONFLICT "Klaim ini tidak sedang disengketakan." code `claim_not_disputed`.
+  One mutation `decideClaimAsAdminStep({ claim_id, status, decided_by, reason })`:
+  set status, `approved_at` only on approve (server clock), `decided_by`,
+  `decided_at`, `decision_reason`; compensation restores the previous
+  status/approved_at/decided_by/decided_at/decision_reason.
+- Workflows src/workflows/approve-claim.ts and src/workflows/reject-claim.ts,
+  `{ claim_id, admin_id, reason }`: lock → guard → decide → release.
+- Routes src/api/admin/claims/[id]/approve/route.ts and .../reject/route.ts:
+  thin; `admin_id` from `req.auth_context.actor_id`; `reason` from
+  `req.validatedBody`; respond with the inventory's 200 shape.
+- middlewares.ts: `POST /admin/claims/:id/approve` and `/reject` →
+  `validateAndTransformBody(AdminDecideClaimBody)`.
+- src/api/admin/claims/route.ts: add `decision_reason` and `decided_at` to the
+  mapped rows (`decided_at` ISO, else null). Keep it admin-only; `toClaimListRows`
+  stays as it is so the farmer row does not change.
+- `bun run codegen`.
+
+## Start from
+- packages/api/src/api/admin/topup-requests/[id]/reject/route.ts (thin decision route)
+- packages/api/src/api/admin/topup-requests/validators.ts:24-30 (reason validator)
+- packages/api/src/workflows/steps/decide-topup-request.ts:18-70 (guard + compensation)
+- packages/api/src/api/admin/claims/route.ts (row mapping to extend)
+
+## Cross-cutting checklist
+- [ ] PII: names only; no customer id, phone, address, video key or URL (D-018/D-042/D-045/D-052)
+- [ ] D-055: Indonesian messages (the reason's 400 included); apps key on status/code; 409 body rewritten
+- [ ] No money, no amount, no ledger row (US-056 parked)
+- [ ] Workflow with compensation; `decided_*` from `req.auth_context.actor_id` + the server clock
+- [ ] Route changes → `bun run codegen`; `bun run tsc` clean in BOTH Koi apps
+
+## Do not touch
+- apps/**; src/api/vendor/**; src/api/store/**; the claim model (T-055.1a added
+  every column; no second migration)
+
+## Spec (packages/api/integration-tests/http/won-lot-claim-admin-decisions.spec.ts)
+Seed a `disputed` claim through the module service (claims-read.spec.ts:134-199).
+- approve with a reason → 200 `approved`, `decision_reason` saved, `decided_by` =
+  admin user id, `decided_at` ≈ now, `approved_at` set; module read agrees
+- reject with a reason → 200 `rejected`, reason saved, `approved_at` null
+- approve an `open` claim → 409 `claim_not_disputed`; approve an `approved`
+  claim → 409; reject after approve → 409 (final)
+- blank / missing reason → 400; unknown id → 404
+- customer token or no token on either route → 401/403
+- GET /admin/claims?status=disputed contains it before the decision, absent
+  after; ?status=approved after approval contains it with `decision_reason`;
+  default (`open`) excludes it
+- forced failure after the update → previous fields restored (compensation)
+- serialised JSON has no video key, URL, phone or customer id
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean
+cd packages/api && bun run codegen → run; list the generated admin claim route names
+cd packages/api && bun run test:integration:http -- won-lot-claim-admin-decisions → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + API contract (method, path, body, 200 shape, every error
+status + code) + the two new row fields.
+```
+
+```text
+Story: US-055 (task T-055.2)   Release: mvp
+Agent: frontend (storefront-koi)   Expected: <=40 min
+Starts after: T-055.1a and its codegen. May run parallel with T-055.3.
+
+## Acceptance criteria
+- AC1: The farmer can accept, which moves the claim straight to `approved` with no admin step, or dispute (`open → disputed`) (D-038).
+
+## Decisions in force
+D-054 + checklist (the backend guard is the source of truth; the button hides
+for a non-`open` claim). D-055 (409 body is rewritten → the app writes its own
+copy; apps key on status). D-002/D-004 (storefront only; no admin surface here).
+
+## Endpoint inventory
+| Method | Path | Exists? | Shape |
+|---|---|---|---|
+| GET | /vendor/claims | yes | unchanged rows (id, lot_id, status, remedy, opened_at, has_video, winner{name}, product{title,thumbnail}) |
+| GET | /vendor/claims/:id/video | yes | raw bytes → existing ClaimVideo |
+| POST | /vendor/claims/:id/accept | yes (T-055.1a) | → 200 { claim: { id, lot_id, status, approved_at, farmer_decided_at, decision_reason } } |
+| POST | /vendor/claims/:id/dispute | yes (T-055.1a) | → 200 same, status "disputed", approved_at null |
+
+## Build (one surface: the claim block on a sold-lot row)
+- src/lib/data/claims.ts: add `acceptClaim(id)` and `disputeClaim(id)` using the
+  codegen names (expected `sdk.vendor.claims.$id.accept.mutate` /
+  `sdk.vendor.claims.$id.dispute.mutate`; check `.mercur/routes.d.ts` and use the
+  exact name — fix the call, never the route) with `vendorHeaders()`. Return
+  `{ success: true } | { message, code, status }`, like `markSoldLotShipped`.
+- src/lib/helpers/farm-claim.ts (+ .test.ts): `claimDecisionFailure({ status,
+  code, message })` → 409 "Klaim ini sudah diputuskan. Halaman diperbarui."
+  refresh true; 404 "Klaim tidak ditemukan." refresh true; 403 the server's
+  message; otherwise the server's message. Mirror `shipFailureInfo`.
+- SoldLotsPage.tsx ClaimBlock: when `claim.status === 'open'`, draw two buttons
+  — "Setujui klaim" and "Ajukan sengketa". Each asks `confirm` first (copy names
+  the remedy, e.g. "Setujui klaim dengan pengembalian dana? Pemenang akan
+  dihubungi untuk penyelesaian."), disables both while busy, and on success
+  shows a toast ("Klaim disetujui." / "Sengketa diajukan.") then
+  `router.refresh()`. On failure show the helper's message and refresh when it
+  says so. For every other status the block stays as today, with no buttons.
+  Small client component beside `ClaimVideo` (e.g. components/ClaimDecision.tsx)
+  if the page's row must stay a server component — the page is already a server
+  component, so copy the `ShipLot` shape.
+- No new route, no nav change, no money text or amount anywhere.
+
+## Start from
+- apps/storefront-koi/src/components/sections/AccountPage/components/ShipLot.tsx
+- apps/storefront-koi/src/lib/data/claims.ts (vendorHeaders + result shape)
+- apps/storefront-koi/src/components/sections/AccountPage/SoldLotsPage.tsx:191-210
+- apps/storefront-koi/src/lib/helpers/sold-lot-actions.ts:49-74
+
+## Cross-cutting checklist
+- [ ] PII: names only; the winner's phone/address is never shown (D-042/D-052)
+- [ ] D-055: 409/403 copy is the app's own; key on status, never message text
+- [ ] No money, amount or "refund" text implying a payment already happened (US-056 parked)
+- [ ] UI task: render check on the changed route, submit one decision (render-check skill)
+- [ ] `bun run check` clean; no new route, no raw `fetch`
+
+## Do not touch
+- packages/api; apps/admin-koi; the winner's screens; the claim form
+
+## Definition of done
+cd apps/storefront-koi && bun run check → pass
+render check (/akun/kebun/terjual as sakura.koi.farm@koi.dev, one seeded `open`
+claim on its sold lot): buttons only on the open claim, accept submit →
+refresh shows Disetujui, a seeded `disputed` claim shows no buttons → clean;
+screenshot path reported.
+Report: standard header + render check result + screenshot path.
+```
+
+```text
+Story: US-055 (task T-055.3)   Release: mvp
+Agent: frontend (admin-koi)   Expected: <=45 min
+Starts after: T-055.1b and its codegen. May run parallel with T-055.2.
+
+## Acceptance criteria
+- AC2: Only a disputed claim goes to admin, whose decision (`approved` or `rejected`) is final and saved with a reason.
+
+## Decisions in force
+D-002 (this app only), D-038 (only `disputed` gets a decision; the decision is
+final), D-042/D-045 (rows carry names only), D-018 (video bytes via the admin
+route), D-055 (Indonesian copy; a 409 body is rewritten, so key on status).
+admin-koi CLAUDE.md: a decision that punishes or moves money needs a written
+reason — here the reason is required by AC2 either way.
+
+## Endpoint inventory
+| Method | Path | Exists? | Shape |
+|---|---|---|---|
+| GET | /admin/claims?status=disputed | yes (T-054.1b) | { claims: [{ id, lot_id, status, remedy, opened_at, has_video, winner{name}, seller{name}, product{title,thumbnail}, decision_reason, decided_at }], count, limit, offset } |
+| GET | /admin/claims?status=approved | yes (T-054.1b) | same row shape |
+| GET | /admin/claims?status=rejected | yes (T-054.1b) | same row shape |
+| GET | /admin/claims/:id/video | yes (T-054.1b) | raw bytes → existing VideoView |
+| POST | /admin/claims/:id/approve | yes (T-055.1b) | body { reason } → 200 { claim: { …, status: "approved", decision_reason, decided_by, decided_at } } |
+| POST | /admin/claims/:id/reject | yes (T-055.1b) | body { reason } → 200 same, status "rejected" |
+
+## Build (one surface: the `/klaim` dispute queue)
+- src/lib/data/claims.ts: `approveClaim(id, reason)` and `rejectClaim(id,
+  reason)` server actions — `requireAdmin(ROUTES.claims)` first, codegen names
+  (expected `sdk.admin.claims.$id.approve.mutate` / `.reject.mutate`), then
+  `revalidatePath(ROUTES.claims)`; return `{ success } | { error }` like
+  `rejectTopup` (apps/admin-koi/src/lib/data/topups.ts:113-130). Extend the
+  `AdminClaim` type with `decision_reason: string | null; decided_at: string | null`.
+- src/lib/helpers/claim-format.ts (+ .test.ts): `claimDecisionFailure(status)` →
+  409 "Klaim ini sudah diputuskan. Halaman diperbarui." (refresh), 404 "Klaim
+  tidak ditemukan." (refresh), else the server message; `decidedLabel`
+  if useful.
+- ClaimQueue.tsx: keep the read-only card, add a decision form under the video
+  for rows whose `status === 'disputed'` — one `FormField` + `Input` for the
+  written reason and two buttons "Setujui" and "Tolak" (confirm before submit),
+  both disabled while busy, toast + `router.refresh()` on success, helper message
+  on failure. Rows in `approved`/`rejected` render read-only with
+  `decision_reason` and `decided_at` (Jakarta time).
+- src/app/(app)/klaim/page.tsx: read three lists (`disputed` as the working tab,
+  `approved` and `rejected` for the decided tab) through `listClaims`, and give
+  `ClaimQueue` a `Tabs` split like TopupQueue.tsx:61-86. Empty copy:
+  "Tidak ada sengketa menunggu." / "Belum ada klaim yang diputuskan."
+  Keep `requireAdmin(ROUTES.claims)`.
+- No money text, no amount, no new nav entry.
+
+## Start from
+- apps/admin-koi/src/components/ClaimQueue.tsx:57-85 (row to extend)
+- apps/admin-koi/src/components/TopupQueue.tsx:51-86, 101-137, 246-364 (tabs + decision forms)
+- apps/admin-koi/src/lib/data/topups.ts:113-130 (guarded decision action)
+- apps/admin-koi/src/lib/helpers/claim-format.ts
+
+## Do not touch
+- packages/api; apps/storefront-koi; US-054's read-only row facts and video loader
+
+## Cross-cutting checklist
+- [ ] D-002: this app only; every server action calls `requireAdmin(ROUTES.claims)` itself
+- [ ] PII: rows carry names only — no phone, address, customer id; the video only via the admin route (D-018/D-042/D-045)
+- [ ] D-055: Indonesian copy; a 409 body is rewritten, so key on status and refresh
+- [ ] A written reason is required before either decision submits; confirm before submit
+- [ ] No money, amount or refund-completion text (US-056 parked)
+- [ ] UI task: render check on `/klaim` including one approve and one reject (render-check skill)
+- [ ] `bun run check` clean; no raw `fetch`; no new nav entry
+
+## Definition of done
+cd apps/admin-koi && bun run check → pass
+render check (http://127.0.0.1:3002/klaim as admin@koi.dev) with one seeded
+`disputed` claim: the disputed tab shows it, approve with a reason → toast, the
+row leaves the tab and appears in the decided tab with the reason; reject on a
+second seeded claim likewise → clean; screenshot path reported.
+Report: standard header + render check result + screenshot path.
+```
+
+```text
+Story: US-055 (task T-055.4)   Release: mvp
+Agent: qa   Expected: <=30 min
+Starts when: no backend agent and no other Jest run is active.
+
+## Acceptance criteria
+Verify AC1–AC2. Decisions: D-038, D-027 (closed states are US-056's), D-002,
+D-042/D-045/D-052, D-018/D-040, D-054, D-055.
+Code under test: packages/api/src/workflows/{accept-claim,dispute-claim,
+approve-claim,reject-claim}.ts, src/workflows/steps/claim.ts,
+src/api/vendor/claims/[id]/{accept,dispute}/route.ts,
+src/api/admin/claims/[id]/{approve,reject}/route.ts, src/api/admin/claims/route.ts,
+src/modules/moderation/**, and the two screens.
+Commands (alone): bun run test:integration:http -- won-lot-claim-farmer-decisions;
+then -- won-lot-claim-admin-decisions; then -- claims-read. Then bun run check in
+both Koi apps.
+Seeding: a `delivered` lot + claim through the module service (as
+claims-read.spec.ts:134-199); for the browser set status (open/disputed) and
+approved_at/decision_reason on a seeded claim with psql. Never add a mark-paid,
+mark-delivered or decide-by-SQL test route — psql is only for browser seeding.
+Browser (render-check): farmer accepts on /akun/kebun/terjual → row reads
+"Disetujui" and the claim never appears on /klaim's disputed tab; farmer disputes
+on a second claim → it appears on /klaim; admin approves it with a reason → it
+moves to the decided tab with the reason; admin rejects a third with a reason.
+Watch for: a repeat or illegal decision returning 200 (accept twice, accept after
+dispute, admin approve on `open`, reject after approve, any second decision);
+a blank reason accepted; `approved_at` set on a rejection or missing on a farmer
+accept; any ledger row, amount field or money text (US-056 is parked); a video
+key/URL, phone or customer id in any response or row; a suspended farm allowed to
+decide (it must be 403 under D-054 as written — see mvp-Q45); a decision that
+reaches `resolved`/`confirmed` (nothing in this story may); another farm's claim
+visible or decidable (404).
+Do not change app code. Report PASS/FAIL per AC with file:line and command
+output; bugs with repro and expected/actual.
+```
 
 ### US-056 Approved claims are resolved · `parked (payment model: Xendit escrow pending, 2026-11-16)`
 **Under escrow** (planned direction, 2026-11-16, not a decision): the refund comes out of the held funds, not from the
@@ -3309,3 +4305,6 @@ is built. Record the answer here, in `plan.md`, and as a decision in `docs/produ
 | mvp-Q41 | **Open (2026-11-17, non-blocking).** Lot-page polling interval for US-045: 2 s (recommended, T-045.1 uses it via `LOT_POLL_MS`) or 3/5 s. No decision or plan line records one; T-045.1 defines it in one place, so a change is one line. *(Was: how many seconds between lot-page polls?)* | none (was US-045 T-045.1) |
 | mvp-Q42 | **Open (2026-11-17, non-blocking).** "One lot at a time" in the live room means what? Options: (a) explicit selection only — the room stages the lot of the tightest `live` auction, `?lot=` stages another, and nothing else appears when it closes until reload; (b) (a) plus a "lot berikutnya" control; (c) auto-rotate to the next open lot when the staged one closes. Recommend (a). T-046.2 is written to (a); (b)/(c) are frontend-only additions. *(Was: does the live room select or rotate lots?)* | US-046 T-046.2 |
 | mvp-Q43 | **Open (2026-11-17, non-blocking; proposal awaiting owner yes/no).** Live link storage and window: nullable `auction.live_stream_url` column (not a Mercur custom field — `customFields` covers `Seller` only, `medusa-config.ts:76-82`), farmer-written via `POST /vendor/auctions/:id/live-link` (D-003), writable in every status except `closed`/`cancelled`, rendered as an outbound link with no embed. Owner may instead want an admin override, a narrower window (only `scheduled`/`live`), or an embed. *(Was: who may set the farmer's live link, in which auction status, and is it stored as a column or a custom field?)* | US-046 T-046.1 |
+| mvp-Q44 | **Open (2026-11-17, non-blocking).** Can a winner file a second claim on the same lot? Shipped rule for US-054: one claim per lot whatever its status — unique index on `claim.lot_id` plus a 409; nothing in US-054 reaches `rejected` (US-055 does). Options: (a) keep one-claim-per-lot (recommended); (b) allow a new claim after a rejection (US-055 drops the index, one-line migration). US-054's ACs hold either way. *(Was: is a claim repeatable?)* | none (was US-054 T-054.1) |
+| mvp-Q45 | **Open (2026-11-17, non-blocking; affects US-055 T-055.1a only).** D-054's literal text lets a suspended farm only mark paid and shipped, and the task-brief checklist puts `validateSellerOpenStep` on every other `/vendor/*` mutation — so a suspended farm cannot accept or dispute, leaving its `open` claim with no decision path at all (the admin routes only act on `disputed`). Options: (a) strict — what T-055.1a builds (403), only coherent if the admin gets a path for `open` claims, which no story has; (b) extend D-054 to claim decisions on the farm's own sold lots, matching its stated purpose ("a suspension punishes the farm, not the winner"). Recommend (b); it is a two-line change (ownership + not-`terminated` instead of `validateSellerOpenStep`). *(Was: may a suspended farm accept or dispute a claim on its own sold lot?)* | US-055 T-055.1a |
+| mvp-Q46 | **Open (2026-11-17, non-blocking).** AC2 requires the admin's written reason; the plan says nothing about the farmer's dispute carrying a note. Shipped: no farmer note (the admin judges from the video and the claim facts). Options: (a) no farmer note (what T-055.2 builds); (b) an optional farmer note, one nullable column shown in the admin row. *(Was: does a dispute carry the farmer's own note?)* | US-055 T-055.2 |

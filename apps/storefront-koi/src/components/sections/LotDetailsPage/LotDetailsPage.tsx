@@ -39,7 +39,12 @@ export async function LotDetailsPage({ id }: { id: string }) {
     ? {
         id: mine.lot.id,
         status: mine.lot.status,
-        hasShippingAddress: mine.has_shipping_address
+        hasShippingAddress: mine.has_shipping_address,
+        claimWindowEndsAt: mine.lot.claim_window_ends_at,
+        claim: mine.lot.claim,
+        /* US-054 AC1: the server's clock, so the claim window's copy renders
+           identically on both sides of hydration. */
+        now: Date.now()
       }
     : undefined;
 

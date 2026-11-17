@@ -14,7 +14,7 @@ export type Routes = {
                 promotions: typeof import("@medusajs/medusa/api/admin/campaigns/[id]/promotions/route");
             };
         };
-        claims: typeof import("@medusajs/medusa/api/admin/claims/route") & {
+        claims: typeof import("../src/api/admin/claims/route") & {
             $id: typeof import("@medusajs/medusa/api/admin/claims/[id]/route") & {
                 cancel: typeof import("@medusajs/medusa/api/admin/claims/[id]/cancel/route");
                 claimItems: typeof import("@medusajs/medusa/api/admin/claims/[id]/claim-items/route") & {
@@ -37,6 +37,7 @@ export type Routes = {
                     };
                 };
                 request: typeof import("@mercurjs/core/api/admin/claims/[id]/request/route");
+                video: typeof import("../src/api/admin/claims/[id]/video/route");
             };
         };
         collections: typeof import("@mercurjs/core/api/admin/collections/route") & {
@@ -679,6 +680,7 @@ export type Routes = {
         wallet: typeof import("../src/api/store/wallet/route");
         wonLots: typeof import("../src/api/store/won-lots/route") & {
             $id: typeof import("../src/api/store/won-lots/[id]/route") & {
+                claims: typeof import("../src/api/store/won-lots/[id]/claims/route");
                 delivered: typeof import("../src/api/store/won-lots/[id]/delivered/route");
             };
         };
@@ -689,7 +691,7 @@ export type Routes = {
                 promotions: typeof import("@mercurjs/core/api/vendor/campaigns/[id]/promotions/route");
             };
         };
-        claims: typeof import("@mercurjs/core/api/vendor/claims/route") & {
+        claims: typeof import("../src/api/vendor/claims/route") & {
             $id: typeof import("@mercurjs/core/api/vendor/claims/[id]/route") & {
                 cancel: typeof import("@mercurjs/core/api/vendor/claims/[id]/cancel/route");
                 claimItems: typeof import("@mercurjs/core/api/vendor/claims/[id]/claim-items/route") & {
@@ -712,6 +714,7 @@ export type Routes = {
                     };
                 };
                 request: typeof import("@mercurjs/core/api/vendor/claims/[id]/request/route");
+                video: typeof import("../src/api/vendor/claims/[id]/video/route");
             };
         };
         collections: typeof import("@mercurjs/core/api/vendor/collections/route") & {
