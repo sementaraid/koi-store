@@ -114,7 +114,7 @@ export const copyCustomerPhoneToSeller = async (
     if (typeof customerId !== "string" || !customerId) {
       throw new MedusaError(
         MedusaError.Types.INVALID_DATA,
-        "Complete your customer profile before registering a farm."
+        "Lengkapi profil akun Anda sebelum mendaftarkan kebun."
       )
     }
 
@@ -130,7 +130,7 @@ export const copyCustomerPhoneToSeller = async (
     if (!customer?.phone) {
       throw new MedusaError(
         MedusaError.Types.INVALID_DATA,
-        "Add a phone number to your account before registering a farm."
+        "Tambahkan nomor WhatsApp di akun Anda sebelum mendaftarkan kebun."
       )
     }
 

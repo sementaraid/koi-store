@@ -38,7 +38,7 @@ export const createTopupRequestWorkflow = createWorkflow(
       if (!id) {
         throw new MedusaError(
           MedusaError.Types.NOT_ALLOWED,
-          "Complete your profile before requesting a top-up."
+          "Lengkapi profil Anda sebelum mengajukan top-up."
         )
       }
       return id

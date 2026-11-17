@@ -28,7 +28,7 @@ export const validateSellerOpenStep = createStep(
     if (seller?.status !== SellerStatus.OPEN) {
       throw new MedusaError(
         MedusaError.Types.FORBIDDEN,
-        "Your farm is not approved, so farmer actions are closed."
+        "Kebun Anda belum disetujui, jadi area petani belum terbuka."
       )
     }
   }

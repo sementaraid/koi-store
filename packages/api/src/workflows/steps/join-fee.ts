@@ -58,7 +58,7 @@ export const getJoinableAuctionStep = createStep(
     if (auction.payer_customer_id === input.customer_id) {
       throw new MedusaError(
         MedusaError.Types.FORBIDDEN,
-        "You can't join your own auction.",
+        "Anda tidak bisa ikut lelang ini karena lelang ini milik kebun Anda.",
         "own_auction"
       )
     }

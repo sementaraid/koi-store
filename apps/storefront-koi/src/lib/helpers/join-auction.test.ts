@@ -62,7 +62,7 @@ test('an owner refusal reads in Indonesian and offers no top-up (AC4)', () => {
   const info = joinFailureInfo({
     code: 'own_auction',
     status: 403,
-    message: "You can't join your own auction.",
+    message: 'Anda tidak bisa ikut lelang ini karena lelang ini milik kebun Anda.',
     fee: 50_000
   });
   assert.equal(info.topUp, false);

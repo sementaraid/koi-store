@@ -109,19 +109,19 @@ export const validateNewAuctionStep = createStep(
     if (!(end_ms > start_ms)) {
       throw new MedusaError(
         MedusaError.Types.INVALID_DATA,
-        "end_at must be after start_at"
+        "Waktu selesai harus setelah waktu mulai."
       )
     }
     if (days < settings.auction_min_days || days > settings.auction_max_days) {
       throw new MedusaError(
         MedusaError.Types.INVALID_DATA,
-        `An auction must run between ${settings.auction_min_days} and ${settings.auction_max_days} days`
+        `Lelang harus berlangsung ${settings.auction_min_days}-${settings.auction_max_days} hari.`
       )
     }
     if (lot_count > settings.max_lots_per_auction) {
       throw new MedusaError(
         MedusaError.Types.INVALID_DATA,
-        `An auction can have at most ${settings.max_lots_per_auction} lots`
+        `Maksimal ${settings.max_lots_per_auction} lot per lelang.`
       )
     }
 
@@ -141,7 +141,7 @@ export const validateAuctionUpdateStep = createStep(
     if (!(input.end_ms > input.start_ms)) {
       throw new MedusaError(
         MedusaError.Types.INVALID_DATA,
-        "end_at must be after start_at"
+        "Waktu selesai harus setelah waktu mulai."
       )
     }
     if (
@@ -150,7 +150,7 @@ export const validateAuctionUpdateStep = createStep(
     ) {
       throw new MedusaError(
         MedusaError.Types.INVALID_DATA,
-        `An auction must run between ${input.settings.auction_min_days} and ${input.settings.auction_max_days} days`
+        `Lelang harus berlangsung ${input.settings.auction_min_days}-${input.settings.auction_max_days} hari.`
       )
     }
 

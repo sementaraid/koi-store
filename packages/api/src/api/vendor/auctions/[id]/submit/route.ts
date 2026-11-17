@@ -23,7 +23,7 @@ export const POST = async (
   if (typeof customerId !== "string" || !customerId) {
     throw new MedusaError(
       MedusaError.Types.INVALID_DATA,
-      "Your farmer account has no customer profile, so no wallet can pay the listing fee."
+      "Akun petani Anda belum punya profil pelanggan, jadi biaya pasang lelang tidak bisa dibayar."
     )
   }
 
