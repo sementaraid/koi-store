@@ -16,7 +16,8 @@ are defined in `docs/product/overview.md`.
 
 ## Status as of 2026-11-18
 
-**Last accepted stories:** US-056 and US-059 (Epic 5), qa PASS on every
+**Last accepted stories:** US-057 and US-060 (Epic 5), qa PASS on every
+AC after one fix round, accepted 2026-11-18. Before them: US-056 and US-059 (Epic 5), qa PASS on every
 AC, no fix rounds, accepted 2026-11-18. Before them: US-046 (Epic 4) and US-058
 (Epic 5), qa PASS on every AC, one fix round each, accepted 2026-11-18. Before them: US-051 and US-052 (Epic 5), qa PASS on every AC,
 accepted 2026-11-18 after D-058/D-059 re-opened them. Before them: US-055
@@ -40,15 +41,15 @@ code are committed (`d67d3c8`).
 | 2 Becoming a farmer | 2 | 0 | 0 | 0 | 0 | 11 | 5 | 0 |
 | 3 Auctions for farmers | 4 | 0 | 0 | 0 | 0 | 23 | 0 | 0 |
 | 4 Joining and bidding | 7 | 0 | 0 | 0 | 0 | 27 | 0 | 0 |
-| 5 Closing and after-sale | 9 | 0 | 3 | 0 | 0 | 47 | 13 | 0 |
+| 5 Closing and after-sale | 11 | 0 | 1 | 0 | 0 | 55 | 5 | 0 |
 | 6 Admin operations | 0 | 0 | 6 | 0 | 0 | 0 | 30 | 0 |
 | 7 WhatsApp bot | 0 | 0 | 0 | 0 | 6 | 0 | 12 | 0 |
 | 8 Pilot | 0 | 0 | 1 | 0 | 0 | 0 | 5 | 0 |
 | Unplanned | 1 | 0 | 0 | 0 | 0 | 1 | 0 | 0 |
-| **Total** | **32** | **0** | **10** | **0** | **6** | **140** | **65** | **0** |
+| **Total** | **34** | **0** | **8** | **0** | **6** | **148** | **57** | **0** |
 
-Stories: 32 done of 48 (67%), 10 todo, 6 blocked, none parked.
-Tasks: 140 done of 205 active (68%), 65 open, none parked.
+Stories: 34 done of 48 (71%), 8 todo, 6 blocked, none parked.
+Tasks: 148 done of 205 active (72%), 57 open, none parked.
 
 **Payment model decided (2026-11-17, D-058).** The MVP pays off-platform: the
 winner pays the farmer directly within 1×24 h, the farmer marks the lot paid
@@ -85,11 +86,19 @@ were already what the story required.
 - `docs/releases/README.md:32` still calls escrow the planned direction for the
   MVP stories; D-058 keeps it for beta only.
 
+**Owner scope change (2026-11-18): work pauses at the M5 boundary.** M5 delivery
+time is being compared against a fresh M6 estimate, so no agent starts M6 work
+(US-070, US-071, US-072) until the owner says so. M5 stands at **11 of 12 stories
+`done`**; US-061 is still `todo` and is **not** accepted on a build agent's report
+alone — it needs qa PASS and an AC-by-AC check before it can close. (An earlier
+expected figure of 10 of 12 is superseded: US-057 and US-060 were both accepted
+in this round.) US-061 and US-072 stay `todo`.
+
 **Next in milestone order:**
-1. **US-057** (winner rates the farmer), then US-060, US-061. US-056 and US-059
-   shipped 2026-11-18.
-2. Small backend swap in the same window: **US-055 T-055.5** (D-060), one guard
-   change in two workflows and one spec case.
+1. **Nothing until the owner lifts the M5 pause.** The only M5 story left is
+   US-061 (claim video cleanup), which needs qa PASS first.
+2. After the pause: US-070 – US-072 and US-091 in milestone order (M6). US-055
+   T-055.5 (D-060) remains a small backend swap that can run any time.
 US-046, US-051, US-052, US-053, US-054, US-055, US-056, US-058 and US-059 remain `done`. T-020.10 can run any
 time; qa's admin browser checks need it.
 
@@ -4534,8 +4543,21 @@ itself US-059 T-059.2; AC3 → no code (policy); AC4 → T-056.1b/.1a. Plan "Dea
 claims 4–6" and "Claim statuses (D-027, D-038)" stay covered by US-054, US-055, US-056,
 US-061.
 
-### US-057 Winner rates the farmer · `todo`
-**Status confirmed 2026-11-17:** unchanged by D-058/D-059/D-060/D-061; `todo` for
+### US-057 Winner rates the farmer · `done (evidence: packages/api/integration-tests/http/lot-ratings.spec.ts 17/17 incl. qa's 300-char boundary case; won-lots.spec.ts 12/12 regression twice; packages/api/src/workflows/steps/farmer-rating.ts:8,37-43 (window shipped|delivered|claimed), :33 (winner-only 404), :74-79 (409 rating_exists, DB unique index); packages/api/src/modules/moderation/models/farmer-rating.ts (unique lot_id + stars/comment checks); packages/api/src/modules/moderation/migrations/Migration20261118092043.ts:7,9 (unique index confirmed in DB); packages/api/src/api/store/ratings/route.ts:38-39,45-50,63,79-84,100-110 (one-decimal average, default 10, newest first, first-name-only raters); packages/api/src/api/store/ratings/validators.ts:8 (limit 10/50); packages/api/src/api/store/won-lots/route.ts:242-246,296 and [id]/route.ts:50 (`rating` on both reads); apps/storefront-koi/src/components/sections/AccountPage/components/RateFarmer.tsx; apps/storefront-koi/src/components/sections/PartnerPage/components/Partner.tsx:169-215 (average, count, no block when none); unit 25/25, packages/api tsc clean, storefront check 240/240, admin-koi check 53/53, helper tests 13/13; browser "4,6 · 5 penilaian", first names only, rate-then-read-only; qa PASS after fix round 1)`
+**Accepted 2026-11-18.** qa PASS on AC1–AC2 after one fix round. Fix round 1:
+(1) `farmer-rating.ts:40-49` no longer keys on `code` — every 409 becomes
+"Status lot sudah berubah. Halaman diperbarui." plus a refresh, and the dead
+`lot_not_shipped` branch was deleted, the spec rewritten around
+`invalid_state_error` (Medusa rewrites 409 bodies); (2) ratings paging is now
+default 10 / max 50 (`validators.ts:8`, `middlewares.ts:356`, `ratings/route.ts:45`)
+with spec cases `?limit=51` → 400 and default limit 10. Not verified by design:
+concurrent ratings (DB unique index only) and a banned winner rating (no ban
+guard in the rating path, consistent with US-059 AC2).
+**mvp-Q48 recorded as the shipped rule (2026-11-18):** a winner may rate on
+`shipped`, `delivered` or `claimed` ("once shipped or later"), and the comment is
+optional, ≤300 characters. The owner may still choose option (b) — exactly
+`shipped` and a required comment — with no migration.
+**Status confirmed 2026-11-17:** unchanged by D-058/D-059/D-060/D-061; built for
 Epic 5, after the paid loop.
 **Depends on:** US-092 (masking on the public farm page) — satisfied for this
 story by returning a display name only (see below); US-092's own encryption
@@ -4546,8 +4568,8 @@ can judge farms. *(Plan: Ratings)*
 - AC2: Ratings show on the farm's page (`mitra/[handle]`).
 **PII (D-039):** anything this story shows about the rater beyond a display name (phone, NIK) is masked, because `mitra/[handle]` is a public page. US-092 delivers it.
 
-**Readiness 2026-11-18: ready (`todo`). Nothing blocks it. One new
-question, non-blocking (`mvp-Q48`), with the build default pinned below.**
+**Readiness 2026-11-18: built and accepted (`done`).** One new question was
+raised and pinned as the build default (`mvp-Q48`); it did not block.
 - **The US-092 dependency is satisfied by narrowing the row.** The story needed
   US-092 only to mask whatever the rating shows about the rater. This story
   returns a display name only — the rater's `first_name`, derived at read time —
@@ -4580,11 +4602,11 @@ question, non-blocking (`mvp-Q48`), with the build default pinned below.**
 | GET | /store/won-lots and /store/won-lots/:id | yes | rows gain `rating: { id, stars, comment, created_at } \| null` (T-057.1) |
 | GET | /store/ratings?seller_id=:id | **no** (T-057.1b) | `{ average: number \| null, count, ratings: [{ id, stars, comment, created_at, rater: { name } }], limit, offset }`; 404 unknown or non-`open` seller (`"Mitra tidak ditemukan."`) |
 
-- [ ] T-057.1 [backend] `farmer_rating` model + `rateFarmerWorkflow` + `POST /store/won-lots/:id/rating` + `rating` on the won-lot rows
-- [ ] T-057.1b [backend] `GET /store/ratings` aggregate for the public farm page
-- [ ] T-057.2 [storefront] Rating sheet on a `shipped`+ won lot
-- [ ] T-057.3 [storefront] Ratings block on `mitra/[handle]`
-- [ ] T-057.4 [qa] Once per lot; only the winner; only at/after `shipped`; nothing PII in the payload
+- [x] T-057.1 [backend] `farmer_rating` model + `rateFarmerWorkflow` + `POST /store/won-lots/:id/rating` + `rating` on the won-lot rows
+- [x] T-057.1b [backend] `GET /store/ratings` aggregate for the public farm page
+- [x] T-057.2 [storefront] Rating sheet on a `shipped`+ won lot
+- [x] T-057.3 [storefront] Ratings block on `mitra/[handle]`
+- [x] T-057.4 [qa] Once per lot; only the winner; only at/after `shipped`; nothing PII in the payload
 
 #### Briefs
 
@@ -5597,18 +5619,32 @@ T-059.3; AC4 → T-059.1a (validators), T-059.2 (client), T-059.3. Plan "Strikes
 (winners and farmers)" and "Fair play"'s ban-by-hand line are covered; the
 shill-bidding table is US-071.
 
-### US-060 Farmer cancels an auction · `todo`
+### US-060 Farmer cancels an auction · `done (evidence: packages/api/integration-tests/http/vendor-cancel-auction.spec.ts 11/11 incl. qa's status-step-failure case + 2 refunds of 100 000, balances +100 000 each, exactly 2 new rows, second cancel 409 no second batch; won-lots.spec.ts 12/12 regression twice; packages/api/src/workflows/steps/join-fee.ts:160-205 (each participant's OWN join_fee via created_by), :222-224 (Rp0 skipped), :202-213 (one batched insert); packages/api/src/workflows/cancel-auction.ts:28-56 (no listing-fee refund); packages/api/src/workflows/steps/auction.ts:321-339 (409 live/closed/cancelled, 403 suspended/pending/terminated D-054, 404 other farm); apps/storefront-koi/src/lib/helpers/auction-cancel.ts:11-14 (`canCancelAuction`), components/AccountPage/components/EditAuction.tsx:228-234 (button); unit 25/25, packages/api tsc clean, storefront check 240/240, admin-koi check 53/53, helper tests 13/13; browser cancel of a scheduled auction with 2 joiners → toast naming 2 participants and Rp 200.000, DB 2 refund +100 000 rows; draft/scheduled show the button, live does not; forced status-step failure leaves zero refund rows; qa PASS after fix round 1)`
+**Accepted 2026-11-18.** qa PASS on AC1–AC3 in the same run that closed US-057
+after fix round 1. Fix round 1 had two items, both in US-057's rating path: the
+409 copy now keys on the status rather than the `code` (Medusa rewrites 409
+bodies, dead `lot_not_shipped` branch removed), and ratings paging became default
+10 / max 50. US-060's refund pairing, status guard and cancel copy needed no
+change and were re-verified in that round.
+**Append-only ledger residue (accepted, documented).** qa's verification added 4
+rows to the append-only `wallet_transaction` on a test auction it then deleted: 2
+`join_fee` (−100000) and 2 `refund` (+100000). Wallets moved `budi` 700k → 800k
+and `siti` 4.7M → 4.8M; `sakura` unchanged. Correcting them would itself write to
+the ledger (CLAUDE.md §8: a mistake is fixed with a new entry, never an update),
+so they stay as a recorded residue. All other seeded rows were removed.
+Not verified by design: concurrent cancels (lock key only) and a suspended-seller
+403 in the browser (spec only).
 As a **farmer**, I want to cancel my auction before it starts so that I can
 withdraw it, with joiners refunded. *(Plan: Cancellations, Refunds in the MVP; D-022, D-031)*
 - AC1: Every customer who joined gets a `refund` (+) of their join fee.
 - AC2: The farmer's listing fee isn't refunded.
 - AC3: The farmer can cancel only while the auction is `draft`, `pending_approval` or `scheduled`. Once it is `live`, the farmer's cancel is refused; only an admin can cancel it (D-022, D-031, US-091).
-- [ ] T-060.1 [backend] Cancel workflow: refuse unless `draft`, `pending_approval` or `scheduled`, refund each participant, set status `cancelled`
-- [ ] T-060.2 [storefront] Cancel action in the Farmer area, hidden once the auction is `live`
-- [ ] T-060.3 [qa] Refunds total exactly the join fees collected; no `listing_fee` refund is written; a farmer cancel on a `live` auction is refused on the server
+- [x] T-060.1 [backend] Cancel workflow: refuse unless `draft`, `pending_approval` or `scheduled`, refund each participant, set status `cancelled`
+- [x] T-060.2 [storefront] Cancel action in the Farmer area, hidden once the auction is `live`
+- [x] T-060.3 [qa] Refunds total exactly the join fees collected; no `listing_fee` refund is written; a farmer cancel on a `live` auction is refused on the server
 
-**Readiness 2026-11-18: ready (`todo`). Nothing blocks it. The D-058 question is
-resolved below; no new question is needed.**
+**Readiness 2026-11-18: built and accepted (`done`). The D-058 question was
+resolved explicitly below; no question was needed.**
 
 **D-058 vs the refund — resolved explicitly.** D-058's "the ledger is untouched"
 is about the **sale**: the winner pays the farmer directly, so the platform never

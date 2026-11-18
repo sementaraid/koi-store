@@ -1,10 +1,12 @@
 import { MedusaService } from "@medusajs/framework/utils"
 import type { InferEntityType } from "@medusajs/framework/types"
 import { Claim } from "./models/claim"
+import { FarmerRating } from "./models/farmer-rating"
 import { LotReport } from "./models/lot-report"
 import { Strike } from "./models/strike"
 
 export type ClaimDTO = InferEntityType<typeof Claim>
+export type FarmerRatingDTO = InferEntityType<typeof FarmerRating>
 export type LotReportDTO = InferEntityType<typeof LotReport>
 export type StrikeDTO = InferEntityType<typeof Strike>
 
@@ -14,6 +16,7 @@ export type StrikeDTO = InferEntityType<typeof Strike>
 // trio.
 class ModerationModuleService extends MedusaService({
   Claim,
+  FarmerRating,
   LotReport,
   Strike,
 }) {}

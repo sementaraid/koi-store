@@ -48,10 +48,12 @@ import {
 import { StorePhone } from "./store/customers/validators"
 import { StoreGetWalletParams } from "./store/wallet/validators"
 import { StoreGetLotsParams } from "./store/lots/validators"
+import { StoreGetRatingsParams } from "./store/ratings/validators"
 import {
   StoreGetWonLotsParams,
   StoreRevealWonLot,
 } from "./store/won-lots/validators"
+import { StoreRateLot } from "./store/won-lots/[id]/rating/validators"
 import { StorePlaceBid } from "./store/bids/validators"
 import {
   SCREENSHOT_MAX_BYTES,
@@ -340,6 +342,19 @@ export default defineMiddlewares({
         }),
       ],
     },
+    // US-057 T-057.1b AC2: the public rating list on the farm page. Public:
+    // publishable key only, no customer identity.
+    {
+      method: ["GET"],
+      matcher: "/store/ratings",
+      middlewares: [
+        validateAndTransformQuery(StoreGetRatingsParams, {
+          defaults: [],
+          isList: true,
+          defaultLimit: 10,
+        }),
+      ],
+    },
     {
       method: ["POST"],
       matcher: "/store/bids",
@@ -372,6 +387,16 @@ export default defineMiddlewares({
       method: ["POST"],
       matcher: "/store/won-lots/:id/claims/confirm",
       middlewares: [authenticate("customer", ["bearer", "session"])],
+    },
+    // US-057 T-057.1 AC1: the winner rates the farmer once, from `shipped` on.
+    // Auth first, so an anonymous request never gets its body parsed.
+    {
+      method: ["POST"],
+      matcher: "/store/won-lots/:id/rating",
+      middlewares: [
+        authenticate("customer", ["bearer", "session"]),
+        validateAndTransformBody(StoreRateLot),
+      ],
     },
     // US-051 T-051.6 / US-053 T-053.2: the caller's own won lots, read only.
     // Customer token; no farmer contact in either response (D-052).

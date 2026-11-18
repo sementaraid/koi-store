@@ -139,6 +139,80 @@ export const createAuctionParticipantStep = createStep(
   }
 )
 
+export type JoinFeeRefund = {
+  wallet_id: string
+  // Positive whole rupiah: the charge mirrored.
+  amount: number
+  reference: string
+  created_by: "refund"
+}
+
+export type JoinFeeRefunds = {
+  rows: JoinFeeRefund[]
+  total: number
+}
+
+// Read-only (US-060 AC1, D-034): every participant's OWN `join_fee` (−) row,
+// matched by `created_by === customer_id` (the charge step writes the joining
+// customer there). A Rp0 join wrote no row, so it gets no refund. The amount is
+// the recorded charge, never the auction's `join_fee` field. Run under the
+// per-auction lock, so no join can land between this read and the refund.
+export const getJoinFeeRefundsStep = createStep(
+  "get-join-fee-refunds",
+  async (input: { auction_id: string }, { container }) => {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const { data: participants } = await query.graph({
+      entity: "auction_participant",
+      fields: ["id", "customer_id", "auction_id"],
+      filters: { auction_id: input.auction_id },
+    })
+    const { data: charges } = await query.graph({
+      entity: "wallet_transaction",
+      fields: ["id", "wallet_id", "amount", "created_by", "reference", "type"],
+      filters: { reference: input.auction_id, type: "join_fee" },
+    })
+
+    const byCustomer = new Map(
+      charges.map((row) => [row.created_by as string, row])
+    )
+    const rows: JoinFeeRefund[] = []
+    for (const participant of participants) {
+      const charge = byCustomer.get(participant.customer_id as string)
+      if (!charge) {
+        continue
+      }
+      rows.push({
+        wallet_id: charge.wallet_id as string,
+        amount: Math.abs(Number(charge.amount)),
+        reference: input.auction_id,
+        created_by: "refund",
+      })
+    }
+    const refunds: JoinFeeRefunds = {
+      rows,
+      total: rows.reduce((sum, row) => sum + row.amount, 0),
+    }
+    return new StepResponse(refunds)
+  }
+)
+
+// One mutation (US-060 AC1, D-034): append every `refund` (+) row in ONE call,
+// all or none. No compensation: the ledger is append-only, and this is the
+// workflow's last mutation, so nothing that can abort runs after it.
+export const refundJoinFeesStep = createStep(
+  "refund-join-fees",
+  async (input: { rows: JoinFeeRefund[] }, { container }) => {
+    if (!input.rows.length) {
+      return new StepResponse([])
+    }
+    const service = container.resolve<WalletModuleService>(WALLET_MODULE)
+    const transactions = await service.createWalletTransactions(
+      input.rows.map((row) => ({ ...row, type: "refund" as const }))
+    )
+    return new StepResponse(transactions)
+  }
+)
+
 export type ChargeJoinFeeStepInput = {
   wallet_id: string | null
   // Positive whole rupiah; written as a negative entry.

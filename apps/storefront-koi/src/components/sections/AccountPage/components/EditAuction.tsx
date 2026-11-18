@@ -28,6 +28,7 @@ import {
   type FeeCategory
 } from '@/lib/data/auctions';
 import { auctionStatusLabel } from '@/lib/helpers/auction-status';
+import { canCancelAuction } from '@/lib/helpers/auction-cancel';
 import {
   auctionFieldsSchema,
   auctionLengthError,
@@ -46,6 +47,7 @@ import { ROUTES } from '@/const/routes';
 import type { HeaderAccount, HeaderCart } from '@/types/header';
 
 import { AccountFrame } from './AccountFrame';
+import { CancelAuctionButton } from './CancelAuctionButton';
 import { LiveLinkForm } from './LiveLinkForm';
 import { SubmitAuctionButton } from './SubmitAuctionButton';
 
@@ -220,6 +222,18 @@ export function EditAuction({ auction: initial, categories, openOrders, account,
         </>
       }
       description="Hanya draf yang bisa diubah. Setelah dikirim, lelang menunggu persetujuan admin."
+      /* US-060 AC3: the cancel is offered only before `live`; after it succeeds
+         the server's `cancelled` drops the button. */
+      action={
+        canCancelAuction(auction.status) ? (
+          <CancelAuctionButton
+            auctionId={auction.id}
+            /* The cancel route returns the auction without lots; keep the ones
+               the page already holds so the count does not drop to 0. */
+            onSuccess={(next) => setAuction((cur) => ({ ...next, lots: cur.lots }))}
+          />
+        ) : undefined
+      }
       openOrders={openOrders}
       account={account}
       cart={cart}

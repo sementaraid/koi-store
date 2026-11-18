@@ -53,6 +53,7 @@ export const GET = async (
     lot: toWonLot(row, extras.get(row.id as string) ?? {
       claim_window_ends_at: null,
       claim: null,
+      rating: null,
       seller_bank: null,
     }),
     has_shipping_address,

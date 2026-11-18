@@ -685,6 +685,7 @@ export type Routes = {
             $id: typeof import("../src/api/store/lots/[id]/route");
         };
         platformBankAccount: typeof import("../src/api/store/platform-bank-account/route");
+        ratings: typeof import("../src/api/store/ratings/route");
         topupRequests: typeof import("../src/api/store/topup-requests/route");
         wallet: typeof import("../src/api/store/wallet/route");
         wonLots: typeof import("../src/api/store/won-lots/route") & {
@@ -693,6 +694,7 @@ export type Routes = {
                     confirm: typeof import("../src/api/store/won-lots/[id]/claims/confirm/route");
                 };
                 delivered: typeof import("../src/api/store/won-lots/[id]/delivered/route");
+                rating: typeof import("../src/api/store/won-lots/[id]/rating/route");
                 reveal: typeof import("../src/api/store/won-lots/[id]/reveal/route");
             };
         };
@@ -988,6 +990,7 @@ export type Routes = {
         uploads: typeof import("@mercurjs/core/api/vendor/uploads/route");
         auctions: typeof import("../src/api/vendor/auctions/route") & {
             $id: typeof import("../src/api/vendor/auctions/[id]/route") & {
+                cancel: typeof import("../src/api/vendor/auctions/[id]/cancel/route");
                 liveLink: typeof import("../src/api/vendor/auctions/[id]/live-link/route");
                 lots: typeof import("../src/api/vendor/auctions/[id]/lots/route") & {
                     $lotId: typeof import("../src/api/vendor/auctions/[id]/lots/[lot_id]/route");

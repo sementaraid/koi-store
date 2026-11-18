@@ -8,6 +8,7 @@ import { ROUTES, lotHref } from '@/const/routes';
 
 import { sdk } from '../client';
 import { getAuthHeaders } from './cookies';
+import type { LotRating } from '../helpers/lot-rating';
 
 /* US-040 T-040.2a. `GET /store/lots` and `GET /store/lots/:id`
    (packages/api/src/api/store/lots/{route,[id]/route}.ts): public, publishable
@@ -171,6 +172,8 @@ export type WonLot = {
   claim_window_ends_at: string | null;
   /** AC4: the caller's own claim, whatever its status, or null. */
   claim: WonLotClaim | null;
+  /** US-057 T-057.1 AC1: the caller's own rating, or null until they rate. */
+  rating: LotRating | null;
   auction: { id: string; delivery_method: string };
   product: { title: string | null; thumbnail: string | null };
   seller: { id: string; name: string; payment_details: WonLotSellerBank | null };
@@ -276,6 +279,44 @@ export const markWonLotDelivered = async (id: string): Promise<MarkDeliveredResu
       return { success: false, message: err.message, code: err.code, status: err.status };
     }
     return { success: false, message: 'Gagal menandai lot diterima. Coba lagi.' };
+  }
+};
+
+export type RateLotResult =
+  | { success: true; rating: LotRating }
+  | { success: false; message: string; code?: string; status?: number };
+
+/** The winner rates the farmer once, on a `shipped`-or-later lot (US-057
+    T-057.2, AC1). The server enforces once-per-lot, the status gate and
+    ownership; a success refreshes the row rather than painting it here.
+ *
+ * @remarks
+ * Whole stars 1–5, comment optional and at most 300 characters — the route's
+ * own limits (`StoreRateLot`). A 409 body is rewritten by Medusa, so the
+ * caller keys on the status/code (D-055). No money moves (D-058). */
+export const rateLot = async (
+  id: string,
+  input: { stars: number; comment?: string }
+): Promise<RateLotResult> => {
+  const headers = await getAuthHeaders();
+  if (!('authorization' in headers)) {
+    return { success: false, message: 'Sesi Anda telah berakhir. Masuk lagi.' };
+  }
+
+  try {
+    const { rating } = await sdk.store.wonLots.$id.rating.mutate({
+      $id: id,
+      stars: input.stars,
+      comment: input.comment ?? null,
+      fetchOptions: { headers }
+    });
+    revalidatePath(ROUTES.wonLots);
+    return { success: true, rating };
+  } catch (err: unknown) {
+    if (err instanceof ClientError) {
+      return { success: false, message: err.message, code: err.code, status: err.status };
+    }
+    return { success: false, message: 'Gagal mengirim penilaian. Coba lagi.' };
   }
 };
 

@@ -295,6 +295,41 @@ export async function submitAuction(id: string): Promise<SubmitAuctionResult> {
     }));
 }
 
+/** `POST /vendor/auctions/:id/cancel`'s refund envelope: how many join fees
+    came back and their whole-rupiah total (US-060 T-060.1). */
+export type CancelRefund = { participants: number; total: number };
+
+/** A refused cancel keeps the server's `code` and `status` so the screen can
+    key on them instead of the message text (D-055). */
+export type CancelAuctionResult =
+  | { success: true; data: AuctionDetail; refund: CancelRefund }
+  | { success: false; error: string; code?: string; status?: number };
+
+/** Cancel an auction before it starts (US-060 T-060.2, AC3). The server
+    refuses anything past `scheduled`; the button is already hidden there, so a
+    409 only means the screen went stale. Nothing flips the status here — the
+    view re-reads the auction after the call. */
+export async function cancelAuction(id: string): Promise<CancelAuctionResult> {
+  return vendorHeaders()
+    .then((headers) =>
+      sdk.vendor.auctions.$id.cancel.mutate({
+        $id: id,
+        fetchOptions: { headers }
+      })
+    )
+    .then(({ auction, refund }) => {
+      revalidatePath(ROUTES.farmHome);
+      revalidatePath(farmAuctionHref(id));
+      return { success: true as const, data: toAuctionDetail(auction), refund };
+    })
+    .catch((err: unknown) => ({
+      success: false as const,
+      error: err instanceof ClientError ? err.message : 'Gagal membatalkan lelang.',
+      code: err instanceof ClientError ? err.code : undefined,
+      status: err instanceof ClientError ? err.status : undefined
+    }));
+}
+
 /** Add lots to a draft (T-032.5), e.g. after a rejection. Fees are not taken
     here; the next submit recomputes them (D-032). */
 export async function addAuctionLots(

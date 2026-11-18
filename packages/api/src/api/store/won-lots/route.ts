@@ -32,6 +32,15 @@ export type WonLotClaim = {
   has_video: boolean
 }
 
+// US-057 T-057.1: the caller's own rating on the lot, if any. Never the rater's
+// customer id (D-042/D-045).
+export type WonLotRating = {
+  id: string
+  stars: number
+  comment: string | null
+  created_at: string
+}
+
 // US-051 T-051.1a (D-052, D-059): the farmer's payout account, always masked
 // here. The full number and holder name only leave the server through the
 // winner's logged reveal (T-051.3a). No phone field, selected or returned.
@@ -46,6 +55,8 @@ export type WonLotExtras = {
   // delivered_at + claim_window_hours; null unless the lot is `delivered`.
   claim_window_ends_at: string | null
   claim: WonLotClaim | null
+  // US-057 T-057.1: the caller's rating on this lot, or null.
+  rating: WonLotRating | null
   // null when the seller has no payment_details row. Internal to the mapper:
   // the row exposes it as `seller.payment_details`, never at the top level.
   seller_bank: WonLotSellerBank | null
@@ -62,6 +73,8 @@ export type WonLot = {
   delivered_at: string | null
   claim_window_ends_at: string | null
   claim: WonLotClaim | null
+  // US-057 T-057.1 AC1: null until the winner rates this lot.
+  rating: WonLotRating | null
   auction: { id: string; delivery_method: string }
   product: { title: string | null; thumbnail: string | null }
   seller: { id: string; name: string; payment_details: WonLotSellerBank | null }
@@ -204,6 +217,8 @@ export const readSellerBanks = async (
 // for a whole page in one query (plus the shared settings read), never per
 // row. `video_file_key` is never selected (D-018); every claim row has one
 // (POST requires the upload), so `has_video` is true by construction.
+// US-057 T-057.1: the caller's own rating joins the same one query. Only the
+// four display fields, never the rater's `customer_id` (D-042/D-045).
 export const readWonLotExtras = async (
   query: Query,
   rows: Record<string, unknown>[],
@@ -212,22 +227,28 @@ export const readWonLotExtras = async (
   const ids = rows.map((row) => row.id as string)
   if (!ids.length) return new Map()
 
-  const [windowHours, sellerBanks, { data: claims }] = await Promise.all([
-    readClaimWindowHours(query),
-    readSellerBanks(
-      query,
-      rows.map(
-        (row) =>
-          ((row.auction ?? {}) as { seller?: { id?: string } }).seller
-            ?.id as string
-      )
-    ),
-    query.graph({
-      entity: "claim",
-      fields: ["id", "lot_id", "status", "remedy", "created_at"],
-      filters: { lot_id: ids, customer_id: customerId },
-    }),
-  ])
+  const [windowHours, sellerBanks, { data: claims }, { data: ratings }] =
+    await Promise.all([
+      readClaimWindowHours(query),
+      readSellerBanks(
+        query,
+        rows.map(
+          (row) =>
+            ((row.auction ?? {}) as { seller?: { id?: string } }).seller
+              ?.id as string
+        )
+      ),
+      query.graph({
+        entity: "claim",
+        fields: ["id", "lot_id", "status", "remedy", "created_at"],
+        filters: { lot_id: ids, customer_id: customerId },
+      }),
+      query.graph({
+        entity: "farmer_rating",
+        fields: ["id", "lot_id", "stars", "comment", "created_at"],
+        filters: { lot_id: ids, customer_id: customerId },
+      }),
+    ])
 
   const claimByLot = new Map<string, WonLotClaim>()
   for (const claim of claims as {
@@ -246,6 +267,22 @@ export const readWonLotExtras = async (
     })
   }
 
+  const ratingByLot = new Map<string, WonLotRating>()
+  for (const rating of ratings as {
+    id: string
+    lot_id: string
+    stars: number
+    comment: string | null
+    created_at: Date | string
+  }[]) {
+    ratingByLot.set(rating.lot_id, {
+      id: rating.id,
+      stars: rating.stars,
+      comment: rating.comment ?? null,
+      created_at: new Date(rating.created_at).toISOString(),
+    })
+  }
+
   const byId = new Map<string, WonLotExtras>()
   for (const row of rows) {
     const deliveredAt = iso(row.delivered_at)
@@ -258,6 +295,7 @@ export const readWonLotExtras = async (
     byId.set(row.id as string, {
       claim_window_ends_at: endsAt,
       claim: claimByLot.get(row.id as string) ?? null,
+      rating: ratingByLot.get(row.id as string) ?? null,
       seller_bank:
         sellerBanks.get(
           (
@@ -322,6 +360,7 @@ export const GET = async (
         rowExtras.get(row.id as string) ?? {
           claim_window_ends_at: null,
           claim: null,
+          rating: null,
           seller_bank: null,
         }
       )

@@ -4,6 +4,7 @@ import { SHELF_LIMIT } from '@/const';
 import { toOfferProducts } from '@/lib/adapters/product';
 import { toPartnerProfile } from '@/lib/adapters/seller';
 import { listOffers } from '@/lib/data/offers';
+import { listSellerRatings } from '@/lib/data/ratings';
 import { getSellerByHandle } from '@/lib/data/seller';
 import { rankOffers } from '@/lib/helpers/buybox';
 import { COUNTRY_CODE } from '@/lib/region';
@@ -44,12 +45,16 @@ export async function PartnerPage({
      can overshoot by a page on a catalog of multi-variant products. The fix is
      `group_by_seller` on the offers route, which the store route does not
      expose yet. */
-  const { offers, count } = await listOffers({
-    sellerId: seller.id,
-    countryCode: COUNTRY_CODE,
-    limit: SHELF_LIMIT,
-    offset: (current - 1) * SHELF_LIMIT
-  });
+  const [{ offers, count }, ratings] = await Promise.all([
+    listOffers({
+      sellerId: seller.id,
+      countryCode: COUNTRY_CODE,
+      limit: SHELF_LIMIT,
+      offset: (current - 1) * SHELF_LIMIT
+    }),
+    /* US-057 AC2: the latest six at most, the same block the brief draws. */
+    listSellerRatings(seller.id)
+  ]);
 
   const byProduct = new Map<string, (typeof offers)[number]>();
   for (const offer of rankOffers(offers)) {
@@ -59,6 +64,7 @@ export async function PartnerPage({
   return (
     <Partner
       partner={toPartnerProfile(seller)}
+      ratings={ratings}
       shelf={toOfferProducts([...byProduct.values()])}
       total={count}
       page={current}

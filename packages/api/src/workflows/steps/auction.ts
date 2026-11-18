@@ -291,6 +291,61 @@ export const getDraftAuctionStep = createStep(
   }
 )
 
+export type CancellableAuction = {
+  id: string
+  previous_status: AuctionDTO["status"]
+}
+
+// D-022/D-031: the farmer may cancel only while `draft`, `pending_approval` or
+// `scheduled`. Run under the per-auction lock, so the status can't move between
+// this read and the write. Another seller's auction is 404, like the draft
+// guard, so ids can't be probed.
+export const getCancellableAuctionStep = createStep(
+  "get-cancellable-auction",
+  async (input: { auction_id: string; seller_id: string }, { container }) => {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const {
+      data: [auction],
+    } = await query.graph({
+      entity: "auction",
+      fields: [
+        "id",
+        "seller_id",
+        "status",
+        "join_fee",
+        "fee_override_join_fee",
+      ],
+      filters: { id: input.auction_id },
+    })
+
+    if (!auction || auction.seller_id !== input.seller_id) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_FOUND,
+        "Lelang tidak ditemukan."
+      )
+    }
+    if (
+      auction.status !== "draft" &&
+      auction.status !== "pending_approval" &&
+      auction.status !== "scheduled"
+    ) {
+      // 409: Medusa's handler replaces the message, so the Koi apps key on the
+      // status; the code is kept for internal callers.
+      throw new MedusaError(
+        MedusaError.Types.CONFLICT,
+        "Lelang ini sudah berjalan, jadi tidak bisa dibatalkan sendiri. Hubungi admin.",
+        "auction_not_cancellable"
+      )
+    }
+
+    const cancellable: CancellableAuction = {
+      id: auction.id,
+      previous_status: auction.status,
+    }
+    return new StepResponse(cancellable)
+  }
+)
+
 export type LiveLinkAuction = {
   id: string
   live_stream_url: string | null

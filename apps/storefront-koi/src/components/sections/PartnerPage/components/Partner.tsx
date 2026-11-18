@@ -5,6 +5,7 @@ import { ChatButton } from '@/components/cells/ChatButton/ChatButton';
 import { EmptyFeed } from '@/components/cells/EmptyFeed/EmptyFeed';
 import { Eyebrow } from '@/components/atoms/Eyebrow/Eyebrow';
 import { FeedGrid } from '@/components/atoms/FeedGrid/FeedGrid';
+import { Stars } from '@/components/atoms/Stars/Stars';
 import { FeedPagination } from '@/components/cells/FeedPagination/FeedPagination';
 import { Link } from '@/components/atoms/Link/Link';
 import { PageShell } from '@/components/organisms/PageShell/PageShell';
@@ -13,12 +14,15 @@ import { CONTAINER, SECTION_LABEL } from '@/const/layout';
 import { ROUTES, koiHref, partnerHref } from '@/const/routes';
 import { formatAgo } from '@/lib/helpers/format-ago';
 import type { PartnerProfile } from '@/lib/adapters/seller';
+import type { SellerRatings } from '@/lib/data/ratings';
 import type { HeaderAccount, HeaderCart } from '@/types/header';
 import type { SimpleProduct } from '@/types/product';
 
 /** Props for {@link Partner}. */
 export type PartnerProps = {
   partner: PartnerProfile;
+  /** US-057 AC2: the farm's latest ratings; `count: 0` hides the block. */
+  ratings: SellerRatings;
   /** What this breeder has listed, this page's worth. */
   shelf: SimpleProduct[];
   /** Offers the breeder has in all, across every page. */
@@ -45,6 +49,7 @@ export type PartnerProps = {
  */
 export function Partner({
   partner,
+  ratings,
   shelf,
   total,
   page,
@@ -163,6 +168,50 @@ export function Partner({
           </RenderIf>
         </div>
       </section>
+
+      {/* US-057 AC2: the farm's ratings, only when there are any. The average
+          is the server's, one decimal; formatting it here as a comma keeps
+          `id-ID` without trusting two ICU builds to agree (no hydration risk).
+          No ratings → no block, never "0,0" (lib/adapters/seller.ts:11-15). */}
+      <RenderIf when={ratings.count > 0 ? ratings : null}>
+        {(data) => (
+          <section aria-labelledby="partner-ratings">
+            <div className={`${CONTAINER} py-8 lg:py-10`}>
+              <h2 id="partner-ratings" className={`${SECTION_LABEL} mb-1`}>
+                Penilaian
+              </h2>
+              <p className="mb-6 text-sm text-muted-foreground">
+                <span className="font-semibold text-foreground">
+                  {data.average === null ? '—' : String(data.average).replace('.', ',')}
+                </span>{' '}
+                · {data.count} penilaian
+              </p>
+
+              <ul className="flex flex-col divide-y divide-border">
+                {data.ratings.map((rating) => (
+                  <li key={rating.id} className="flex flex-col gap-1 py-4 first:pt-0">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <Stars value={rating.stars} />
+                      <span className="text-sm font-medium">{rating.rater.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatAgo(rating.created_at)}
+                      </span>
+                    </div>
+                    {/* The comment as text, never HTML. */}
+                    <RenderIf when={rating.comment}>
+                      {(comment) => (
+                        <p className="text-sm leading-relaxed text-muted-foreground">
+                          {comment}
+                        </p>
+                      )}
+                    </RenderIf>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        )}
+      </RenderIf>
 
       <section aria-labelledby="partner-shelf">
         <div className={`${CONTAINER} py-8 lg:py-10`}>

@@ -2,7 +2,7 @@ import { AlertTriangle, Trophy } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { Badge, Card, RenderIf } from '@koi/ui';
-import { Link } from '@/components/atoms';
+import { Link, Stars } from '@/components/atoms';
 import { EmptyFeed } from '@/components/cells/EmptyFeed/EmptyFeed';
 import { FeedPagination } from '@/components/cells/FeedPagination/FeedPagination';
 import { ROUTES, lotHref } from '@/const/routes';
@@ -15,6 +15,7 @@ import {
 } from '@/lib/helpers/claim';
 import { formatDeadline } from '@/lib/helpers/format-deadline';
 import { formatPrice } from '@/lib/helpers/format-price';
+import { canRateLot } from '@/lib/helpers/lot-rating';
 import { soldLotStatusLabel } from '@/lib/helpers/sold-lot';
 import { getShell } from '@/lib/shell';
 
@@ -22,6 +23,7 @@ import { listOrderGroups } from './AccountPage';
 import { countOpen } from './components/Orders';
 import { AccountFrame } from './components/AccountFrame';
 import { ConfirmClaim } from './components/ConfirmClaim';
+import { RateFarmer } from './components/RateFarmer';
 import { RevealBank } from './components/RevealBank';
 
 /** How many won lots one page shows (matches the route's own default). */
@@ -163,6 +165,33 @@ function WonLots({
 
                     <div className="grid min-w-[160px] justify-end gap-2 text-right">
                       <Badge variant={status.tone}>{status.label}</Badge>
+                      {/* US-057 T-057.2 (AC1): rate the farmer once, from
+                          `shipped` on. Never on a `won`/`paid` row — the fish
+                          has not arrived. A rated row shows the saved stars,
+                          comment and date read-only. */}
+                      {canRateLot({ status: lot.status, rating: lot.rating }).show ? (
+                        <RateFarmer lotId={lot.id} sellerName={lot.seller.name} />
+                      ) : null}
+                      <RenderIf when={lot.rating}>
+                        {(rating) => (
+                          <div className="grid justify-items-end gap-0.5">
+                            <span className="inline-flex items-center gap-1 text-xs font-medium text-foreground">
+                              Sudah dinilai
+                              <Stars value={rating.stars} />
+                            </span>
+                            <RenderIf when={rating.comment}>
+                              {(comment) => (
+                                <p className="max-w-[220px] text-xs break-words text-muted-foreground">
+                                  {comment}
+                                </p>
+                              )}
+                            </RenderIf>
+                            <span className="text-xs text-muted-foreground">
+                              {formatDeadline(rating.created_at)} WIB
+                            </span>
+                          </div>
+                        )}
+                      </RenderIf>
                       {lot.claim ? (
                         <div className="grid gap-1">
                           <Badge variant="urgent">Klaim diajukan</Badge>

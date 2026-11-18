@@ -219,6 +219,8 @@ medusaIntegrationTestRunner({
         // US-054 T-054.1b: shipped, so no window and no claim yet.
         claim_window_ends_at: null,
         claim: null,
+        // US-057 T-057.1: no rating yet.
+        rating: null,
       })
       expect(new Date(shipped.pay_by).getTime()).toEqual(
         new Date(shipped.closed_at).getTime() + DAY
