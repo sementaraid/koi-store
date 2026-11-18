@@ -6,7 +6,6 @@ export { AccountMenu } from './AccountMenu/AccountMenu';
 export { AccountNav } from './AccountNav/AccountNav';
 export { BackButton } from './BackButton/BackButton';
 export { BrandMark } from './BrandMark/BrandMark';
-export { BroadcastBar } from './BroadcastBar/BroadcastBar';
 export { CartDeadline } from './CartDeadline/CartDeadline';
 export { CartLink } from './CartLink/CartLink';
 export { CartSteps, CHECKOUT_STEPS } from './CartSteps/CartSteps';

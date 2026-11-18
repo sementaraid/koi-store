@@ -16,4 +16,3 @@ export {
   SimpleProductCard,
 } from './ProductCard';
 export { SaleTerminal } from './SaleTerminal/SaleTerminal';
-export { SpotlightStage } from './SpotlightStage/SpotlightStage';

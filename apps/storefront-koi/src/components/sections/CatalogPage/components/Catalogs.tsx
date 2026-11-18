@@ -1,4 +1,5 @@
 import { BadgeCheck, ShoppingBag } from "lucide-react"
+import { cn } from "cn"
 
 import { Button, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
@@ -128,7 +129,12 @@ export function Catalogs({
           {...(onAttributesChange ? { onAttributesChange } : {})}
         />
 
-        <div className="min-w-0 lg:col-span-3">
+        <div
+          className={cn(
+            "min-w-0",
+            attributes?.length ? "lg:col-span-3" : "lg:col-span-4"
+          )}
+        >
           <FeedSummary
             total={total}
             statusLabel={AVAILABILITY_LABEL[filter.status]}

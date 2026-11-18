@@ -5,7 +5,6 @@ export const ROUTES = {
   catalogs: "/katalog",
   categories: "/kategori",
   marketplace: "/toko",
-  live: "/live",
   guide: "/panduan",
   partners: "/mitra",
   escrow: "/rekber",
@@ -43,8 +42,6 @@ export const orderHref = (id: string) => `${ROUTES.orders}/${id}`
 export const koiHref = (handle: string) => `/produk/${handle}`
 
 export const goodHref = (handle: string) => `/produk/${handle}`
-
-export const roomHref = (id: string) => `${ROUTES.live}?lot=${id}`
 
 export const pageHref = (base: string, page: number) => `${base}?page=${page}`
 

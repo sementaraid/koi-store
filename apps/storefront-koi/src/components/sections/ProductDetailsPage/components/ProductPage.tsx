@@ -7,7 +7,6 @@ import {
   DEFAULT_CATALOG_KOI,
 } from "@/const/catalog"
 import { CONTAINER, SECTION_LABEL } from "@/const/layout"
-import { DEFAULT_LIVE_MEDIA } from "@/const/live"
 import { ROUTES, goodHref, koiHref, partnerHref } from "@/const/routes"
 import { EmptyFeed } from "@/components/cells/EmptyFeed/EmptyFeed"
 import { FeedGrid } from "@/components/atoms/FeedGrid/FeedGrid"
@@ -38,7 +37,7 @@ const itemHref = (item: SimpleProduct) =>
 export function ProductPage({
   product = DEFAULT_CATALOG_KOI[0],
   shelf = DEFAULT_CATALOG_KOI,
-  media = DEFAULT_LIVE_MEDIA,
+  media = [],
   onBuy,
   backHref,
   description,

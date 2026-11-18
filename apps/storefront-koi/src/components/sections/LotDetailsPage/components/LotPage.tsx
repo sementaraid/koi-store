@@ -1,12 +1,12 @@
 import { cn } from "cn"
-import { ArrowRight, Gavel } from "lucide-react"
+import { Gavel } from "lucide-react"
 import { useState } from "react"
 
 import { Button, Card, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
 import { DEFAULT_AUCTION_FILTER } from "@/const/auctions"
 import { CONTAINER, SECTION_LABEL } from "@/const/layout"
-import { ROUTES, lotHref, roomHref } from "@/const/routes"
+import { ROUTES, lotHref } from "@/const/routes"
 import { EmptyFeed } from "@/components/cells/EmptyFeed/EmptyFeed"
 import { FeedGrid } from "@/components/atoms/FeedGrid/FeedGrid"
 import { FeedPagination } from "@/components/cells/FeedPagination/FeedPagination"
@@ -46,7 +46,6 @@ export function LotPage({
   join,
   bid,
   wonLot,
-  liveHref,
   backHref = ROUTES.auctions,
   activeHref = ROUTES.auctions,
   filter = DEFAULT_AUCTION_FILTER,
@@ -255,18 +254,6 @@ export function LotPage({
                         )}
                       </RenderIf>
 
-                      <Button
-                        size="lg"
-                        render={<Link href={liveHref ?? roomHref(lot.id)} />}
-                        nativeButton={false}
-                        className="w-full"
-                      >
-                        <Gavel aria-hidden />
-                        {status === "live"
-                          ? "Masuk ruang bidding"
-                          : "Lihat ruang lelang"}
-                        <ArrowRight aria-hidden />
-                      </Button>
 
                       <RenderIf when={join}>
                         {(control) => <JoinAuction {...control} />}
@@ -279,14 +266,6 @@ export function LotPage({
                             currentPrice={currentBid}
                             onEndTime={setBidEndTime}
                           />
-                        )}
-                      </RenderIf>
-
-                      <RenderIf when={!bid}>
-                        {() => (
-                          <p className="text-center text-xs text-muted-foreground">
-                            Bid &amp; beli langsung dilakukan di ruang siaran.
-                          </p>
                         )}
                       </RenderIf>
                     </>

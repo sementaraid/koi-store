@@ -14,7 +14,7 @@ import { ROUTES } from "@/const/routes"
 import type { HeaderAccountLink, HeaderLink } from "@/types/header"
 
 export const DEFAULT_LINKS: HeaderLink[] = [
-  { label: "Lelang Live", href: ROUTES.live, live: true },
+  { label: "Lelang Live", href: ROUTES.auctions, live: true },
   { label: "Katalog Koi", href: ROUTES.catalogs },
   { label: "Perlengkapan Kolam Koi", href: ROUTES.marketplace },
 ]

@@ -19,7 +19,6 @@ export type LotPageProps = ComponentProps<"div"> &
     lots: AuctionProduct[]
     pageSize?: number
     media: MediaItem[]
-    liveHref?: string
     backHref?: string
     join?: JoinControl
     bid?: BidControl
