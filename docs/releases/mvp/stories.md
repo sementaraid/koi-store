@@ -4516,15 +4516,349 @@ claims 4–6" and "Claim statuses (D-027, D-038)" stay covered by US-054, US-055
 US-061.
 
 ### US-057 Winner rates the farmer · `todo`
-**Status confirmed 2026-11-17:** unchanged by D-058/D-059/D-060/D-061; no blocking question (`mvp-Q40`/`mvp-Q46` are non-blocking); `todo` for Epic 5, after the paid loop.
-**Depends on:** US-092 (masking on the public farm page).
+**Status confirmed 2026-11-17:** unchanged by D-058/D-059/D-060/D-061; `todo` for
+Epic 5, after the paid loop.
+**Depends on:** US-092 (masking on the public farm page) — satisfied for this
+story by returning a display name only (see below); US-092's own encryption
+tasks stay open and do not wait on this story.
 As a **winner**, I want to rate the farmer after shipping so that other buyers
 can judge farms. *(Plan: Ratings)*
 - AC1: Available once the lot is `shipped`: 1–5 stars and a comment, once per lot.
 - AC2: Ratings show on the farm's page (`mitra/[handle]`).
 **PII (D-039):** anything this story shows about the rater beyond a display name (phone, NIK) is masked, because `mitra/[handle]` is a public page. US-092 delivers it.
-- [ ] T-057.1 [backend] `farmer_rating` model + workflow + routes
-- [ ] T-057.2 [storefront] Rating form + display on the partner page
+
+**Readiness 2026-11-18: ready (`todo`). Nothing blocks it. One new
+question, non-blocking (`mvp-Q48`), with the build default pinned below.**
+- **The US-092 dependency is satisfied by narrowing the row.** The story needed
+  US-092 only to mask whatever the rating shows about the rater. This story
+  returns a display name only — the rater's `first_name`, derived at read time —
+  and never a customer id, phone, NIK or email. US-092 T-092.2's response
+  middleware already masks every `seller`/`sellers` value on `/store/*`
+  (`api/utils/mask-response.ts:106-155`), and `mitra/[handle]`'s seller read is
+  `GET /store/sellers`. Nothing here waits on US-092's encryption.
+- No money: a rating writes no ledger row and moves nothing (D-058's scope is
+  the sale; a rating is not a fee).
+
+**What the rating is, pinned:**
+
+| Question | Answer | Source |
+|---|---|---|
+| Who may rate | the lot's `winner_customer_id` only; any other caller gets 404 (no existence leak) | AC1; US-051's own-lots scoping |
+| Which lot statuses | `shipped`, `delivered`, `claimed` — "once shipped or later". `open`/`unsold`/`won`/`paid`/`cancelled` → 409 `lot_not_shipped` | AC1 ("once the lot is `shipped`"); interpretation pinned as `mvp-Q48` default |
+| One per lot | unique index on `farmer_rating.lot_id`; a second POST → 409 `rating_exists`, no second row | AC1 ("once per lot") |
+| Score | 1–5 whole stars, required. Comment optional, ≤300 characters (the existing review sheet's limit) | AC1; `components/sections/AccountPage/components/ReviewForm.tsx` |
+| Farmer reply | none in the MVP — no reply column, no route, no button | plan "Ratings" says only "1–5 stars and a comment" |
+| Farmer sees | the same public list on their own farm page. No separate Farmer-area ratings screen in this story | plan "Ratings"; story has two tasks only |
+| What the farm page shows | average to one decimal + count + the latest 6 (stars, comment, rater first name, date). No ratings → the whole block is hidden, never "0,0" | AC2; `lib/adapters/seller.ts:11-15` (no invented zeroes) |
+| Rater name | first name only, from `customer.first_name`, at read time. No mask characters, no id | story's PII line ("beyond a display name") |
+| Banned winner | may still rate — AC2 of US-059 blocks only join, bid and auction creation | US-059 AC2 |
+
+**Endpoint inventory (story)**
+
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| POST | /store/won-lots/:id/rating | **no** (T-057.1) | body `{ stars: 1..5, comment?: string ≤300 }` → 201 `{ rating: { id, lot_id, stars, comment, created_at } }`; 400 bad body; 401 no token; 404 unknown lot or not the caller's win (`"Lot tidak ditemukan."`); 409 `lot_not_shipped` / `rating_exists` |
+| GET | /store/won-lots and /store/won-lots/:id | yes | rows gain `rating: { id, stars, comment, created_at } \| null` (T-057.1) |
+| GET | /store/ratings?seller_id=:id | **no** (T-057.1b) | `{ average: number \| null, count, ratings: [{ id, stars, comment, created_at, rater: { name } }], limit, offset }`; 404 unknown or non-`open` seller (`"Mitra tidak ditemukan."`) |
+
+- [ ] T-057.1 [backend] `farmer_rating` model + `rateFarmerWorkflow` + `POST /store/won-lots/:id/rating` + `rating` on the won-lot rows
+- [ ] T-057.1b [backend] `GET /store/ratings` aggregate for the public farm page
+- [ ] T-057.2 [storefront] Rating sheet on a `shipped`+ won lot
+- [ ] T-057.3 [storefront] Ratings block on `mitra/[handle]`
+- [ ] T-057.4 [qa] Once per lot; only the winner; only at/after `shipped`; nothing PII in the payload
+
+#### Briefs
+
+```text
+Story: US-057 (task T-057.1)   Release: mvp
+Agent: backend   Expected: <=45 min
+
+## Acceptance criteria
+- AC1: Available once the lot is `shipped`: 1–5 stars and a comment, once per lot.
+
+## Decisions in force
+D-058: a rating moves no money — no wallet read, no ledger row, no payout.
+D-055: Indonesian messages; the app keys on `code`/status, never message text.
+D-042/D-045: the row returns no customer id, phone, NIK or email; the rater is a
+first name only. D-039 stands (name is the permitted display value).
+CLAUDE.md §8: one workflow with compensation; one row per lot enforced by the DB.
+
+## Build
+- Model src/modules/moderation/models/farmer-rating.ts:
+  `FarmerRating { id: model.id({ prefix: "frat" }).primaryKey(), lot_id: text,
+  customer_id: text, seller_id: text, stars: model.number(), comment: text().nullable() }`.
+  Unique index `{ on: ["lot_id"], unique: true }`, indexes `{ on: ["seller_id", "created_at"] }`.
+  Soft references only (§9). Add `FarmerRating` to the `MedusaService({...})`
+  call in modules/moderation/service.ts (keep every model already listed);
+  migration `bunx medusa db:generate moderation`.
+- Guard step `getRateableLotStep({ lot_id, customer_id })`, read only, under the
+  `lot:<id>` lock: `query.graph` lot fields `id, status, winner_customer_id,
+  auction.seller_id`. Missing lot, or `winner_customer_id !== customer_id` →
+  NOT_FOUND "Lot tidak ditemukan." (no existence leak). `status` not in
+  `["shipped","delivered","claimed"]` → CONFLICT "Lot ini belum dikirim, jadi
+  belum bisa dinilai." code `lot_not_shipped`. Returns `seller_id`.
+- Insert step `createFarmerRatingStep`: `createFarmerRatings([...])`; catch
+  `code === "23505"` → CONFLICT "Anda sudah menilai lot ini." code
+  `rating_exists` (copy `createClaimStep`, steps/claim.ts:321-347). Compensation
+  deletes the row.
+- Workflow src/workflows/rate-farmer.ts `{ lot_id, customer_id, stars, comment }`:
+  lock `lot:<id>` → guard → insert → release; return the row.
+- Route src/api/store/won-lots/[id]/rating/route.ts: identity from
+  `req.auth_context.actor_id`; 201 `{ rating: { id, lot_id, stars, comment,
+  created_at } }`. Strict body via zod, imported from a new
+  api/store/won-lots/[id]/rating/validators.ts.
+- Won-lot read: in api/store/won-lots/route.ts `readWonLotExtras`, add the
+  caller's ratings for the page's lot ids to the one batched query (same shape as
+  the existing claim read, :207-225) and map `rating: {...} | null` into
+  `WonLot`/`toWonLot`; the `:id` route reads the same extras.
+- middlewares.ts: `{ method: ["POST"], matcher: "/store/won-lots/:id/rating",
+  middlewares: [authenticate("customer", ["bearer","session"]),
+  validateAndTransformBody(StoreRateLot)] }`. `bun run codegen`.
+
+## Start from
+- packages/api/src/workflows/open-claim.ts (lock, guard, insert, 23505, compensation)
+- packages/api/src/workflows/steps/claim.ts:321-347 (unique-race 409)
+- packages/api/src/api/store/won-lots/route.ts:190-260 (batched extras, the
+  `claim` field added the same way)
+
+## Do not touch
+- apps/**; the claim model/workflows; any auction, lot or wallet code; US-059/060/061
+
+## Spec (packages/api/integration-tests/http/lot-rating.spec.ts)
+Seed a closed lot per case through the module service (winner = the test customer).
+- `shipped` + stars 5 + comment → 201, row saved; module read agrees
+- second POST → 409 `rating_exists`, still one row
+- `delivered` and `claimed` → 201 (the pinned window)
+- `open` / `unsold` / `won` / `paid` / `cancelled` → 409 `lot_not_shipped`, no row
+- another customer's lot (not the winner) → 404, no row; unknown id → 404
+- stars 0, 6, 2.5, or a missing `stars` → 400; 301-character comment → 400; strict body
+- no customer token → 401
+- `GET /store/won-lots` then carries `rating` on that row and null on another
+- forced failure after the insert → row deleted (compensation)
+- serialised JSON has no customer id, phone, email, NIK or address
+
+## Cross-cutting checklist
+- [ ] PII: first name only, no id/phone/email/NIK anywhere (D-042/D-045); self
+      customer fields stay as they are
+- [ ] D-055: the two 409 codes and the 404 message in Indonesian
+- [ ] No money, no ledger row, no payout (D-058)
+- [ ] One mutation per step with compensation; timestamps from the server
+- [ ] `bun run codegen`; `bun run tsc` clean in BOTH Koi apps
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean
+cd packages/api && bun run codegen → run; list the generated rating route name
+cd packages/api && bun run test:integration:http -- lot-rating → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + API contract (route, body, 201 shape, every error) +
+migration name + the won-lot `rating` field.
+```
+
+```text
+Story: US-057 (task T-057.1b)   Release: mvp
+Agent: backend   Expected: <=30 min
+Starts after: T-057.1 (model and rows).
+
+## Acceptance criteria
+- AC2: Ratings show on the farm's page (`mitra/[handle]`).
+
+## Decisions in force
+D-042/D-045: rater first name only; no customer id, phone or email.
+D-046/D-061: a suspended farm is not public; `GET /store/sellers` returns only
+`open` sellers, so a non-open seller is 404 here too. D-055: Indonesian messages.
+
+## Build
+- src/api/store/ratings/validators.ts: `StoreGetRatingsParams` — `seller_id`
+  (required string), `limit` default 10 max 50, `offset` default 0.
+- src/api/store/ratings/route.ts (public: publishable key, no customer token):
+  1. read the seller `{ id, status }` by id; missing or `status !== "open"` →
+     NOT_FOUND "Mitra tidak ditemukan."
+  2. `query.graph` `farmer_rating` fields `id, stars, comment, created_at,
+     customer_id`, filters `{ seller_id }`, order `created_at DESC`, paged.
+  3. one batched customer read for the page's `customer_id`s →
+     `customer.first_name` only.
+  4. `average`: mean of all the seller's ratings to one decimal
+     (`Math.round(sum/count*10)/10`), null when count is 0; `count` from
+     `metadata.count`.
+  5. `{ average, count, ratings: [{ id, stars, comment, created_at,
+     rater: { name } }], limit, offset }`. Never select phone, email, NIK or the
+     customer id into the response.
+- middlewares.ts: `{ method: ["GET"], matcher: "/store/ratings", middlewares:
+  [validateAndTransformQuery(StoreGetRatingsParams, { defaults: [], isList: true,
+  defaultLimit: 10 })] }`. `bun run codegen`.
+
+## Start from
+- packages/api/src/api/store/lots/route.ts (public read, paged, batched joins)
+- packages/api/src/api/vendor/claims/route.ts:47-67 (`winnersById`, the same
+  name-only batched read)
+
+## Do not touch
+- apps/**; Mercur's `/store/sellers*`; the rating write (T-057.1)
+
+## Spec (append to packages/api/integration-tests/http/lot-rating.spec.ts)
+- three ratings on seller A, one on seller B → A returns count 3, its average,
+  newest first; B's row absent
+- zero ratings → `average: null`, `count: 0`, `ratings: []`
+- unknown seller id and a `suspended` seller → 404 "Mitra tidak ditemukan."
+- `limit`/`offset` page correctly; `limit` > 50 → 400
+- serialised JSON has no customer id, phone, email or NIK
+
+## Cross-cutting checklist
+- [ ] PII: first name only (D-042/D-045)
+- [ ] D-055: the 404 message in Indonesian
+- [ ] Read only: no workflow needed, no writes
+- [ ] `bun run codegen`; `bun run tsc` clean in BOTH Koi apps
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean
+cd packages/api && bun run codegen → run; list the generated ratings route name
+cd packages/api && bun run test:integration:http -- lot-rating → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + API contract (query, 200 shape, 404) + the average rule.
+```
+
+```text
+Story: US-057 (task T-057.2)   Release: mvp
+Agent: frontend (storefront-koi)   Expected: <=40 min
+Starts after: T-057.1 and its codegen.
+
+## Acceptance criteria
+- AC1 (winner half): the winner can rate a `shipped` lot, once.
+
+## Decisions in force
+D-055: a 409 body is rewritten by Medusa, so the app writes its own copy and
+keys on status/code. D-042/D-045: nothing about the rater leaves the form.
+D-058: no money text anywhere on this screen.
+
+## Endpoint inventory
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| GET | /store/won-lots | yes | rows gain `rating: { id, stars, comment, created_at } \| null` (T-057.1) |
+| POST | /store/won-lots/:id/rating | no → T-057.1, first | `{ stars, comment? }` → 201 `{ rating }`; 404; 409 `lot_not_shipped` / `rating_exists` |
+| GET | /store/ratings?seller_id= | no → T-057.1b | used by T-057.3 only |
+
+## Build (one surface: a won-lot row on `/akun/menang`)
+- src/lib/helpers/lot-rating.ts (+ .test.ts): `canRateLot({ status, rating })` →
+  `{ show: boolean }` (status in `shipped|delivered|claimed`, no `rating` yet);
+  `ratingFailureInfo({ status, code, message })` → 409 `rating_exists`
+  "Lot ini sudah dinilai. Halaman diperbarui." (refresh); 409 `lot_not_shipped`
+  "Lot ini belum dikirim, jadi belum bisa dinilai." (refresh); 404
+  "Lot ini tidak ditemukan." (refresh); else the server's message.
+- src/lib/data/lots.ts: `rateLot(id, { stars, comment })` beside the delivered
+  action, same result shape and `revalidatePath(ROUTES.wonLots)`; extend the
+  `WonLot` type with `rating`.
+- src/components/sections/AccountPage/components/RateFarmer.tsx: client sheet
+  copied from `ReviewForm.tsx` (StarsInput via `Controller`, bare textarea ≤300,
+  zod schema with 1–5 required). Submit → toast "Terima kasih, penilaian
+  terkirim." → `router.refresh()`. Busy state on the button.
+- WonLotsPage.tsx row: when `canRateLot(...).show` draw "Nilai kebun"; when
+  `rating` exists draw `Sudah dinilai — ★{stars}` and no button. Never show a
+  button on `won`/`paid`.
+
+## Start from
+- apps/storefront-koi/src/components/sections/AccountPage/components/ReviewForm.tsx
+- apps/storefront-koi/src/components/sections/AccountPage/WonLotsPage.tsx:100-200
+- apps/storefront-koi/src/lib/helpers/review-subjects.test.ts (test style)
+
+## Do not touch
+- packages/api; apps/admin-koi; the claim block; `ReviewForm` itself
+
+## Cross-cutting checklist
+- [ ] D-055: 409/404 copy is the app's own; never key on message text
+- [ ] No PII in the form; no money text (D-058)
+- [ ] Uses `@koi/ui` + existing atoms; no raw `fetch`
+- [ ] UI task: render check on `/akun/menang`, one submit (render-check skill)
+- [ ] `bun run check` clean
+
+## Definition of done
+cd apps/storefront-koi && bun run check → pass
+render check (/akun/menang as a seeded winner with one `shipped` lot, one
+`delivered` lot already rated, one `won` lot — psql): button only on `shipped`
+and unrated; submit → "Sudah dinilai — ★5"; a second submit path is not offered
+→ clean; screenshot path reported.
+Report: standard header + render check result + screenshot path.
+```
+
+```text
+Story: US-057 (task T-057.3)   Release: mvp
+Agent: frontend (storefront-koi)   Expected: <=35 min
+Starts after: T-057.1b and its codegen.
+
+## Acceptance criteria
+- AC2: Ratings show on the farm's page (`mitra/[handle]`).
+
+## Decisions in force
+D-042/D-045: the rater is a first name from the server; nothing else.
+D-046/D-061: the page already 404s a non-public seller — keep that path.
+`lib/adapters/seller.ts:11-15`: never invent zeroes; hide the block instead.
+
+## Endpoint inventory
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| GET | /store/sellers | yes | the page's existing seller read, unchanged |
+| GET | /store/ratings?seller_id=:id | no → T-057.1b | `{ average, count, ratings: [{ id, stars, comment, created_at, rater: { name } }] }`; 404 |
+
+## Build (one surface: the identity band's reviews block)
+- src/lib/data/ratings.ts: `listSellerRatings(sellerId, limit = 6)` in the same
+  shape as the other public reads; a failure returns `{ average: null, count: 0,
+  ratings: [] }` so the page still renders.
+- PartnerPage.tsx: one extra parallel read; pass `ratings` to `Partner`.
+- components/PartnerPage/components/Partner.tsx: below the identity band, a
+  "Penilaian" block drawn only when `count > 0`: `{average formatted id-ID} ·
+  {count} penilaian`, then each of the latest 6 as stars (`<Stars value>`),
+  first name, `formatAgo(created_at)`, and the comment as text (never HTML).
+- No star block on the directory cards; no pagination in this task.
+
+## Start from
+- apps/storefront-koi/src/components/sections/PartnerPage/components/Partner.tsx
+- apps/storefront-koi/src/components/atoms/Stars/Stars.tsx
+- apps/storefront-koi/src/lib/helpers/format-ago.ts
+
+## Do not touch
+- packages/api; apps/admin-koi; the shelf/pagination; the seller adapter
+
+## Cross-cutting checklist
+- [ ] No PII beyond the server's first name; never print an id (D-042/D-045)
+- [ ] Nothing rendered as HTML (`dangerouslySetInnerHTML` is banned here)
+- [ ] Empty/error state hides the block (no "0,0", no layout hole)
+- [ ] UI task: render check on `/mitra/<handle>` for a rated and an unrated farm
+- [ ] `bun run check` clean; no raw `fetch`
+
+## Definition of done
+cd apps/storefront-koi && bun run check → pass
+render check (/mitra/sakura-koi-farm with 3 seeded ratings; one unrated farm):
+average and count, three rows, comments as text; unrated farm shows no block,
+no "NaN"/"undefined" → clean; screenshot path reported.
+Report: standard header + render check result + screenshot path.
+```
+
+```text
+Story: US-057 (task T-057.4)   Release: mvp
+Agent: qa   Expected: <=30 min
+Starts when: no backend agent and no other Jest run is active.
+
+## Acceptance criteria
+Verify AC1–AC2. Decisions: D-042/D-045, D-055, D-058. Code under test:
+src/modules/moderation/models/farmer-rating.ts, workflows/rate-farmer.ts,
+steps/farmer-rating.ts, api/store/won-lots/[id]/rating/route.ts,
+api/store/ratings/route.ts, the two screens.
+Commands (alone): bun run test:integration:http -- lot-rating. Then bun run
+check in storefront-koi.
+Seeding: lots and ratings through the module service; the browser's `shipped`
+lot state with psql.
+Browser (render-check): winner rates on /akun/menang; the farm page shows the
+rating with the rater's first name only.
+Watch for: a rating from anyone but the winner (must be 404); a rating on `won`
+or `paid` (409); a second rating creating a second row; stars outside 1–5
+accepted; a comment over 300 stored; any customer id, phone, email or NIK in a
+payload or the page source; any money/ledger row; an invented "0,0" average.
+Do not change app code. Report PASS/FAIL per AC with file:line and command
+output; bugs with repro and expected/actual.
+```
+
+**Coverage:** AC1 → T-057.1, T-057.2, T-057.4; AC2 → T-057.1b, T-057.3,
+T-057.4. Plan "Ratings" is fully covered. `mvp-Q48` (window, comment
+requiredness) is non-blocking; the defaults above are what the briefs build.
 
 ### US-058 Farmer reports a winner who didn't pay · `todo` (unparked 2026-11-17 by D-058; briefs written 2026-11-17)
 **D-058 sets the deadline.** The winner pays the farmer directly, off-platform,
@@ -4881,9 +5215,352 @@ offenders are banned. *(Plan: Strikes; D-058)*
 - AC2: 2 active strikes = ban. A banned winner can't join or bid. A banned farmer can't create auctions.
 - AC3: Strikes expire after 6 months. Admin can remove a strike with a reason.
 - AC4: Every ban and every suspend needs a written reason, the same rule as a farm rejection (D-041). admin-koi refuses the action without one.
-- [ ] T-059.1 [backend] `strike` model + give/remove workflows + an active-strike check used by join, bid and create; every suspend and ban passes `reason` (D-041). Adds the ban check into US-041's join workflow and US-042's place-bid workflow (D-047); those stories ship without it
-- [ ] T-059.2 [admin] Strike actions on reports and users
-- [ ] T-059.3 [qa] An expired strike no longer counts; the ban lifts when active strikes drop below 2; a banned customer's join and bid are refused (US-041 AC4 and US-042 AC1 ban clauses, D-047)
+- [ ] T-059.1a [backend] `strike` model + migration + give/remove workflows + three admin routes + `active_strikes`/`banned` on the report and claim rows
+- [ ] T-059.1b [backend] `assertNotBannedStep` wired into join, bid and create-auction (D-047's deferred checks)
+- [ ] T-059.2 [admin] Strike button on a `/laporan` row and on an overdue `/klaim` row, plus the user's strike history and remove action
+- [ ] T-059.3 [qa] Expiry, removal lifting the ban, and all three refused actions (US-041 AC4, US-042 AC1 ban clauses)
+
+**Readiness 2026-11-18: ready (`todo`). Nothing blocks it. One new question,
+non-blocking (`mvp-Q49`), with the build default pinned below.**
+- **A strike is one row in a new `strike` table**, written only by an admin after
+  checking a report or an overdue claim: `customer_id` (the account, D-003 — a
+  farmer and a winner are the same identity), optional `seller_id` and `lot_id`,
+  `reason_type`, a required Indonesian `reason` (D-041), `created_by` (admin),
+  and the row's own `created_at`. Removing a strike writes `removed_at`,
+  `removed_by`, `removed_reason` on that row — nothing is deleted, and nothing is
+  written to the wallet (D-058: no money, no ledger row, no payout).
+- **There is no ban table.** AC2's "2 active strikes = ban" is a derived state:
+  **active** = not removed **and** `created_at` newer than 6 months (AC3). A ban
+  is `active_count >= 2`, computed by one read helper. Removing a strike or
+  letting one expire drops the count and lifts the ban with no separate action,
+  so nothing can drift out of sync. `mvp-Q49` asks whether the ban should instead
+  be an explicit admin action; the build follows AC2 literally (automatic at the
+  second active strike, with the second strike's own written reason as the ban's
+  reason, so D-041 is satisfied).
+- **Ban checks do not exist yet at join or bid.** Verified: `steps/join-fee.ts:20`
+  and `steps/bid.ts:42` both carry a `ponytail:` naming US-059 T-059.1 as where
+  the check lands (D-047). This story adds them; US-041 AC4's and US-042 AC1's
+  ban clauses are verified here, not there.
+- **What a ban blocks (AC2 only):** joining an auction, placing a bid, and
+  creating an auction. Not rating a farmer (US-057), marking a won lot delivered,
+  opening or deciding a claim, marking a sold lot paid or shipped (D-054/D-060
+  stand), or reading anything.
+- **A customer ban does not suspend the farm.** D-054/D-060 exceptions are
+  untouched; a banned farmer still has the seller status they had. The ban blocks
+  creation through the strike count, not through Mercur's seller status.
+
+**The three strike reasons, pinned:**
+
+| `reason_type` | Who | Where the admin acts | Backing |
+|---|---|---|---|
+| `winner_unpaid` | winner | `/laporan` (US-058 report row) | report exists and `closed_at + 24 h` passed (D-058) |
+| `farmer_not_shipped` | farmer | the admin's own record page; no queue row in the MVP, so the API accepts `lot_id` directly | plan "Strikes"; no shipping deadline exists, so it is an admin judgment (noted in `mvp-Q49`) |
+| `farmer_claim_refused` | farmer | `/klaim` approved tab (US-056 T-056.3 flag) | approved claim past 3 days, or a refusal not acted on (`mvp-Q47` option a) |
+
+**Endpoint inventory (story)**
+
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| POST | /admin/strikes | **no** (T-059.1a) | body `{ customer_id?, seller_id?, lot_id?, reason_type, reason }` → 201 `{ strike: { id, customer_id, seller_id, lot_id, reason_type, reason, created_at, removed_at }, ban: { active_count, banned } }`; 400 `"Alasan strike wajib diisi."` / `"Jenis strike tidak dikenal."`; 404 `"Akun pemilik kebun tidak ditemukan."` / `"Lot tidak ditemukan."` |
+| POST | /admin/strikes/:id/remove | **no** (T-059.1a) | body `{ reason }` → 200 `{ strike, ban }`; 400 `"Alasan pencabutan wajib diisi."`; 404 `"Strike tidak ditemukan."` (unknown or already removed) |
+| GET | /admin/strikes?customer_id=:id | **no** (T-059.1a) | `{ strikes: [...], active_count, banned, limit, offset }` — the history the admin needs before a second strike |
+| GET | /admin/reports | yes after US-058 T-058.3 | rows gain `active_strikes: number`, `banned: boolean` (T-059.1a) |
+| GET | /admin/claims?status=approved | yes | rows gain `active_strikes: number`, `banned: boolean` for the seller's customer (T-059.1a) |
+| POST | /store/auctions/:id/join | yes | gains 403 `banned_customer` `"Akun Anda diblokir karena memiliki 2 strike aktif."` (T-059.1b) |
+| POST | /store/bids | yes | gains the same 403 `banned_customer` (T-059.1b) |
+| POST | /vendor/auctions | yes | gains 403 `banned_seller` `"Akun Anda diblokir karena memiliki 2 strike aktif."` (T-059.1b) |
+
+#### Briefs
+
+```text
+Story: US-059 (task T-059.1a)   Release: mvp
+Agent: backend   Expected: <=45 min
+
+## Acceptance criteria
+- AC1: Admin gives each strike with a reason (winner: didn't pay; farmer: didn't ship a paid lot, or refused an approved claim).
+- AC2 (data half): a customer's active strikes are countable and a ban is `>= 2`.
+- AC3: Strikes expire after 6 months. Admin can remove a strike with a reason.
+- AC4: Every ban needs a written reason (D-041).
+
+## Decisions in force
+D-058: strikes move no money and write no ledger row.
+D-041/D-015: a written reason is mandatory and the admin is recorded.
+D-042/D-045: no NIK/bank/phone in a strike row; names are fine.
+D-003: one identity is a customer and a member; a strike names the customer.
+D-037: an "unpaid win" is the US-058 report row, counted all time.
+D-055: Indonesian messages; the apps key on code/status.
+D-054/D-060: untouched — a banned farmer is NOT seller-suspended.
+
+## Build
+- Model src/modules/moderation/models/strike.ts:
+  `Strike { id: model.id({ prefix: "strk" }).primaryKey(), customer_id: text,
+   seller_id: text().nullable(), lot_id: text().nullable(),
+   reason_type: model.enum(["winner_unpaid","farmer_not_shipped","farmer_claim_refused"]),
+   reason: text, created_by: text,
+   removed_at: model.dateTime().nullable(), removed_by: text().nullable(),
+   removed_reason: text().nullable() }`.
+  Indexes `{ on: ["customer_id", "created_at"] }`, `{ on: ["lot_id"] }`.
+  Register in modules/moderation/service.ts (`MedusaService({ Claim, LotReport,
+  Strike })`, plus any model another story already added); migration
+  `bunx medusa db:generate moderation`.
+- Helper src/utils/strike.ts (+ __tests__/strike.unit.spec.ts):
+  `STRIKE_WINDOW_DAYS = 180`; `isActiveStrike(row, now)` = `removed_at === null &&
+  created_at > now - 180 days`; `isBanned(activeCount)` = `activeCount >= 2`.
+  Unit cases: exactly 180 days old = expired; removed = inactive; 2 = banned,
+  1 = not.
+- Read step `getActiveStrikeCountStep({ customer_id })`: `query.graph` `strike`
+  fields `id, removed_at, created_at`, filter `{ customer_id }`, count with the
+  helper. Read-only, no compensation.
+- Workflows src/workflows/give-strike.ts and remove-strike.ts, each locked on
+  `strike-user:<customer_id>`:
+  - give: resolve the subject — `customer_id` as given, else `seller_id` → member
+    email → customer (reuse `applicantsByEmail`, api/admin/farms/route.ts:132-160),
+    else the lot's `winner_customer_id`; missing → 404. Insert the row
+    (`created_by` = `req.auth_context.actor_id`). Compensation deletes it.
+  - remove: load the row; missing or `removed_at` already set → NOT_FOUND "Strike
+    tidak ditemukan."; update `removed_at: now, removed_by, removed_reason`.
+    Compensation restores the previous three columns.
+- Routes:
+  - POST src/api/admin/strikes/route.ts (admin only by Medusa's /admin default):
+    201 `{ strike, ban: { active_count, banned } }`, recomputed after the write.
+  - POST src/api/admin/strikes/[id]/remove/route.ts: 200, same envelope.
+  - GET src/api/admin/strikes/route.ts: `customer_id` required,
+    `limit`/`offset`; `{ strikes, active_count, banned, limit, offset }`.
+  Every row returns `customer_id`, `seller_id`, `lot_id`, `reason_type`,
+  `reason`, `created_at`, `removed_*`; never phone, NIK or bank.
+- Extend the US-058 report row and the admin claim row with `active_strikes` and
+  `banned`, read in ONE batched `query.graph` over the page's customer ids (the
+  report's `winner_customer_id`; the claim's seller via the saved `seller_id` and
+  the member email). No N+1 read.
+- validators.ts per route (zod, `.strict()`): `reason` trimmed min 1 max 500,
+  `reason_type` enum, optional ids as strings. Middlewares: POST bodies by
+  `validateAndTransformBody`, GET query by `validateAndTransformQuery`.
+- `bun run codegen`.
+
+## Start from
+- packages/api/src/workflows/steps/claim.ts:240-300 (decision step + compensation)
+- packages/api/src/api/admin/farms/route.ts:132-160 (`applicantsByEmail`)
+- packages/api/src/utils/pay-window.ts (small constant + unit spec pattern)
+
+## Do not touch
+- apps/**; join, bid and create-auction workflows (T-059.1b); the claim and
+  report models; seller status/suspend logic (D-054/D-060); US-060/061
+
+## Spec (packages/api/integration-tests/http/admin-strikes.spec.ts)
+- a `winner_unpaid` strike on a US-058 report's winner → 201, row saved with the
+  admin id; `ban.active_count` 1, `banned` false
+- a second strike → `active_count` 2, `banned` true
+- remove the second with a reason → `active_count` 1, `banned` false; the row
+  still exists with `removed_at`, `removed_by`, `removed_reason`
+- remove the same strike twice → 404 "Strike tidak ditemukan."
+- blank reason on give and on remove → 400; unknown `reason_type` → 400
+- unknown `customer_id`, `seller_id` and `lot_id` → 404; a seller with no
+  customer on its identity → 404, no partial row
+- a strike 181 days old (insert via the module, then psql) is not counted:
+  `active_count` 0, `banned` false
+- forced failure after the insert → no row (compensation); after the remove → the
+  three removal columns are null again
+- report and claim rows carry `active_strikes`/`banned` for the whole page (say
+  how you checked it is one query: code read or a query counter)
+- no ledger row and both wallet balances unchanged (D-058)
+
+## Cross-cutting checklist
+- [ ] D-041: no strike and no removal without a written reason, recorded with the admin
+- [ ] D-055: Indonesian messages; the apps key on code/status
+- [ ] No money, no ledger row, no payout (D-058); no seller suspend
+- [ ] One mutation per step with compensation; expiry is computed, never a stored flag
+- [ ] PII: no NIK/bank/phone in any strike payload (D-042/D-045)
+- [ ] `bun run codegen`; `bun run tsc` clean in BOTH Koi apps
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean
+cd packages/api && bun run test:unit → strike unit spec pass
+cd packages/api && bun run codegen → run; list the generated strike routes
+cd packages/api && bun run test:integration:http -- admin-strikes → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + API contract (three routes, bodies, 201/200 shapes,
+every error) + migration name + the expiry rule.
+```
+
+```text
+Story: US-059 (task T-059.1b)   Release: mvp
+Agent: backend   Expected: <=35 min
+Starts after: T-059.1a (strike model and helper).
+
+## Acceptance criteria
+- AC2: A banned winner can't join or bid. A banned farmer can't create auctions.
+
+## Decisions in force
+D-047: this is where the deferred ban checks land; US-041 AC4 and US-042 AC1
+ban clauses are verified here.
+D-054/D-060: paid, shipped, delivered and claim decisions are untouched.
+D-055: Indonesian message, codes `banned_customer` / `banned_seller`.
+D-058: no money changes in any of the three paths.
+
+## Build
+- One read step src/workflows/steps/ban.ts `assertNotBannedStep({ customer_id,
+  code })`: count the customer's `strike` rows with `isActiveStrike`; on `>= 2`
+  throw FORBIDDEN "Akun Anda diblokir karena memiliki 2 strike aktif." with the
+  given code. Read-only, no compensation.
+- Join: src/workflows/join-auction.ts — run the step first, inside the existing
+  `auction-join:` lock, before `getJoinableAuctionStep`. Delete the `ponytail:`
+  at steps/join-fee.ts:20 and name the step there.
+- Bid: src/workflows/place-bid.ts — same, first step inside the `lot:<id>` lock;
+  delete the `ponytail:` at steps/bid.ts:42.
+- Create auction: src/api/vendor/auctions/route.ts POST reads
+  `req.auth_context.app_metadata?.customer_id` (the submit route already does,
+  :18-22) and passes `customer_id` into `createAuctionWorkflow`, which runs
+  `assertNotBannedStep({ customer_id, code: "banned_seller" })` before
+  `validateSellerOpenStep`. No `customer_id` on the token → skip the ban step
+  (submit refuses the incomplete profile later, unchanged). Add
+  `customer_id?: string` to `CreateAuctionWorkflowInput` and thread it.
+- Do NOT add the check to: add-draft-lots, update-draft-auction, paid, shipped,
+  delivered, claims, live-link. AC2 lists three actions only.
+
+## Start from
+- packages/api/src/workflows/join-auction.ts:19-45
+- packages/api/src/workflows/place-bid.ts:24-45
+- packages/api/src/api/vendor/auctions/route.ts:180-205 (POST)
+- packages/api/src/workflows/steps/validate-seller-open.ts (a read guard that throws)
+
+## Do not touch
+- apps/**; the strike routes (T-059.1a); seller suspend/terminate logic; US-060/061
+
+## Spec (append to packages/api/integration-tests/http/admin-strikes.spec.ts)
+- 2 active strikes → join → 403 `banned_customer`, no participant, no `join_fee`
+  row; a bid → 403 `banned_customer`, no bid row, `current_price` unchanged
+- 1 active strike → join and bid both succeed
+- 2 strikes, one removed → both succeed (ban lifted)
+- 2 strikes, one 181 days old → both succeed (expired)
+- farmer with 2 active strikes → POST /vendor/auctions → 403 `banned_seller`, no
+  auction and no product created; the same farmer with 1 strike → 201
+- a banned winner can still mark a won lot delivered and open a claim; a banned
+  farmer can still mark a sold lot paid and shipped — proves the check is only
+  where AC2 says
+- a suspended (not banned) farmer's create is still 403 from
+  `validateSellerOpenStep` — unchanged
+
+## Cross-cutting checklist
+- [ ] One step reused three times; no route duplicates the check
+- [ ] D-055: Indonesian message and code on the error
+- [ ] A refused join writes no participant and no ledger row; no other money moves
+- [ ] D-054/D-060 exceptions untouched
+- [ ] No new `any`; both Koi apps' tsc clean (no route type change here)
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean
+cd packages/api && bun run test:integration:http -- admin-strikes → pass (alone)
+cd packages/api && bun run test:integration:http -- join-auction → pass (alone)
+cd packages/api && bun run test:integration:http -- place-bid → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + the three refusal points + the unchanged paths verified.
+```
+
+```text
+Story: US-059 (task T-059.2)   Release: mvp
+Agent: frontend (admin-koi)   Expected: <=45 min
+Starts after: T-059.1a and its codegen.
+
+## Acceptance criteria
+- AC1: the admin gives a strike, with a reason, from the row that evidences it.
+- AC4: no strike and no removal without a written reason; the screen refuses a blank one.
+
+## Decisions in force
+D-002: admin-koi only. D-041/D-015: written reason mandatory, confirmation before
+the action. D-055: a 409/404 body is rewritten, so the app writes its own copy and
+keys on status/code. D-042: masked PII only — names and reasons, never NIK, bank
+or phone. D-058: no money text.
+
+## Endpoint inventory
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| GET | /admin/reports | yes after US-058 | rows gain `active_strikes`, `banned` (T-059.1a) |
+| GET | /admin/claims?status=approved | yes | rows gain `active_strikes`, `banned` (T-059.1a) |
+| GET | /admin/strikes?customer_id= | no → T-059.1a, first | `{ strikes, active_count, banned }` |
+| POST | /admin/strikes | no → T-059.1a | `{ customer_id?, seller_id?, lot_id?, reason_type, reason }` → 201 `{ strike, ban }` |
+| POST | /admin/strikes/:id/remove | no → T-059.1a | `{ reason }` → 200 `{ strike, ban }` |
+
+## Build (one surface: a strike panel reused on two rows)
+- src/lib/data/strikes.ts: `listStrikes(customerId)`, `giveStrike(input)`,
+  `removeStrike(id, reason)` — each calls `requireAdmin()` first (admin-koi
+  CLAUDE.md security rule), then `sdk.admin.strikes.*` with the existing header
+  helper.
+- src/lib/helpers/strike-format.ts (+ test): `reasonTypeLabel` (winner_unpaid →
+  "Pemenang tidak membayar"; farmer_not_shipped → "Petani tidak mengirim";
+  farmer_claim_refused → "Klaim disetujui tidak dipenuhi"), `banLabel(banned)`
+  ("Diblokir" / "Tidak diblokir"), `strikeFailureInfo({ status, message })` for the
+  app's own copy on 400/404.
+- src/components/StrikePanel.tsx (client): "Beri strike" opens a confirm dialog
+  with the reason type (select, defaulted per row: report row → `winner_unpaid`,
+  approved-claim row → `farmer_claim_refused`) and a required textarea. Confirm
+  copy: "Strike ini tidak bisa dihapus, hanya dicabut dengan alasan. Dua strike
+  aktif memblokir akun." On success toast "Strike diberikan." +
+  `router.refresh()`. Below: the user's strike list (reason type, reason, date,
+  "Dicabut") and "Cabut strike" with its own required reason, offered only on an
+  active row.
+- `/laporan` (US-058's page component): each row gets the panel with the winner's
+  `customer_id` and `lot_id`. `/klaim` approved tab: the same with the seller's
+  customer and `lot_id`. Both show `Diblokir` / the active count.
+- No new page; no `/pengguna` (US-070 owns it).
+
+## Start from
+- apps/admin-koi/src/components/ClaimQueue.tsx (tab row + required-reason dialog)
+- apps/admin-koi/src/components/FarmQueue.tsx:470-530 (confirmed destructive action, zod reason)
+- apps/admin-koi/src/lib/data/farms.ts (server action + requireAdmin shape)
+
+## Do not touch
+- packages/api; apps/storefront-koi; the US-058 and US-056 row shapes beyond
+  reading the two new fields; the `/pengguna` nav item (stays `ready: false`)
+
+## Cross-cutting checklist
+- [ ] Every server action calls `requireAdmin()` itself
+- [ ] Punishing action: confirmation + written reason; blank refused on the client too
+- [ ] D-055: 400/404 copy is the app's own; never key on message text
+- [ ] No money text, no ledger read (D-058); no PII beyond names and reasons
+- [ ] Render check on both routes, one strike and one removal
+- [ ] `bun run check` clean
+
+## Definition of done
+cd apps/admin-koi && bun run check → pass
+render check (/laporan with one report, strike → "2 strike aktif" → "Diblokir";
+/klaim approved tab, strike → ban; remove with a reason → "Tidak diblokir";
+seed via psql as needed) → no hydration/runtime errors, no "undefined"/"NaN";
+screenshot path reported.
+Also: signed out, both actions refuse (redirect to /masuk).
+Report: standard header + render check result + screenshot path.
+```
+
+```text
+Story: US-059 (task T-059.3)   Release: mvp
+Agent: qa   Expected: <=30 min
+Starts when: no backend agent and no other Jest run is active.
+
+## Acceptance criteria
+Verify AC1–AC4, including the ban clauses carried by US-041 AC4 and US-042 AC1
+(D-047). Decisions: D-041, D-047, D-054, D-058, D-055, D-042.
+Code under test: modules/moderation/models/strike.ts, workflows/give-strike.ts,
+remove-strike.ts, steps/ban.ts, api/admin/strikes/**, join-auction.ts,
+place-bid.ts, vendor/auctions/route.ts, StrikePanel.tsx.
+Commands (alone, one at a time): bun run test:integration:http -- admin-strikes;
+-- join-auction; -- place-bid. Then bun run test:unit. Then bun run check in
+admin-koi and storefront-koi.
+Browser (render-check): /laporan and /klaim as admin@koi.dev; /akun and /lelang as
+a seeded customer with 2 strikes (psql) to see the refused join and bid.
+Watch for: a ban at 1 strike; a 181-day strike still counted; a removed strike
+still counted; a second row where there should be one; a missing reason accepted;
+a strike or removal with no admin recorded; the ban leaking into paid, shipped,
+delivered or claim paths; any ledger row or balance change; the seller suspended
+by a customer ban (must not be); phone/NIK/bank in a payload or the admin page
+source.
+Do not change app code. Report PASS/FAIL per AC with file:line and command
+output; bugs with repro and expected/actual.
+```
+
+**Coverage:** AC1 → T-059.1a, T-059.2; AC2 → T-059.1a (derived ban) and
+T-059.1b (three blocked actions), verified T-059.3; AC3 → T-059.1a, T-059.2,
+T-059.3; AC4 → T-059.1a (validators), T-059.2 (client), T-059.3. Plan "Strikes
+(winners and farmers)" and "Fair play"'s ban-by-hand line are covered; the
+shill-bidding table is US-071.
 
 ### US-060 Farmer cancels an auction · `todo`
 As a **farmer**, I want to cancel my auction before it starts so that I can
@@ -4895,12 +5572,466 @@ withdraw it, with joiners refunded. *(Plan: Cancellations, Refunds in the MVP; D
 - [ ] T-060.2 [storefront] Cancel action in the Farmer area, hidden once the auction is `live`
 - [ ] T-060.3 [qa] Refunds total exactly the join fees collected; no `listing_fee` refund is written; a farmer cancel on a `live` auction is refused on the server
 
+**Readiness 2026-11-18: ready (`todo`). Nothing blocks it. The D-058 question is
+resolved below; no new question is needed.**
+
+**D-058 vs the refund — resolved explicitly.** D-058's "the ledger is untouched"
+is about the **sale**: the winner pays the farmer directly, so the platform never
+debits or credits a wallet for a lot's price, and pays out nothing. A join fee is
+**not** sale money: it is prepaid platform credit (plan "Store credit wallet",
+"Credit can only pay platform fees"). Refunding it on a cancel is the plan's own
+rule for the MVP (plan "Refunds in the MVP": "only when a farmer or an admin
+cancels an auction, … a `refund` of their join fee"; D-022, D-034). So this
+story **does** write `refund` rows to `wallet_transaction`, using the `refund`
+type already in the enum (`models/wallet-transaction.ts:5-11`). Nothing here
+touches a lot's price, a payout balance or farmer payment.
+
+**Every rule pinned:**
+
+| Question | Answer | Source |
+|---|---|---|
+| Which statuses a farmer may cancel | `draft`, `pending_approval`, `scheduled`. `live`, `closed`, `cancelled` → 409 `auction_not_cancellable` "Lelang ini sudah berjalan, jadi tidak bisa dibatalkan sendiri. Hubungi admin." | AC3, D-022, D-031 |
+| What the refund is | one `refund` (+) row per participant, equal to the `join_fee` (−) that customer's wallet actually recorded for this auction (`reference = auction_id`). Never `auction.join_fee`, never a recomputation | AC1; D-034; `steps/join-fee.ts:151-180` |
+| Rp0 join (admin override) | no `join_fee` row was written, so no `refund` row is written for it — "refunds total exactly what was collected" | `chargeJoinFeeStep`'s `amount <= 0` branch |
+| Listing fee | never refunded. `draft`/`pending_approval`: nothing was charged (D-020). `scheduled`: the charge stands | AC2, D-020 |
+| Participants | rows are kept (audit); the auction is not joinable afterwards because only `scheduled`/`live` are (D-048) | AC1; D-048 |
+| Bids | none can exist before `live` (bidding needs a `live` auction, `steps/bid.ts:111-117`), so a farmer cancel never touches a bid | verified code |
+| Lots | **untouched, stay `open`.** D-035 lets only an admin write lot `cancelled`, and D-046 makes a cancelled auction never public, so no lot status is needed. The close job already skips them (its guard refuses a lot of a cancelled auction, `steps/lot.ts:56-57`) | D-035, D-046; verified code |
+| Second cancel | 409 (the first set `cancelled`), so no second refund batch | AC1; lock |
+| Suspended farm | 403 `validateSellerOpenStep` — D-054's exception covers only paid/shipped (and D-060 claims), not cancelling | D-054, D-060 |
+| Retry / idempotence | the workflow locks `auction:<id>` and re-checks the status inside the lock: a retry after success is a 409, before any write it starts clean | CLAUDE.md §8 |
+
+**Endpoint inventory (story)**
+
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| POST | /vendor/auctions/:id/cancel | **no** (T-060.1) | no body → 200 `{ auction: VendorAuction, refund: { participants: number, total: number } }` (`status: "cancelled"`, `total` = whole rupiah refunded); 400 non-empty body `"Pembatalan tidak memakai body."`; 403 `"Kebun Anda belum disetujui, jadi area petani belum terbuka."`; 404 `"Lelang tidak ditemukan."` (unknown or another farm's); 409 `auction_not_cancellable` |
+| GET | /vendor/auctions and /vendor/auctions/:id | yes | unchanged shape; a cancelled auction reads `status: "cancelled"` |
+| GET | /store/wallet | yes | shows the `refund` rows like any other entry (no shape change) |
+
+#### Briefs
+
+```text
+Story: US-060 (task T-060.1)   Release: mvp
+Agent: backend   Expected: <=45 min
+
+## Acceptance criteria
+- AC1: Every customer who joined gets a `refund` (+) of their join fee.
+- AC2: The farmer's listing fee isn't refunded.
+- AC3: The farmer can cancel only while the auction is `draft`, `pending_approval` or `scheduled`. Once it is `live`, the farmer's cancel is refused.
+
+## Decisions in force
+D-022/D-031: the three cancellable statuses; once live, only an admin.
+D-034: a cancel refunds every join fee and nothing else.
+D-020: the listing fee is charged only at approval; never refunded.
+D-058: no sale money moves; a join fee is platform credit, so its refund IS a
+ledger row of type `refund` (resolved in the story's readiness note).
+D-054/D-060: not extended — cancelling keeps `validateSellerOpenStep`.
+D-035: a farmer never writes lot `cancelled`; lots stay `open`.
+D-055: Indonesian messages; the app keys on code/status.
+CLAUDE.md §8: the ledger is append-only. One batched refund write, no
+compensation; the status step compensates.
+
+## Build
+- Read guard `getCancellableAuctionStep({ auction_id, seller_id })`, under the
+  `auction:<id>` lock: `query.graph` auction `id, seller_id, status,
+  join_fee, fee_override_join_fee`. Missing or another seller → NOT_FOUND
+  "Lelang tidak ditemukan." (no existence leak). Status not in
+  `["draft","pending_approval","scheduled"]` → CONFLICT "Lelang ini sudah
+  berjalan, jadi tidak bisa dibatalkan sendiri. Hubungi admin." code
+  `auction_not_cancellable`. Returns `{ id, previous_status }`.
+- Refund read step `getJoinFeeRefundsStep({ auction_id })`: `query.graph`
+  `auction_participant` fields `id, customer_id, auction_id`; then ONE
+  `query.graph` over `wallet_transaction` with fields `id, wallet_id, amount,
+  created_by, reference, type` and filters `{ reference: auction_id,
+  type: "join_fee" }`. Pair each participant with their own `join_fee` row via
+  `created_by === participant.customer_id` (the charge step writes
+  `created_by: customer_id`, steps/join-fee.ts:170-178). Build
+  `[{ wallet_id, amount: <absolute join_fee amount>, reference: auction_id,
+  created_by: "refund" }]`. A participant with no ledger row (Rp0 fee) gets no
+  refund. Return the rows plus the total.
+- Workflow src/workflows/cancel-auction.ts `{ seller_id, auction_id }`:
+  1. lock `auction:<id>` (same key as approve/reject/start/close)
+  2. `validateSellerOpenStep` (403 for a suspended farm)
+  3. `getCancellableAuctionStep`
+  4. `getJoinFeeRefundsStep`
+  5. `setAuctionFieldsStep({ id, update: { status: "cancelled" } })` — existing
+     step, compensates back to the previous status
+  6. `refundJoinFeesStep`: ONE `createWalletTransactions(rows)` call (all rows or
+     none at the DB). Last mutation, no compensation — the ledger is
+     append-only; nothing that can abort runs after it. If the call throws,
+     step 5 compensates and no row exists.
+  7. release the lock; return `{ auction, refund: { participants: rows.length,
+     total } }`.
+- Route packages/api/src/api/vendor/auctions/[id]/cancel/route.ts (thin): reject a non-empty
+  body with 400 "Pembatalan tidak memakai body."; identity from
+  `req.seller_context!.seller_id`; 200 with the read-back `VendorAuction`
+  (`getVendorAuctionDetail`'s mapper, without lots) and the refund envelope.
+  Import `…/types/seller-context` (the tsc requirement).
+- Mercur's /vendor catch-all authenticates the member; add a middlewares entry
+  only if you use a body validator (a body check in the route is enough). Do not
+  put a method-less matcher on `/vendor/auctions/:id/cancel`.
+- `bun run codegen`.
+
+## Start from
+- packages/api/src/workflows/decide-auction.ts:25-100 (lock, guard, status step,
+  charge as last mutation)
+- packages/api/src/workflows/steps/join-fee.ts:128-160 (the charge shape and
+  `created_by` convention a refund must mirror)
+- packages/api/src/workflows/steps/auction.ts:424-451 (setAuctionFieldsStep's
+  compensation)
+
+## Do not touch
+- apps/**; lot status/rows; the listing-fee charge; US-091's admin cancel; US-061
+
+## Spec (packages/api/integration-tests/http/farmer-cancel-auction.spec.ts)
+Seed an auction with 2 participants (each with a real `join_fee` charge via the
+join workflow) and a listing fee charged (approve path).
+- cancel a `scheduled` auction with 2 participants → 200, status `cancelled`,
+  `refund.participants` 2; two `refund` (+) rows, each equal to that customer's
+  `join_fee`; wallet balances rise by exactly those amounts; NO `listing_fee`
+  refund row
+- cancel a `draft` with no participants → 200, 0 refunds, no ledger row
+- cancel a `pending_approval` → 200, `cancelled`
+- a participant with an Rp0 join (admin override 0) → no refund row for them
+- second cancel → 409 `auction_not_cancellable`, no second refund batch
+- `live`, `closed`, `cancelled` → 409; another farm's auction → 404; unknown id → 404
+- a suspended farm → 403; the auction stays `scheduled`
+- non-empty body → 400, nothing written
+- forced failure inside `refundJoinFeesStep` (test wrapper) → status back to
+  `scheduled`, zero refund rows (append-only respected)
+- auction lots still `open`, `winner_customer_id`/`final_price` null; a close-job
+  run afterwards changes nothing (a lot of a cancelled auction is skipped)
+- no `listing_fee` row with the auction id after cancel
+
+## Cross-cutting checklist
+- [ ] Money: whole-rupiah integers; the refund mirrors the charge exactly
+- [ ] Ledger append-only: no update, no delete, one batched insert, no compensation
+- [ ] Every mutation in a workflow; the route is thin; identity from `req.seller_context`
+- [ ] D-055: Indonesian messages; codes on errors
+- [ ] D-054: cancelling is NOT an exception — suspended → 403
+- [ ] `bun run codegen`; `bun run tsc` clean in BOTH Koi apps
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean
+cd packages/api && bun run codegen → run; list the generated cancel route
+cd packages/api && bun run test:integration:http -- farmer-cancel-auction → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + API contract (route, body rule, 200 shape, every error)
++ the refund rule as built + the lot-status decision as built.
+```
+
+```text
+Story: US-060 (task T-060.2)   Release: mvp
+Agent: frontend (storefront-koi)   Expected: <=40 min
+Starts after: T-060.1 and its codegen.
+
+## Acceptance criteria
+- AC3 (screen half): the cancel action is offered only while the auction is
+  `draft`, `pending_approval` or `scheduled`, and never once it is `live`.
+
+## Decisions in force
+D-055: a 409 body is rewritten; the app writes its own copy and keys on status/code.
+D-022/D-031: the three cancellable statuses. D-058's sale scope: the copy says
+join fees return to the wallet and the listing fee does not.
+A destructive action is confirmed first.
+
+## Endpoint inventory
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| GET | /vendor/auctions/:id | yes | `auction.status` drives visibility |
+| POST | /vendor/auctions/:id/cancel | no → T-060.1, first | no body → 200 `{ auction, refund: { participants, total } }`; 403; 404; 409 `auction_not_cancellable` |
+
+## Build (one surface: the farmer's auction detail page)
+- src/lib/helpers/auction-cancel.ts (+ .test.ts): `canCancelAuction(status)` →
+  true for `draft`, `pending_approval`, `scheduled`. `cancelFailureInfo({ status,
+  code, message })` → 409 `auction_not_cancellable` uses the server message and
+  sets refresh; 403/404 keep the server message; else the server's message.
+- src/lib/data/auctions.ts: `cancelAuction(id)` beside `submitAuction`, same
+  `{ success, error, refund }` result shape, `revalidatePath(farmAuctionHref(id))`
+  and `revalidatePath(ROUTES.farmHome)`.
+- components/AccountPage/components/CancelAuctionButton.tsx (client): an outline
+  destructive button "Batalkan lelang" + confirm dialog. Confirmation copy names
+  both money facts from AC1/AC2: "Biaya ikut lelang setiap peserta dikembalikan
+  ke saldo mereka. Biaya pasang lelang tidak dikembalikan." On success toast
+  "Lelang dibatalkan. {n} biaya ikut lelang dikembalikan." and
+  `router.refresh()`; after that the page reads `cancelled` and the button is gone.
+- EditAuction.tsx: render the button in the page head area when
+  `canCancelAuction(auction.status)`; never on `live`/`closed`/`cancelled`.
+  `auctionStatusLabel` already handles `cancelled`; no new label.
+
+## Start from
+- apps/storefront-koi/src/components/sections/AccountPage/components/SubmitAuctionButton.tsx
+- apps/storefront-koi/src/components/sections/AccountPage/components/EditAuction.tsx:240-260 (head) and :415-425 (the read-only notice)
+- apps/storefront-koi/src/lib/helpers/sold-lot-actions.test.ts (test style)
+
+## Do not touch
+- packages/api; apps/admin-koi; the submit flow; US-091's admin cancel
+
+## Cross-cutting checklist
+- [ ] Confirm before the destructive action; the copy states both money facts (AC1, AC2)
+- [ ] D-055: 409 copy is the app's own; never key on message text
+- [ ] No raw `fetch`; no client-side money maths (the server returns the total)
+- [ ] UI task: render check on a draft auction (button), a live one (no button),
+      and a cancel that succeeds
+- [ ] `bun run check` clean
+
+## Definition of done
+cd apps/storefront-koi && bun run check → pass
+render check (/akun/kebun/lelang/<draft> shows "Batalkan lelang"; after cancelling
+the status reads "Dibatalkan" and the button is gone; /akun/kebun/lelang/<live>
+shows no button; the wallet shows the refunds) → clean; screenshot path reported.
+Report: standard header + render check result + screenshot path.
+```
+
+```text
+Story: US-060 (task T-060.3)   Release: mvp
+Agent: qa   Expected: <=30 min
+Starts when: no backend agent and no other Jest run is active.
+
+## Acceptance criteria
+Verify AC1–AC3. Decisions: D-020, D-022, D-031, D-034, D-035, D-048, D-054,
+D-058 (its sale scope, not the join-fee refund), D-055.
+Code under test: workflows/cancel-auction.ts, steps/auction-cancel.ts,
+api/vendor/auctions/[id]/cancel/route.ts, CancelAuctionButton.tsx.
+Commands (alone): bun run test:integration:http -- farmer-cancel-auction. Then
+bun run check in storefront-koi.
+Browser (render-check): /akun/kebun/lelang/<draft>, <scheduled with joiners>,
+<live>; /akun/saldo after a cancel.
+Watch for: a refund row larger or smaller than the charge; a `listing_fee`
+refund anywhere; a refund for a Rp0 join; a second refund batch after a retry; a
+cancel accepted on `live`/`closed`/`cancelled`; a farmer cancelling another
+farm's auction (must be 404, not 403); lot statuses changed; bids touched; a
+suspended farm allowed to cancel; a balance not equal to the ledger sum.
+Do not change app code. Report PASS/FAIL per AC with file:line and command
+output; bugs with repro and expected/actual.
+```
+
+**Coverage:** AC1 → T-060.1, T-060.2 (confirmation copy), T-060.3; AC2 →
+T-060.1, T-060.2, T-060.3; AC3 → T-060.1 (server), T-060.2 (screen), T-060.3.
+Plan "Cancellations (MVP)" farmer-cancel bullet and "Refunds in the MVP" are
+covered; the admin cancel (live auction, D-034) stays US-091.
+
 ### US-061 Claim videos are cleaned up · `todo`
 As the **platform**, I want claim videos deleted 30 days after a claim closes so
 that storage stays bounded. *(Plan: Dead-on-arrival claims 7; D-027)*
 - AC1: A claim is closed when its status is `confirmed` or `rejected` (D-027). Its video is deleted 30 days after it closed; the claim record stays.
 - [ ] T-061.1 [backend] The scheduled job deletes the files and keeps the claim record
+- [ ] T-061.1b [backend] `video_deleted_at` on the claim row and `has_video` derived from it on the three claim rows
 - [ ] T-061.2 [qa] Only `confirmed` or `rejected` claims closed more than 30 days ago are affected
+
+**Readiness 2026-11-18: ready (`todo`). Nothing blocks it. One ordering
+dependency, no question.**
+- **Ordering:** the "closed at" timestamp for `confirmed` is `confirmed_at`,
+  added by **US-056 T-056.1a**. Start US-061 after that task lands; do not add a
+  second column for the same fact. `rejected` already has `decided_at`
+  (`steps/claim.ts:257-299`).
+- **Verified:** `src/jobs/` holds only `close-lots.ts` and `start-auctions.ts`
+  — there is no cleanup job yet, so T-061.1 creates one. Nothing folds into
+  `close-lots.ts` (its filter and log are about lot `end_time`).
+- **Verified:** the File Module can delete by key —
+  `fileModule.deleteFiles(id: string)` (`@medusajs/file` 2.21.2,
+  `file-module-service.d.ts:16-17`), and the local provider's `delete` ignores
+  `ENOENT` (`file-local/dist/services/local-file.js:115-130`), which is what
+  makes a re-run harmless.
+- **Verified:** `has_video` today is the constant `true` in three places
+  (`api/store/won-lots/route.ts:245`, `api/vendor/claims/route.ts:119`,
+  derived for the winner row through `readWonLotExtras`). After a delete it must
+  become `false`, so the row needs one marker: `video_deleted_at`.
+- The claim row itself is never deleted (AC1) and `video_file_key` stays where it
+  is (a not-null column); no route ever returns it (D-018), and the two private
+  video routes already 404 when the provider no longer has the file
+  (`api/utils/private-image.ts:26-32`).
+- No money: a delete writes no ledger row and touches no wallet (D-058).
+
+**Rules pinned:**
+
+| Question | Answer |
+|---|---|
+| Which job | a new `src/jobs/delete-claim-videos.ts`, `schedule: "0 3 * * *"` (daily 03:00), own log line. Not `close-lots.ts` |
+| What marks a video deletable | claim `status` in `["confirmed","rejected"]` **and** its closed timestamp older than 30 days. Closed timestamp = `confirmed_at` for `confirmed`, `decided_at` for `rejected` (D-027, D-038) |
+| Retention window | exactly **30 days** after closed; the row must be strictly older (`closed_at < now - 30 days`) |
+| Idempotence | `video_deleted_at` is set only after the delete returns; the provider ignores `ENOENT`, so a crash between delete and update, or a re-run, cannot fail and writes no second delete of a live file |
+| Batching | ids read page by page (`PAGE = 50`, `id ASC`) before processing, like `close-lots.ts:9-31`; one failure logged, the rest still run |
+| What happens to the claim row | stays, every column unchanged, plus `video_deleted_at` (ISO). `has_video` becomes `false` |
+| A non-closed claim | never touched: `open`, `approved`, `disputed`, `resolved` keep their video |
+| A closed claim inside 30 days | untouched; `has_video` stays `true` |
+
+**Endpoint inventory (story)**
+
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| — | (no new route) | — | — |
+| GET | /vendor/claims | yes | `has_video` becomes `false` once the video is gone (T-061.1b) |
+| GET | /admin/claims | yes | same change (T-061.1b) |
+| GET | /store/won-lots and /store/won-lots/:id | yes | `claim.has_video` becomes `false` (T-061.1b) |
+| GET | /vendor/claims/:id/video, /admin/claims/:id/video | yes | already 404 after deletion (provider read fails); no change needed |
+
+#### Briefs
+
+```text
+Story: US-061 (task T-061.1b)   Release: mvp
+Agent: backend   Expected: <=20 min
+Starts after: US-056 T-056.1a (`confirmed_at` exists). Do this before T-061.1.
+
+## Acceptance criteria
+- AC1 (read half): the claim record stays, and the API says whether the video is
+  still there.
+
+## Decisions in force
+D-018/D-040: the file is private; no key or URL in any response, ever.
+D-027/D-038: closed = `confirmed` or `rejected`.
+D-055: Indonesian messages where a user can see one (these routes show none for
+this field). No money (D-058).
+
+## Build
+- Migration: add `video_deleted_at: model.dateTime().nullable()` to
+  `models/claim.ts`; `bunx medusa db:generate moderation`. No data backfill.
+- `has_video` becomes `video_deleted_at === null` in exactly three places:
+  `api/store/won-lots/route.ts` (`readWonLotExtras` claim mapping, currently the
+  comment "true by construction" at :205-206 and the value at :245),
+  `api/vendor/claims/route.ts:119` (`toClaimListRows`), and the admin row inherits
+  it (it maps through `toClaimListRows`). Add `video_deleted_at` to each claim
+  read's `fields` list.
+- Do not select or return `video_file_key` anywhere (unchanged).
+- No route, no workflow, no money movement.
+
+## Start from
+- packages/api/src/api/store/won-lots/route.ts:190-260
+- packages/api/src/api/vendor/claims/route.ts:100-125
+
+## Do not touch
+- apps/**; the claim status columns; the video routes; US-056's workflows
+
+## Spec (append to packages/api/integration-tests/http/claims-read.spec.ts)
+- a claim with `video_deleted_at` null → `has_video: true` on the winner row, the
+  farmer row and the admin row
+- set `video_deleted_at` (module update) → all three read `false`
+- no response contains `video_file_key` or a URL in either case
+
+## Cross-cutting checklist
+- [ ] D-018: never a key or URL
+- [ ] `bun run codegen`; `bun run tsc` clean in BOTH Koi apps
+- [ ] No money, no ledger (D-058)
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean
+cd packages/api && bun run codegen → run
+cd packages/api && bun run test:integration:http -- claims-read → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + the three read changes + migration name.
+```
+
+```text
+Story: US-061 (task T-061.1)   Release: mvp
+Agent: backend   Expected: <=40 min
+Starts after: T-061.1b.
+
+## Acceptance criteria
+- AC1: A claim is closed when its status is `confirmed` or `rejected` (D-027). Its video is deleted 30 days after it closed; the claim record stays.
+
+## Decisions in force
+D-027/D-038: closed statuses and their timestamps (`confirmed_at`, `decided_at`).
+D-018/D-040: private file; only the job touches the bytes.
+D-053 stands: nothing auto-confirms delivery; this job reads only claims.
+No money (D-058). CLAUDE.md §9: a job fetches by id, runs a workflow, is idempotent and batches.
+
+## Build
+- Workflow src/workflows/delete-claim-video.ts `{ claim_id }`:
+  1. lock `claim:<id>` (same key as the claim decisions)
+  2. read step `getDeletableClaimStep`: `query.graph` claim `id, status,
+     video_file_key, video_deleted_at, confirmed_at, decided_at`. Missing,
+     already `video_deleted_at` set, status not in `["confirmed","rejected"]`, or
+     `closedAt >= now - 30 days` → return `{ skip: true, reason }` (a skip, not an
+     error). Else `{ skip: false, file_key }`.
+  3. `when` skip false → `deleteClaimVideoFileStep`: resolve `Modules.FILE` and
+     `deleteFiles(file_key)`; then `markClaimVideoDeletedStep` sets
+     `video_deleted_at: new Date()`. Compensation on the mark is the previous
+     null; the file delete has no compensation (a deleted private video is not
+     recoverable, and the claim is closed so nothing reads it again).
+  4. release the lock; return `{ deleted, skipped }`.
+- Job src/jobs/delete-claim-videos.ts:
+  - `collectIds` copied from `close-lots.ts:9-31` (page 50, `id ASC`), filter:
+    `status: { $in: ["confirmed","rejected"] }` and
+    `$or: [{ confirmed_at: { $lt: cutoff } }, { decided_at: { $lt: cutoff } }]`
+    where `cutoff = new Date(Date.now() - 30*864e5)`. Add
+    `video_deleted_at: null` to the filter so deleted rows leave the page.
+  - per id: run the workflow in try/catch, count `deleted`/`skipped`/`failed`
+    separately; one `logger.error` per failure.
+  - one summary line: `delete-claim-videos: found N, deleted D, skipped S, failed F`.
+  - `export const config = { name: "delete-claim-videos", schedule: "0 3 * * *" }`.
+- Do not touch `close-lots.ts`, `start-auctions.ts` or any claim route.
+
+## Start from
+- packages/api/src/jobs/close-lots.ts (paging, per-id try/catch, summary log, config)
+- packages/api/src/workflows/reject-claim.ts (lock + read guard + one mutation)
+- packages/api/src/api/utils/private-image.ts:26-32 (`Modules.FILE` resolve)
+
+## Do not touch
+- apps/**; the claim model beyond T-061.1b's column; claim decision workflows;
+  close-lots and start-auctions
+
+## Spec (packages/api/integration-tests/http/claim-video-cleanup.spec.ts)
+Seed claims through the module service, with a real private file per claim
+(upload through the same step or `fileModule` write used by open-claim):
+- `confirmed` with `confirmed_at` 31 days ago → file gone from the provider
+  (`getAsBuffer` throws), `video_deleted_at` set, row still present with every
+  other column unchanged, `has_video` false on all three routes
+- `rejected` with `decided_at` 31 days ago → same
+- `confirmed` 29 days ago → untouched, file still readable, `video_deleted_at` null
+- `open`, `approved`, `disputed`, `resolved` with old timestamps → all untouched
+  (no `confirmed_at`/`decided_at` is used for them)
+- closed 31 days ago but `video_deleted_at` already set → skipped, no error
+- file already missing on disk (delete out of band) → job still sets
+  `video_deleted_at`, no thrown error (ENOENT ignored), summary says deleted
+- run the job twice → second run deletes nothing, summary `deleted 0`
+- one row forced to fail (test wrapper) → other rows still processed, job exits
+  normally, `failed 1` in the log
+- no ledger row, no wallet change (D-058)
+
+## Cross-cutting checklist
+- [ ] Idempotent by `video_deleted_at` + provider ENOENT handling; proven by the
+      two-run case
+- [ ] Batched: paged ids read first, then per-id workflow; no N+1 query per row
+- [ ] Job is a plain handler; every mutation inside a workflow; lock per claim
+- [ ] No key or URL ever returned; no money (D-058)
+- [ ] `bun run tsc` clean; no route change so codegen only if T-061.1b changed types
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean
+cd packages/api && bun run test:integration:http -- claim-video-cleanup → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + the two timestamps used + the skip/deleted counts from
+one live tick + migration name from T-061.1b.
+```
+
+```text
+Story: US-061 (task T-061.2)   Release: mvp
+Agent: qa   Expected: <=30 min
+Starts when: no backend agent and no other Jest run is active.
+
+## Acceptance criteria
+Verify AC1. Decisions: D-018, D-027, D-038, D-053, D-058.
+Code under test: packages/api/src/jobs/delete-claim-videos.ts,
+workflows/delete-claim-video.ts, steps/claim-video.ts,
+models/claim.ts (`video_deleted_at`), the three claim read routes.
+Commands (alone): bun run test:integration:http -- claim-video-cleanup; then --
+claims-read.
+Browser (render-check): /akun/kebun/terjual (farmer) and /klaim (admin) for a
+claim whose video was deleted: no video control, no "Tidak ada video unboxing."
+contradiction — say what the screen shows.
+Watch for: a claim deleted inside the 30 days; a non-closed claim touched;
+`resolved` treated as closed (it is not); the claim row deleted or a status
+changed; `has_video` still true after the file is gone; a video route returning
+bytes after deletion; a second run deleting again or throwing; the job failing
+the whole batch on one bad row; a file key or URL in any payload; any money.
+Do not change app code. Report PASS/FAIL per AC with file:line and command
+output; bugs with repro and expected/actual.
+```
+
+**Coverage:** AC1 → T-061.1b (the closed/closed-at facts and `has_video`),
+T-061.1 (deletion and retention), T-061.2. Plan "Dead-on-arrival claims" item 7
+("Videos are deleted 30 days after the claim is closed") is covered.
 
 ---
 
@@ -5179,4 +6310,6 @@ is built. Record the answer here, in `plan.md`, and as a decision in `docs/produ
 | mvp-Q45 | **Answered 2026-11-17 (D-060), option (b):** a farm suspended after approval may also accept or dispute a claim on its own sold lot — the D-054 exception (ownership + not `terminated`), not `validateSellerOpenStep`. `pending_approval`, a rejected registration and `terminated` still 403. Follow-up US-055 T-055.5 (the shipped spec case that asserts 403 for suspended changes to 200). *(Was: may a suspended farm accept or dispute a claim on its own sold lot?)* | none (was US-055 T-055.1a) |
 | mvp-Q46 | **Open (2026-11-17, non-blocking).** AC2 requires the admin's written reason; the plan says nothing about the farmer's dispute carrying a note. Shipped: no farmer note (the admin judges from the video and the claim facts). Options: (a) no farmer note (what T-055.2 builds); (b) an optional farmer note, one nullable column shown in the admin row. *(Was: does a dispute carry the farmer's own note?)* | US-055 T-055.2 |
 | mvp-Q47 | **Open (2026-11-17, non-blocking).** US-056 AC2 says "missing the 3 days, **or refusing an approved claim**", but D-038's enum has no `refused` state, so a refusal has nowhere to be recorded. Shipped: (a) no new state — a refusal not acted on is the 3-day miss, and T-056.3 flags `approved` older than 3 days. Options: (a) keep it (recommended; no column, so copy can change without a migration); (b) add a refusal state out of `approved` (new decision + enum change + migration; touches US-055's finality). *(Was: how is a farmer's explicit refusal of an approved claim recorded?)* Re-checked 2026-11-18 at US-051/US-052 acceptance: still open, non-blocking, touches neither story. | none (was US-056 T-056.3) |
+| mvp-Q48 | **Open (2026-11-18, non-blocking).** US-057 AC1 says a winner may rate "once the lot is `shipped`". Does that mean exactly `shipped`, or `shipped` or later (delivered, claimed)? And the plan says "1-5 stars and a comment" — is the comment required? Shipped: shipped|delivered|claimed, comment optional and <=300 chars. Options: (a) what is built (recommended); (b) exactly `shipped` and a required comment. No migration either way. *(Was: when exactly may a winner rate, and is the comment required?)* | US-057 T-057.1 |
+| mvp-Q49 | **Open (2026-11-18, non-blocking).** US-059 AC2 reads "2 active strikes = ban", i.e. automatic. Should a ban instead be an explicit admin action so a second strike never silently blocks an account? Shipped: automatic at the second active strike, using that strike's written reason, ban derived from `active_count` (no ban table). Note: `farmer_not_shipped` has no queue row in the MVP (no shipping deadline exists), so the route accepts it directly. Options: (a) automatic (built, recommended); (b) an explicit ban action (new table/route/UI). *(Was: is a ban automatic at the second strike or an explicit admin action?)* | US-059 T-059.1a |
 | — (payment model) | **Answered 2026-11-17 (D-058):** the MVP pays off-platform — the winner pays the farmer directly within 1×24 h, the farmer marks the lot paid (`won → paid`) then ships; the platform holds and pays out no money. Xendit escrow stays the planned beta direction, out of MVP scope. Un-parks US-056, US-058, US-059's payment strike and T-052.4; restores D-044/D-057 through D-059. *(Was: does the MVP pay in-app (Xendit escrow or wallet escrow), or off-platform?)* | none (was US-052 T-052.4, US-056, US-058, US-059) |
