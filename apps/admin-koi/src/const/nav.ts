@@ -46,6 +46,12 @@ export const NAV: NavGroup[] = [
         label: 'Klaim DOA',
         hint: 'Tinjau video unboxing dan putuskan sengketa.',
         ready: true
+      },
+      {
+        href: ROUTES.reports,
+        label: 'Laporan',
+        hint: 'Tinjau laporan pemenang yang tidak membayar.',
+        ready: true
       }
     ]
   },

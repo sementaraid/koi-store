@@ -55,6 +55,8 @@ export type Auction = {
   fee_override_join_fee: number | null;
   fee_override_reason: string | null;
   rejection_reason: string | null;
+  /** The farmer's YouTube or Instagram live link, or `null` (US-046, D-061). */
+  live_stream_url: string | null;
   lots?: AuctionLot[];
 };
 
@@ -235,6 +237,31 @@ export async function updateDraftAuction(
     .catch((err: unknown) => ({
       success: false as const,
       error: err instanceof ClientError ? err.message : 'Gagal menyimpan perubahan.'
+    }));
+}
+
+/** Set or clear an auction's live link (US-046 T-046.3, D-061). `null`
+    clears it; the server refuses a non-YouTube/Instagram link with its own
+    Indonesian 400, shown as-is (D-055). */
+export async function setAuctionLiveLink(
+  id: string,
+  url: string | null
+): Promise<Result<Auction>> {
+  return vendorHeaders()
+    .then((headers) =>
+      sdk.vendor.auctions.$id.liveLink.mutate({
+        $id: id,
+        live_stream_url: url,
+        fetchOptions: { headers }
+      })
+    )
+    .then(({ auction }) => {
+      revalidatePath(ROUTES.farmHome);
+      return { success: true as const, data: asAuction(auction) };
+    })
+    .catch((err: unknown) => ({
+      success: false as const,
+      error: err instanceof ClientError ? err.message : 'Gagal menyimpan tautan siaran.'
     }));
 }
 

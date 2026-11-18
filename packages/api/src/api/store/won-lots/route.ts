@@ -6,6 +6,7 @@ import type {
 import type { RemoteQueryFunction } from "@medusajs/framework/types"
 import type { LotStatus } from "../../../modules/auction/models/lot"
 import { maskAccountNumber, maskName } from "../../../utils/mask"
+import { PAY_WINDOW_MS } from "../../../utils/pay-window"
 import { readClaimWindowHours } from "../../../workflows/steps/claim"
 import type { StoreGetWonLotsParamsType } from "./validators"
 
@@ -97,9 +98,6 @@ export const WON_LOT_FIELDS = [
   "product.title",
   "product.thumbnail",
 ]
-
-// D-058: the winner pays the farmer directly within 1×24 h of the close.
-const PAY_WINDOW_MS = 24 * 60 * 60 * 1000
 
 // Same list as the farmer's sold lots: a closed lot with a winner (D-035).
 export const WON_LOT_STATUSES = [

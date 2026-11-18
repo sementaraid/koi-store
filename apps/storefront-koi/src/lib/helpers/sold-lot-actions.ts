@@ -65,6 +65,46 @@ export function soldLotFailureInfo(input: {
   return { message: input.message || 'Gagal memperbarui status lot. Coba lagi.', refresh: false };
 }
 
+/** Whether one `won` row offers "Laporkan belum dibayar" (US-058 T-058.2,
+    AC1): the lot is still `won`, its `pay_by` (closed_at + 24 h, D-058) has
+    passed, and no report exists yet. The server is the real gate; this only
+    hides a button that would be refused with a 409. */
+export function canReportUnpaid(input: {
+  status: string;
+  payBy: string | null;
+  reportedAt: string | null;
+  now: number;
+}): { show: boolean } {
+  if (input.status !== 'won' || input.reportedAt || !input.payBy) {
+    return { show: false };
+  }
+  const deadline = Date.parse(input.payBy);
+  return { show: Number.isFinite(deadline) && input.now >= deadline };
+}
+
+/** Read one refused report (US-058 T-058.2, D-055). A 409 body's code is
+    rewritten by Medusa, so the status is the signal; the specific code is only
+    used when it survives. 403/404 keep the server's Indonesian message. */
+export function unpaidFailureInfo(input: {
+  code?: string;
+  status?: number;
+  message: string;
+}): SoldLotFailure {
+  if (input.status === 409) {
+    if (input.code === 'lot_already_reported') {
+      return { message: 'Lot ini sudah dilaporkan.', refresh: true };
+    }
+    return { message: 'Status lot sudah berubah. Halaman diperbarui.', refresh: true };
+  }
+  if (input.status === 404) {
+    return { message: input.message, refresh: true };
+  }
+  return {
+    message: input.message || 'Gagal mengirim laporan. Coba lagi.',
+    refresh: false
+  };
+}
+
 /** The resi line on a shipped-or-later row, or `null` while there is nothing
     shipped yet to say. Self-delivery ships without one. */
 export function shippedTrackingLabel(

@@ -517,6 +517,7 @@ export type Routes = {
         auctions: typeof import("../src/api/admin/auctions/route") & {
             $id: {
                 approve: typeof import("../src/api/admin/auctions/[id]/approve/route");
+                liveLink: typeof import("../src/api/admin/auctions/[id]/live-link/route");
                 reject: typeof import("../src/api/admin/auctions/[id]/reject/route");
             };
         };
@@ -530,6 +531,7 @@ export type Routes = {
         feeCategories: typeof import("../src/api/admin/fee-categories/route") & {
             $id: typeof import("../src/api/admin/fee-categories/[id]/route");
         };
+        reports: typeof import("../src/api/admin/reports/route");
         settings: typeof import("../src/api/admin/settings/route");
         topupRequests: typeof import("../src/api/admin/topup-requests/route") & {
             $id: {
@@ -978,6 +980,7 @@ export type Routes = {
         uploads: typeof import("@mercurjs/core/api/vendor/uploads/route");
         auctions: typeof import("../src/api/vendor/auctions/route") & {
             $id: typeof import("../src/api/vendor/auctions/[id]/route") & {
+                liveLink: typeof import("../src/api/vendor/auctions/[id]/live-link/route");
                 lots: typeof import("../src/api/vendor/auctions/[id]/lots/route") & {
                     $lotId: typeof import("../src/api/vendor/auctions/[id]/lots/[lot_id]/route");
                 };
@@ -988,6 +991,7 @@ export type Routes = {
         soldLots: typeof import("../src/api/vendor/sold-lots/route") & {
             $id: {
                 paid: typeof import("../src/api/vendor/sold-lots/[id]/paid/route");
+                report: typeof import("../src/api/vendor/sold-lots/[id]/report/route");
                 reveal: typeof import("../src/api/vendor/sold-lots/[id]/reveal/route");
                 shipped: typeof import("../src/api/vendor/sold-lots/[id]/shipped/route");
             };

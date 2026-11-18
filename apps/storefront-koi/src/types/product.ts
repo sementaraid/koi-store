@@ -174,6 +174,10 @@ export type AuctionState = {
       "Terjual" / "Tidak terjual" label a closed lot's card and page draw
       instead of a live price (D-046). */
   sold?: boolean
+  /** US-046 AC2 (D-061): the farmer's YouTube/Instagram live link, already
+      validated by the server. Omitted or null draws nothing; rendered as a
+      plain outbound link, never an embed. */
+  live_stream_url?: string | null
 }
 
 /**

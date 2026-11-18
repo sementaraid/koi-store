@@ -28,6 +28,7 @@ import { farmerClaimStatus, formatClaimOpenedAt } from '@/lib/helpers/farm-claim
 import { farmStatusInfo, soldLotsOpen } from '@/lib/helpers/farm-status';
 import { soldLotStatusLabel } from '@/lib/helpers/sold-lot';
 import {
+  canReportUnpaid,
   shippedTrackingLabel,
   soldLotAction
 } from '@/lib/helpers/sold-lot-actions';
@@ -39,6 +40,7 @@ import { AccountFrame } from './components/AccountFrame';
 import { ClaimDecision } from './components/ClaimDecision';
 import { ClaimVideo } from './components/ClaimVideo';
 import { MarkPaid } from './components/MarkPaid';
+import { ReportUnpaid } from './components/ReportUnpaid';
 import { RevealAddress } from './components/RevealAddress';
 import { ShipLot } from './components/ShipLot';
 
@@ -235,6 +237,9 @@ function SoldLots({
       farmer is told why it's worth checking the admin. */
   suspended: boolean;
 }): ReactNode {
+  // US-058: one clock read for the page; the server's `pay_by` decides, this
+  // only hides a button the server would refuse.
+  const now = Date.now();
   return (
     <div className="grid gap-4">
       <RenderIf when={suspended}>
@@ -265,6 +270,12 @@ function SoldLots({
                 const status = soldLotStatusLabel(lot.status);
                 const action = soldLotAction(lot.status);
                 const tracking = shippedTrackingLabel(lot.status, lot.tracking_number);
+                const report = canReportUnpaid({
+                  status: lot.status,
+                  payBy: lot.pay_by,
+                  reportedAt: lot.unpaid?.reported_at ?? null,
+                  now
+                });
                 const claim = claimsByLot.get(lot.id);
                 return (
                   <div
@@ -318,6 +329,14 @@ function SoldLots({
                         <p className="text-xs text-muted-foreground">{tracking}</p>
                       ) : null}
                       {action === 'pay' ? <MarkPaid lotId={lot.id} /> : null}
+                      <RenderIf when={lot.unpaid}>
+                        {(unpaid) => (
+                          <p className="text-xs text-muted-foreground">
+                            Dilaporkan {formatClaimOpenedAt(unpaid.reported_at)}
+                          </p>
+                        )}
+                      </RenderIf>
+                      {report.show ? <ReportUnpaid lotId={lot.id} /> : null}
                       {action === 'ship' ? (
                         <ShipLot
                           lotId={lot.id}

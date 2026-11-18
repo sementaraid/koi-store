@@ -11,6 +11,7 @@ import {
   approveAuction,
   approveAuctionWithOverride,
   rejectAuction,
+  setAuctionLiveLink,
   type AdminAuction,
   type AuctionLot
 } from '@/lib/data/auctions';
@@ -20,6 +21,7 @@ import {
   formatAuctionDate,
   overrideFormError
 } from '@/lib/helpers/auction-format';
+import { isLiveStreamUrl } from '@/lib/helpers/live-stream-url';
 import { formatRupiah } from '@/lib/helpers/topup-format';
 
 /** Props for {@link AuctionQueue}. */
@@ -101,6 +103,8 @@ function AuctionRow({ auction }: { auction: AdminAuction }) {
           <LotCard key={lot.id} lot={lot} />
         ))}
       </div>
+
+      <LiveLinkControl auction={auction} />
 
       <div className="grid gap-3 lg:grid-cols-2">
         <ApproveForm auction={auction} busy={busy} onBusyChange={setBusy} />
@@ -248,6 +252,103 @@ function ApproveForm({
         </Button>
       </div>
     </form>
+  );
+}
+
+/* The link rule is the backend's (D-061): https, YouTube or Instagram. */
+const liveLinkSchema = z.object({
+  live_stream_url: z
+    .string()
+    .trim()
+    .refine(isLiveStreamUrl, 'Tautan harus dari YouTube atau Instagram (https).')
+});
+
+type LiveLinkData = z.infer<typeof liveLinkSchema>;
+
+/** The auction's live link (US-046 T-046.5, D-061): shown as an outbound link
+    only, set or cleared in any status but `closed`/`cancelled` there. */
+function LiveLinkControl({ auction }: { auction: AdminAuction }) {
+  const [stored, setStored] = useState<string | null>(auction.live_stream_url);
+  const [busy, setBusy] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting }
+  } = useForm<LiveLinkData>({
+    resolver: zodResolver(liveLinkSchema),
+    defaultValues: { live_stream_url: auction.live_stream_url ?? '' }
+  });
+
+  const readOnly = auction.status === 'closed' || auction.status === 'cancelled';
+
+  async function save(url: string | null, successMessage: string) {
+    setBusy(true);
+    const result = await setAuctionLiveLink(auction.id, url);
+    setBusy(false);
+
+    if (!result.success) {
+      toast.error(result.error);
+      return;
+    }
+
+    setStored(result.live_stream_url);
+    toast.success(successMessage);
+    reset({ live_stream_url: '' });
+  }
+
+  return (
+    <div className="grid gap-2 rounded-md border border-border p-3">
+      <h3 className="text-sm font-medium">Tautan siaran</h3>
+      {stored ? (
+        <p className="text-sm break-all">
+          <a
+            href={stored}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-accent-ink underline underline-offset-4"
+          >
+            {stored}
+          </a>
+        </p>
+      ) : (
+        <p className="text-sm text-muted-foreground">Belum ada tautan siaran.</p>
+      )}
+
+      {readOnly ? null : (
+        <form
+          onSubmit={handleSubmit((data) => save(data.live_stream_url, 'Tautan siaran tersimpan.'))}
+          className="grid gap-2"
+          noValidate
+        >
+          <FormField
+            label="Tautan YouTube atau Instagram"
+            type="url"
+            inputMode="url"
+            placeholder="https://www.youtube.com/live/…"
+            hint="Hanya tautan YouTube atau Instagram (https). Tidak ada video yang diunggah ke Koi Store."
+            error={errors.live_stream_url?.message}
+            {...register('live_stream_url')}
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" size="sm" disabled={isSubmitting || busy}>
+              {isSubmitting ? 'Menyimpan…' : 'Simpan tautan'}
+            </Button>
+            {stored ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={isSubmitting || busy}
+                onClick={() => save(null, 'Tautan siaran dihapus.')}
+              >
+                Hapus tautan
+              </Button>
+            ) : null}
+          </div>
+        </form>
+      )}
+    </div>
   );
 }
 

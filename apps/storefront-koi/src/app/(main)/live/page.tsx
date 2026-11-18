@@ -8,10 +8,16 @@ export const metadata: Metadata = {
   description: 'Ruang siar lelang: lot yang sedang di atas panggung, sekarang.'
 };
 
-export default function LiveRoute() {
+export default async function LiveRoute({
+  searchParams
+}: {
+  searchParams: Promise<{ lot?: string }>;
+}) {
+  const { lot } = await searchParams;
+
   return (
     <Suspense>
-      <LivePage />
+      <LivePage featuredId={lot} />
     </Suspense>
   );
 }

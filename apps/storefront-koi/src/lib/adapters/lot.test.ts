@@ -32,6 +32,7 @@ const lot = (over: Partial<StoreLot> = {}): StoreLot => ({
     delivery_method: "courier",
     category: { id: "cat_1", name: "Kohaku" },
     seller: { id: "sel_1", name: "Sakura Farm", handle: "sakura" },
+    live_stream_url: null,
   },
   ...over,
 })
@@ -69,6 +70,16 @@ test("the feed's bid_count becomes bidCount; no bids key stays undefined", () =>
   const out = toAuctionProduct(lot())
   assert.equal(out.auction.bidCount, 3)
   assert.equal(out.auction.bids, undefined)
+})
+
+test("the live link passes through verbatim, and stays null when unset (US-046 AC2)", () => {
+  const url = "https://www.youtube.com/live/abc123"
+  assert.equal(
+    toAuctionProduct(lot({ auction: { ...lot().auction, live_stream_url: url } })).auction
+      .live_stream_url,
+    url
+  )
+  assert.equal(toAuctionProduct(lot()).auction.live_stream_url, null)
 })
 
 test("the detail's bids map to { bidder, amount, at }, mask verbatim (D-051)", () => {

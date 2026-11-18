@@ -16,7 +16,8 @@ are defined in `docs/product/overview.md`.
 
 ## Status as of 2026-11-18
 
-**Last accepted stories:** US-051 and US-052 (Epic 5), qa PASS on every AC,
+**Last accepted stories:** US-046 (Epic 4) and US-058 (Epic 5), qa PASS on every
+AC, one fix round each, accepted 2026-11-18. Before them: US-051 and US-052 (Epic 5), qa PASS on every AC,
 accepted 2026-11-18 after D-058/D-059 re-opened them. Before them: US-055
 (Epic 5), qa PASS on AC1–AC2, accepted
 2026-11-17, plus the unplanned `@koi/ui` tab-orientation fix. Before it: US-054
@@ -37,16 +38,16 @@ code are committed (`d67d3c8`).
 | 1 Wallet | 6 | 0 | 0 | 0 | 0 | 22 | 0 | 0 |
 | 2 Becoming a farmer | 2 | 0 | 0 | 0 | 0 | 11 | 5 | 0 |
 | 3 Auctions for farmers | 4 | 0 | 0 | 0 | 0 | 23 | 0 | 0 |
-| 4 Joining and bidding | 6 | 0 | 1 | 0 | 0 | 22 | 5 | 0 |
-| 5 Closing and after-sale | 6 | 0 | 6 | 0 | 0 | 32 | 18 | 0 |
+| 4 Joining and bidding | 7 | 0 | 0 | 0 | 0 | 27 | 0 | 0 |
+| 5 Closing and after-sale | 7 | 0 | 5 | 0 | 0 | 37 | 22 | 0 |
 | 6 Admin operations | 0 | 0 | 6 | 0 | 0 | 0 | 22 | 0 |
 | 7 WhatsApp bot | 0 | 0 | 0 | 0 | 6 | 0 | 12 | 0 |
 | 8 Pilot | 0 | 0 | 1 | 0 | 0 | 0 | 5 | 0 |
 | Unplanned | 1 | 0 | 0 | 0 | 0 | 1 | 0 | 0 |
-| **Total** | **28** | **0** | **14** | **0** | **6** | **120** | **67** | **0** |
+| **Total** | **30** | **0** | **12** | **0** | **6** | **130** | **66** | **0** |
 
-Stories: 28 done of 48 (58%), 14 todo, 6 blocked, none parked.
-Tasks: 120 done of 187 active (64%), 67 open, none parked.
+Stories: 30 done of 48 (63%), 12 todo, 6 blocked, none parked.
+Tasks: 130 done of 196 active (66%), 66 open, none parked.
 
 **Payment model decided (2026-11-17, D-058).** The MVP pays off-platform: the
 winner pays the farmer directly within 1×24 h, the farmer marks the lot paid
@@ -84,16 +85,12 @@ were already what the story required.
   MVP stories; D-058 keeps it for beta only.
 
 **Next in milestone order:**
-1. **US-058** (report a non-paying winner; deadline `closed_at` + 24 h, now
-   live on the winner's row) then **US-056** (claim resolution, direct refund
-   off-platform); then US-057, US-059, US-060, US-061. The paid loop (US-051's
-   bank reveal, US-052 T-052.4) is built, so both are unblocked.
+1. **US-056** (claim resolution, direct refund off-platform); then US-057,
+   US-059, US-060, US-061. US-058 shipped, so US-059's "winner didn't pay"
+   strike has its report rows to read.
 2. Small backend swap in the same window: **US-055 T-055.5** (D-060), one guard
    change in two workflows and one spec case.
-3. **US-046** is fully ready: its live-link read/write is independent of money,
-   and D-061 removed its owner question.
-   Order when picked: T-046.1 → T-046.2 ‖ T-046.3 ‖ T-046.5 → T-046.4.
-US-051, US-052, US-053, US-054, US-055 remain `done`. T-020.10 can run any
+US-046, US-051, US-052, US-053, US-054, US-055 and US-058 remain `done`. T-020.10 can run any
 time; qa's admin browser checks need it.
 
 ## Epic 0: Foundations (Milestone 1)
@@ -1744,16 +1741,31 @@ Screenshots and page snapshots land in `.playwright-mcp/`. Don't change app code
 polling interval for the MVP lot page, or another value (e.g. 3 s/5 s)? It blocks nothing; T-045.1 uses 2 s as a
 named constant, so a change is one line. Recommend 2 s.
 
-### US-046 Live bidding room · `todo`
+### US-046 Live bidding room · `done (evidence: apps/storefront-koi/src/const/live.ts:72-75 (pickFeatured: `!cancelled && sold === null && status live|scheduled`, 7 unit cases in const/live.test.ts); packages/api/src/workflows/set-auction-live-link.ts:23-56; packages/api/src/api/{vendor,admin}/auctions/[id]/live-link/route.ts; validators.ts:59-70 (https, YouTube/Instagram allow-list, `youtube.com.evil.dev` refused); LiveRoom.tsx:126-136 outbound anchor, 142 CTA, 0 iframe/video/embed; BidTerminal.tsx:203 read-only board; /live staged one real lot (4 photos, 4 masked rows), poll 3.050.000→3.150.000 and 20→21 in 2263 ms, no reload; closed-auction and cancelled lots not staged (3 runs each); qa PASS fix round 1)
 As a **bidder**, I want a live screen with one lot at a time so that the auction
 feels like a live event. *(Plan: Live room)*
 - AC1: Shows one lot at a time: photo, current price, countdown, bid feed.
 - AC2: The farmer can add a YouTube or Instagram live link, which is shown on the page. No video system is built. The link is a plain nullable `auction.live_stream_url` column, written by the farmer through `POST /vendor/auctions/:id/live-link` in any status except `closed`/`cancelled`, writable from admin-koi too, and rendered as an outbound link only (no iframe, no embedded player; D-061).
-- [ ] T-046.1 [backend] `auction.live_stream_url` plain nullable column + migration, `POST /vendor/auctions/:id/live-link`, `POST /admin/auctions/:id/live-link`, URL validation, public and vendor exposure, `codegen`
-- [ ] T-046.2 [storefront] `live` page on real data, replacing `const/live.ts`, the link rendered as an outbound link (ordered after T-046.1)
-- [ ] T-046.3 [storefront] Farmer area: set and clear the live link (ordered after T-046.1)
-- [ ] T-046.5 [admin] admin-koi live-link write on the `/lelang` queue row (ordered after T-046.1)
-- [ ] T-046.4 [qa] Both ACs in a browser, including a real polling update and the link rendering, plus the admin write
+- [x] T-046.1 [backend] `auction.live_stream_url` plain nullable column + migration, `POST /vendor/auctions/:id/live-link`, `POST /admin/auctions/:id/live-link`, URL validation, public and vendor exposure, `codegen`
+- [x] T-046.2 [storefront] `live` page on real data, replacing `const/live.ts`, the link rendered as an outbound link (ordered after T-046.1)
+- [x] T-046.3 [storefront] Farmer area: set and clear the live link (ordered after T-046.1)
+- [x] T-046.5 [admin] admin-koi live-link write on the `/lelang` queue row (ordered after T-046.1)
+- [x] T-046.4 [qa] Both ACs in a browser, including a real polling update and the link rendering, plus the admin write
+
+**Accepted 2026-11-18 (qa PASS, fix round 1).** Two rules as built, both
+checked in code:
+- **The room stages only an auction that is `scheduled` or `live`.** A lot whose
+  auction is `closed`, or a lot that is `cancelled` or already `sold`, is never
+  staged (`pickFeatured`, `const/live.ts:72-75`). This was the fix: before it,
+  a closed-auction lot could be shown as the featured lot.
+- **The live link is an outbound link, never an embed.** When
+  `auction.live_stream_url` is set the room draws one `<a target="_blank"
+  rel="noopener noreferrer">` (`LiveRoom.tsx:126-136`); there is no iframe,
+  player or preview fetch anywhere on the route (D-061). Clearing the value in
+  the farmer form sends `null` and removes the link and all "siaran" text.
+- **Open bug (not an AC, follow-up):** an English `Invalid request: ` prefix
+  leaked into the farmer's live-link toast. Fixed in a separate small task;
+  does not affect this acceptance.
 
 **Readiness (2026-11-17; updated after D-061): ready (`todo`).** `mvp-Q43` is
 answered by D-061: a plain nullable `auction.live_stream_url` column (not a
@@ -4860,7 +4872,7 @@ output; bugs with repro and expected/actual.
 T-057.4. Plan "Ratings" is fully covered. `mvp-Q48` (window, comment
 requiredness) is non-blocking; the defaults above are what the briefs build.
 
-### US-058 Farmer reports a winner who didn't pay · `todo` (unparked 2026-11-17 by D-058; briefs written 2026-11-17)
+### US-058 Farmer reports a winner who didn't pay · `done (evidence: packages/api/integration-tests/http/lot-reports.spec.ts 17/17 (US-058 cases; qa's 18th run was US-059's strike case, which ships with US-059) (deadline 409, non-`won` 409, won without closed_at 409, second report 409 one row, other farm 404, 401 anonymous, pending/suspended/terminated 403, non-empty body 400, compensation deletes the row, lot byte-identical after the report, 0 wallet rows, no second-bidder field); packages/api/src/workflows/report-unpaid-lot.ts; packages/api/src/workflows/steps/lot-report.ts; packages/api/src/api/vendor/sold-lots/[id]/report/route.ts; packages/api/src/api/admin/reports/route.ts (default `open`, `?status=open`, `?winner_id` all-time, paging, 401, names only); apps/admin-koi/src/app/(app)/laporan/page.tsx + ReportQueue.tsx (Asia/Jakarta dates, read-only, empty state, nav entry, signed-out redirect); qa PASS fix round 1)
 **D-058 sets the deadline.** The winner pays the farmer directly, off-platform,
 within 1×24 h of the lot closing, so the deadline is `closed_at` + 24 h (the same
 `pay_by` the winner's won-lot rows show, `store/won-lots/route.ts:102,136`). The
@@ -4870,11 +4882,18 @@ As a **farmer**, I want to report a winner who didn't pay within 1×24 h so that
 admin can act. *(Plan: Winner doesn't pay; D-026, D-058)*
 - AC1: The farmer can report after the deadline. The admin reviews it and may give a strike.
 - AC2: Any offer to the second-highest bidder is fully off-platform. The platform records nothing about it and never reassigns the lot; winner and final price stay as saved at close (D-026).
-- [ ] T-058.1 [backend] `lot_report` model (one per lot) + `reportUnpaidLotWorkflow` + `POST /vendor/sold-lots/:id/report` + `pay_by`/`unpaid` on the sold-lot row
-- [ ] T-058.2 [storefront] "Laporkan belum dibayar" on a `won` sold lot once the deadline passes
-- [ ] T-058.3 [backend] `GET /admin/reports` (queue by status, per-winner by `winner_id`), names only
-- [ ] T-058.4 [admin] `/laporan` queue and a `/pengguna` "Laporan belum dibayar" tab (read-only; the strike is US-059 T-059.2)
-- [ ] T-058.5 [qa] The deadline gates the report; a second report is refused; the lot never changes; nothing about a second bidder is stored or shown
+- [x] T-058.1 [backend] `lot_report` model (one per lot) + `reportUnpaidLotWorkflow` + `POST /vendor/sold-lots/:id/report` + `pay_by`/`unpaid` on the sold-lot row
+- [x] T-058.2 [storefront] "Laporkan belum dibayar" on a `won` sold lot once the deadline passes
+- [x] T-058.3 [backend] `GET /admin/reports` (queue by status, per-winner by `winner_id`), names only
+- [x] T-058.4 [admin] `/laporan` queue and a `/pengguna` "Laporan belum dibayar" tab (read-only; the strike is US-059 T-059.2 — the `/pengguna` tab is not built; `/laporan` is)
+- [x] T-058.5 [qa] The deadline gates the report; a second report is refused; the lot never changes; nothing about a second bidder is stored or shown
+
+**Accepted 2026-11-18 (qa PASS, fix round 1).** AC2 checked against the DB:
+after a report the lot row is byte-identical (status `won`, same winner, same
+`final_price`, same `updated_at`), `lot_report` holds one row and
+`wallet_transaction` none. No second-bidder field exists in `packages/api` or
+either app. The `/pengguna` tab from T-058.4 was not built; `/laporan` carries
+the queue and the owner's tab can be a follow-up inside US-070.
 
 **Readiness 2026-11-17: ready (`todo`). Nothing blocks it, and no new question.**
 - The deadline source is decided and already in the tree: `lot.closed_at` (US-050) + 24 h,

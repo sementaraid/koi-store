@@ -20,6 +20,10 @@ export type SoldLot = {
   status: string;
   final_price: number | null;
   closed_at: string | null;
+  /** D-058: `closed_at` + 24 h. Null while the lot has no `closed_at`. */
+  pay_by: string | null;
+  /** US-058: the farmer's own non-payment report, if any. */
+  unpaid: { reported_at: string } | null;
   auction: { id: string; delivery_method: string };
   product: { title: string | null; thumbnail: string | null };
   /** US-052 T-052.1: set when the farmer ships with one; null for
@@ -97,6 +101,33 @@ export const markSoldLotPaid = async (id: string): Promise<SoldLotResult> => {
       };
     }
     return { success: false, message: 'Gagal menandai lot dibayar. Coba lagi.' };
+  }
+};
+
+/** Report one of the farmer's own `won` lots whose winner missed the pay
+ * deadline (US-058 T-058.2, AC1, D-026, D-058).
+ *
+ * @remarks
+ * Body-less; the report changes no lot, moves no money and blocks nothing —
+ * a late payment still settles the row. The status is never set here: the
+ * server's row is re-read after success (`revalidatePath`) and a refused call
+ * answers with its own Indonesian reason (D-055). */
+export const reportUnpaidLot = async (id: string): Promise<SoldLotResult> => {
+  try {
+    const headers = await vendorHeaders();
+    await sdk.vendor.soldLots.$id.report.mutate({ $id: id, fetchOptions: { headers } });
+    revalidatePath(ROUTES.farmSold);
+    return { success: true };
+  } catch (err: unknown) {
+    if (err instanceof ClientError) {
+      return {
+        success: false,
+        message: err.message,
+        code: err.code,
+        status: err.status
+      };
+    }
+    return { success: false, message: 'Gagal mengirim laporan. Coba lagi.' };
   }
 };
 

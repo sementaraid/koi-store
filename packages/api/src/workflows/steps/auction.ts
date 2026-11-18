@@ -291,6 +291,51 @@ export const getDraftAuctionStep = createStep(
   }
 )
 
+export type LiveLinkAuction = {
+  id: string
+  live_stream_url: string | null
+}
+
+// Read-only guard for the live-link write (US-046, D-061): the auction exists,
+// belongs to the acting seller (when a seller is acting) and is not `closed` or
+// `cancelled`. Another seller's auction is 404, like the draft guard, so ids
+// can't be probed.
+export const getAuctionForLiveLinkStep = createStep(
+  "get-auction-for-live-link",
+  async (input: { auction_id: string; seller_id?: string }, { container }) => {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const {
+      data: [auction],
+    } = await query.graph({
+      entity: "auction",
+      fields: ["id", "seller_id", "status", "live_stream_url"],
+      filters: { id: input.auction_id },
+    })
+
+    if (!auction || (input.seller_id && auction.seller_id !== input.seller_id)) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_FOUND,
+        `Auction ${input.auction_id} was not found`
+      )
+    }
+    if (auction.status === "closed" || auction.status === "cancelled") {
+      // D-061: the link is writable in any other status. 409 so the Koi apps
+      // key on the status (Medusa replaces the message).
+      throw new MedusaError(
+        MedusaError.Types.CONFLICT,
+        "Tautan siaran tidak bisa diubah setelah lelang selesai atau dibatalkan.",
+        "auction_not_editable"
+      )
+    }
+
+    const liveLink: LiveLinkAuction = {
+      id: auction.id,
+      live_stream_url: auction.live_stream_url ?? null,
+    }
+    return new StepResponse(liveLink)
+  }
+)
+
 export type PendingAuction = {
   id: string
   listing_fee: number
@@ -369,6 +414,7 @@ export type AuctionFields = Partial<
     | "fee_override_join_fee"
     | "fee_override_reason"
     | "rejection_reason"
+    | "live_stream_url"
   >
 >
 

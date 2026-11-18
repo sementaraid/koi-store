@@ -56,6 +56,8 @@ export function toAuctionProduct(lot: StoreLot): AuctionProduct {
       /* US-044 (D-051): the feed carries `bid_count` but never `bids`; only
          the detail fetch has rows. `bidder` is the server's mask — verbatim. */
       bidCount: lot.bid_count,
+      /* US-046 AC2 (D-061): the server-validated outbound link, verbatim. */
+      live_stream_url: lot.auction.live_stream_url,
       bids: lot.bids?.map((bid) => ({
         bidder: bid.bidder,
         amount: bid.amount,

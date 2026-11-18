@@ -46,6 +46,8 @@ export type AdminAuction = {
   fee_override_join_fee: number | null;
   fee_override_reason: string | null;
   rejection_reason: string | null;
+  /** D-061: the auction's YouTube/Instagram live link, null when unset. */
+  live_stream_url: string | null;
   seller: { id: string; name: string } | null;
   fee_category: { id: string; name: string; listing_fee: number; join_fee: number } | null;
   lots: AuctionLot[];
@@ -159,5 +161,35 @@ export async function rejectAuction(id: string, reason: string): Promise<Result>
     .catch((err: unknown) => ({
       success: false as const,
       error: err instanceof ClientError ? err.message : 'Gagal menolak lelang.'
+    }));
+}
+
+/** The link the server now stores after a save/clear (D-061). */
+export type SetLiveLinkResult =
+  | { success: true; live_stream_url: string | null }
+  | { success: false; error: string };
+
+/** Set or clear an auction's live link (US-046 T-046.5, D-061). The backend
+    refuses `closed`/`cancelled` (409) and a non-allow-listed URL (400) with an
+    Indonesian message, which is passed through unchanged (D-055). */
+export async function setAuctionLiveLink(
+  id: string,
+  url: string | null
+): Promise<SetLiveLinkResult> {
+  await requireAdmin(ROUTES.auctions);
+
+  return sdk.admin.auctions.$id.liveLink
+    .mutate({
+      $id: id,
+      live_stream_url: url,
+      fetchOptions: { headers: { ...(await getAuthHeaders()) } }
+    })
+    .then(({ auction }) => {
+      revalidatePath(ROUTES.auctions);
+      return { success: true as const, live_stream_url: auction.live_stream_url };
+    })
+    .catch((err: unknown) => ({
+      success: false as const,
+      error: err instanceof ClientError ? err.message : 'Gagal menyimpan tautan siaran.'
     }));
 }

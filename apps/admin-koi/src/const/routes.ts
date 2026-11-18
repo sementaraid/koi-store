@@ -30,5 +30,7 @@ export const ROUTES = {
   /** Accounts: strikes, bans, who is who. */
   users: '/pengguna',
   /** Dead-on-arrival claims an operator has to decide. */
-  claims: '/klaim'
+  claims: '/klaim',
+  /** Unpaid-winner reports from farmers (US-058). */
+  reports: '/laporan'
 } as const;

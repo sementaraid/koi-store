@@ -46,6 +46,7 @@ import { ROUTES } from '@/const/routes';
 import type { HeaderAccount, HeaderCart } from '@/types/header';
 
 import { AccountFrame } from './AccountFrame';
+import { LiveLinkForm } from './LiveLinkForm';
 import { SubmitAuctionButton } from './SubmitAuctionButton';
 
 /** Props for {@link EditAuction}. */
@@ -241,6 +242,12 @@ export function EditAuction({ auction: initial, categories, openOrders, account,
           </Card>
         )}
       </RenderIf>
+
+      {/* The live-link response carries no lots, so take its field only. */}
+      <LiveLinkForm
+        auction={auction}
+        onSaved={(next) => setAuction((cur) => ({ ...cur, live_stream_url: next.live_stream_url }))}
+      />
 
       <Card className="px-5 py-4">
         <CardHeader className="px-0 pt-0">

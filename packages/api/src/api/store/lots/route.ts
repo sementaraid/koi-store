@@ -43,6 +43,8 @@ export type StoreLot = {
     category: { id: string; name: string } | null
     // D-039 / D-046: id, name and handle only. Never any other seller field.
     seller: { id: string; name: string; handle: string } | null
+    // D-061: the farmer's YouTube/Instagram live link, null when unset.
+    live_stream_url: string | null
   }
 }
 
@@ -86,6 +88,7 @@ export const STORE_LOT_FIELDS = [
   "auction.seller.id",
   "auction.seller.name",
   "auction.seller.handle",
+  "auction.live_stream_url",
   "product.title",
   "product.description",
   "product.images.url",
@@ -147,6 +150,7 @@ const toStoreLot = (
       seller: seller
         ? { id: seller.id, name: seller.name, handle: seller.handle }
         : null,
+      live_stream_url: (auction.live_stream_url as string | null) ?? null,
     },
   }
 }

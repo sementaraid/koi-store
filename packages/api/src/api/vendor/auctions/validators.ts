@@ -1,4 +1,5 @@
 import { z } from "@medusajs/framework/zod"
+import { isLiveStreamUrl } from "../../../utils/live-stream"
 
 // Whole rupiah, 4-byte integer column (same bound as fee_category).
 const rupiah = z.number().int().min(1).max(2_147_483_647)
@@ -52,6 +53,21 @@ export const VendorAddDraftLots = z
   .strict()
 
 export type VendorAddDraftLotsType = z.infer<typeof VendorAddDraftLots>
+
+// US-046 T-046.1 (D-061): the farmer's live link or admin's. `null` clears it.
+// Only the two routes' shared body; identity never travels in it (strict).
+export const SetAuctionLiveLink = z
+  .object({
+    live_stream_url: z.string().trim().max(2048).nullable(),
+  })
+  .strict()
+  .refine(
+    (body) =>
+      body.live_stream_url === null || isLiveStreamUrl(body.live_stream_url),
+    { message: "Tautan siaran harus dari YouTube atau Instagram (https)." }
+  )
+
+export type SetAuctionLiveLinkType = z.infer<typeof SetAuctionLiveLink>
 
 export const VendorGetAuctionsParams = z.object({
   limit: z.coerce.number().int().min(1).max(100).optional().default(20),

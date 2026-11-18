@@ -46,6 +46,9 @@ export const Auction = model
     fee_override_reason: model.text().nullable(),
     // D-031: set when an admin rejects; cleared on the next submit (US-032).
     rejection_reason: model.text().nullable(),
+    // D-061: the farmer's YouTube/Instagram live link (US-046). Nullable; null
+    // clears it. A plain outbound link, never embedded.
+    live_stream_url: model.text().nullable(),
     lots: model.hasMany(() => Lot, { mappedBy: "auction" }),
     participants: model.hasMany(() => AuctionParticipant, {
       mappedBy: "auction",

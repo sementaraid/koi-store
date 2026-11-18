@@ -29,6 +29,7 @@ import {
   AdminSuspendReason,
 } from "./admin/farms/validators"
 import {
+  SetAuctionLiveLink,
   VendorAddDraftLots,
   VendorCreateAuction,
   VendorGetAuctionsParams,
@@ -80,6 +81,7 @@ import {
   AdminDecideClaimBody,
   AdminGetClaimsParams,
 } from "./admin/claims/validators"
+import { AdminGetReportsParams } from "./admin/reports/validators"
 import {
   adminPiiMask,
   storePiiMask,
@@ -525,6 +527,12 @@ export default defineMiddlewares({
       matcher: "/vendor/auctions/:id/lots",
       middlewares: [validateAndTransformBody(VendorAddDraftLots)],
     },
+    // US-046 T-046.1 (D-061): the farmer's live link, or null to clear it.
+    {
+      method: ["POST"],
+      matcher: "/vendor/auctions/:id/live-link",
+      middlewares: [validateAndTransformBody(SetAuctionLiveLink)],
+    },
     // US-051 T-051.1b/T-051.5 (D-056). The farmer's sold lots; the reveal of
     // the winner's default shipping address, one value per body.
     {
@@ -568,6 +576,19 @@ export default defineMiddlewares({
       matcher: "/admin/claims",
       middlewares: [validateAndTransformQuery(AdminGetClaimsParams, {})],
     },
+    // US-058 T-058.3: the admin-koi unpaid-report queue. Status defaults to
+    // `open`; `winner_id` reads one winner's reports across all time.
+    {
+      method: ["GET"],
+      matcher: "/admin/reports",
+      middlewares: [
+        validateAndTransformQuery(AdminGetReportsParams, {
+          defaults: [],
+          isList: true,
+          defaultLimit: 20,
+        }),
+      ],
+    },
     // US-055 T-055.1b: the admin's final decision on a disputed claim. Both
     // take the written reason (AC2).
     {
@@ -589,6 +610,12 @@ export default defineMiddlewares({
       method: ["POST"],
       matcher: "/admin/auctions/:id/reject",
       middlewares: [validateAndTransformBody(AdminRejectAuction)],
+    },
+    // US-046 T-046.1 (D-061): the admin's write of the same field.
+    {
+      method: ["POST"],
+      matcher: "/admin/auctions/:id/live-link",
+      middlewares: [validateAndTransformBody(SetAuctionLiveLink)],
     },
     // US-021 T-021.1. The farm queue reads; approve and reject are Mercur's
     // own POST /admin/sellers/:id/approve and /suspend.

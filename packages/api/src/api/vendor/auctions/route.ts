@@ -42,6 +42,8 @@ export type VendorAuction = {
   fee_override_join_fee: number | null
   fee_override_reason: string | null
   rejection_reason: string | null
+  // D-061: the farmer's YouTube/Instagram live link, null when unset.
+  live_stream_url: string | null
   lots?: VendorAuctionLot[]
 }
 
@@ -69,6 +71,7 @@ export const AUCTION_FIELDS = [
   "fee_override_join_fee",
   "fee_override_reason",
   "rejection_reason",
+  "live_stream_url",
 ]
 
 export const LOT_FIELDS = [
@@ -144,6 +147,7 @@ export const toVendorAuction = (
     (auction.fee_override_join_fee as number | null) ?? null,
   fee_override_reason: (auction.fee_override_reason as string | null) ?? null,
   rejection_reason: (auction.rejection_reason as string | null) ?? null,
+  live_stream_url: (auction.live_stream_url as string | null) ?? null,
 })
 
 // AC6/AC7: the list carries the stored fee and extend-window snapshots so the

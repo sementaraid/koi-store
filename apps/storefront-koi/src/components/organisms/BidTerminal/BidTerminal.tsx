@@ -38,6 +38,10 @@ export type BidTerminalProps = ComponentProps<"div"> & {
       the board says so — the one thing a bidder mid-auction must not miss.
       Omitted, no line is drawn. */
   myBid?: number
+  /** Read-only board: identity, price and clock, nothing to raise. The live
+      room sets it, because bidding there is the lot page's job (US-042).
+      @defaultValue `false` */
+  readOnly?: boolean
   /** A control the terminal does not know how to open, e.g. a bid history.
       Omitted, the slot is not drawn. */
   details?: ReactNode
@@ -86,6 +90,7 @@ export function BidTerminal({
   buyNow,
   onBid,
   myBid,
+  readOnly = false,
   details,
   broadcast,
   className,
@@ -195,81 +200,89 @@ export function BidTerminal({
             )}
           </RenderIf>
 
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between text-2xs">
-              <span className="text-muted-foreground">Naikkan sebesar</span>
-              <span className="font-medium text-accent-ink tabular-nums">
-                Kelipatan {formatPriceCompact(step, currency)}
-              </span>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {steps.map((increment) => (
-                <Button
-                  key={increment}
-                  type="button"
-                  variant={raise === increment ? "neutral" : "outline"}
-                  size="sm"
-                  aria-pressed={raise === increment}
-                  onClick={() => {
-                    setRaise(increment)
-                    onBid?.({
-                      type: "quick",
-                      increment,
-                      amount: currentBid + increment,
-                    })
-                  }}
-                  className="w-full px-1 text-xs font-bold tabular-nums"
-                >
-                  +{formatPriceCompact(increment, currency)}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          <Button
-            size="lg"
-            onClick={() => onBid?.({ type: "bid", amount: next })}
-            className="w-full text-xs font-bold"
-          >
-            <Gavel aria-hidden />
-            Pasang bid {formatPrice(next, currency)}
-          </Button>
-
-          {/* What the house promises about the money, where the bid is placed
-              rather than in a band at the foot of the page. */}
-          <p className="text-center text-2xs text-muted-foreground">
-            Saldo cukup · dana ditahan rekber
-          </p>
-
-          <RenderIf when={buyNow}>
-            {(price) => (
-              <div className="flex items-center justify-between gap-3 border-t border-border pt-4">
-                <div className="min-w-0">
-                  <div className="text-xs font-bold text-muted-foreground">
-                    Beli langsung{" "}
-                    <span className="tabular-nums">
-                      {formatPrice(price, currency)}
+          {/* A read-only board draws the state and no way to change it: the
+              room sends visitors to the lot page to bid (US-046). */}
+          <RenderIf when={!readOnly}>
+            {() => (
+              <>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between text-2xs">
+                    <span className="text-muted-foreground">Naikkan sebesar</span>
+                    <span className="font-medium text-accent-ink tabular-nums">
+                      Kelipatan {formatPriceCompact(step, currency)}
                     </span>
                   </div>
-                  <RenderIf when={buyNowGone}>
-                    {() => (
-                      <p className="text-2xs text-muted-foreground">
-                        Tidak tersedia — bid sudah melewati harga ini
-                      </p>
-                    )}
-                  </RenderIf>
+                  <div className="grid grid-cols-3 gap-2">
+                    {steps.map((increment) => (
+                      <Button
+                        key={increment}
+                        type="button"
+                        variant={raise === increment ? "neutral" : "outline"}
+                        size="sm"
+                        aria-pressed={raise === increment}
+                        onClick={() => {
+                          setRaise(increment)
+                          onBid?.({
+                            type: "quick",
+                            increment,
+                            amount: currentBid + increment,
+                          })
+                        }}
+                        className="w-full px-1 text-xs font-bold tabular-nums"
+                      >
+                        +{formatPriceCompact(increment, currency)}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
+
                 <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={buyNowGone}
-                  onClick={() => onBid?.({ type: "buy-now", amount: price })}
-                  className="shrink-0 text-xs"
+                  size="lg"
+                  onClick={() => onBid?.({ type: "bid", amount: next })}
+                  className="w-full text-xs font-bold"
                 >
-                  <ShoppingBag aria-hidden />
-                  Beli
+                  <Gavel aria-hidden />
+                  Pasang bid {formatPrice(next, currency)}
                 </Button>
-              </div>
+
+                {/* What the house promises about the money, where the bid is
+                    placed rather than in a band at the foot of the page. */}
+                <p className="text-center text-2xs text-muted-foreground">
+                  Saldo cukup · dana ditahan rekber
+                </p>
+
+                <RenderIf when={buyNow}>
+                  {(price) => (
+                    <div className="flex items-center justify-between gap-3 border-t border-border pt-4">
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-muted-foreground">
+                          Beli langsung{" "}
+                          <span className="tabular-nums">
+                            {formatPrice(price, currency)}
+                          </span>
+                        </div>
+                        <RenderIf when={buyNowGone}>
+                          {() => (
+                            <p className="text-2xs text-muted-foreground">
+                              Tidak tersedia — bid sudah melewati harga ini
+                            </p>
+                          )}
+                        </RenderIf>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={buyNowGone}
+                        onClick={() => onBid?.({ type: "buy-now", amount: price })}
+                        className="shrink-0 text-xs"
+                      >
+                        <ShoppingBag aria-hidden />
+                        Beli
+                      </Button>
+                    </div>
+                  )}
+                </RenderIf>
+              </>
             )}
           </RenderIf>
         </div>

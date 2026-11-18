@@ -5,6 +5,7 @@ import type {
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { assertSellerNotTerminated } from "../../../workflows/steps/sold-lot"
+import { PAY_WINDOW_MS } from "../../../utils/pay-window"
 import {
   SOLD_LOT_STATUSES,
   type VendorGetSoldLotsParamsType,
@@ -19,11 +20,19 @@ import "../../../types/seller-context"
 // leading/trailing chars, which would leak a house number).
 export type SoldLotAddress = { city: string | null; province: string | null }
 
+// US-058 T-058.1: the farmer's own non-payment report on this lot, if any.
+// `reported_at` is the row's created_at; nothing else about it is exposed.
+export type SoldLotUnpaid = { reported_at: string }
+
 export type SoldLot = {
   id: string
   status: string
   final_price: number | null
   closed_at: string | null
+  // D-058: closed_at + 24 h, ISO. null when the lot has no closed_at.
+  pay_by: string | null
+  // US-058: null until the farmer reports the winner.
+  unpaid: SoldLotUnpaid | null
   // US-052 T-052.1: null for self-delivery, and until the lot is shipped.
   tracking_number: string | null
   auction: { id: string; delivery_method: string }
@@ -102,6 +111,26 @@ const winnersById = async (
   return byId
 }
 
+// US-058 T-058.1: the page's reports in one query, keyed by lot id.
+const reportsByLot = async (
+  scope: MedusaContainer,
+  lotIds: string[]
+): Promise<Map<string, SoldLotUnpaid>> => {
+  if (!lotIds.length) return new Map()
+  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
+  const { data } = await query.graph({
+    entity: "lot_report",
+    fields: ["id", "lot_id", "created_at"],
+    filters: { lot_id: lotIds },
+  })
+  return new Map(
+    (data as { lot_id: string; created_at: Date | string }[]).map((row) => [
+      row.lot_id,
+      { reported_at: new Date(row.created_at).toISOString() },
+    ])
+  )
+}
+
 export const toSoldLots = async (
   scope: MedusaContainer,
   rows: Record<string, unknown>[]
@@ -113,7 +142,13 @@ export const toSoldLots = async (
         .filter((id): id is string => typeof id === "string")
     ),
   ]
-  const winners = await winnersById(scope, winnerIds)
+  const [winners, reports] = await Promise.all([
+    winnersById(scope, winnerIds),
+    reportsByLot(
+      scope,
+      rows.map((row) => row.id as string)
+    ),
+  ])
 
   return rows.map((row) => {
     const auction = (row.auction ?? {}) as Record<string, unknown>
@@ -126,13 +161,19 @@ export const toSoldLots = async (
       name: "",
       address: null,
     }
+    const closedAt = row.closed_at
+      ? new Date(row.closed_at as string).toISOString()
+      : null
     return {
       id: row.id as string,
       status: row.status as string,
       final_price: (row.final_price as number | null) ?? null,
-      closed_at: row.closed_at
-        ? new Date(row.closed_at as string).toISOString()
-        : null,
+      closed_at: closedAt,
+      pay_by:
+        closedAt === null
+          ? null
+          : new Date(new Date(closedAt).getTime() + PAY_WINDOW_MS).toISOString(),
+      unpaid: reports.get(row.id as string) ?? null,
       tracking_number: (row.tracking_number as string | null) ?? null,
       auction: {
         id: auction.id as string,

@@ -45,6 +45,8 @@ export type StoreLot = {
     delivery_method: string;
     category: { id: string; name: string } | null;
     seller: { id: string; name: string; handle: string } | null;
+    /** US-046 AC2 (D-061): the farmer's YouTube/Instagram link, null when unset. */
+    live_stream_url: string | null;
   };
 };
 
