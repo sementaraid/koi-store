@@ -11,7 +11,6 @@ test('labels the report state the backend can send', () => {
   assert.equal(reportStatusLabel('open'), 'Terbuka');
 });
 
-/* Jakarta is UTC+7: a report stored at 17.20 UTC is the next day's 00.20 WIB. */
 test('reads the reported time in Jakarta time', () => {
   const formatted = formatReportedAt('2026-11-14T17:20:00.000Z');
   assert.match(formatted, /2026/);

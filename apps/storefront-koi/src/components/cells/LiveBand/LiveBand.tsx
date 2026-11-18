@@ -5,31 +5,12 @@ import { LIVE_TINT } from "@/const/live"
 import { PulseIcon } from "@/components/atoms/PulseIcon/PulseIcon"
 import { RenderIf } from "@koi/ui"
 
-/** Props for {@link LiveBand}. */
 export type LiveBandProps = ComponentProps<"div"> & {
-  /** What is on air, e.g. `"Sesi Spesial Dainichi"`, or what the lot's state is
-      on a page's own board, e.g. `"Sedang dilelang di ruang siaran"`. */
   title: string
-  /** The clock, already formatted. Omitted, the band carries the sentence alone
-      — a page's board has no broadcast to band it against. */
   clock?: ReactNode
-  /** Whether the clock is inside its closing window, which turns it destructive. */
   closing?: boolean
 }
 
-/**
- * The live header band over a board or a lot's own card: the pulse, what the
- * state is, and — on air — how long is left.
- *
- * @remarks
- * The tint is the badge's own `live` tone (`constant/live.ts` holds the one
- * string), because the pill on a tile and the band on the board behind it are
- * the same claim about the same lot and must not be two shades of red.
- *
- * A clock left out is not the same as a clock at zero, which is why `clock` is
- * a node and not a number: `formatRemaining(0)` is a real reading, and the
- * caller decides whether the state has one.
- */
 export function LiveBand({
   title,
   clock,

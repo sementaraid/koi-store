@@ -8,7 +8,6 @@ import { CONTAINER } from '@/const/layout';
 import { ROUTES, categoryHref } from '@/const/routes';
 import type { HeaderAccount, HeaderCart } from '@/types/header';
 
-/** One variety and the narrower ones beneath it. */
 export type CategoryGroup = {
   id: string;
   name: string;
@@ -17,21 +16,12 @@ export type CategoryGroup = {
   children: { id: string; name: string; handle: string }[];
 };
 
-/** Props for {@link Categories}. */
 export type CategoriesProps = {
   groups: CategoryGroup[];
   account?: HeaderAccount;
   cart?: HeaderCart;
 };
 
-/**
- * The variety index: a card per department, with its children as links.
- *
- * @remarks
- * A link list rather than a feed — the koi themselves are at `/katalog`, and a
- * breed is chosen here before the catalog is asked to narrow. Presentational:
- * the caller fetches and flattens the tree.
- */
 export function Categories({ groups, account, cart }: CategoriesProps) {
   return (
     <PageShell
@@ -55,9 +45,6 @@ export function Categories({ groups, account, cart }: CategoriesProps) {
           </p>
         </div>
 
-        {/* Nothing listed. An empty index is a catalog fact, not a narrowing —
-            so it offers the catalog rather than a "reset filter" that would do
-            nothing. */}
         {groups.length ? (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {groups.map((group) => (

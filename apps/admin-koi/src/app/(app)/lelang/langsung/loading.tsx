@@ -1,6 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@koi/ui';
 
-/** The live monitoring list while the backend answers. */
 export default function LiveAuctionsLoading() {
   return (
     <div className="grid gap-6">

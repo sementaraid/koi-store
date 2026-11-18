@@ -45,19 +45,15 @@ import type { HeaderAccount, HeaderCart } from '@/types/header';
 
 import { AccountFrame } from './AccountFrame';
 
-/** Props for {@link Farm}. */
 export type FarmProps = {
   customer: HttpTypes.StoreCustomer;
-  /** The farmer's seller, or `null` when this account has not registered. */
   seller: FarmSeller | null;
-  /** The status fetch failed — drawn as a retry card, never as "not registered". */
   failed: boolean;
   openOrders: number;
   account?: HeaderAccount;
   cart?: HeaderCart;
 };
 
-/** Which step failed, in the customer's words. */
 const STEP_COPY: Record<FarmStep, string> = {
   session: 'Sesi akun',
   signin: 'Masuk sebagai petani',
@@ -68,8 +64,6 @@ const STEP_COPY: Record<FarmStep, string> = {
 
 const MB = MAX_FARM_FILE_BYTES / (1024 * 1024);
 
-/** The Farmer area's front door: register a farm, or read where the
-    registration stands (US-020 T-020.3). */
 export function Farm({ customer, seller, failed, openOrders, account, cart }: FarmProps) {
   const frame = (body: ReactNode) => (
     <AccountFrame
@@ -111,7 +105,6 @@ export function Farm({ customer, seller, failed, openOrders, account, cart }: Fa
   return frame(<RegistrationForm customer={customer} />);
 }
 
-/** Where the registration stands, and what to do next (AC3). */
 function Status({ seller }: { seller: FarmSeller }) {
   const info = farmStatusInfo(seller);
   const reason = seller.status_reason?.trim();
@@ -171,15 +164,12 @@ function Status({ seller }: { seller: FarmSeller }) {
   );
 }
 
-/** The registration form (AC1, AC2, AC4, AC6). */
 function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
   const router = useRouter();
   const [ktp, setKtp] = useState<File | null>(null);
   const [farmPhotos, setFarmPhotos] = useState<File[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
-  /** Uploads already accepted by the server, so a failed submit resumes. */
   const [uploads, setUploads] = useState<FarmUploads>({});
-  /** The step that failed, drawn above the button. */
   const [failedStep, setFailedStep] = useState<{ step: FarmStep; message: string } | null>(null);
 
   const {
@@ -218,7 +208,6 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
       return;
     }
     setKtp(file);
-    /* A different scan is a different upload; the old key no longer applies. */
     setUploads((current) => ({ ...current, ktp_photo_key: undefined }));
   }
 
@@ -249,8 +238,6 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
     }
 
     setFarmPhotos(list);
-    /* New files are new photos; a url from the previous pick may not match the
-       file at the same index. Upload them again. */
     setUploads((current) => ({ ...current, farm_photo_urls: [] }));
   }
 
@@ -276,9 +263,6 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
 
     if (!result.ok) {
       setUploads(result.uploads);
-      /* A dead session is the sign-in redirect every account page gives, not a
-         form error: the uploads already made stay in `uploads` only for this
-         mount, so the visitor is told to retry after signing in. */
       if (result.step === 'session') {
         router.push(
           `${ROUTES.login}?sessionExpired=true&redirect=${encodeURIComponent(ROUTES.farm)}`

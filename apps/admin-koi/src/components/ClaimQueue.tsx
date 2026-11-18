@@ -28,30 +28,13 @@ import { activeStrikeLabel, banLabel } from '@/lib/helpers/strike-format';
 
 import { StrikePanel } from './StrikePanel';
 
-/** Props for {@link ClaimQueue}. */
 export type ClaimQueueProps = {
-  /** Disputed claims, oldest first. */
   disputed: AdminClaim[];
-  /** How many disputed in total; may exceed `disputed.length`. */
   disputedTotal: number;
-  /** Approved and rejected claims, oldest first. */
   decided: AdminClaim[];
-  /** The server's clock as ISO, so both renders compute the same deadline. */
   now: string;
 };
 
-/**
- * The `/klaim` queue (US-054 AC3, US-055 AC2; US-059 T-059.2): disputes first,
- * each with the lot, the farm, the winner and the unboxing video, then the
- * decisions already taken.
- *
- * @remarks
- * Only `disputed` claims carry a decision form. The decision is final
- * (D-038), so the reason is required and the confirm copy says so; a decided
- * claim sits in its own tab so it cannot be decided twice. An approved claim
- * is also where the admin gives a `farmer_claim_refused` strike, off the row's
- * own `seller`.
- */
 export function ClaimQueue({ disputed, disputedTotal, decided, now }: ClaimQueueProps) {
   return (
     <Card>
@@ -95,7 +78,6 @@ export function ClaimQueue({ disputed, disputedTotal, decided, now }: ClaimQueue
   );
 }
 
-/** The lot, the farm, the winner and the video — shared by both tabs. */
 function ClaimFacts({ claim }: { claim: AdminClaim }) {
   return (
     <div className="grid gap-3">
@@ -129,7 +111,6 @@ function ClaimFacts({ claim }: { claim: AdminClaim }) {
   );
 }
 
-/** One disputed claim: the facts, the video, and the two final decisions. */
 function DisputedRow({ claim }: { claim: AdminClaim }) {
   return (
     <div className="grid gap-3 rounded-md border border-border p-3">
@@ -139,10 +120,7 @@ function DisputedRow({ claim }: { claim: AdminClaim }) {
   );
 }
 
-/** One decided claim: the facts and the reason the decision was taken. */
 function DecidedRow({ claim, now }: { claim: AdminClaim; now: string }) {
-  /* US-056 AC2: only an `approved` claim has a running 3-day clock. A missed
-     deadline makes the farmer strike-eligible; the strike itself is US-059. */
   const deadline = claim.status === 'approved' ? claimOverdue(claim.approved_at, now) : null;
 
   return (
@@ -173,7 +151,6 @@ function DecidedRow({ claim, now }: { claim: AdminClaim; now: string }) {
           Diputuskan {formatClaimDate(claim.decided_at)}
         </p>
       ) : null}
-      {/* US-059 T-059.2: refusing an approved claim is what earns this strike. */}
       {claim.status === 'approved' ? (
         <StrikePanel
           defaultReasonType="farmer_claim_refused"
@@ -189,15 +166,6 @@ function DecidedRow({ claim, now }: { claim: AdminClaim; now: string }) {
   );
 }
 
-/**
- * The admin's decision (US-055 AC2): a written reason, then approve or reject.
- *
- * @remarks
- * Both buttons share the one reason field; one decision at a time, and the
- * resulting status comes from the server (a refresh re-reads it), never from an
- * optimistic flip. A 409/404 refreshes the queue (`claimDecisionFailure`)
- * because the row is stale.
- */
 function DecisionForm({ id }: { id: string }) {
   const router = useRouter();
   const [reason, setReason] = useState('');
@@ -268,14 +236,6 @@ function DecisionForm({ id }: { id: string }) {
   );
 }
 
-/**
- * The unboxing video, fetched through the admin-only route (D-018).
- *
- * @remarks
- * Bytes, never a URL: they arrive as base64 from the server action and become
- * a blob URL here, revoked when this row unmounts or the operator loads it
- * again — an unboxing video should not sit in memory for the rest of the shift.
- */
 function VideoView({ id }: { id: string }) {
   const [state, setState] = useState<
     | { status: 'idle' }
@@ -285,8 +245,6 @@ function VideoView({ id }: { id: string }) {
   >({ status: 'idle' });
   const [url, setUrl] = useState<string | null>(null);
 
-  /* One effect owns the URL's whole life: revoke the previous one when it is
-     replaced, and the current one on unmount. */
   useEffect(() => {
     return () => {
       if (url) URL.revokeObjectURL(url);

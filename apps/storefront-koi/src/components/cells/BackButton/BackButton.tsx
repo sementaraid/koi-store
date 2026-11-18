@@ -6,16 +6,9 @@ import { Button } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
 import type { HeaderBack } from "@/types/header"
 
-/** {@link BackButton} props: the destination/handler pair plus the rest of the
-    control's own, so a caller can widen it or hang a `data-*` on it. */
 export type BackButtonProps = HeaderBack &
   Omit<ComponentProps<typeof Button>, "onClick">
 
-/**
- * Back out of the current page. Icon-only on phones; the label reappears once
- * there is room for it beside the search field, and stays as the accessible
- * name either way.
- */
 export function BackButton({
   label = "Kembali",
   href,
@@ -28,7 +21,6 @@ export function BackButton({
   return (
     <Button
       onClick={onClick}
-      /* an anchor when the destination is known, a plain button otherwise */
       render={href ? <Link href={href} /> : undefined}
       nativeButton={!href}
       variant={variant}

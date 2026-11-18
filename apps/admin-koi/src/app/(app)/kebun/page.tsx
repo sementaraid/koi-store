@@ -10,7 +10,6 @@ export const metadata: Metadata = {
   title: 'Pendaftaran kebun'
 };
 
-/** The farm registration queue (US-021): KTP, farm photos, bank account name. */
 export default async function FarmsRoute() {
   await requireAdmin(ROUTES.farms);
   const queues = await getFarmQueues();

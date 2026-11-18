@@ -1,6 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@koi/ui';
 
-/** The correction screen while the backend answers. */
 export default function BalanceCorrectionLoading() {
   return (
     <div className="grid gap-6">

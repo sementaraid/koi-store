@@ -8,64 +8,28 @@ import { formatDeadline } from "@/lib/helpers/format-deadline"
 import { formatPrice } from "@/lib/helpers/format-price"
 import { cn } from "cn"
 
-/** What the control says on each step. The last one is the only that takes
-    money, so it is the only one that says so. */
 const STEP_LABEL: Record<CheckoutStep, string> = {
   cart: "Lanjut ke pengiriman",
   shipping: "Lanjut ke pembayaran",
   payment: "Bayar sekarang",
 }
 
-/** Props for {@link CartSummary}. */
 export type CartSummaryProps = {
-  /** What the order comes to, as {@link Settlement} states it. A cart totals its
-      own lines and passes that; the delivery step passes the landed bill. */
   totals: Settlement
-  /** The cart's own figures, where the backend has priced them. Given, these
-      are the rows — the kit's arithmetic is only the fallback for a demo cart,
-      because tax, promotions and freight are not derivable from line prices. */
   money?: CartMoney
-  /** The settlement these rows are the detail of, where the caller has one. A
-      cart shows what its two halves come to and where the freight will be
-      priced; a delivery shows a row per parcel. Omitted, the rail draws the
-      goods, the freight and the total it was handed. */
   detail?: CartTotals & { parcels?: ParcelRow[] }
-  /** Which step the control moves to. @defaultValue `"cart"` */
   step?: CheckoutStep
-  /** Called when the visitor commits to the next step. Omitted, the control
-      still renders and does nothing — taking the money is the app's business. */
   onCheckout?: () => void
-  /** Called when the visitor gives up and goes back. Omitted, the way back still
-      renders and does nothing. */
   onBack?: () => void
-  /** Replaces the control's own wording. Omitted, it names the next step. */
   checkoutLabel?: string
   className?: string
 }
 
-/** One shipment as the rail lists it: which parcel, and what its delivery
-    adds. Named apart from the page's own parcel type because the rail only
-    needs these two facts about it. */
 export type ParcelRow = {
   label: string
-  /** What it adds, in Rupiah. Omitted, the delivery is not priced yet. */
   price?: number
 }
 
-/**
- * What the order costs, what is not priced yet, and the way forward.
- *
- * @remarks
- * One rail for both steps a visitor settles on, because they are the same
- * question asked twice — what am I paying for — and two components would give
- * the figure at the foot of the page two chances to disagree with itself. What
- * changes is what the rows *know*: on the cart, delivery is a row rather than a
- * figure (the house cannot price it before it knows where the fish is going) and
- * the two halves of the bill are shown apart, because a won lot is an invoice
- * with a deadline on it and a shelf purchase is an order nothing has shipped. On
- * the delivery step the parcels are known and priced, so `detail.parcels` draws
- * a row each and the total underneath is the landed bill.
- */
 export function CartSummary({
   totals,
   money,
@@ -78,12 +42,7 @@ export function CartSummary({
 }: CartSummaryProps) {
   const { items, shipping, total, due, dueRef } = totals
   const parcels = money ? undefined : detail?.parcels
-  /* What the visitor is actually asked for: the cart's own total where the
-     house has computed one, the landed bill where the freight is known, the
-     goods alone where it is not. */
   const figure = money?.total ?? total ?? items
-  /* Whether the figure above is final. The cart's `total` always is — it is
-     what gets charged — so a `money` cart never prints "Subtotal". */
   const settled = money !== undefined || total !== undefined
   const currency = money?.currency
 
@@ -100,10 +59,6 @@ export function CartSummary({
         </div>
 
         <div className="flex flex-col gap-3 px-5 py-4 text-sm">
-          {/* The house's own figures, where it has computed them. These replace
-              the rows below rather than joining them: tax and promotions are
-              the backend's arithmetic, and a cart that drew both sets would be
-              showing the same money twice under different names. */}
           <RenderIf when={money}>
             {(m) => (
               <>
@@ -117,9 +72,6 @@ export function CartSummary({
                     />
                   )}
                 </RenderIf>
-                {/* Freight is a row once it has a price and a note before
-                    then — the house cannot quote air cargo before it knows
-                    where the fish is going. */}
                 <RenderIf when={m.shipping}>
                   {(amount) => (
                     <Row label="Ongkir" value={amount} currency={m.currency} />
@@ -137,9 +89,6 @@ export function CartSummary({
             )}
           </RenderIf>
 
-          {/* One row per parcel where the delivery step has assembled them: the
-              freight belongs to a shipment, and a single "Ongkir" would hide
-              that a fish and a sack of food travel differently. */}
           <RenderIf when={parcels?.length ? parcels : undefined}>
             {(rows) => (
               <>
@@ -156,8 +105,6 @@ export function CartSummary({
             )}
           </RenderIf>
 
-          {/* The cart's own two halves and its two unpriced deliveries — the
-              rows the delivery step replaces once it knows the parcels. */}
           <RenderIf when={money || parcels?.length ? undefined : detail}>
             {(d) => (
               <>
@@ -187,9 +134,6 @@ export function CartSummary({
             </span>
           </div>
 
-          {/* Freight known but not quoted for every parcel: the total cannot be
-              stated, and saying so is the only honest thing the rail can do. A
-              figure here would change after the visitor agreed to it. */}
           <RenderIf when={!money && shipping === undefined && parcels?.length}>
             {() => (
               <p className="text-center text-xs text-muted-foreground">
@@ -203,8 +147,6 @@ export function CartSummary({
             <ArrowRight aria-hidden />
           </Button>
 
-          {/* The way back, under the way forward: a visitor who has changed their
-              mind about the cart is one step from it, not stuck. */}
           <RenderIf when={onBack}>
             {(back) => (
               <Button
@@ -218,8 +160,6 @@ export function CartSummary({
             )}
           </RenderIf>
 
-          {/* The last chance to say it before the coin: which lot the hurry is
-              about, and when it runs out. */}
           <RenderIf when={due}>
             {(at) => (
               <p className="text-center text-xs font-semibold text-destructive-ink tabular-nums">
@@ -230,10 +170,6 @@ export function CartSummary({
         </div>
       </Card>
 
-      {/* What backs the money, on the panel that spends it. Two lines rather
-          than `LotTrustList`'s list, because a cart's question is not a lot's:
-          here the visitor is settling a bill, so the first thing to say is what
-          paying unlocks. */}
       <ul className="flex flex-col">
         <TrustRow icon={ShieldCheck} claim={TRUST_CLAIMS.settled} />
         <TrustRow icon={Video} claim={TRUST_CLAIMS.doa} />
@@ -242,7 +178,6 @@ export function CartSummary({
   )
 }
 
-/** One line of the rail: a claim on the left, its figure on the right. */
 function Row({
   label,
   value,
@@ -250,14 +185,8 @@ function Row({
   deferred,
 }: {
   label: string
-  /** The amount, in major units. Omitted with `deferred`. Negative draws as a
-      deduction, which is how a discount row is meant to read. */
   value?: number
-  /** ISO 4217. Omitted, the house's own currency is assumed. */
   currency?: string
-  /** Priced later, in the second step — drawn as a note rather than an amount,
-      because the house cannot quote a delivery before it knows where the fish
-      is going. A `Rp 0` here would read as free shipping. */
   deferred?: boolean
 }) {
   return (
@@ -275,7 +204,6 @@ function Row({
   )
 }
 
-/** One line of what backs the money: a glyph, a claim, and its condition. */
 function TrustRow({
   icon: Icon,
   claim,

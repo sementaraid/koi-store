@@ -27,7 +27,6 @@ test('a rated lot hides the form even when it is delivered', () => {
 });
 
 test('any 409 says the row changed and refreshes, ignoring the rewritten body', () => {
-  // Medusa rewrites every 409 to this body, so the code must not be branched on.
   const rewritten = {
     status: 409,
     code: 'invalid_state_error',

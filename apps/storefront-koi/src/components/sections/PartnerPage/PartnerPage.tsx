@@ -12,8 +12,6 @@ import { getShell } from '@/lib/shell';
 
 import { Partner } from './components/Partner';
 
-/** The breeder behind a handle, or nothing. Exported for the route's metadata,
-    the same way `getProduct` is. */
 export async function getPartner(handle: string) {
   return getSellerByHandle(handle);
 }
@@ -30,21 +28,10 @@ export async function PartnerPage({
     getPartner(handle)
   ]);
 
-  /* Storefront's own seller page returns `null` here, which renders a blank
-     frame with a 200. koi has a `not-found.tsx`, so an unknown or suspended
-     breeder gets the 404 it is. */
   if (!seller) notFound();
 
   const current = Math.max(page, 1);
 
-  /* The seller's own offers, not the catalog's: a breeder's page speaks for
-     this breeder's prices even where a rival undercuts them. One offer per
-     variant, so a product with several variants returns several rows — ranked
-     here and deduped below, keeping the one the buybox would pick.
-     ponytail: `count` is the offer count, not the product count, so the pager
-     can overshoot by a page on a catalog of multi-variant products. The fix is
-     `group_by_seller` on the offers route, which the store route does not
-     expose yet. */
   const [{ offers, count }, ratings] = await Promise.all([
     listOffers({
       sellerId: seller.id,
@@ -52,7 +39,6 @@ export async function PartnerPage({
       limit: SHELF_LIMIT,
       offset: (current - 1) * SHELF_LIMIT
     }),
-    /* US-057 AC2: the latest six at most, the same block the brief draws. */
     listSellerRatings(seller.id)
   ]);
 

@@ -6,34 +6,12 @@ import { partnerHref } from '@/const/routes';
 import { formatPrice } from '@/lib/helpers/format-price';
 import type { OfferQuote } from '@/lib/adapters/product';
 
-/** Props for {@link OfferComparison}. */
 export type OfferComparisonProps = {
-  /** Every offer on the product, ranked buybox-first. */
   offers: OfferQuote[];
-  /** Which row the terminal above is quoting — drawn with the "Pilihan" tag. */
   winnerId?: string;
   className?: string;
 };
 
-/**
- * Every seller's own price on one product, ranked the way the buybox ranked
- * them.
- *
- * @remarks
- * `SaleTerminal` quotes one number — the buybox winner's — because that is
- * the price a "Beli sekarang" click pays. A product with two sellers listing
- * it is the normal shape of a Mercur marketplace, though, and a buyer who
- * cannot see the second price cannot tell a bargain from the only offer there
- * is. This is that second table: plain rows, not a `Sheet`, because the whole
- * list is short enough to sit on the page rather than behind a trigger.
- *
- * Nothing here is a buy control — only the winner is purchasable from this
- * page (`ProductDetail`'s `onBuy` carries one offer id), so a loser's row
- * links at the seller instead of promising a sale this page cannot place.
- *
- * Renders nothing for one offer: a comparison of one thing to itself says
- * nothing a buyer did not already read off the terminal.
- */
 export function OfferComparison({
   offers,
   winnerId,

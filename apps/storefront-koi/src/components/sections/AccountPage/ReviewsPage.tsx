@@ -7,7 +7,6 @@ import { listOrderGroups } from './AccountPage';
 import { countOpen } from './components/Orders';
 import { Reviews } from './components/Reviews';
 
-/** Every review the customer has written. */
 export async function ReviewsPage() {
   const [, { account, cart }, reviews, groups] = await Promise.all([
     requireCustomer(ROUTES.reviews),

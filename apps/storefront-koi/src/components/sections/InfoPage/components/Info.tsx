@@ -7,29 +7,13 @@ import { Eyebrow } from '@/components/atoms/Eyebrow/Eyebrow';
 import { PageShell } from '@/components/organisms/PageShell/PageShell';
 import type { HeaderAccount, HeaderCart } from '@/types/header';
 
-/** Props for {@link Info}. */
 export type InfoProps = {
-  /** The page's copy, already looked up by segment. */
   doc: InfoDoc;
-  /** The segment it was looked up by, for the trail's last step. */
   slug: string;
   account?: HeaderAccount;
   cart?: HeaderCart;
 };
 
-/**
- * One standing page: a heading, a lede, and numbered prose under it.
- *
- * @remarks
- * One component for every one of these pages, because they differ only in their
- * words — a guide, a privacy policy and an escrow explainer are the same
- * object as far as a reader is concerned, and twelve near-identical sections is
- * twelve places for the measure and the heading rank to drift apart.
- *
- * Every paragraph is a `<p>` of plain text. The copy is the house's own, held
- * in `const/info.ts`, and it still is not rendered as HTML: the day these rows
- * come from a CMS instead, the renderer must already refuse markup.
- */
 export function Info({ doc, slug, account, cart }: InfoProps) {
   return (
     <PageShell
@@ -41,8 +25,6 @@ export function Info({ doc, slug, account, cart }: InfoProps) {
         { label: doc.title }
       ]}
     >
-      {/* A measure, not the full gutter: these pages are read, and a line of
-          prose running the whole 1200px is a line nobody finishes. */}
       <article className={`${CONTAINER} max-w-[760px] py-10 lg:py-14`}>
         <header className="flex flex-col gap-3">
           <Eyebrow>{doc.eyebrow}</Eyebrow>
@@ -72,9 +54,6 @@ export function Info({ doc, slug, account, cart }: InfoProps) {
           ))}
         </div>
 
-        {/* What the page asks of the reader, where it asks anything. An
-            off-site destination keeps its own tab, since it is a different app
-            and coming back should not cost them this page. */}
         <RenderIf when={doc.action}>
           {(action) => (
             <div className="mt-10 flex flex-col items-start gap-2 border-t border-border pt-8">

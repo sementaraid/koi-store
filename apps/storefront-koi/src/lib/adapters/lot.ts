@@ -1,15 +1,6 @@
 import type { AuctionProduct } from "@/types/product"
 import type { StoreLot } from "../data/lots.ts"
 
-/* US-040 T-040.2a. `GET /store/lots` → the kit's `AuctionProduct`.
-   - cancelled (D-050): status "cancelled", no price (currentBid: 0 — gated by
-     the `cancelled` flag everywhere a price would render, see AuctionState's
-     remark), no clock, no bids.
-   - closed (lot.sold !== null): status "ended"; currentBid is the final price
-     the house actually settled at, falling back to current_price only for a
-     closed lot that somehow carries no final_price.
-   - open: status from the auction's own lifecycle (scheduled → "upcoming",
-     live → "live"); currentBid is the running price. */
 export function toAuctionProduct(lot: StoreLot): AuctionProduct {
   if (lot.cancelled) {
     return {
@@ -53,18 +44,13 @@ export function toAuctionProduct(lot: StoreLot): AuctionProduct {
       endsAt: lot.end_time,
       openingBid: lot.ob,
       bidStep: lot.kb,
-      /* US-044 (D-051): the feed carries `bid_count` but never `bids`; only
-         the detail fetch has rows. `bidder` is the server's mask — verbatim. */
       bidCount: lot.bid_count,
-      /* US-046 AC2 (D-061): the server-validated outbound link, verbatim. */
       live_stream_url: lot.auction.live_stream_url,
       bids: lot.bids?.map((bid) => ({
         bidder: bid.bidder,
         amount: bid.amount,
         at: bid.created_at
       })),
-      /* For the lot page's "Terjual" / "Tidak terjual" label (T-040.2b).
-         `closed` is `lot.sold !== null`, so the cast below is exact. */
       ...(closed ? { sold: lot.sold as boolean } : {}),
     },
   }

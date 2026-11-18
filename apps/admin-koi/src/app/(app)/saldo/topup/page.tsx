@@ -10,7 +10,6 @@ export const metadata: Metadata = {
   title: 'Permintaan top-up'
 };
 
-/** The top-up queue (US-012): screenshot against the bank statement. */
 export default async function TopupsRoute() {
   await requireAdmin(ROUTES.topups);
   const queues = await getTopupQueues();

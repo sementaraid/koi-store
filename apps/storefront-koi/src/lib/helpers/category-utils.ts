@@ -90,8 +90,6 @@ export function filterCategoriesByParent(
   categories: HttpTypes.StoreProductCategory[],
   parentCategories: HttpTypes.StoreProductCategory[]
 ): HttpTypes.StoreProductCategory[] {
-  // With no active department (home, all-products), show the top-level
-  // categories rather than every sub-category flattened together.
   if (!activeParentHandle || !parentCategories?.length) {
     return parentCategories ?? categories
   }

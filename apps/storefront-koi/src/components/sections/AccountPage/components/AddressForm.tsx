@@ -17,27 +17,12 @@ import { addCustomerAddress, updateCustomerAddress } from '@/lib/data/customer';
 
 import { addressSchema, EMPTY_ADDRESS, type AddressData } from './schema';
 
-/** Props for {@link AddressForm}. */
 export type AddressFormProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** The address being edited, with its Medusa id. Omitted, the sheet is
-      "Tambah alamat" and submits a create instead of an update. */
   editing?: AddressData & { addressId: string };
 };
 
-/**
- * The sheet that adds or edits one shipping address.
- *
- * @remarks
- * A sheet rather than a modal: `apps/storefront` uses its own `Modal` here,
- * which this storefront does not have, and `src/components/ui/sheet.tsx` was
- * already in the kit, unused, waiting for exactly this.
- *
- * One form for both acts, branching on whether `editing` is present — the
- * fields are identical and `updateCustomerAddress` only differs from
- * `addCustomerAddress` by the id it carries.
- */
 export function AddressForm({ open, onOpenChange, editing }: AddressFormProps) {
   const {
     register,
@@ -46,9 +31,6 @@ export function AddressForm({ open, onOpenChange, editing }: AddressFormProps) {
     formState: { errors, isSubmitting }
   } = useForm<AddressData>({
     resolver: zodResolver(addressSchema),
-    /* `values`, not `defaultValues`: the same mounted sheet is reused for
-       "tambah" and for each address edited, so the fields have to follow the
-       prop rather than whatever they held the first time it opened. */
     values: editing ?? EMPTY_ADDRESS
   });
 
@@ -113,10 +95,6 @@ export function AddressForm({ open, onOpenChange, editing }: AddressFormProps) {
               {...register('lastName')}
             />
           </div>
-          {/* ponytail: country is fixed to Indonesia — the house ships koi
-              nowhere else, so a one-option select would be a control that only
-              ever says the same thing. Swap this for the `NativeSelect` in
-              `src/components/ui/native-select.tsx` when a second region opens. */}
           <input
             type="hidden"
             {...register('countryCode')}

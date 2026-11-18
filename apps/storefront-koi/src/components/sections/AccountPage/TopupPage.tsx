@@ -15,10 +15,8 @@ import { listOrderGroups } from './AccountPage';
 import { countOpen } from './components/Orders';
 import { Topup } from './components/Topup';
 
-/** How many requests one page of the list shows. */
 const PER_PAGE = 20;
 
-/** Top up the wallet with a transfer screenshot (US-011). */
 export async function TopupPage() {
   const [, { account, cart }] = await Promise.all([
     requireCustomer(ROUTES.topup),
@@ -32,9 +30,6 @@ export async function TopupPage() {
   try {
     requests = await getTopupRequests(PER_PAGE, 0);
   } catch (err) {
-    /* Same rule as `WalletPage`: an expired token sends the customer back to
-       sign-in, any other failure shows a retry state rather than a false
-       "belum pernah top-up". */
     if (err instanceof ClientError && err.status === 401) {
       redirect(`${ROUTES.login}?sessionExpired=true&redirect=${encodeURIComponent(ROUTES.topup)}`);
     }
@@ -42,10 +37,6 @@ export async function TopupPage() {
     failed = true;
   }
 
-  /* The bank account is authenticated too (its route requires the customer
-     token): a 401 is the same expired-session redirect, and any other failure
-     leaves it `null` so the form says the account couldn't be loaded rather
-     than showing a blank one. */
   let bankAccount: PlatformBankAccount | null;
   try {
     bankAccount = await getPlatformBankAccount();

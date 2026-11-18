@@ -5,8 +5,6 @@ import { getShell } from '@/lib/shell';
 
 import { AuctionsFeed } from './components/AuctionsFeed';
 
-/** The floor: the open feed (scheduled + live) and the closed feed ("Selesai"),
-    joined into one list — the tab filter in `Auctions` picks which half shows. */
 export async function AuctionsPage() {
   const [{ account, cart }, open, closed] = await Promise.all([
     getShell(),

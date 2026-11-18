@@ -7,14 +7,12 @@ import type { Admin } from '@/lib/data/auth';
 
 import { Button } from '@koi/ui';
 
-/** The signed-in frame: who you are, where you can go, the way out. */
 export function Chrome({
   admin,
   activeHref,
   children
 }: {
   admin: Admin;
-  /** The current page, so its link reads as the one you are on. */
   activeHref?: string;
   children: React.ReactNode;
 }) {
@@ -22,8 +20,6 @@ export function Chrome({
 
   return (
     <div className="min-h-dvh md:grid md:grid-cols-[16rem_1fr]">
-      {/* Static on mobile rather than a drawer: a back office is a desk tool,
-          and a sheet is a component this app does not own yet. */}
       <aside className="border-b border-border bg-sidebar px-4 py-5 md:min-h-dvh md:border-r md:border-b-0">
         <Link href={ROUTES.home} className="block px-2">
           <p className="text-2xs font-bold tracking-widest text-muted-foreground uppercase">
@@ -52,9 +48,6 @@ export function Chrome({
                     {item.label}
                   </Link>
                 ) : (
-                  /* Not a link and not focusable: the screen does not exist, so
-                     a keyboard user tabbing the nav should not land on it. The
-                     label still shows, because the map is the point. */
                   <p
                     key={item.href}
                     className="px-2 py-1.5 text-sm text-muted-foreground/60"
@@ -75,8 +68,6 @@ export function Chrome({
           <p className="truncate text-sm text-muted-foreground">
             Masuk sebagai <span className="text-foreground">{name}</span>
           </p>
-          {/* A form, not a link: signing out is a state change, and a GET href
-              fires on prefetch. See `(auth)/keluar/route.ts`. */}
           <form action={ROUTES.signout} method="post">
             <Button type="submit" variant="outline" className="h-8 px-2.5 text-xs">
               Keluar

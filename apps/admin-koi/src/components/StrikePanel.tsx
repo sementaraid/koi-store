@@ -23,18 +23,11 @@ import {
   strikeReasonError
 } from '@/lib/helpers/strike-format';
 
-/** Where the strike lands. The backend resolves it server-side: a `lot_id`
-    means that lot's winner, a `customer_id` the account itself. */
 export type StrikeTarget = Pick<GiveStrikeInput, 'lot_id' | 'customer_id' | 'seller_id'>;
 
-/** Props for {@link StrikePanel}. */
 export type StrikePanelProps = {
-  /** What the strike is given for; the row decides which of the three. */
   defaultReasonType: StrikeReasonType;
-  /** The account whose history the panel shows and whose strike it removes.
-      Null while the queue row does not carry it: no history, no removal. */
   customerId: string | null;
-  /** The subject passed to `POST /admin/strikes`. */
   target: StrikeTarget;
 };
 
@@ -47,24 +40,10 @@ const REASON_TYPES: StrikeReasonType[] = [
 const CONFIRM_COPY =
   'Strike ini tidak bisa dihapus, hanya dicabut dengan alasan. Dua strike aktif memblokir akun.';
 
-/** The toast after a give/remove: the server's derived state, never a guess. */
 function banToast(prefix: string, ban: { active_count: number; banned: boolean }): string {
   return `${prefix} ${activeStrikeLabel(ban.active_count)} — ${banLabel(ban.banned).toLowerCase()}.`;
 }
 
-/**
- * The strike panel on a report or approved-claim row (US-059 T-059.2).
- *
- * @remarks
- * A punishing action, so it asks twice: the written reason is required on the
- * client (AC4), and a confirm dialog states the consequence before the call.
- * The ban is never computed here — the toast reads the `{ active_count,
- * banned }` the server returns, and the row badges come from the re-read queue
- * after `router.refresh()`.
- *
- * The history and its remove action appear only when the row carries the
- * account id: a panel without a target would remove someone else's strike.
- */
 export function StrikePanel({ defaultReasonType, customerId, target }: StrikePanelProps) {
   const router = useRouter();
   const id = useId();
@@ -75,8 +54,6 @@ export function StrikePanel({ defaultReasonType, customerId, target }: StrikePan
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<StrikeHistory | null | 'loading'>(null);
 
-  /* A click loads once, not an effect: an effect that depended on its own
-     result cancelled the fetch it started by clearing the state. */
   async function loadHistory() {
     if (!customerId) return;
     setHistory('loading');
@@ -207,7 +184,6 @@ export function StrikePanel({ defaultReasonType, customerId, target }: StrikePan
   );
 }
 
-/** The account's strike history, each active row removable with a reason. */
 function StrikeHistoryList({
   history,
   onChanged

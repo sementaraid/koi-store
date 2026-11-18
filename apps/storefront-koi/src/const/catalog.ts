@@ -8,24 +8,14 @@ import type {
   CatalogTab,
 } from "@/types/catalog"
 
-/* The catalog's demo koi. Same contract as `constant/auctions.ts`: they exist so
-   the page renders something real before an API owns it, and the breeder's own
-   stock replaces them wholesale.
-
-   Unlike the auction floor there is no drift here — no deadline, so nothing in
-   this list goes stale while a session sits open. Delete the file the day the
-   API lands. */
-
 const image = (seed: string) => `https://picsum.photos/seed/${seed}/640/480`
 
-/** The filter a caller gets without saying otherwise. */
 export const DEFAULT_CATALOG_FILTER: CatalogFilter = {
   status: "all",
   category: "",
   sort: "newest",
 }
 
-/** Availability tabs, in reading order. `all` first: it is the default view. */
 export const DEFAULT_CATALOG_TABS: CatalogTab[] = [
   { value: "all", label: "Semua" },
   { value: "available", label: "Tersedia" },
@@ -33,17 +23,12 @@ export const DEFAULT_CATALOG_TABS: CatalogTab[] = [
   { value: "sold", label: "Terjual" },
 ]
 
-/** Listing orders, as the house words them. Values are what the API will take. */
 export const DEFAULT_CATALOG_SORTS: CatalogSortOption[] = [
   { value: "newest", label: "Terbaru" },
   { value: "price-asc", label: "Harga terendah" },
   { value: "price-desc", label: "Harga tertinggi" },
 ]
 
-/**
- * Koi the breeder sells outright, newest first — which is what `newest` sorts
- * by, so the API is expected to hand the feed over in this same order.
- */
 export const DEFAULT_CATALOG_KOI: SimpleProduct[] = [
   {
     kind: "simple",
@@ -207,7 +192,6 @@ export const DEFAULT_CATALOG_KOI: SimpleProduct[] = [
   },
 ]
 
-/** Availability labels, for the "nothing here" line and the result count. */
 export const AVAILABILITY_LABEL: Record<Availability | "all", string> = {
   all: "koi",
   available: "koi tersedia",
@@ -215,10 +199,6 @@ export const AVAILABILITY_LABEL: Record<Availability | "all", string> = {
   sold: "koi terjual",
 }
 
-/** The catalog's own attribute facets. Attributes are global in Mercur — a
-    sack of food's pellet size comes back from the same endpoint as a koi's
-    bloodline — so the catalog says which of them are about a koi. Order here
-    is just the fallback before `getAttributeFacets` sorts by rank. */
 export const CATALOG_ATTRIBUTE_HANDLES = [
   "ukuran",
   "umur",

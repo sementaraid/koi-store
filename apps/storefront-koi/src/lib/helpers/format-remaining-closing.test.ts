@@ -3,8 +3,6 @@ import { test } from "node:test"
 
 import { isClosing } from "./format-remaining.ts"
 
-/* The boundary is the whole point of this helper: two clocks on two surfaces
-   must turn at the same instant. */
 test("no deadline is never closing", () => {
   assert.equal(isClosing(null), false)
 })

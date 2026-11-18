@@ -11,14 +11,6 @@ import type { HeaderAccount, HeaderCart } from '@/types/header';
 import type { Product } from '@/types/product';
 import { deleteLineItem, updateLineItem } from '@/lib/data/cart';
 
-/**
- * The cart, with its two mutations wired to the cart's own server actions.
- *
- * The kit's handlers report a `Product`; Medusa's mutations take a line id, so
- * the pairing is handed down as a map (see `lib/adapters/cart.ts`). Both actions
- * revalidate the cart tag themselves, so there is nothing to hold here — the
- * server re-renders this page with the new lines.
- */
 export function CartLines({
   lines,
   lineIds,
@@ -35,8 +27,6 @@ export function CartLines({
   const router = useRouter();
   const [pending, start] = useTransition();
 
-  /* One guard for both: a second click mid-flight would fire against a quantity
-     the server has already moved past. */
   const run = (job: () => Promise<unknown>) => {
     if (pending) return;
 

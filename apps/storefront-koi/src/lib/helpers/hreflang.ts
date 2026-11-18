@@ -33,9 +33,6 @@ export const toHreflang = (code: string): string => {
 
 const DEFAULT_REGION = process.env.NEXT_PUBLIC_DEFAULT_REGION || "us"
 
-// The storefront serves every page under a locale prefix (/de, /se, ...);
-// requests without one are 307-redirected by the middleware. x-default must
-// therefore resolve to a locale that actually returns 200, never the bare path.
 export const resolveXDefaultLocale = (locales: string[]): string => {
   if (!locales.length) return DEFAULT_REGION
   for (const preferred of [DEFAULT_REGION, "us", "gb"]) {
@@ -60,8 +57,6 @@ type HreflangAlternates = {
   languages: Record<string, string>
 }
 
-// Builds hreflang alternates where every entry — including x-default and the
-// self-referencing link — points at a locale-prefixed URL that returns 200.
 export const buildHreflangAlternates = ({
   baseUrl,
   path,
@@ -69,7 +64,6 @@ export const buildHreflangAlternates = ({
   locales,
 }: {
   baseUrl: string
-  // Path after the locale segment, starting with "/" (empty string for home).
   path: string
   locale: string
   locales: string[]

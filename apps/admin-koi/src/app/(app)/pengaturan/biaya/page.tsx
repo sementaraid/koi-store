@@ -12,7 +12,6 @@ export const metadata: Metadata = {
   title: 'Tabel biaya'
 };
 
-/** Platform limits, the bank account (US-015), and the fee table (US-014). */
 export default async function FeesRoute() {
   await requireAdmin(ROUTES.fees);
   const [settings, categories] = await Promise.all([getSettings(), getFeeCategories()]);

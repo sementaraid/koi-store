@@ -36,32 +36,6 @@ export type {
   AuctionStatusTab,
 } from "@/types/auctions"
 
-/**
- * The floor: every lot the house is running, narrowed by lifecycle tab,
- * variety, and order, then paged.
- *
- * Data in, page out — the same seam every koi page uses. It does not fetch,
- * bid, or route: the app hands it the lots and the current filter, and hears
- * back through `onFilterChange` and `onPageChange`.
- *
- * @remarks
- * Stateless on purpose. `filter` and `page` are the caller's, which is exactly
- * what a URL search string will hold — so the router swap is one file's worth
- * of change at the call site, not a rewrite of the page.
- *
- * @example
- * // App, once the router owns /auctions
- * const [filter, setFilter] = useState(DEFAULT_AUCTION_FILTER)
- * const [page, setPage] = useSearchParams().page
- * <Auctions
- *   lots={lots}
- *   filter={filter}
- *   page={page}
- *   onFilterChange={(next) => { setFilter(next); setPage(1) }}
- *   onPageChange={setPage}
- *   account={session}
- * />
- */
 export function Auctions({
   lots,
   filter = DEFAULT_AUCTION_FILTER,
@@ -100,9 +74,6 @@ export function Auctions({
       account={account}
       {...props}
     >
-      {/* The band that says what page you are on and what is running on it.
-          Counts come off the unfiltered floor: they describe the house, not the
-          current narrowing. */}
       <FeedHero
         eyebrow={
           <>
@@ -169,8 +140,6 @@ export function Auctions({
           )}
         </RenderIf>
 
-        {/* Nothing matched. The copy differs by cause: a narrowed floor is
-            not the same as an empty house. */}
         <RenderIf when={!items.length}>
           {() => (
             <EmptyFeed
@@ -193,7 +162,6 @@ export function Auctions({
           )}
         </RenderIf>
 
-        {/* Pages, drawn only when there is more than one. */}
         <FeedPagination
           page={current}
           pageCount={pageCount}

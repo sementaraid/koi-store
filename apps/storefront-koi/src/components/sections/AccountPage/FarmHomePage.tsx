@@ -36,28 +36,12 @@ import { countOpen } from './components/Orders';
 import { AccountFrame } from './components/AccountFrame';
 import { SubmitAuctionButton } from './components/SubmitAuctionButton';
 
-/** How many auctions one page of the tracker shows (US-033 AC1). Matches
-    `/vendor/auctions`'s own default limit, so a farmer with few auctions
-    never sees a pager. */
 const PER_PAGE = 20;
 
-/** Props for {@link FarmHomePage}: the route's own `?status=&page=`, read
-    server-side (US-033 T-033.2) — the tracker never flips a status on the
-    client, only what the server returned for that query. */
 export type FarmHomePageProps = {
   searchParams: Promise<{ status?: string | string[]; page?: string | string[] }>;
 };
 
-/** The Farmer area home.
- *
- * @remarks
- * Only a seller whose status is `open` gets in (US-021 AC4). Every other
- * status — pending, rejected, suspended, terminated — sees the same closed
- * card, worded by `farmStatusInfo`, with the rejection reason when there is
- * one. Registration is not offered to a seller that already exists: a
- * rejection is final (AC3), so the closed card links to the status page and
- * nowhere else. An approved farmer sees "Buat lelang" and the auction tracker
- * (US-033): six status tabs, each row's lot count and dates, and the pager. */
 export async function FarmHomePage({ searchParams }: FarmHomePageProps) {
   const [, { account, cart }, groups, params] = await Promise.all([
     requireCustomer(ROUTES.farmHome),
@@ -72,8 +56,6 @@ export async function FarmHomePage({ searchParams }: FarmHomePageProps) {
   try {
     seller = await getMyFarm();
   } catch (err) {
-    /* A member cookie that expired between requests is not "you never
-       registered" — the sign-in page, then back here. */
     if (err instanceof ClientError && err.status === 401) {
       redirect(`${ROUTES.login}?sessionExpired=true&redirect=${encodeURIComponent(ROUTES.farmHome)}`);
     }
@@ -82,8 +64,6 @@ export async function FarmHomePage({ searchParams }: FarmHomePageProps) {
 
   const approved = seller ? farmStatusInfo(seller).approved : false;
 
-  /* An unknown `?status=` is not a filter this page owns — read as "Semua"
-     rather than sent to the server as a status it would 400 on. */
   const status = isAuctionStatus(params.status) ? params.status : undefined;
   const rawPage = Array.isArray(params.page) ? params.page[0] : params.page;
   const page = Math.max(Number.parseInt(rawPage ?? '1', 10) || 1, 1);
@@ -143,7 +123,6 @@ export async function FarmHomePage({ searchParams }: FarmHomePageProps) {
   );
 }
 
-/** The area while the seller is not `open` (US-021 AC2–AC4). */
 function Closed({ seller }: { seller: FarmSeller | null }): ReactNode {
   if (!seller) {
     return (
@@ -206,9 +185,6 @@ function Closed({ seller }: { seller: FarmSeller | null }): ReactNode {
   );
 }
 
-/** The tabs row: "Semua" plus D-031's six statuses, each a link to the same
-    page with its own `?status=` — a server-rendered filter, not client state
-    (US-033 AC2: show what the server returns). */
 function StatusTabs({ status }: { status?: AuctionStatus }) {
   const tabs: { value?: AuctionStatus; label: string }[] = [
     { value: undefined, label: 'Semua' },
@@ -242,9 +218,6 @@ function StatusTabs({ status }: { status?: AuctionStatus }) {
   );
 }
 
-/** An approved farmer's auction tracker (US-033): status tabs, each row's lot
-    count, start–end dates and status badge, and the way to make a new
-    auction (US-030 T-030.3). */
 function MyAuctions({
   auctions,
   failed,

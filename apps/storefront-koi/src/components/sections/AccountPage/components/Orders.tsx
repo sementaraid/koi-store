@@ -13,33 +13,15 @@ import type { AccountOrder } from '@/types/order';
 
 import { AccountFrame } from './AccountFrame';
 
-/** Props for {@link Orders}. */
 export type OrdersProps = {
-  /** The page's own checkouts, already sliced. */
   groups: OrderGroup<AccountOrder>[];
-  /** Pages available, so the pager knows whether to draw. */
   pageCount: number;
-  /** The page being shown, 1-based. */
   page: number;
-  /** Open checkouts across *all* pages — the sidebar's count is about the
-      account, not about what this page happens to be showing. */
   openOrders: number;
   account?: HeaderAccount;
   cart?: HeaderCart;
 };
 
-/**
- * Every checkout the customer has made, newest first.
- *
- * @remarks
- * One row per checkout, not per seller's parcel: a cart holding koi from two
- * farms is paid for once and comes back from the API as two orders, which is
- * the API's bookkeeping and not the customer's. The split is shown on the
- * order's own page, where it means something — each farm ships separately.
- *
- * The pager is anchors, not state: a customer linking their own order history
- * to support, or hitting back, lands on the page they were reading.
- */
 export function Orders({
   groups,
   pageCount,
@@ -108,7 +90,6 @@ export function Orders({
   );
 }
 
-/** How many of these checkouts the house is still waiting to be paid for. */
 export function countOpen(groups: OrderGroup<AccountOrder>[]): number {
   return groups.filter((group) => group.orders.some((order) => orderStatus(order).unpaid))
     .length;

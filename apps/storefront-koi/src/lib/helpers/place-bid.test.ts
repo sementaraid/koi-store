@@ -13,7 +13,6 @@ import { formatPrice } from './format-price.ts';
 test('the first bid may equal OB; every later bid needs current + KB (AC2, D-023)', () => {
   assert.equal(minimumNextBid({ ob: 1_000_000, kb: 100_000, currentPrice: 1_000_000 }), 1_000_000);
   assert.equal(minimumNextBid({ ob: 1_000_000, kb: 100_000, currentPrice: 1_500_000 }), 1_600_000);
-  /* A first bid sitting exactly on OB still closes the OB door. */
   assert.equal(
     minimumNextBid({ ob: 1_000_000, kb: 100_000, currentPrice: 1_000_000, hasBid: true }),
     1_100_000

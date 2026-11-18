@@ -12,7 +12,6 @@ import type { AccountOrder } from '@/types/order';
 import { AccountFrame } from './AccountFrame';
 import { ParcelReviews } from './ParcelReviews';
 
-/** One checkout, as `retrieveOrderGroup` returns it. */
 export type OrderDetailGroup = {
   id: string;
   display_id?: number | string | null;
@@ -21,22 +20,12 @@ export type OrderDetailGroup = {
   orders: AccountOrder[];
 };
 
-/** Props for {@link OrderDetail}. */
 export type OrderDetailProps = {
   group: OrderDetailGroup;
   account?: HeaderAccount;
   cart?: HeaderCart;
 };
 
-/**
- * One checkout's receipt: every seller's parcel, each with its own status, and
- * the sum the whole thing came to.
- *
- * @remarks
- * Parcels are per-seller because fulfillment is per-seller — one farm can ship
- * while another is still packing, and a customer reading one combined status
- * would not know which fish that status was about.
- */
 export function OrderDetail({ group, account, cart }: OrderDetailProps) {
   const currency = group.orders[0]?.currency_code ?? 'IDR';
   const total = group.total ?? group.orders.reduce((sum, o) => sum + (o.total ?? 0), 0);
@@ -83,8 +72,6 @@ export function OrderDetail({ group, account, cart }: OrderDetailProps) {
         <p className="text-sm font-medium text-muted-foreground">
           Total {group.orders.length > 1 ? `(${group.orders.length} penjual)` : ''}
         </p>
-        {/* kit's figure voice: same weight as the cart's total and every order
-            row's price. */}
         <p className="font-heading text-xl font-extrabold text-foreground tabular-nums">
           {formatPrice(total, currency)}
         </p>
@@ -93,8 +80,6 @@ export function OrderDetail({ group, account, cart }: OrderDetailProps) {
   );
 }
 
-/** One seller's own order inside the checkout: its items, its status, its own
-    subtotal — fulfillment happens per seller, so the status does too. */
 function Parcel({ order }: { order: AccountOrder }) {
   const status = orderStatus(order);
   const items = order.items ?? [];
@@ -148,8 +133,6 @@ function Parcel({ order }: { order: AccountOrder }) {
         </p>
       </div>
 
-      {/* Drawn only once the parcel has arrived — the component returns nothing
-          while the fish is still in transit. */}
       <ParcelReviews order={order} />
     </Card>
   );

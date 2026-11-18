@@ -18,14 +18,6 @@ import {
   type StateSpec,
 } from "@/const/stamps"
 
-/**
- * The glyph beside a seller's name: a breeder's koi, or a shop's storefront.
- *
- * @remarks
- * Purely decorative — the seller's name is right next to it, so a screen reader
- * gains nothing from the icon twice. A listing that does not say what kind of
- * seller it is gets no mark rather than a guessed one.
- */
 function SellerMark({ kind }: { kind?: SellerKind }) {
   return (
     <RenderIf when={kind}>
@@ -35,8 +27,6 @@ function SellerMark({ kind }: { kind?: SellerKind }) {
           <Icon
             aria-hidden
             data-slot="product-card-seller-kind"
-            /* `shrink-0` so the glyph survives a long seller name, and the
-               `-ml-0.5` pulls it back to the text's optical edge. */
             className="-ml-0.5 size-3 shrink-0 text-muted-foreground"
           />
         )
@@ -45,48 +35,20 @@ function SellerMark({ kind }: { kind?: SellerKind }) {
   )
 }
 
-/**
- * What a treatment takes from the card, and forwards to the frame.
- *
- * @remarks
- * The card's own props are spread in rather than carried as a `rest` bag, so a
- * treatment is handable the same props the `Card` is — `onClick`, `aria-*`,
- * `data-*` — and TypeScript checks them at every call site instead of at none.
- */
 export type TreatmentProps = Pick<
   ProductCardProps,
   "href" | "action" | "className"
 > &
-  /* `content` is dropped from the forwarded set: React types it as the RDFa
-     attribute, so it would be a string on the card element and shadow
-     {@link ProductFrame}'s own `content` slot — which is a node. */
   Omit<ComponentProps<typeof Card>, "href" | "className" | "content">
 
-/** Props for {@link ProductFrame}: the shared half of every product tile. */
 export type ProductFrameProps = TreatmentProps & {
-  /** The headline. */
   title: string
-  /** Photo. Omit and the card keeps a neutral placeholder block. */
   image?: string
-  /** Who and what the product is. */
   listing?: ListingBase
-  /** Pills over the photo: earned distinction, then state. */
   overlay?: ReactNode
-  /** The kind's own facts: the taxonomy row and the price row. */
   content?: ReactNode
 }
 
-/**
- * The shell every product kind is drawn in: photo, pills, title, seller,
- * whatever the kind says about itself, and the CTA.
- *
- * @remarks
- * One card, several treatments. The kind-specific facts — a bid tally, a
- * countdown, a stock band — are built by the treatment and arrive here as
- * `content` and `overlay`; everything the kinds share (the tile material, the
- * title seam, the photo, the footer) is written once, so the two cards cannot
- * drift into looking like two kits.
- */
 export function ProductFrame({
   title,
   image,
@@ -99,18 +61,9 @@ export function ProductFrame({
   ...card
 }: ProductFrameProps) {
   return (
-    /* `relative` so the overlay anchors to the card, and the photo stays the
-       card's first child — that is what keeps it flush, since the card's pt-0
-       is a `> img:first-child` rule. */
     <Card
       data-slot="product-card"
-      /* No edge ring: the standoff alone separates the tile from the page, and
-         the hairline read as a stroke around the photo. `flat` drops the card's
-         inset edge, `ring-0` the shadcn outer one. */
       variant="flat"
-      /* `sm` tightens the card's spacing token to 4 and drops the title to
-         `text-sm` — the scale a five-across grid tile needs, without every
-         sub-part hand-tuning its own size. */
       size="sm"
       className={cn("relative w-full ring-0", TILE, className)}
       {...card}
@@ -119,7 +72,6 @@ export function ProductFrame({
         {(src) => (
           <img
             src={src}
-            /* Decorative: the title next to it already names the product. */
             alt=""
             loading="lazy"
             className="aspect-4/3 w-full object-cover"
@@ -187,24 +139,12 @@ export function ProductFrame({
   )
 }
 
-/** Props for {@link ProductOverlay}. */
 export type ProductOverlayProps<H extends string> = {
-  /** The earned marks to draw, in reading order. */
   highlights?: H[]
-  /** Wording, tone and glyph per mark — the vocabulary this row reads. */
   lookup: Record<H, PillSpec>
-  /** The state pill, drawn against the card edge after the highlights. */
   state?: StateSpec
 }
 
-/**
- * Pills over the photo's top-right: earned distinction, then state. State goes
- * last so it sits against the card edge — the top of the readability stack.
- *
- * @remarks
- * The row is `inset-x`, so the pills are bounded by the card and wrap onto a
- * second line on a narrow grid tile rather than overflowing it.
- */
 export function ProductOverlay<H extends string>({
   highlights,
   lookup,
@@ -247,30 +187,15 @@ export function ProductOverlay<H extends string>({
   )
 }
 
-/** Props for {@link ProductFacts}. */
 export type ProductFactsProps = {
-  /** The listing whose category and spec lead the row. */
   listing?: ListingBase
-  /** The price, and the unit it buys. Omitted, the whole price row drops. */
   sale?: SaleState
-  /** The listing's secondary attributes, in given order. */
   info?: string[]
-  /** Wording, tone and glyph per attribute. */
   infoLookup: Record<string, PillSpec>
-  /** What the figure is called: "Bid" on the floor, "Harga" in the shop. */
   priceLabel: string
-  /** The kind's own right-hand column: a bid tally and clock, or stock. */
   trailing?: ReactNode
 }
 
-/**
- * Category and spec, the listing's info attributes, then the money.
- *
- * @remarks
- * The price row is one component for both kinds, because there is only ever one
- * price row: a lot leaves it without a countdown, a simple product without a
- * tally, and a good sold by weight adds its unit to the figure.
- */
 export function ProductFacts({
   listing,
   sale,
@@ -329,8 +254,6 @@ export function ProductFacts({
           <div className="flex items-end justify-between gap-3">
             <div className="min-w-0">
               <div className="text-2xs text-muted-foreground">{priceLabel}</div>
-              {/* One step under the title's `text-sm`, so a Rupiah figure wider
-                  than the tile cannot out-shout what it is pricing. */}
               <div className="truncate text-sm font-semibold tabular-nums">
                 {formatPrice(price!, sale?.currency)}
                 <RenderIf when={sale?.unit}>

@@ -18,30 +18,14 @@ import {
 } from '@/lib/helpers/live-bid-format';
 import { formatRupiah } from '@/lib/helpers/topup-format';
 
-/** Props for {@link LiveLotPanel}. */
 export type LiveLotPanelProps = {
-  /** The lot header and every bid, removed rows included (T-072.1b). */
   detail: AdminLiveLotDetail;
-  /** The server's clock, so the countdown reads the same on both renders. */
   now: string;
 };
 
 const CONFIRM_COPY =
   'Bid akan ditandai dihapus, tidak dihapus permanen. Harga berjalan dihitung ulang.';
 
-/**
- * The bid panel for one lot on `/lelang/langsung` (US-072 T-072.2b).
- *
- * @remarks
- * A punishing action, so it asks twice: a written reason checked on the client,
- * then a confirm dialog naming the consequence. The lot's `current_price` after
- * the removal comes from the server's answer and is shown in the toast; the
- * panel re-reads through `router.refresh()`. Removal is offered only while the
- * lot is `open` — a closed lot renders read-only with the audit still visible.
- *
- * Names and opaque ids only; no phone, email or address reaches this page
- * (D-042/D-052).
- */
 export function LiveLotPanel({ detail, now }: LiveLotPanelProps) {
   const { lot, bids } = detail;
   const open = lot.status === 'open';
@@ -85,7 +69,6 @@ export function LiveLotPanel({ detail, now }: LiveLotPanelProps) {
   );
 }
 
-/** One bid. A removed row keeps its place and shows the reason (AC2). */
 function BidRow({ bid, lotStatus }: { bid: AdminLiveLotBid; lotStatus: string }) {
   const id = useId();
   const router = useRouter();

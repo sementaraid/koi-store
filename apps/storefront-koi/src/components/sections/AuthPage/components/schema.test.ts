@@ -8,10 +8,6 @@ import {
   registerSchema
 } from './schema.ts';
 
-/* The forms' rules are the one piece of auth with logic in it, and the one the
-   server does not re-state in the same words — a loosened regex here is a
-   weaker password everywhere, silently. */
-
 const VALID_PASSWORD = 'Koi#2024ok';
 
 test('login takes any non-empty password', () => {
@@ -39,7 +35,6 @@ test('register takes a complete form', () => {
   });
 
   assert.equal(result.success, true);
-  /* The separators the visitor typed are stripped, not complained about. */
   assert.equal(result.data?.phone, '081234567890');
 });
 
@@ -63,11 +58,11 @@ test('register rejects a phone that is not digits', () => {
 
 test('every password rule rejects on its own', () => {
   const fails = [
-    'Ko#2a', // too short
-    'koi#2024ok', // no uppercase
-    'KOI#2024OK', // no lowercase
-    'KoiPassw#rd', // no digit
-    'Koi2024okay' // no symbol
+    'Ko#2a',
+    'koi#2024ok',
+    'KOI#2024OK',
+    'KoiPassw#rd',
+    'Koi2024okay' 
   ];
 
   for (const password of fails) {

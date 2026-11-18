@@ -1,9 +1,5 @@
 import { z } from 'zod';
 
-/* The account forms' shapes. Messages are the user-facing copy in the house's
-   Indonesian, the same way `AuthPage/components/schema.ts` holds the four auth
-   forms' rules — a field's complaint is read far more often than its label. */
-
 const name = (label: string) =>
   z
     .string()
@@ -11,8 +7,6 @@ const name = (label: string) =>
     .min(1, `Masukkan ${label}`)
     .max(50, `${label[0].toUpperCase()}${label.slice(1)} maksimal 50 karakter`);
 
-/** Indonesian mobile numbers are written `08…` and `+628…` both; spaces and
-    dashes are stripped before the shape is checked, as on the sign-up form. */
 const phone = z
   .string()
   .trim()
@@ -26,8 +20,6 @@ const phone = z
   );
 
 export const addressSchema = z.object({
-  /* Not required: the address book shows this as the card's own title, and a
-     customer with one address has nothing to tell apart. */
   addressName: z.string().trim().max(50, 'Nama alamat maksimal 50 karakter').optional(),
   firstName: name('nama depan'),
   lastName: name('nama belakang'),
@@ -42,8 +34,6 @@ export const addressSchema = z.object({
     .string()
     .trim()
     .regex(/^\d{5}$/, 'Kode pos Indonesia terdiri dari 5 angka'),
-  /* A koi is flown domestically; the field exists because Medusa requires a
-     country on an address, not because the house ships abroad. */
   countryCode: z.string().trim().min(2, 'Pilih negara'),
   phone
 });
@@ -54,29 +44,16 @@ export const profileSchema = z.object({
   phone
 });
 
-/* 1–5 whole stars and at most 300 characters are the backend's own limits
-   (`StoreCreateReview` in `@mercurjs/core`), repeated here so the customer is
-   told before the request rather than by a 400 afterwards. */
 export const reviewSchema = z.object({
   rating: z
     .number({ message: 'Pilih nilai bintang' })
     .int()
     .min(1, 'Pilih nilai bintang')
     .max(5, 'Nilai maksimal 5 bintang'),
-  /* Optional: a score with no words is a complete review, and the house would
-     rather have the number than nothing. */
   note: z.string().trim().max(300, 'Ulasan maksimal 300 karakter').optional()
 });
 
-/* `screenshot` is `unknown` rather than `z.instanceof(File)`: this schema is
-   imported by a client form, and the `File` global the schema would check
-   against differs between the browser's and (if this file were ever pulled
-   into a server bundle) Node's — `screenshotError` in `lib/helpers` does the
-   real check on the value react-hook-form actually holds. */
 export const topupSchema = z.object({
-  /* Same shape the backend accepts (`StoreCreateTopupRequest`): whole rupiah,
-     no leading zeroes. The submit handler re-checks with `parseTopupAmount`
-     before spending the upload. */
   amount: z
     .string()
     .trim()
@@ -92,8 +69,6 @@ export type ProfileData = z.infer<typeof profileSchema>;
 export type ReviewData = z.infer<typeof reviewSchema>;
 export type TopupFormData = z.infer<typeof topupSchema>;
 
-/** A blank address form — the "tambah alamat" state. `id` defaults to Indonesia
-    because that is where every fish the house sells is going. */
 export const EMPTY_ADDRESS: AddressData = {
   addressName: '',
   firstName: '',

@@ -18,21 +18,11 @@ import {
 import { formatRupiah, formatTopupDate } from '@/lib/helpers/topup-format';
 import { walletTransactionTypeLabel } from '@/lib/helpers/wallet-format';
 
-/** The customer's name, or email when there is none. */
 function customerName(customer: WalletCustomer): string {
   const name = [customer.first_name, customer.last_name].filter(Boolean).join(' ');
   return name || customer.email;
 }
 
-/**
- * The balance correction screen (US-013): find a customer, see their balance
- * and recent history, then record a signed adjustment with a written reason.
- *
- * @remarks
- * Search and the ledger both come from server actions on demand — there is no
- * list to seed this with, unlike the top-up queue — so the component owns its
- * own loading/empty/error states for each step rather than receiving props.
- */
 export function BalanceCorrection() {
   const [selected, setSelected] = useState<WalletCustomer | null>(null);
   const [wallet, setWallet] = useState<
@@ -112,8 +102,6 @@ export function BalanceCorrection() {
   );
 }
 
-/** Find the customer to correct, by name or email (Medusa core's
-    `GET /admin/customers?q=`). */
 function CustomerSearch({
   onSelect,
   selected
@@ -188,12 +176,6 @@ function CustomerSearch({
   );
 }
 
-/* A correction moves money without a bank statement behind it, so direction,
-   a positive whole-rupiah amount, and a written reason are all required
-   (US-013 AC1, admin-koi's security rule on money actions). This schema is
-   for the form's own feedback only — `adjustWalletBalance` revalidates the
-   same shape and is the one place that turns direction × magnitude into the
-   signed amount the backend stores. */
 const adjustmentSchema = z.object({
   direction: z.enum(['add', 'subtract']),
   amount: z.number({ message: 'Masukkan jumlah' }).int('Jumlah harus bilangan bulat').min(1, 'Jumlah minimal Rp 1'),

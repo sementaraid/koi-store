@@ -5,10 +5,6 @@ import { RenderIf } from "@koi/ui"
 import { Avatar, AvatarFallback, AvatarImage } from "@koi/ui/primitives/avatar"
 import type { HeaderBrand } from "@/types/header"
 
-/**
- * The brand mark: the design's logo is a photo and a name, so the photo carries
- * it alone, with a glyph standing in until a `brandIcon` arrives.
- */
 export function BrandMark({ brandIcon, brandHref }: HeaderBrand) {
   return (
     <Link
@@ -16,8 +12,6 @@ export function BrandMark({ brandIcon, brandHref }: HeaderBrand) {
       aria-label="Beranda"
       className="shrink-0 rounded-full focus-visible:ring-[3px] focus-visible:ring-ring/50"
     >
-      {/* Accent *ink*, not the fill: the glyph sits on the fill's own tint, and
-          at fill strength the navy swallows its own mark. */}
       <Avatar size="lg" className="bg-primary/10 text-accent-ink">
         <RenderIf when={brandIcon}>
           {(src) => <AvatarImage src={src} alt="" />}

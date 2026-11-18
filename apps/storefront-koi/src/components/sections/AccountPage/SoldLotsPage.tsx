@@ -45,25 +45,12 @@ import { ReportUnpaid } from './components/ReportUnpaid';
 import { RevealAddress } from './components/RevealAddress';
 import { ShipLot } from './components/ShipLot';
 
-/** How many sold lots one page shows (matches the route's own default). */
 const PER_PAGE = 20;
 
-/** Props for {@link SoldLotsPage}: the route's own `?page=`, read server-side. */
 export type SoldLotsPageProps = {
   page?: string | string[];
 };
 
-/** The farmer's sold lots (US-051 T-051.2b, AC2/AC5): each lot's outcome,
-    final price and winner name, with the winner's default shipping address
-    masked to city + province and a per-row reveal for the full one.
- *
- * @remarks
- * An `open` seller, or one `suspended` after approval (D-054), gets the list —
- * the latter with a notice that the farm is suspended. Every other status
- * (pending, rejected, terminated) sees the same closed card the Farmer area
- * home draws, worded by `farmStatusInfo` ({@link soldLotsOpen}). A member
- * cookie that expired mid-session redirects to sign-in, as everywhere else
- * here. */
 export async function SoldLotsPage({ page: raw }: SoldLotsPageProps) {
   const [, { account, cart }, groups] = await Promise.all([
     requireCustomer(ROUTES.farmSold),
@@ -85,9 +72,6 @@ export async function SoldLotsPage({ page: raw }: SoldLotsPageProps) {
     failed = true;
   }
 
-  // D-054: a farm suspended *after* approval may still finish lots it already
-  // sold, so this list stays open for it (unlike the rest of the Farmer area,
-  // which `farmStatusInfo(seller).approved` keeps closed).
   const open = seller ? soldLotsOpen(seller) : false;
   const suspended = seller?.status === 'suspended' && open;
 
@@ -100,9 +84,6 @@ export async function SoldLotsPage({ page: raw }: SoldLotsPageProps) {
   let lotsFailed = false;
   let claimsFailed = false;
   if (open) {
-    /* US-054 T-054.2c: one extra vendor read for the whole page, never one per
-       row. ponytail: one generous page of claims (the API caps at 100); swap
-       to per-lot reads when a farm's claim history passes that. */
     const [lotsResult, claimsResult] = await Promise.all([
       listSoldLots(PER_PAGE, (requested - 1) * PER_PAGE).catch((err: unknown) => {
         if (err instanceof ClientError && err.status === 401) {
@@ -129,8 +110,6 @@ export async function SoldLotsPage({ page: raw }: SoldLotsPageProps) {
     }
   }
 
-  /* Merge the two lists by `lot_id`; the sold-lot read stays the page's main
-     read, so a lot with no claim renders exactly as before. */
   const claimsByLot = new Map(claims.map((claim) => [claim.lot_id, claim]));
 
   const pageCount = Math.max(1, Math.ceil(count / PER_PAGE));
@@ -171,7 +150,6 @@ export async function SoldLotsPage({ page: raw }: SoldLotsPageProps) {
   );
 }
 
-/** A failed read, drawn the same way everywhere on this page. */
 function ErrorCard({ title }: { title: string }): ReactNode {
   return (
     <Card className="border-destructive-ink/30">
@@ -187,12 +165,6 @@ function ErrorCard({ title }: { title: string }): ReactNode {
   );
 }
 
-/** US-054 T-054.2c (AC3): the "Klaim DOA" block under one sold-lot row.
- *
- * @remarks
- * Visible only when the lot has a claim; a lot without one renders exactly as
- * before. Names only — the backend never sends the winner's phone or address
- * here (D-052), and the clip is fetched on click (D-018). */
 function ClaimBlock({ claim }: { claim: VendorClaim }): ReactNode {
   const status = farmerClaimStatus(claim.status);
   return (
@@ -213,8 +185,6 @@ function ClaimBlock({ claim }: { claim: VendorClaim }): ReactNode {
       {claim.status === 'open' ? (
         <ClaimDecision claimId={claim.id} remedy={claim.remedy} />
       ) : null}
-      {/* US-056 T-056.2a: the farmer settled off-platform; marking it done only
-          moves the claim to `resolved` (D-058). */}
       {claim.status === 'approved' ? (
         <ClaimResolution claimId={claim.id} remedy={claim.remedy} />
       ) : null}
@@ -222,7 +192,6 @@ function ClaimBlock({ claim }: { claim: VendorClaim }): ReactNode {
   );
 }
 
-/** The list itself. */
 function SoldLots({
   lots,
   claimsByLot,
@@ -233,18 +202,13 @@ function SoldLots({
   suspended
 }: {
   lots: SoldLot[];
-  /** US-054 T-054.2c: the page's claims, keyed by `lot_id`. */
   claimsByLot: Map<string, VendorClaim>;
   failed: boolean;
   claimsFailed: boolean;
   page: number;
   pageCount: number;
-  /** D-054: a farm suspended after approval. The list stays open, but the
-      farmer is told why it's worth checking the admin. */
   suspended: boolean;
 }): ReactNode {
-  // US-058: one clock read for the page; the server's `pay_by` decides, this
-  // only hides a button the server would refuse.
   const now = Date.now();
   return (
     <div className="grid gap-4">
@@ -380,7 +344,6 @@ function SoldLots({
   );
 }
 
-/** The area while the seller is not `open` — same wording as the home. */
 function Closed({ seller }: { seller: FarmSeller | null }): ReactNode {
   if (!seller) {
     return (

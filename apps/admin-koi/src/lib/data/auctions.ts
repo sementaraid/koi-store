@@ -10,8 +10,6 @@ import { requireAdmin } from '@/lib/guard';
 import { sdk } from '../client';
 import { getAuthHeaders } from '../cookies';
 
-/** The states US-033's plan enum allows (D-031). Only `pending_approval`
-    reaches this queue (US-032 AC1). */
 export type AuctionStatus = 'draft' | 'pending_approval' | 'scheduled' | 'live' | 'closed' | 'cancelled';
 
 export type AuctionLot = {
@@ -29,7 +27,6 @@ export type AuctionLot = {
   photos: string[];
 };
 
-/** One auction in the `/lelang` queue (US-032 AC1), the backend's `AdminAuction`. */
 export type AdminAuction = {
   id: string;
   seller_id: string;
@@ -46,7 +43,6 @@ export type AdminAuction = {
   fee_override_join_fee: number | null;
   fee_override_reason: string | null;
   rejection_reason: string | null;
-  /** D-061: the auction's YouTube/Instagram live link, null when unset. */
   live_stream_url: string | null;
   seller: { id: string; name: string } | null;
   fee_category: { id: string; name: string; listing_fee: number; join_fee: number } | null;
@@ -60,13 +56,6 @@ type AuctionList = {
   offset: number;
 };
 
-/* ponytail: one page of 50, no paging. Same shape and same reason as
-   `getFarmQueues`'s `listByStatus` — add offset paging (or "muat lagi") when
-   the queue regularly passes 50 pending auctions.
-
-   Same client-typing gap as `farms.ts`'s `listByStatus`: GET /admin/auctions
-   validates its query into `validatedQuery`, which the client doesn't derive
-   an input type from, so the filter is passed with the same narrow cast. */
 export async function getAuctionQueue(): Promise<{ auctions: AdminAuction[]; total: number } | null> {
   await requireAdmin(ROUTES.auctions);
 
@@ -85,16 +74,11 @@ export async function getAuctionQueue(): Promise<{ auctions: AdminAuction[]; tot
 
 type Result = { success: true } | { success: false; error: string; code?: string };
 
-/** Approve at the recomputed fee (no override). */
 export async function approveAuction(id: string): Promise<Result> {
   await requireAdmin(ROUTES.auctions);
   return runApprove(id, {});
 }
 
-/** Approve with an override of the listing and/or join fee for this one
-    auction, with the reason the backend saves (US-032 AC3). The form already
-    enforces fee+reason together; this re-enforces it because a server action
-    is reachable without the form. */
 export async function approveAuctionWithOverride(
   id: string,
   override: { listing_fee?: number; join_fee?: number; reason: string }
@@ -138,8 +122,6 @@ async function runApprove(
     });
 }
 
-/** Reject with the reason the farmer reads (US-032 AC4). Moves the auction
-    back to `draft` and clears any override (AC5, done by the backend). */
 export async function rejectAuction(id: string, reason: string): Promise<Result> {
   await requireAdmin(ROUTES.auctions);
 
@@ -164,14 +146,10 @@ export async function rejectAuction(id: string, reason: string): Promise<Result>
     }));
 }
 
-/** The link the server now stores after a save/clear (D-061). */
 export type SetLiveLinkResult =
   | { success: true; live_stream_url: string | null }
   | { success: false; error: string };
 
-/** Set or clear an auction's live link (US-046 T-046.5, D-061). The backend
-    refuses `closed`/`cancelled` (409) and a non-allow-listed URL (400) with an
-    Indonesian message, which is passed through unchanged (D-055). */
 export async function setAuctionLiveLink(
   id: string,
   url: string | null

@@ -24,29 +24,11 @@ import { reviewSchema, type ReviewData } from './schema';
 
 const NOTE_MAX = 300;
 
-/** Props for {@link RateFarmer}. */
 export type RateFarmerProps = {
-  /** The won lot whose farmer is being rated — the route is keyed by lot. */
   lotId: string;
-  /** The farm's name, for the sheet's question. */
   sellerName: string;
 };
 
-/**
- * "Nilai kebun": the winner rates the farmer once, from `shipped` on
- * (US-057 T-057.2, AC1).
- *
- * @remarks
- * A button that opens a sheet, copied from `ReviewForm`: `StarsInput` through
- * a `Controller` (it is a controlled radio group, not an input whose `ref`
- * spreads), a bare `<textarea>` with a live counter, and `reviewSchema` — the
- * same 1–5 whole stars and 300 characters the backend enforces
- * (`StoreRateLot`), so the customer is told before the request.
- *
- * The row is re-read after a success instead of being painted here: the
- * server owns "once per lot" and the status gate. A refusal maps through
- * `ratingFailureInfo` (D-055) and refreshes a stale row.
- */
 export function RateFarmer({ lotId, sellerName }: RateFarmerProps) {
   const router = useRouter();
   const id = useId();

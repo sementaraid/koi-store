@@ -32,44 +32,14 @@ export type {
   ShippingParcel,
 } from "@/types/shipping"
 
-/** What a parcel is called, in the rail and over its own section. */
 function parcelLabel(parcel: ShippingParcel, i: number) {
   return `Paket ${i + 1}${parcel.seller ? ` · ${parcel.seller}` : ""}`
 }
 
-/** What a live parcel is, in the two words the page has for it — and the ink it
-    is said in. A fish is the thing the visitor is being asked to be home for, so
-    it is the only thing on the page said in the alarm's own red. */
 function parcelNote(parcel: ShippingParcel) {
   return parcel.mode === "live" ? "Ikan hidup" : "Kurir reguler"
 }
 
-/**
- * The delivery step: where the order goes, when the fish lands, and what the
- * freight costs.
- *
- * @remarks
- * The step is not a form, it is a set of decisions about parcels — which is why
- * the page is a list of shipments rather than a column of fields. A cart's three
- * items become three parcels because they come from three sellers, and a fish
- * has a question a sack of food does not: when can somebody be home to take it
- * out of the bag. So the koi parcels carry a day, the courier parcel does not,
- * and the rail says which row is which.
- *
- * The page prices nothing. It hands a choice back — a parcel's key, an option's
- * id — and draws whatever the app answers with, because the kit has no tariff
- * and should not invent one. Until a caller supplies prices, the freight rows
- * say `Ongkir menyusul`, the total is withheld, and the visitor is told why.
- *
- * @example
- * <ShippingPage
- *   parcels={parcels}
- *   totals={settlement(lines, priced)}
- *   onChoiceChange={({ key, optionId }) => priceParcel(key, optionId)}
- *   onPhoneChange={setPhone}
- *   account={session}
- * />
- */
 export function ShippingPage({
   parcels = DEFAULT_SHIPPING_PARCELS,
   addresses = DEFAULT_SHIPPING_ADDRESSES,
@@ -94,25 +64,16 @@ export function ShippingPage({
   className,
   ...rest
 }: ShippingPageProps) {
-  /* The only two things the page holds itself. A day and a phone number are not
-     part of any parcel and change no price, so there is nothing to hand back to
-     an app for them beyond the fact that they were picked. */
   const [day, setDay] = useState(dateId)
   const [number, setNumber] = useState(phone ?? "")
 
-  /* Which delivery each parcel is taking, so the rail's rows and the page's own
-     radio dots can never point at different options. */
   const taken = parcels.map((parcel) =>
     parcel.options.find((o) => o.id === chosen(parcel))
   )
 
-  /* Any live parcel puts the day question on the page: a fish is what needs
-     somebody home, and the day is the same day for all of them. */
   const flight = parcels.find((parcel) => parcel.mode === "live")
   const chosenDay = dates.find((date) => date.id === day) ?? dates[0]
 
-  /* What the bill comes to, unless the caller has priced it itself — the kit's
-     demo state is a settled order, so the rail has something to add up. */
   const bill =
     totals ??
     settlement(
@@ -152,12 +113,8 @@ export function ShippingPage({
 
         <div className="flex flex-wrap items-start gap-12">
           <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-10">
-            {/* Where it can go. First, because it is the answer the freight
-                depends on — everything below it is priced against it. */}
             <section aria-labelledby="shipping-address">
               <SectionHead id="shipping-address" title="Alamat penerima">
-                {/* Drawn only where the caller has somewhere to send them: a
-                    control that goes nowhere is furniture. */}
                 <RenderIf when={onAddAddress}>
                   {(add) => (
                     <Button
@@ -209,8 +166,6 @@ export function ShippingPage({
                   </span>
                 </SectionHead>
 
-                {/* What is in the box, before what it costs to send it: the
-                    visitor is confirming a shipment, not shopping. */}
                 <ul className="flex flex-col">
                   {parcel.items.map(({ product, quantity }) => (
                     <li
@@ -238,8 +193,6 @@ export function ShippingPage({
                         className="min-w-0 font-bold hover:text-accent-ink"
                       >
                         {product.title}
-                        {/* The count, where the seller counts: two sacks of the
-                            same food are one line, not two. */}
                         {quantity && isCounted({ product, quantity }) ? (
                           <span className="font-normal text-muted-foreground">
                             {" "}
@@ -273,8 +226,6 @@ export function ShippingPage({
               </section>
             ))}
 
-            {/* The day, and who to ring. Only where something is alive: a courier
-                parcel has a tracking number, not an appointment. */}
             <RenderIf when={flight}>
               {() => (
                 <section aria-labelledby="shipping-date">
@@ -285,9 +236,6 @@ export function ShippingPage({
                     tiba di hari yang sama.
                   </p>
 
-                  {/* One choice out of four, so the list is a radio group — the
-                      same act as the address above it, in a row rather than a
-                      column. */}
                   <fieldset className="flex flex-wrap gap-2.5">
                     <legend className="sr-only">Hari terima koi</legend>
                     {dates.map((date) => (
@@ -350,10 +298,6 @@ export function ShippingPage({
           <aside className="min-w-0 flex-[1_1_360px]">
             <CartSummary
               totals={bill}
-              /* `parcels` is the only row group the rail draws here, so the
-                 `detail` fields it does not read are zeroes rather than
-                 invented counts — a delivery is not made of a cart's two
-                 halves. */
               detail={{
                 lines: 0,
                 units: 0,
@@ -382,14 +326,10 @@ export function ShippingPage({
   )
 }
 
-/** The delivery option a parcel is taking. Omitted, the first the house offers —
-    a page that drew no choice would otherwise price nothing. */
 function chosen(parcel: ShippingParcel) {
   return parcel.choice?.optionId ?? parcel.options[0]?.id
 }
 
-/** A shelf's name over its body: the section's own heading, with whatever the
-    section has to say on the right. */
 function SectionHead({
   id,
   title,
@@ -397,7 +337,6 @@ function SectionHead({
 }: {
   id: string
   title: string
-  /** What the section has to say on the right, where it has anything. */
   children?: ReactNode
 }) {
   return (

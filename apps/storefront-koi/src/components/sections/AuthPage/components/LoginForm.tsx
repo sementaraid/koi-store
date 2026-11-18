@@ -16,25 +16,11 @@ import type { HeaderAccount, HeaderCart } from '@/types/header';
 import { AuthFrame } from './AuthFrame';
 import { loginSchema, type LoginData } from './schema';
 
-/** Why the visitor was sent here, when they did not come on their own. */
 const NOTICES: Record<string, string> = {
   sessionExpired: 'Sesi Anda telah berakhir. Masuk lagi untuk melanjutkan.',
   sessionRequired: 'Masuk dulu untuk melanjutkan.'
 };
 
-/**
- * Sign in.
- *
- * @remarks
- * `login()` does not move the guest's cart onto the account — `signup()` does,
- * but sign-in is the commoner path, and a visitor who filled a cart and then
- * remembered they have an account would watch it empty. So the transfer is done
- * here, after the token lands and before the redirect.
- *
- * The redirect honours `?redirect=`, but only a path of this site's own: an
- * absolute URL in that query is an open redirect, which is a phishing link
- * wearing the house's domain.
- */
 export function LoginForm({
   account,
   cart
@@ -75,13 +61,9 @@ export function LoginForm({
       return;
     }
 
-    /* Best effort: the sign-in itself succeeded, and a cart that failed to
-       follow is not worth sending the visitor back to the form over. */
     await transferCart().catch(() => undefined);
 
     router.push(safeRedirect(params.get('redirect'), ROUTES.home));
-    /* The header is a server component holding the signed-out face; without
-       this it keeps showing `Masuk` until something else revalidates. */
     router.refresh();
   }
 

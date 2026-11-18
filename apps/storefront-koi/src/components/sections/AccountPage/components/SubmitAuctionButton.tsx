@@ -10,24 +10,12 @@ import { ROUTES } from '@/const/routes';
 import { submitAuction, type AuctionDetail } from '@/lib/data/auctions';
 import { submitFailureInfo, type SubmitFailure } from '@/lib/helpers/auction-submit';
 
-/** Props for {@link SubmitAuctionButton}. */
 export type SubmitAuctionButtonProps = {
   auctionId: string;
-  /** Runs before the submit — the edit screen uses it to save unsaved field
-      edits first. Returning `false` aborts the submit. */
   prepare?: () => Promise<boolean>;
-  /** The auction the server returned, so a screen already holding it can show
-      the new status. */
   onSuccess?: (auction: AuctionDetail) => void;
 };
 
-/** "Kirim untuk persetujuan" (US-031 T-031.2, AC1–AC4).
- *
- * @remarks
- * The status is never flipped here: whatever the server returns is what the
- * screen shows. A refused submit leaves the draft untouched (AC4) and, when
- * the refusal is a short balance, the button is replaced by the top-up prompt
- * so a farmer cannot retry blindly. */
 export function SubmitAuctionButton({
   auctionId,
   prepare,

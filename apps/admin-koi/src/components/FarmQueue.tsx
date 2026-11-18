@@ -33,29 +33,12 @@ import {
   formatFarmDate
 } from '@/lib/helpers/farm-format';
 
-/** Props for {@link FarmQueue}. */
 export type FarmQueueProps = {
-  /** Registrations still waiting on a decision, oldest first. */
   pending: AdminFarm[];
-  /** How many are waiting in total; may exceed `pending.length`. */
   pendingTotal: number;
-  /** Registrations already decided, newest first. */
   decided: AdminFarm[];
 };
 
-/**
- * The farm registration queue (US-021): KTP, farm photos and the bank account
- * name beside the applicant's, then approve or reject with a reason.
- *
- * @remarks
- * Decided registrations sit in their own tab for the same reason the top-up
- * queue splits them: the operator's job is the pending list, and a decided row
- * between two pending ones invites a second decision on the same farm.
- *
- * There is deliberately no unsuspend action anywhere on this screen: a
- * rejection is final, and Mercur's unsuspend would move the seller straight to
- * `open` without an approval (D-015).
- */
 export function FarmQueue({ pending, pendingTotal, decided }: FarmQueueProps) {
   return (
     <Card>
@@ -104,17 +87,13 @@ export function FarmQueue({ pending, pendingTotal, decided }: FarmQueueProps) {
   );
 }
 
-/** The applicant's name, or their email when the API sent no name. */
 function applicantName(applicant: FarmApplicant | null): string {
   if (!applicant) return '—';
   const name = [applicant.first_name, applicant.last_name].filter(Boolean).join(' ');
   return name || applicant.email || '—';
 }
 
-/** One pending registration: the facts, the evidence, and the two decisions. */
 function PendingRow({ farm }: { farm: AdminFarm }) {
-  /* One decision at a time per row: approving while a rejection is on the wire
-     is two answers to one question. */
   const [busy, setBusy] = useState(false);
 
   return (
@@ -198,14 +177,6 @@ function PendingRow({ farm }: { farm: AdminFarm }) {
   );
 }
 
-/**
- * The bank account beside the applicant's name (US-021 AC1).
- *
- * @remarks
- * The comparison only ever claims what the data supports: a mismatch is shown
- * loudly, a match quietly, and missing data says it could not compare — that
- * is the case the admin must chase, and a silent blank would read as a match.
- */
 function PaymentCheck({ farm }: { farm: AdminFarm }) {
   const payment = farm.payment_details;
   const match = farm.holder_matches_applicant;
@@ -248,16 +219,6 @@ function PaymentCheck({ farm }: { farm: AdminFarm }) {
   );
 }
 
-/**
- * One masked PII value with an explicit "Tampilkan" control (US-092 T-092.3,
- * D-042).
- *
- * @remarks
- * The mask is whatever the backend sent; this never re-masks and never asks for
- * the full value on render, because every reveal writes an audit row. The full
- * value lives in this component's state only and is dropped on "Sembunyikan" or
- * when the row unmounts.
- */
 function RevealValue({
   farmId,
   field,
@@ -325,7 +286,6 @@ function RevealValue({
   );
 }
 
-/** One decided registration: its outcome and, if rejected, the reason. */
 function DecidedRow({ farm }: { farm: AdminFarm }) {
   return (
     <div className="grid gap-1 rounded-md border border-border p-3 text-sm">
@@ -347,13 +307,6 @@ function DecidedRow({ farm }: { farm: AdminFarm }) {
   );
 }
 
-/**
- * The KTP photo, fetched through the admin-only route (D-017).
- *
- * @remarks
- * Never a URL: the bytes arrive as base64 from the server action and become a
- * blob URL here, revoked when this row unmounts or the operator asks again.
- */
 function KtpView({ id }: { id: string }) {
   const [state, setState] = useState<
     | { status: 'idle' }
@@ -363,8 +316,6 @@ function KtpView({ id }: { id: string }) {
   >({ status: 'idle' });
   const [url, setUrl] = useState<string | null>(null);
 
-  /* One effect owns the URL's whole life: revoke the previous one when it is
-     replaced, and the current one on unmount. */
   useEffect(() => {
     return () => {
       if (url) URL.revokeObjectURL(url);
@@ -426,7 +377,6 @@ function KtpView({ id }: { id: string }) {
   );
 }
 
-/** Approve: the farmer gains access (US-021 AC2). */
 function ApproveForm({
   id,
   busy,
@@ -439,8 +389,6 @@ function ApproveForm({
   const [submitting, setSubmitting] = useState(false);
 
   async function approve() {
-    /* Busy before the dialog: a second click while `confirm()` is open is the
-       same double approval. */
     onBusyChange(true);
     if (!confirm('Setujui pendaftaran kebun ini dan beri akses petani?')) {
       onBusyChange(false);
@@ -469,14 +417,12 @@ function ApproveForm({
   );
 }
 
-/* A rejection is final and the farmer reads the reason, so it must be written (AC2, D-015). */
 const rejectSchema = z.object({
   reason: z.string().trim().min(1, 'Masukkan alasan penolakan')
 });
 
 type RejectData = z.infer<typeof rejectSchema>;
 
-/** Reject, with the reason the farmer will see. */
 function RejectForm({
   id,
   busy,

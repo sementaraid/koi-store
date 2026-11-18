@@ -10,15 +10,6 @@ export const metadata: Metadata = {
   title: 'Klaim DOA'
 };
 
-/**
- * The dead-on-arrival claim queue (US-054 AC3, US-055 AC2).
- *
- * @remarks
- * Three reads, one screen: the disputes the operator has to decide, and the
- * approved/rejected claims as the audit trail. A decided claim leaves the
- * disputed list because the route filters by status, so each tab is the
- * server's answer, never an optimistic flip.
- */
 export default async function ClaimsRoute() {
   await requireAdmin(ROUTES.claims);
   const [disputed, approved, rejected] = await Promise.all([

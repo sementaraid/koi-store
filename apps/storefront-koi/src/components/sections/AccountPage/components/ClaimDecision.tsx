@@ -9,23 +9,11 @@ import { acceptClaim, disputeClaim } from '@/lib/data/claims';
 import { remedyLabel } from '@/lib/helpers/claim';
 import { claimDecisionFailure } from '@/lib/helpers/farm-claim';
 
-/** Props for {@link ClaimDecision}. */
 export type ClaimDecisionProps = {
   claimId: string;
-  /** `refund` or `replacement`; named in the confirm copy (AC1). */
   remedy: string;
 };
 
-/**
- * The farmer's two answers to an `open` claim (US-055 T-055.2, AC1, D-038).
- *
- * @remarks
- * Accept moves the claim straight to `approved` with no admin step; dispute
- * moves it to `disputed` for the admin. Only `open` renders this component —
- * every other status keeps the read-only block. The status is never flipped
- * here: a success re-reads the server's row, and a refused call either shows
- * the server's reason or refreshes a stale row (`claimDecisionFailure`).
- */
 export function ClaimDecision({ claimId, remedy }: ClaimDecisionProps) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);

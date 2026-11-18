@@ -6,7 +6,6 @@ import { Addresses } from './components/Addresses';
 import { countOpen } from './components/Orders';
 import { listOrderGroups } from './AccountPage';
 
-/** Every address the customer has saved, each editable in place. */
 export async function AddressesPage() {
   const [customer, { account, cart }] = await Promise.all([
     requireCustomer(ROUTES.addresses),

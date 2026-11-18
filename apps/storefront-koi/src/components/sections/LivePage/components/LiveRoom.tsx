@@ -31,22 +31,6 @@ export type {
 } from "@/types/auctions"
 export type { LiveRoomProps } from "@/types/live"
 
-/**
- * The live room: one lot on the block, at full size, with the board beside it.
- *
- * @remarks
- * One lot at a time (US-046, mvp-Q42 (a)): the page stages the lot and polls
- * it, and this draws what it is handed. The room holds no bid of its own — a
- * board a visitor can move is a lot's own page, so the terminal here is
- * read-only and links to it.
- *
- * The board is {@link BidTerminal} rather than {@link SpotlightStage} — a stage
- * is a gallery and a board, and this page already draws the gallery at the left,
- * wider, with the room's own live line over it.
- *
- * @example
- * <LiveRoom lot={lot} media={media} liveCount={2} account={session} />
- */
 export function LiveRoom({
   lot,
   media,
@@ -69,8 +53,6 @@ export function LiveRoom({
       onSearch={onSearch}
       account={account}
       cart={cart}
-      /* No fabricated figures: the bar carries the session's own name and the
-         count of lots actually live (US-046 AC1). */
       bar={
         <BroadcastBar
           message={
@@ -81,8 +63,6 @@ export function LiveRoom({
           liveCount={liveCount}
         />
       }
-      /* The trail is the staged lot's, so it is drawn inside the block that has
-         one — an empty floor states no position. */
       trail={
         lot
           ? [
@@ -95,8 +75,6 @@ export function LiveRoom({
       }
       {...rest}
     >
-      {/* The stage. An empty floor has nothing to stage, so the whole block
-          gives way rather than drawing a board with no lot in it. */}
       <RenderIf when={lot}>
         {(staged) => (
           <LotLayout
@@ -121,8 +99,6 @@ export function LiveRoom({
             }
             aside={
               <>
-                {/* US-046 AC2 (D-061): the server already validated the host,
-                    so this is only drawn, never re-checked or embedded. */}
                 <RenderIf when={staged.auction.live_stream_url}>
                   {(url) => (
                     <a
@@ -139,14 +115,9 @@ export function LiveRoom({
                   lot={staged}
                   readOnly
                   broadcast={sessionLabel(staged.listing?.seller)}
-                  /* The page supplies the gutter, so the board's own inset is
-                     off — its left edge is the page's column, not a second
-                     padding inside one. */
                   className="p-0"
                 />
 
-                {/* The room does not place bids (US-042 owns that): it hands the
-                    visitor to the page that does. */}
                 <Button
                   render={<Link href={lotHref(staged.id)} />}
                   nativeButton={false}
@@ -157,10 +128,6 @@ export function LiveRoom({
                   Pasang bid di halaman lot
                 </Button>
 
-                {/* The trail, where the money is: a bidder mid-auction reads
-                    who is winning without opening anything. The drawer keeps
-                    the full list — this is the last few rows of it, and the
-                    same control carries the spec behind the "detail". */}
                 <RenderIf when={trail.length}>
                   {() => (
                     <section className="flex flex-col gap-2">
@@ -190,7 +157,6 @@ export function LiveRoom({
                   )}
                 </RenderIf>
 
-                {/* What backs the money, in the order a buyer checks it. */}
                 <LotTrustList
                   variant="room"
                   sellerKind={staged.listing?.sellerKind}
@@ -203,8 +169,6 @@ export function LiveRoom({
         )}
       </RenderIf>
 
-      {/* Nothing on the block: the room says so, and points at the floor the
-          full grid lives on. */}
       <RenderIf when={!lot}>
         {() => (
           <section className={`${CONTAINER} py-10`}>

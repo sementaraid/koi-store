@@ -1,10 +1,3 @@
-/* What a failed auth call says to the visitor.
-
-   The server actions hand back Medusa's own message, which is written for
-   whoever built the store: `Error: Identity with email already exists`. This
-   maps the handful a customer can act on into the house's Indonesian, and
-   falls back to a plain sentence for everything else — an accurate but alien
-   error is worse than a general apology next to a form the visitor can retry. */
 
 const KNOWN: [RegExp, string][] = [
   [

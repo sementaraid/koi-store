@@ -6,8 +6,6 @@ import { sdk } from '@/lib/client';
 
 import { getAuthHeaders, getCacheOptions } from './cookies';
 
-// ponytail: shipping-section UI type was never ported from storefront; inlined
-// here since fulfillment.ts only needs the shape, not the component.
 export type StoreCardShippingMethod = HttpTypes.StoreCartShippingOption & {
   seller_id?: string;
   seller_name?: string;
@@ -33,8 +31,6 @@ export const listCartShippingMethods = async (cartId: string, is_return: boolean
         cache: 'no-cache'
       }
     } as never) as unknown as Promise<{
-      // Core returns the options already grouped by seller
-      // (`Record<sellerId, ShippingOption[]>`), not a flat array.
       shipping_options:
         | Record<string, StoreCardShippingMethod[]>
         | StoreCardShippingMethod[]
@@ -46,12 +42,6 @@ export const listCartShippingMethods = async (cartId: string, is_return: boolean
     });
 };
 
-/**
- * The seller-scoped shipping-options endpoint groups its result by seller id.
- * The delivery section expects a flat list where each option carries
- * `seller_id` / `seller_name`, so lift those off the nested `seller` and
- * flatten. Falls back gracefully if the endpoint ever returns a bare array.
- */
 function flattenSellerShippingOptions(
   shipping_options:
     | Record<string, StoreCardShippingMethod[]>

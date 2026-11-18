@@ -4,11 +4,6 @@ import { Button, RenderIf } from "@koi/ui"
 import { AccountMenu } from "./AccountMenu"
 import type { HeaderAccount } from "@/types/header"
 
-/**
- * The right side of the bar: the bell on phones, the profile dropdown from `lg`.
- * Each is hidden where the other belongs — a phone carries the account pages in
- * the bottom tab bar, so only the bell earns a place in its header.
- */
 export function AccountCluster({ account }: { account: HeaderAccount }) {
   const { unread, onNotificationsClick } = account
 

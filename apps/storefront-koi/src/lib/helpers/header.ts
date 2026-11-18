@@ -1,6 +1,5 @@
 import type { HeaderAccountLink } from "@/types/header"
 
-/** `"Bpk. Hendra S."` → `"BH"` — the design shows a monogram, so the name gives one. */
 export function initials(name: string): string {
   return name
     .split(/\s+/)
@@ -11,15 +10,6 @@ export function initials(name: string): string {
     .toUpperCase()
 }
 
-/**
- * Splits the account menu into headed sections and the unheaded rest.
- *
- * @remarks
- * `Map` keeps first-seen order, so the caller's list order is the drawn order,
- * and one label is enough to describe several non-adjacent rows. Ungrouped rows
- * are collected rather than assumed to be last: the list stays in the caller's
- * order, and the drawing decides where the trailing block goes.
- */
 export function sections(links: HeaderAccountLink[]) {
   const headed = new Map<string, HeaderAccountLink[]>()
   const rest: HeaderAccountLink[] = []

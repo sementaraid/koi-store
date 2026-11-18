@@ -18,9 +18,6 @@ export async function generateMetadata({
   };
 }
 
-/* No `Suspense`, same reasoning as `mitra/[handle]`: an unknown handle is a
-   `notFound()` inside the section, and a boundary above it would flush the
-   shell before the 404 could be set. */
 export default async function CategoryRoute({
   params,
   searchParams

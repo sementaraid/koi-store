@@ -16,8 +16,6 @@ import {
 } from '@koi/ui';
 import { updateSettings, type Settings } from '@/lib/data/settings';
 
-/* Whole numbers only — every one of these is a day count, a minute count, an
-   hour count or a lot count (US-015 AC1), never a fraction. */
 const schema = z
   .object({
     extend_window_minutes: z.number().int('Harus bilangan bulat').positive('Harus lebih dari 0'),
@@ -36,19 +34,10 @@ const schema = z
 
 type SettingsData = z.infer<typeof schema>;
 
-/** Props for {@link SettingsForm}. */
 export type SettingsFormProps = {
   settings: Settings;
 };
 
-/**
- * The platform limits and the bank account top-ups are transferred to
- * (US-015, D-009, D-010).
- *
- * @remarks
- * One form, one save: every field lands in the same `/admin/settings` write,
- * so a half-saved limit never sits next to an unsaved bank account.
- */
 export function SettingsForm({ settings }: SettingsFormProps) {
   const {
     register,

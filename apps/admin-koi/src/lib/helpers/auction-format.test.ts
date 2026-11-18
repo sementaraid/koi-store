@@ -15,7 +15,6 @@ test('labels the two delivery methods', () => {
   assert.equal(deliveryMethodLabel('something_new'), 'something_new');
 });
 
-/* Jakarta is UTC+7: a time stored at 17.20 UTC is the next day's 00.20 WIB. */
 test('reads the auction date in Jakarta time', () => {
   const formatted = formatAuctionDate('2026-11-14T17:20:00.000Z');
   assert.match(formatted, /2026/);

@@ -10,9 +10,6 @@ export async function Cart() {
     retrieveCart()
   ]);
 
-  /* The cart's own figures where it has them: tax and promotions are the
-     backend's arithmetic, and the rail would otherwise print a total that
-     disagrees with what gets charged. */
   const money = toCartMoney(cart);
 
   return (

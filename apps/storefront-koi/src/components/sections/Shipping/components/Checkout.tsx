@@ -14,14 +14,6 @@ import type {
 } from '@/types/shipping';
 import { setShippingMethod } from '@/lib/data/cart';
 
-/**
- * The delivery step, with the one decision that changes money — which option
- * each parcel takes — written back to the cart.
- *
- * The address is held here rather than on the server: Medusa stores addresses on
- * the customer, and a change of delivery address is not a cart mutation until
- * checkout sets it. The phone field is the page's own, per the kit.
- */
 export function Checkout({
   cartId,
   parcels,
@@ -33,7 +25,6 @@ export function Checkout({
 }: {
   cartId: string;
   parcels: ShippingParcel[];
-  /** Omitted for a guest, so the kit draws its own demo addresses. */
   addresses?: ShippingAddress[];
   addressId?: string;
   dates: ShippingDate[];
@@ -71,8 +62,6 @@ export function Checkout({
         });
       }}
       onBack={() => router.push(ROUTES.cart)}
-      /* ponytail: no payment step yet, so the last control goes nowhere. Wire it
-         to the payment route when one lands. */
     />
   );
 }

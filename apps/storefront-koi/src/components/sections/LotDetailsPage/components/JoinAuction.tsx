@@ -16,16 +16,6 @@ import {
 } from '@/lib/helpers/join-auction';
 import { formatPrice } from '@/lib/helpers/format-price';
 
-/**
- * The way into an auction (US-041 T-041.2, AC1–AC4).
- *
- * @remarks
- * Joining is not bidding: this pays the join fee and adds the participant, and
- * the bid control is another task's. The state is never flipped here — a
- * successful join reloads the server's own answer, and a refused one either
- * shows the top-up prompt (short balance, AC2) or the server's reason. Codes
- * are read, never the message text, and a rewritten 409 refreshes the page.
- */
 export function JoinAuction({ auctionId, fee, returnPath, balance, mode }: JoinControl) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -50,10 +40,6 @@ export function JoinAuction({ auctionId, fee, returnPath, balance, mode }: JoinC
   }
 
   if (mode === 'owner') {
-    /* The lot names this farm as its seller: no join control at all (AC4).
-       The server still refuses `own_auction` if this check misses (a farm with
-       a second member, ponytail: D-033's single payer id), which the failure
-       copy above answers. */
     return null;
   }
 

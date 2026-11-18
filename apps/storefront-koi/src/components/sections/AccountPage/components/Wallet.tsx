@@ -12,12 +12,8 @@ import type { HeaderAccount, HeaderCart } from '@/types/header';
 
 import { AccountFrame } from './AccountFrame';
 
-/** Props for {@link Wallet}. */
 export type WalletProps = {
   wallet: WalletPage;
-  /** The fetch failed — a real "balance 0" is `wallet.count === 0` and no
-      error; this is "the house doesn't actually know the balance right now",
-      which draws a retry card instead of a wrong Rp 0. */
   failed: boolean;
   pageCount: number;
   page: number;
@@ -26,7 +22,6 @@ export type WalletProps = {
   cart?: HeaderCart;
 };
 
-/** Balance and every transaction, newest first (US-010). */
 export function Wallet({ wallet, failed, pageCount, page, openOrders, account, cart }: WalletProps) {
   return (
     <AccountFrame

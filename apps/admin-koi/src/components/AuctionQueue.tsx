@@ -24,24 +24,11 @@ import {
 import { isLiveStreamUrl } from '@/lib/helpers/live-stream-url';
 import { formatRupiah } from '@/lib/helpers/topup-format';
 
-/** Props for {@link AuctionQueue}. */
 export type AuctionQueueProps = {
-  /** Auctions waiting on a decision, oldest `updated_at` first. */
   auctions: AdminAuction[];
-  /** How many are waiting in total; may exceed `auctions.length`. */
   total: number;
 };
 
-/**
- * The `/lelang` approval queue (US-032): category, lots with photos, and fees
- * for every `pending_approval` auction, then approve (at the recomputed fee or
- * an override with a reason) or reject with a reason.
- *
- * @remarks
- * One flat list, not tabs like the farm queue: a decided auction leaves this
- * status entirely (`scheduled` or `draft`), so there is no "decided" list to
- * split off here — it never shows again (US-032 AC5, D-031).
- */
 export function AuctionQueue({ auctions, total }: AuctionQueueProps) {
   return (
     <Card>
@@ -68,11 +55,7 @@ export function AuctionQueue({ auctions, total }: AuctionQueueProps) {
   );
 }
 
-/** One pending auction: its facts, every lot, then the two decisions. */
 function AuctionRow({ auction }: { auction: AdminAuction }) {
-  /* One decision at a time per row, same reason as the farm queue's
-     `PendingRow`: approving while a rejection is on the wire is two answers to
-     one question. */
   const [busy, setBusy] = useState(false);
 
   return (
@@ -114,7 +97,6 @@ function AuctionRow({ auction }: { auction: AdminAuction }) {
   );
 }
 
-/** One lot: title, OB/KB, and its photos (US-032 AC1). */
 function LotCard({ lot }: { lot: AuctionLot }) {
   return (
     <div className="grid gap-1 rounded-md border border-border p-2 text-sm">
@@ -141,11 +123,6 @@ function LotCard({ lot }: { lot: AuctionLot }) {
   );
 }
 
-/* Both fee inputs stay plain strings in the form (an empty string means "no
-   override", matching the backend's optional `listing_fee`/`join_fee`), and
-   are parsed to whole non-negative rupiah on submit — `z.coerce.number()`
-   would otherwise widen the resolver's input type to `unknown` and break
-   `useForm`'s generic. */
 const feeField = z
   .string()
   .refine((value) => value === '' || /^\d+$/.test(value), 'Harus bilangan bulat, tidak boleh negatif');
@@ -167,7 +144,6 @@ const approveSchema = z
 
 type ApproveData = z.infer<typeof approveSchema>;
 
-/** Approve, with an optional override of this one auction's fees (US-032 AC2/AC3). */
 function ApproveForm({
   auction,
   busy,
@@ -255,7 +231,6 @@ function ApproveForm({
   );
 }
 
-/* The link rule is the backend's (D-061): https, YouTube or Instagram. */
 const liveLinkSchema = z.object({
   live_stream_url: z
     .string()
@@ -265,8 +240,6 @@ const liveLinkSchema = z.object({
 
 type LiveLinkData = z.infer<typeof liveLinkSchema>;
 
-/** The auction's live link (US-046 T-046.5, D-061): shown as an outbound link
-    only, set or cleared in any status but `closed`/`cancelled` there. */
 function LiveLinkControl({ auction }: { auction: AdminAuction }) {
   const [stored, setStored] = useState<string | null>(auction.live_stream_url);
   const [busy, setBusy] = useState(false);
@@ -352,16 +325,12 @@ function LiveLinkControl({ auction }: { auction: AdminAuction }) {
   );
 }
 
-/* A rejection must carry the reason the farmer reads (US-032 AC4). */
 const rejectSchema = z.object({
   reason: z.string().trim().min(1, 'Masukkan alasan penolakan')
 });
 
 type RejectData = z.infer<typeof rejectSchema>;
 
-/** Reject, with the reason the farmer will see on their draft (US-032 AC4).
-    Clearing any override is the backend's job (AC5) — this form makes no
-    claim about it either way. */
 function RejectForm({
   id,
   busy,

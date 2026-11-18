@@ -7,7 +7,6 @@ import type {
   FooterTrust,
 } from "@/types/footer"
 
-/** Where the columns point without a caller saying otherwise. */
 export const DEFAULT_FOOTER_COLUMNS: FooterColumn[] = [
   {
     label: "Layanan Lelang",
@@ -41,20 +40,12 @@ export const DEFAULT_FOOTER_COLUMNS: FooterColumn[] = [
   },
 ]
 
-/** The rights line's trailing row. */
 export const DEFAULT_FOOTER_LEGAL_LINKS: FooterLink[] = [
   { label: "Kebijakan Privasi", href: "/privasi" },
   { label: "Syarat & Ketentuan Bidding", href: "/syarat" },
   { label: "Regulasi Lelang", href: "/regulasi" },
 ]
 
-/**
- * The two claims under the tagline.
- *
- * @remarks
- * The shield is the verification the buyer is owed, the award the accreditation
- * the house earned — hence `info` for one and `gold` for the other.
- */
 export const DEFAULT_FOOTER_TRUST: FooterTrust[] = [
   { label: "Pembayaran Terverifikasi", icon: ShieldCheck, tone: "info" },
   { label: "Verifikasi APKI Resmi", icon: Award, tone: "gold" },

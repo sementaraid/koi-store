@@ -12,32 +12,19 @@ import { setAuctionLiveLink, type Auction } from '@/lib/data/auctions';
 import { isLiveStreamUrl } from '@/lib/helpers/live-stream-url';
 import { stripValidationPrefix } from '@/lib/helpers/validation-message';
 
-/** Length only; the host rule is the server's, mirrored here as a visible
-    pre-check rather than a blocker, so its own Indonesian 400 still reaches
-    the farmer (D-055). */
 const schema = z.object({
   live_stream_url: z.string().trim().max(2048, 'Tautan maksimal 2048 karakter.')
 });
 
 type FormData = z.infer<typeof schema>;
 
-/** D-061: the route accepts every status but the two terminal ones. */
 const EDITABLE_STATUSES = ['draft', 'pending_approval', 'scheduled', 'live'];
 
 export type LiveLinkFormProps = {
   auction: Auction;
-  /** Called with the server's auction after a save or a clear. */
   onSaved: (auction: Auction) => void;
 };
 
-/** The farmer's YouTube or Instagram live link (US-046 AC2, D-061).
- *
- * @remarks
- * Outbound link only: nothing is embedded, nothing is uploaded. The form is
- * offered while the auction can still be edited, and draws the stored link
- * read-only once the auction is `closed` or `cancelled` — the server refuses
- * those with a 409. A failed call shows the server's own Indonesian message
- * (D-055) and leaves the shown link untouched. */
 export function LiveLinkForm({ auction, onSaved }: LiveLinkFormProps) {
   const editable = EDITABLE_STATUSES.includes(auction.status);
   const stored = auction.live_stream_url;
@@ -56,17 +43,11 @@ export function LiveLinkForm({ auction, onSaved }: LiveLinkFormProps) {
 
   async function save(data: FormData) {
     const url = data.live_stream_url.trim();
-    /* An empty field means "no link", so it clears the column (`null`) the
-       same way "Hapus tautan" does. Sending `""` is what the server refuses,
-       and the farmer would get a raw 400 for doing nothing wrong. */
     if (!url) {
       await clear();
       return;
     }
     if (!isLiveStreamUrl(url)) {
-      /* Early inline feedback only: the server owns the rule, so the request
-         still goes out and its own Indonesian refusal is what the farmer sees
-         when the link is truly rejected (D-055). */
       setError('live_stream_url', {
         message: 'Tautan harus dari YouTube atau Instagram (https).'
       });

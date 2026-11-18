@@ -10,7 +10,6 @@ import { listOrderGroups } from './AccountPage';
 import { countOpen } from './components/Orders';
 import { Farm } from './components/Farm';
 
-/** The Farmer area's front door (US-020 T-020.3): registration, or its status. */
 export async function FarmPage() {
   const [customer, { account, cart }, groups] = await Promise.all([
     requireCustomer(ROUTES.farm),
@@ -24,8 +23,6 @@ export async function FarmPage() {
   try {
     seller = await getMyFarm();
   } catch (err) {
-    /* A member cookie that expired between requests is not "you never
-       registered" — the page says it could not read the status. */
     if (err instanceof ClientError && err.status === 401) {
       redirect(`${ROUTES.login}?sessionExpired=true&redirect=${encodeURIComponent(ROUTES.farm)}`);
     }

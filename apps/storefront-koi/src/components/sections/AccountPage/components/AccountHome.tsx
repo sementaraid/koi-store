@@ -16,30 +16,15 @@ import type { AccountOrder } from '@/types/order';
 import { AccountFrame } from './AccountFrame';
 import { SectionHead } from './SectionHead';
 
-/** How many of the newest checkouts the home page lists before handing over to
-    the orders page. Three is what fits above the fold beside the sidebar. */
 const RECENT = 3;
 
-/** Props for {@link AccountHome}. */
 export type AccountHomeProps = {
   customer: HttpTypes.StoreCustomer;
-  /** Every checkout the customer has made, newest first. */
   groups: OrderGroup<AccountOrder>[];
   account?: HeaderAccount;
   cart?: HeaderCart;
 };
 
-/**
- * Where the customer stands with the house: what is owed, what is on its way,
- * and where it is being sent.
- *
- * @remarks
- * The page opens with whatever is *unfinished* — an unpaid checkout is drawn
- * above the welcome's own sections, because a customer who owes the house money
- * came here to pay it and should not have to find the row. When nothing is
- * outstanding the alert is not drawn at all rather than replaced with a
- * reassurance, which is a sentence nobody reads twice.
- */
 export function AccountHome({ customer, groups, account, cart }: AccountHomeProps) {
   const name = customer.first_name || customer.email;
   const unpaid = groups.filter((group) => group.orders.some((o) => orderStatus(o).unpaid));
@@ -66,13 +51,8 @@ export function AccountHome({ customer, groups, account, cart }: AccountHomeProp
       description="Akun Anda, pesanan yang sedang berjalan, dan alamat pengiriman — semuanya di satu halaman."
       identity={{ name, email: customer.email }}
     >
-      {/* The oldest unsettled checkout, because that is the one whose payment
-          window runs out first. */}
       <RenderIf when={unpaid.at(-1)}>
         {(group) => (
-          /* The cart's alarm band, worn by the dashboard: same tint, same glyph,
-             same `role="status"` — an unsettled bill is the same fact here as it
-             is in the cart, so it is said the same way. */
           <section
             role="status"
             aria-labelledby="akun-tagihan"
@@ -178,9 +158,6 @@ export function AccountHome({ customer, groups, account, cart }: AccountHomeProp
         <StatCard
           label="Kontak"
           icon={UserRound}
-          /* An address is longer than the figures this card is sized for, so
-             it is set at body size and allowed to break rather than pushed
-             out of the panel. */
           value={<span className="text-base break-all">{customer.email}</span>}
           note={customer.phone ?? 'Nomor telepon belum diisi.'}
           action={

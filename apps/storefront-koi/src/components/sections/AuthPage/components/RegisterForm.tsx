@@ -16,19 +16,6 @@ import type { HeaderAccount, HeaderCart } from '@/types/header';
 import { AuthFrame } from './AuthFrame';
 import { PASSWORD_RULES, registerSchema, type RegisterData } from './schema';
 
-/**
- * Sign up.
- *
- * @remarks
- * `signup()` returns the created customer on success and an error *string* on
- * failure — its `catch` ends in `error.toString()` — so the branch is on the
- * shape of what came back, not on a status. It also calls `transferCart()`
- * itself, which is why this form, unlike sign-in, does not.
- *
- * The password rules are stated under the field rather than checked live: one
- * list, read off the same schema that enforces them, cannot drift from what
- * the form will actually accept.
- */
 export function RegisterForm({
   account,
   cart
@@ -64,8 +51,6 @@ export function RegisterForm({
 
     const result = await signup(form);
 
-    /* A customer object means it worked; anything else is the action's own
-       stringified error. */
     if (!result || typeof result === 'string' || !('id' in result)) {
       toast.error(
         authErrorMessage(result, 'Pendaftaran gagal. Coba lagi sebentar lagi.')

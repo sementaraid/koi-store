@@ -9,29 +9,10 @@ import type { AccountOrder } from '@/types/order';
 
 import { ReviewForm, type ReviewTarget } from './ReviewForm';
 
-/** Props for {@link ParcelReviews}. */
 export type ParcelReviewsProps = {
-  /** The per-seller order the row belongs to — the farm, its items, and the
-      statuses that decide whether a review is due at all. */
   order: AccountOrder;
 };
 
-/**
- * The row of "beri ulasan" buttons under a delivered parcel, and the sheet
- * they open.
- *
- * @remarks
- * Split out of `OrderDetail` rather than folded into it: the receipt is a
- * server component, and the sheet needs the state that picks which subject is
- * being rated. Nothing is drawn until the parcel has arrived — see
- * `reviewSubjects`, which is also where the one-subject-per-product rule and
- * the delivered-only gate are checked.
- *
- * ponytail: a subject already reviewed still shows its button, because
- * `GET /store/reviews` returns no `reference_id` to match against — the
- * backend refuses the duplicate and the sheet says so. Hide the button here
- * once the response carries the subject back.
- */
 export function ParcelReviews({ order }: ParcelReviewsProps) {
   const [target, setTarget] = useState<ReviewTarget | undefined>(undefined);
   const [open, setOpen] = useState(false);

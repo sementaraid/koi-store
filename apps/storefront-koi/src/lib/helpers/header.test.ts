@@ -9,8 +9,6 @@ test("monograms the first two words", () => {
   assert.equal(initials(""), "")
 })
 
-/* The drawn order is the caller's order — `Map` keeps insertion — and the
-   ungrouped rows must not vanish into a section. */
 test("keeps first-seen order, splits ungrouped rows off last", () => {
   const link = (label: string, group?: string): HeaderAccountLink => ({
     label,

@@ -6,75 +6,25 @@ import { TILE } from "@koi/ui/surface"
 import { Button, Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
 
-/** One figure a farm publishes about itself, e.g. `142` / `Kolam aktif`. */
 export type PartnerFact = {
-  /** The figure, already formatted for display. */
   value: string
-  /** What it counts. */
   label: string
 }
 
-/**
- * A verified partner farm, as the directory card needs it.
- *
- * The monogram tile is drawn from `name`'s first letter rather than taking a
- * logo: farm artwork is not in the kit's asset pipeline, and a brick of
- * mismatched logos reads worse than a consistent initial.
- *
- * @example
- * const farm: PartnerFarm = {
- *   id: "blitar-premier",
- *   name: "Sentra Blitar Premier",
- *   location: "Jawa Timur, Indonesia",
- *   rating: 4.98,
- *   facts: [
- *     { value: "142", label: "Kolam aktif" },
- *     { value: "100%", label: "Sertifikat APKI" },
- *     { value: "1.240+", label: "Ikan terlelang" },
- *   ],
- *   speciality: "Kohaku, Sanke, Showa",
- *   href: "/farms/blitar-premier",
- * }
- */
 export type PartnerFarm = {
-  /** Stable farm id from the API. */
   id: string
-  /** Farm name, e.g. `"Sentra Blitar Premier"`. */
   name: string
-  /** Province and country, as the house writes it. Omitted when the seller
-      record carries no location — the card then draws no line rather than an
-      invented one. */
   location?: string
-  /** Rating as published, e.g. `4.98`. Rendered to two decimals. Omitted when
-      nothing publishes one; the star is then absent, not zero. */
   rating?: number
-  /** At-a-glance figures. More or fewer wrap rather than clip; three is what
-      the design row holds. Omitted — a real seller record has no counts to
-      quote — the row is not drawn. */
   facts?: PartnerFact[]
-  /** Varieties the farm breeds, e.g. `"Kohaku, Sanke, Showa"`. Omitted when the
-      seller publishes none. */
   speciality?: string
-  /** The farm's page. Also where the CTA points. */
   href: string
 }
 
-/** Props beyond the underlying card's, which pass straight through. */
 export type PartnerCardProps = ComponentProps<typeof Card> & {
   partner: PartnerFarm
 }
 
-/**
- * Verified-breeder directory tile: monogram, name with the trust tick, location,
- * rating, a three-figure row, and the way into the farm's own page.
- *
- * Presentation only — a farm in, a card out. The tick is not a claim this
- * component makes: the directory only holds farms the house has inspected, so
- * every card carries it by definition.
- *
- * @example
- * <PartnerCard partner={farm} />
- */
 export function PartnerCard({
   partner,
   className,
@@ -83,12 +33,9 @@ export function PartnerCard({
   const { name, location, rating, facts, speciality, href } = partner
 
   return (
-    /* `sm` spacing: these sit three-up on the page, where the card's default
-       gutter would push the facts row below the fold of the tile. */
     <Card
       data-slot="partner-card"
       size="sm"
-      /* Same material as the product tile: flat + TILE standoff, no edge ring. */
       variant="flat"
       className={cn("w-full ring-0", TILE, className)}
       {...props}
@@ -125,8 +72,6 @@ export function PartnerCard({
             </RenderIf>
           </div>
 
-          {/* A star with no figure behind it is a claim the house has not
-              made, so an unrated farm shows none. */}
           <RenderIf when={rating}>
             {(score) => (
               <span className="flex shrink-0 items-center gap-1 text-xs font-bold tabular-nums">

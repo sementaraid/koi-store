@@ -9,18 +9,10 @@ import { requireAdmin } from '@/lib/guard';
 import { sdk } from '../client';
 import { getAuthHeaders } from '../cookies';
 
-/** US-059 T-059.2: the strike panel's data. Every call is a server action and
-    calls `requireAdmin()` itself (admin-koi CLAUDE.md), then the typed
-    `sdk.admin.strikes` route with the existing header helper. */
-
-/** The three reasons a strike can be given for (AC1). */
 export type StrikeReasonType = 'winner_unpaid' | 'farmer_not_shipped' | 'farmer_claim_refused';
 
-/** The derived ban state (AC2): no ban table, `active_count >= 2`. */
 export type StrikeBan = { active_count: number; banned: boolean };
 
-/** One strike row. The backend selects no phone, NIK or bank field
-    (D-042/D-045); the ids are opaque and only used to target the action. */
 export type AdminStrike = {
   id: string;
   customer_id: string;
@@ -43,7 +35,6 @@ export type StrikeHistory = {
   offset: number;
 };
 
-/** What a give/remove call returns: the row and the recomputed ban. */
 type StrikeResult = { strike: AdminStrike; ban: StrikeBan };
 
 export type StrikeActionResult =
@@ -58,10 +49,6 @@ export type GiveStrikeInput = {
   reason: string;
 };
 
-/* One page of history, no paging: the panel shows it under the row whose
-   action it belongs to. Add paging when an account passes 20 strikes. */
-/* Same client-typing gap as `reports.ts`: the route validates its query into
-   `validatedQuery`, which the client derives no input type from. */
 export const listStrikes = async (customerId: string): Promise<StrikeHistory | null> => {
   await requireAdmin(ROUTES.reports);
 
@@ -77,8 +64,6 @@ export const listStrikes = async (customerId: string): Promise<StrikeHistory | n
   }
 };
 
-/** Give one strike with the operator's written reason (AC1, AC4). The ban is
-    the server's derived answer, never computed here. */
 export async function giveStrike(input: GiveStrikeInput): Promise<StrikeActionResult> {
   await requireAdmin(ROUTES.reports);
 
@@ -101,8 +86,6 @@ export async function giveStrike(input: GiveStrikeInput): Promise<StrikeActionRe
   }
 }
 
-/** Remove an active strike, with its own written reason (AC3, AC4). Nothing is
-    deleted: the backend writes `removed_*`, and the ban drops with the count. */
 export async function removeStrike(id: string, reason: string): Promise<StrikeActionResult> {
   await requireAdmin(ROUTES.reports);
 

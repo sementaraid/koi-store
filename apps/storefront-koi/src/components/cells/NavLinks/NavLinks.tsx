@@ -5,10 +5,6 @@ import { Link } from "@/components/atoms/Link/Link"
 import { PulseIcon } from "@/components/atoms/PulseIcon/PulseIcon"
 import type { HeaderLink } from "@/types/header"
 
-/**
- * Desktop nav: text links, the live one wearing the pulse. Below `lg` it is
- * gone — those destinations live in the bottom nav.
- */
 export function NavLinks({
   links,
   activeHref,
@@ -29,9 +25,6 @@ export function NavLinks({
             size="sm"
             aria-current={active ? "page" : undefined}
             className={cn(
-              /* The footer's link row, lifted onto the bar: quiet size, muted
-                 at rest, spending the brand accent on interaction — plus the
-                 current page, the other thing the accent marks. */
               "gap-1.5 px-2 text-xs",
               active
                 ? "font-bold text-accent-ink"

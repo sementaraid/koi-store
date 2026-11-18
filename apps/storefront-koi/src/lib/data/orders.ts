@@ -8,7 +8,6 @@ import { sdk } from '../client';
 import medusaError from '../helpers/medusa-error';
 import { getAuthHeaders, getCacheOptions } from './cookies';
 
-// TODO: legacy returns endpoints — migrate when the returns module lands
 type LooseRoute = {
   query: <T = unknown>(i?: never) => Promise<T>;
   mutate: <T = unknown>(i?: never) => Promise<T>;
@@ -20,13 +19,6 @@ export const retrieveOrderGroup = async (id: string) => {
   return (
     sdk.store.orderGroups.$id.query({
       $id: id,
-      /* The route's curated defaults carry most of what the receipt draws, but
-         not a line's `product_id` — and a review is filed against that id, not
-         against the product's handle. `orders.items.product_id` by name is not
-         in the route's `allowed` list and would be silently stripped; the whole
-         relation is (Mercur lists `orders.items` as expandable), so the star
-         form is what actually brings the column back. Leading `*` also keeps
-         the defaults rather than replacing them. */
       fields: '*orders.items',
       fetchOptions: {
         headers: { ...(await getAuthHeaders()) },

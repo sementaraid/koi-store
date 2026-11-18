@@ -1,11 +1,3 @@
-/** The shape a per-seller order arrives in from `listOrders`.
- *
- * @remarks
- * A narrowed view of `HttpTypes.StoreOrder`, not a re-declaration: the account
- * pages read a line item's title, thumbnail and seller, and nothing else. Kept
- * here rather than inline in each section because the orders list, the account
- * home and the order detail all draw the same row.
- */
 export type AccountOrder = {
   id: string;
   display_id?: number | null;

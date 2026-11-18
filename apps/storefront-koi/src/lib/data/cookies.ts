@@ -64,13 +64,6 @@ export const removeAuthToken = async () => {
   });
 };
 
-/** The farmer's member token (D-003).
- *
- * @remarks
- * A second jar, not a second field: a Medusa token covers one actor, so the
- * customer session in `_medusa_jwt` cannot also answer `/vendor/*`. The farmer
- * is the same person and signs in with the same email and password; the two
- * cookies are that person's two faces. */
 export const getMemberAuthHeaders = async (): Promise<
   { authorization: string } | {}
 > => {

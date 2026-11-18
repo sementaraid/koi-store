@@ -13,7 +13,6 @@ import { getAuthHeaders, getMemberAuthHeaders, setMemberToken } from './cookies'
 import { retrieveCustomer } from './customer';
 import { memberSignIn } from './member';
 
-/** One farm's status, as the Farmer area needs it (US-020 AC3). */
 export type FarmSeller = {
   id: string;
   name: string;
@@ -23,32 +22,17 @@ export type FarmSeller = {
   approved_at: string | null;
 };
 
-/** Uploads already made for one registration attempt.
- *
- * @remarks
- * Returned on a failed submit so the form can hand them back on retry: a KTP
- * scan and a set of farm photos should not be uploaded twice because the seller
- * call after them failed. */
 export type FarmUploads = {
   ktp_photo_key?: string;
   farm_photo_urls?: string[];
 };
 
-/** Which step of the registration failed — the customer is told exactly. */
 export type FarmStep = 'session' | 'signin' | 'upload' | 'register' | 'member';
 
 export type FarmRegistrationResult =
   | { ok: true }
   | { ok: false; step: FarmStep; message: string; uploads: FarmUploads };
 
-/** The signed-in farmer's seller, or `null` when this account has none.
- *
- * @remarks
- * `GET /vendor/sellers` needs the member token (D-003's second login) and reads
- * the seller through the member link; `seller.*` carries `status_reason` too.
- * A 401 means the member cookie is absent or stale — the same answer as "no
- * registration", which draws the form. Any other failure is thrown, so the page
- * shows an error instead of claiming the customer never registered. */
 export async function getMyFarm(): Promise<FarmSeller | null> {
   const headers = await getMemberAuthHeaders();
   if (!('authorization' in headers)) return null;
@@ -73,36 +57,15 @@ export async function getMyFarm(): Promise<FarmSeller | null> {
   };
 }
 
-/** One registration file through the customer-authenticated upload route
-    (T-020.5). The typed client turns the `file` into multipart itself. */
 async function uploadFarmFile(
   purpose: 'ktp' | 'farm',
   file: File,
   headers: { authorization: string }
 ) {
-  /* A variable, not a literal: the generated route type declares only
-     `purpose` in its body (multer keeps the file off `validatedBody`), while
-     the handler reads `req.file` from the same multipart request. Passing the
-     object by reference is what keeps this typed instead of cast. */
   const payload = { purpose, file, fetchOptions: { headers } };
   return sdk.store.farmUploads.mutate(payload);
 }
 
-/** Submit a farm registration (US-020 T-020.2).
- *
- * @remarks
- * D-003's sequence, in one action so a half-finished registration cannot be
- * left behind by a navigation:
- * 1. the customer token uploads the KTP (private) and the farm photos (public);
- * 2. a first member sign-in carries the empty `actor_id` `POST /vendor/sellers`
- *    expects;
- * 3. the same credentials sign in again — that token carries the new member id
- *    and is what every later `/vendor/*` call needs — and is kept in its own
- *    cookie.
- *
- * The account password is asked for on the form because the server only ever
- * holds a customer token, never the password needed to open the member session.
- * It is used here and not stored. */
 export async function registerFarm(
   data: FarmRegistrationData,
   ktp: File,
@@ -144,8 +107,6 @@ export async function registerFarm(
     };
   }
 
-  /* Upload what is not uploaded yet. The urls already made are kept in the
-     same order as the chosen files, so a retry resumes rather than repeats. */
   const nextUploads: FarmUploads = {
     ktp_photo_key: uploads.ktp_photo_key,
     farm_photo_urls: [...(uploads.farm_photo_urls ?? [])].slice(0, farmPhotos.length)
@@ -174,8 +135,6 @@ export async function registerFarm(
   }
 
   try {
-    /* `phone` is deliberately absent: the server copies the customer's
-       registration phone (D-016) and ignores a body value. */
     await sdk.vendor.sellers.mutate({
       name: data.name,
       email: customer.email,

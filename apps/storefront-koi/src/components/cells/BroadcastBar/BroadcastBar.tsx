@@ -6,47 +6,17 @@ import { CONTAINER } from "@/const/layout"
 import { PulseIcon } from "@/components/atoms/PulseIcon/PulseIcon"
 import { RenderIf } from "@koi/ui"
 
-/** One figure the house publishes beside the broadcast: a value and what it counts. */
 export type BroadcastStat = {
-  /** The figure, already formatted for display, e.g. `"Rp 1,42 M"`. */
   value: string
-  /** What it counts, e.g. `"Escrow terkunci"`. */
   label: string
 }
 
-/** Props for {@link BroadcastBar}. */
 export type BroadcastBarProps = ComponentProps<"div"> & {
-  /** What is on air, as one line. Omitted, the bar carries the counts alone. */
   message?: string
-  /** How many lots are open right now. Omitted, the count is left out. */
   liveCount?: number
-  /** The proof figures, in reading order. `[]` drops them. */
   stats?: BroadcastStat[]
 }
 
-/**
- * The band under the header of a live floor: what is on air, and the house's
- * figures — the ticker a broadcast room needs and a catalogue page does not.
- *
- * Presentation only. The latency and escrow figures are the house's claims, not
- * measurements this component takes: it renders what it is handed.
- *
- * @remarks
- * The two icons are fixed to their stat by position rather than by a prop on
- * {@link BroadcastStat}, because there are exactly two figures looking for two
- * marks — a third would read better with its label alone than with a borrowed
- * glyph. A stat past the second is drawn without one.
- *
- * @example
- * <BroadcastBar
- *   message="Sesi Spesial Dainichi sedang berlangsung"
- *   liveCount={38}
- *   stats={[
- *     { label: "Escrow terkunci", value: "Rp 1,42 M" },
- *     { label: "Latency", value: "18ms" },
- *   ]}
- * />
- */
 export function BroadcastBar({
   message,
   liveCount,

@@ -8,24 +8,14 @@ import type {
   MarketTab,
 } from "@/types/marketplace"
 
-/* The shop's demo shelf. Same contract as `constant/catalog.ts`: they exist so
-   the page renders something real before an API owns it, and the seller's own
-   stock replaces them wholesale.
-
-   Goods, not koi — food, biotics, water treatment, tools. Every demo good
-   carries a `stock` and a price `unit`, which are the two things a shelf item
-   has and a koi does not. Delete the file the day the API lands. */
-
 const image = (seed: string) => `https://picsum.photos/seed/${seed}/640/480`
 
-/** The filter a caller gets without saying otherwise. */
 export const DEFAULT_MARKET_FILTER: MarketFilter = {
   status: "all",
   category: "",
   sort: "newest",
 }
 
-/** Stock tabs, in reading order. `all` first: it is the default view. */
 export const DEFAULT_MARKET_TABS: MarketTab[] = [
   { value: "all", label: "Semua" },
   { value: "in-stock", label: "Tersedia" },
@@ -33,14 +23,12 @@ export const DEFAULT_MARKET_TABS: MarketTab[] = [
   { value: "out-of-stock", label: "Habis" },
 ]
 
-/** Listing orders, as the shop words them. Values are what the API will take. */
 export const DEFAULT_MARKET_SORTS: MarketSortOption[] = [
   { value: "newest", label: "Terbaru" },
   { value: "price-asc", label: "Harga terendah" },
   { value: "price-desc", label: "Harga tertinggi" },
 ]
 
-/** Goods on the shelf, newest first — the order `newest` means. */
 export const DEFAULT_SUPPLIES: SimpleProduct[] = [
   {
     kind: "simple",
@@ -229,7 +217,6 @@ export const DEFAULT_SUPPLIES: SimpleProduct[] = [
   },
 ]
 
-/** Stock labels, for the "nothing here" line and the result count. */
 export const STOCK_LABEL: Record<StockLevel | "all", string> = {
   all: "produk",
   "in-stock": "produk tersedia",
@@ -237,10 +224,6 @@ export const STOCK_LABEL: Record<StockLevel | "all", string> = {
   "out-of-stock": "produk habis",
 }
 
-/** The shop's own attribute facets. `berat` and `varian` are the supply
-    variant axes; the two feed attributes only supplies carry. Attributes are
-    global in Mercur, so this is what keeps a koi's bloodline off a sack of
-    food. */
 export const MARKET_ATTRIBUTE_HANDLES = [
   "berat",
   "varian",

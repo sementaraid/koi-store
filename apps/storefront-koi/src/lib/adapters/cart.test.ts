@@ -1,14 +1,8 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-/* Relative paths only, same reason as the helper tests: the runner strips types
-   without reading tsconfig, so `@/` does not resolve. Type-only imports erase. */
 import { toCartMoney } from "./cart.ts"
 import type { HttpTypes } from "@medusajs/types"
-
-/* What this mapping goes wrong at: drawing a zero as a priced row (free
-   shipping on an unpriced delivery), and reporting a total the cart is not
-   actually going to charge. */
 
 const cart = (over: Record<string, unknown> = {}) =>
   ({

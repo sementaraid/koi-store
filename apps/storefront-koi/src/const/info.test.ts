@@ -2,24 +2,14 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
-/* Relative paths only, same reason as the helper tests: the runner strips types
-   without reading tsconfig, so `@/` does not resolve. */
 import { INFO_DOCS, INFO_SLUGS } from './info.ts';
 import { ROUTES } from './routes.ts';
 
-/**
- * Every URL `app/` can answer for, as `/`-joined segments.
- *
- * Dynamic segments (`[slug]`) are recorded in a second set, because a link into
- * one is only dead if nothing backs the segment — which is exactly the case
- * these tests exist to catch for the `[slug]` standing pages.
- */
 const readRoutes = (dir: string, prefix = ''): { static: Set<string>; dynamic: Set<string> } => {
   const out = { static: new Set<string>(), dynamic: new Set<string>() };
 
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
-    /* Route groups are parentheses and do not appear in the URL. */
     const group = /^\(.*\)$/.test(entry.name);
     const path = group ? prefix : `${prefix}/${entry.name}`;
 

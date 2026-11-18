@@ -12,16 +12,6 @@ export const metadata: Metadata = {
   title: 'Pantau lelang'
 };
 
-/**
- * The `/lelang/langsung` live monitoring screen (US-072 T-072.2a), with the
- * bid panel (T-072.2b) when `?lot=<id>` is present.
- *
- * @remarks
- * Two reads: the live auctions and their lots, and — only when a lot is
- * selected — that lot's bids. A lot that has since closed still opens
- * read-only, so the audit stays reachable. `now` is the server's clock, so the
- * countdown text matches between the server and client renders.
- */
 export default async function LiveAuctionsRoute({
   searchParams
 }: {
@@ -47,8 +37,6 @@ export default async function LiveAuctionsRoute({
             bid yang salah.
           </p>
         </div>
-        {/* A plain link, not a timer: the screen refreshes when the operator
-            asks, and never polls (T-072.2a). */}
         <Link
           href={lotId ? `${ROUTES.liveAuctions}?lot=${encodeURIComponent(lotId)}` : ROUTES.liveAuctions}
           className="text-sm text-accent-ink underline underline-offset-4"

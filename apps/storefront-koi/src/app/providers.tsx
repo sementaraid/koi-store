@@ -7,8 +7,6 @@ import type { Cart } from '@/types/medusa';
 
 interface ProvidersProps extends PropsWithChildren {
   cart: Cart | null;
-  /** The TalkJS session, when the app id is set and someone is signed in.
-      Absent, chat surfaces render nothing — see `ChatButton`. */
   chat?: {
     appId: string;
     userId: string;

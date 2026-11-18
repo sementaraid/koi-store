@@ -5,18 +5,13 @@ import { Award } from "lucide-react"
 import { RenderIf } from "@koi/ui"
 import type { AuctionProduct, ListingBase } from "@/types/product"
 
-/** Props for {@link SpecCell}. */
 export type SpecCellProps = {
   label: string
   value?: string
   className?: string
 }
 
-/** One cell of the spec sheet: a quiet tile, not a labelled row. */
 export function SpecCell({ label, value, className }: SpecCellProps) {
-  /* `null` rather than a wrapping {@link RenderIf}, so a missing fact leaves no
-     gap behind — the grid's own gap does the spacing, so the layout stays
-     honest however many facts are absent. */
   if (!value) return null
 
   return (
@@ -29,25 +24,13 @@ export function SpecCell({ label, value, className }: SpecCellProps) {
   )
 }
 
-/** Props for {@link SpecSheet}. */
 export type SpecSheetProps = {
-  /** What the lot is. Its `awards` opens the sheet, its facts fill the grid. */
   listing?: ListingBase
-  /** Secondary attributes the sheet reads a fact off, e.g. the sex. */
   info?: AuctionProduct["info"]
-  /** A way to the fuller page, drawn beside the heading. Omitted, no link. */
   action?: ReactNode
   className?: string
 }
 
-/**
- * The lot's spec sheet: what it won, then what it is.
- *
- * @remarks
- * The award sits above the grid rather than in it, because it is the one line
- * of the sheet a bidder reads first and a grid cell gives every fact the same
- * weight. Gold is the kit's own `attention` tone, not a new one.
- */
 export function SpecSheet({
   listing,
   info,

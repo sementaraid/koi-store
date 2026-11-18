@@ -6,7 +6,6 @@ import { listOrderGroups } from './AccountPage';
 import { Messages } from './components/Messages';
 import { countOpen } from './components/Orders';
 
-/** Every conversation the customer has with the shops. */
 export async function MessagesPage() {
   const [, { account, cart }, groups] = await Promise.all([
     requireCustomer(ROUTES.messages),

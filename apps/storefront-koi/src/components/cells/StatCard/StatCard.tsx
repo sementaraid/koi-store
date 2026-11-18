@@ -5,43 +5,15 @@ import { cn } from 'cn';
 import { Card, RenderIf } from "@koi/ui";
 import { SECTION_LABEL } from '@/const/layout';
 
-/** Props for {@link StatCard}. */
 export type StatCardProps = {
-  /** What is being stated, in the house's quiet section voice. */
   label: string;
-  /** The glyph beside the label, in the brand accent. Omitted, the label
-      stands alone. */
   icon?: LucideIcon;
-  /** The figure or the phrase itself — the one thing the card is for. */
   value: ReactNode;
-  /** A line under the value: the address behind the city, the date behind the
-      balance. Omitted, the card is the label and the value. */
   note?: ReactNode;
-  /** The way to act on it — "Kelola alamat", "Isi saldo". */
   action?: ReactNode;
   className?: string;
 };
 
-/**
- * One fact about the account, boxed: a label, the figure, and the way to change
- * it.
- *
- * @remarks
- * A card rather than a row because these sit two-up at the foot of the account
- * home, where a bare label-over-value pair loses its edges against the sections
- * above it. It stands on the kit's `Card` material, the same panel the cart's
- * rail and the auth screens use: the account pages are the only place in the
- * storefront that was drawing its own hairline box, which is how one page ends
- * up looking like a different product.
- *
- * The value is set in the kit's figure voice — heading face, extrabold,
- * `tabular-nums` — so a price here and a price in the cart's rail are visibly
- * the same kind of fact, and a column of them does not jitter as the digits
- * change.
- *
- * @example
- * <StatCard label="Alamat utama" value="Bandung" action={<Link …>Kelola</Link>} />
- */
 export function StatCard({
   label,
   icon: Icon,
