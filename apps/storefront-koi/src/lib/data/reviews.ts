@@ -3,7 +3,7 @@
 import { revalidateTag } from 'next/cache';
 
 import { sdk } from '../client';
-import { getAuthHeaders, getCacheOptions, getCacheTag } from './cookies';
+import { getAuthHeaders, getCacheTag } from './cookies';
 
 type LooseRoute = {
   query: <T = unknown>(i?: never) => Promise<T>;
@@ -36,18 +36,13 @@ export type CreateReviewInput = {
 };
 
 export const listMyReviews = async (): Promise<StoreReview[]> => {
-  const next = {
-    ...(await getCacheOptions('reviews'))
-  };
-
   return storeLoose.reviews
     .query<{ reviews: StoreReview[] }>({
       order: '-created_at',
       limit: 100,
       fetchOptions: {
         headers: { ...(await getAuthHeaders()) },
-        next,
-        cache: 'force-cache'
+        cache: 'no-store'
       }
     } as never)
     .then(({ reviews }) => reviews ?? [])

@@ -11,7 +11,6 @@ import { parseVariantIdsFromError } from '@/lib/helpers/parse-variant-error';
 import { sdk } from '../client';
 import {
   getAuthHeaders,
-  getCacheOptions,
   getCacheTag,
   getCartId,
   removeCartId,
@@ -527,13 +526,10 @@ export async function listCartOptions() {
   const headers = {
     ...(await getAuthHeaders())
   };
-  const next = {
-    ...(await getCacheOptions('shippingOptions'))
-  };
 
   return await (sdk.store.shippingOptions.query({
     cart_id: cartId,
-    fetchOptions: { headers, next, cache: 'force-cache' }
+    fetchOptions: { headers, cache: 'no-store' }
   } as never) as unknown as Promise<{
     shipping_options: HttpTypes.StoreCartShippingOption[];
   }>);

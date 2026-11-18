@@ -1,46 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { ROUTES } from './const/routes';
+import { loginHrefFor } from './lib/helpers/login-href';
 import { isTokenExpired } from './lib/helpers/token';
+
+const AUTH_COOKIE = '_medusa_jwt';
 
 const PROTECTED_ROUTES = [ROUTES.account];
 
-const makeAuthRedirect = (
-  request: NextRequest,
-  reason: 'sessionRequired' | 'sessionExpired'
-) => {
-  const url = new URL(ROUTES.login, request.url);
-  url.searchParams.set(reason, 'true');
-  url.searchParams.set(
-    'redirect',
-    `${request.nextUrl.pathname}${request.nextUrl.search}`
-  );
-
-  const response = NextResponse.redirect(url);
-
-  if (reason === 'sessionExpired') {
-    response.cookies.delete('_medusa_jwt');
-  }
-
-  return response;
-};
-
+/**
+ * An expired token must never reach the API or become an identity, on any route
+ * — the header renders from the same cookie, so an expired one is cleared here
+ * or the header and the page disagree. The account pages keep their early
+ * bounce; every other page falls through to `requireCustomer`/`getSession`.
+ */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const token = request.cookies.get(AUTH_COOKIE)?.value;
+  const expired = Boolean(token) && isTokenExpired(token ?? null);
 
   if (PROTECTED_ROUTES.some(route => pathname.startsWith(route))) {
-    const token = request.cookies.get('_medusa_jwt')?.value;
-
-    if (!token) {
-      return makeAuthRedirect(request, 'sessionRequired');
-    }
-
-    if (isTokenExpired(token)) {
-      return makeAuthRedirect(request, 'sessionExpired');
+    if (!token || expired) {
+      const url = new URL(
+        loginHrefFor(
+          expired ? { status: 'expired' } : { status: 'anonymous' },
+          `${pathname}${request.nextUrl.search}`
+        ),
+        request.url
+      );
+      const redirect = NextResponse.redirect(url);
+      if (expired) redirect.cookies.delete(AUTH_COOKIE);
+      return redirect;
     }
   }
 
   const response = NextResponse.next();
+
+  if (expired) {
+    response.cookies.delete(AUTH_COOKIE);
+  }
 
   if (!request.cookies.get('_medusa_cache_id')) {
     response.cookies.set('_medusa_cache_id', crypto.randomUUID(), {

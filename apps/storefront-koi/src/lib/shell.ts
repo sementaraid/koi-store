@@ -1,15 +1,17 @@
 import type { HeaderAccount, HeaderCart } from '@/types/header';
 import { retrieveCart } from '@/lib/data/cart';
-import { retrieveCustomer } from '@/lib/data/customer';
+import { getSession } from '@/lib/data/session';
 
 export async function getShell(): Promise<{
   account?: HeaderAccount;
   cart?: HeaderCart;
 }> {
-  const [customer, cart] = await Promise.all([
-    retrieveCustomer().catch(() => null),
+  const [session, cart] = await Promise.all([
+    getSession().catch(() => ({ status: 'error' as const })),
     retrieveCart().catch(() => null)
   ]);
+
+  const customer = session.status === 'authenticated' ? session.customer : null;
 
   const account: HeaderAccount | undefined = customer
     ? {

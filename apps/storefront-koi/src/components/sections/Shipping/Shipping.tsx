@@ -7,8 +7,8 @@ import {
   toShippingParcels
 } from '@/lib/adapters/shipping';
 import { retrieveCart } from '@/lib/data/cart';
-import { retrieveCustomer } from '@/lib/data/customer';
 import { listCartShippingMethods } from '@/lib/data/fulfillment';
+import { requireCustomer } from '@/lib/guard';
 import { getShell } from '@/lib/shell';
 
 import { Checkout } from './components/Checkout';
@@ -23,7 +23,7 @@ export async function Shipping() {
 
   const [options, customer] = await Promise.all([
     listCartShippingMethods(cart.id),
-    retrieveCustomer().catch(() => null)
+    requireCustomer(ROUTES.shipping)
   ]);
 
   const addresses = toShippingAddresses(customer);

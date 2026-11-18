@@ -7,37 +7,27 @@ import { redirect } from 'next/navigation';
 import { sdk } from '../client';
 import {
   getAuthHeaders,
-  getCacheOptions,
   getCacheTag,
   getCartId,
   removeAuthToken,
   removeCartId,
   removeMemberToken,
+  rotateCacheId,
   setAuthToken,
   setMemberToken
 } from './cookies';
 import { memberSignIn } from './member';
+import { getSession } from './session';
 
+/**
+ * The signed-in customer, or `null` when anonymous, expired or the API could
+ * not answer. Reads `getSession`, so it can never contradict the guards.
+ * Not cached: an identity must not outlive its token.
+ */
 export const retrieveCustomer = async (): Promise<HttpTypes.StoreCustomer | null> => {
-  const authHeaders = await getAuthHeaders();
+  const session = await getSession();
 
-  if (!('authorization' in authHeaders)) return null;
-
-  const headers = {
-    ...authHeaders
-  };
-
-  const next = {
-    ...(await getCacheOptions('customers'))
-  };
-
-  return await (sdk.store.customers.me
-    .query({
-      fields: '*orders,*addresses',
-      fetchOptions: { headers, next, cache: 'force-cache' }
-    } as never) as unknown as Promise<{ customer: HttpTypes.StoreCustomer }>)
-    .then(({ customer }) => customer ?? null)
-    .catch(() => null);
+  return session.status === 'authenticated' ? session.customer : null;
 };
 
 export const updateCustomer = async (body: HttpTypes.StoreUpdateCustomer) => {
@@ -114,6 +104,10 @@ export async function login(formData: FormData) {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
 
+  if (!email || !password) {
+    return { success: false, message: 'Email dan kata sandi wajib diisi.' };
+  }
+
   try {
     const token = await (sdk.auth.$actorType.$authProvider
       .mutate({ $actorType: 'customer', $authProvider: 'emailpass', email, password } as never) as unknown as Promise<{ token: string }>)
@@ -122,8 +116,7 @@ export async function login(formData: FormData) {
 
     await memberSignIn(email, password).then(setMemberToken).catch(() => undefined);
 
-    const customerCacheTag = await getCacheTag('customers');
-    revalidateTag(customerCacheTag);
+    await rotateCacheId();
 
     return { success: true };
   } catch (error: unknown) {
@@ -137,14 +130,10 @@ export async function login(formData: FormData) {
 export async function signout() {
   await removeAuthToken();
   await removeMemberToken();
-
-  const customerCacheTag = await getCacheTag('customers');
-  revalidateTag(customerCacheTag);
-
   await removeCartId();
 
-  const cartCacheTag = await getCacheTag('carts');
-  revalidateTag(cartCacheTag);
+  await rotateCacheId();
+
   redirect(`/`);
 }
 

@@ -6,7 +6,7 @@ import { SellerDTO } from '@mercurjs/types';
 
 import { sdk } from '../client';
 import medusaError from '../helpers/medusa-error';
-import { getAuthHeaders, getCacheOptions } from './cookies';
+import { getAuthHeaders } from './cookies';
 
 type LooseRoute = {
   query: <T = unknown>(i?: never) => Promise<T>;
@@ -31,10 +31,6 @@ export const retrieveOrderGroup = async (id: string) => {
 };
 
 export const retrieveOrder = async (id: string) => {
-  const next = {
-    ...(await getCacheOptions('orders'))
-  };
-
   return (
     sdk.store.orders.$id.query({
       $id: id,
@@ -42,8 +38,7 @@ export const retrieveOrder = async (id: string) => {
         '*payment_collections.payments,*items,*items.metadata,*items.variant,*items.product,*seller,*order_group',
       fetchOptions: {
         headers: { ...(await getAuthHeaders()) },
-        next,
-        cache: 'force-cache'
+        cache: 'no-store'
       }
     } as never) as unknown as Promise<
       HttpTypes.StoreOrderResponse & { seller: SellerDTO }
@@ -77,7 +72,7 @@ export const getReturns = async () => {
       fields: '*line_items.reason_id',
       fetchOptions: {
         headers: { ...(await getAuthHeaders()) },
-        cache: 'force-cache'
+        cache: 'no-store'
       }
     } as never)
     .then(res => res)
@@ -102,10 +97,6 @@ export const listOrders = async (
   offset: number = 0,
   filters?: Record<string, unknown>
 ) => {
-  const next = {
-    ...(await getCacheOptions('orders'))
-  };
-
   return (
     sdk.store.orders.query({
       limit,
@@ -116,8 +107,7 @@ export const listOrders = async (
       ...filters,
       fetchOptions: {
         headers: { ...(await getAuthHeaders()) },
-        next,
-        cache: 'no-cache'
+        cache: 'no-store'
       }
     } as never) as unknown as Promise<{
       orders: Array<
@@ -194,8 +184,8 @@ export const retrieveReturnReasons = async () => {
   return (
     sdk.store.returnReasons.query({
       fetchOptions: {
-        headers: { ...(await getAuthHeaders()) },
-        cache: 'force-cache'
+        cache: 'force-cache',
+        next: { revalidate: 3600 }
       }
     } as never) as unknown as Promise<{
       return_reasons: Array<HttpTypes.StoreReturnReason>;

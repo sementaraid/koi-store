@@ -18,7 +18,9 @@ import { loginSchema, type LoginData } from './schema';
 
 const NOTICES: Record<string, string> = {
   sessionExpired: 'Sesi Anda telah berakhir. Masuk lagi untuk melanjutkan.',
-  sessionRequired: 'Masuk dulu untuk melanjutkan.'
+  sessionRequired: 'Masuk dulu untuk melanjutkan.',
+  sessionError:
+    'Kami tidak bisa memeriksa sesi Anda karena gangguan sementara. Coba masuk lagi.'
 };
 
 export function LoginForm({

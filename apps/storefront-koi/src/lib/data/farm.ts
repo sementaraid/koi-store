@@ -8,7 +8,7 @@ import { ROUTES } from '@/const/routes';
 import { sdk } from '../client';
 import { authErrorMessage } from '../helpers/auth-error';
 import type { FarmRegistrationData } from '../helpers/farm-schema';
-import { tokenActorId } from '../helpers/token';
+import { isTokenExpired, tokenActorId } from '../helpers/token';
 import { getAuthHeaders, getMemberAuthHeaders, setMemberToken } from './cookies';
 import { retrieveCustomer } from './customer';
 import { memberSignIn } from './member';
@@ -36,6 +36,9 @@ export type FarmRegistrationResult =
 export async function getMyFarm(): Promise<FarmSeller | null> {
   const headers = await getMemberAuthHeaders();
   if (!('authorization' in headers)) return null;
+
+  // An expired member token is signed out, not an outage.
+  if (isTokenExpired(headers.authorization.slice('Bearer '.length))) return null;
 
   const page = await sdk.vendor.sellers
     .query({ fetchOptions: { headers, cache: 'no-store' } })
@@ -73,7 +76,10 @@ export async function registerFarm(
   uploads: FarmUploads = {}
 ): Promise<FarmRegistrationResult> {
   const customerHeaders = await getAuthHeaders();
-  if (!('authorization' in customerHeaders)) {
+  if (
+    !('authorization' in customerHeaders) ||
+    isTokenExpired(customerHeaders.authorization.slice('Bearer '.length))
+  ) {
     return {
       ok: false,
       step: 'session',

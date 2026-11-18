@@ -5,7 +5,7 @@ import './globals.css';
 import { Toaster } from 'sonner';
 
 import { retrieveCart } from '@/lib/data/cart';
-import { retrieveCustomer } from '@/lib/data/customer';
+import { getSession } from '@/lib/data/session';
 
 import { Providers } from './providers';
 
@@ -23,7 +23,11 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children
 }: Readonly<{ children: React.ReactNode }>) {
-  const [cart, customer] = await Promise.all([retrieveCart(), retrieveCustomer()]);
+  const [cart, session] = await Promise.all([
+    retrieveCart(),
+    getSession().catch(() => ({ status: 'error' as const }))
+  ]);
+  const customer = session.status === 'authenticated' ? session.customer : null;
 
   const appId = process.env.NEXT_PUBLIC_TALKJS_APP_ID;
   const chat =
