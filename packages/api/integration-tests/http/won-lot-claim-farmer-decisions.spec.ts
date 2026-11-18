@@ -209,6 +209,9 @@ medusaIntegrationTestRunner({
           approved_at: expect.any(String),
           farmer_decided_at: expect.any(String),
           decision_reason: null,
+          // US-056 fields on the shared row: unset until resolved/confirmed.
+          resolved_at: null,
+          confirmed_at: null,
         })
         // The server's clock, not the caller's, and the same instant on both.
         expect(new Date(res.data.claim.approved_at).getTime()).toBeGreaterThanOrEqual(
@@ -250,6 +253,9 @@ medusaIntegrationTestRunner({
           approved_at: null,
           farmer_decided_at: expect.any(String),
           decision_reason: null,
+          // US-056 fields on the shared row: unset until resolved/confirmed.
+          resolved_at: null,
+          confirmed_at: null,
         })
 
         const stored = await claimById(row.id)

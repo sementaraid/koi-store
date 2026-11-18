@@ -3,6 +3,7 @@ import { test } from 'node:test';
 
 import {
   claimDecisionFailure,
+  claimResolutionFailure,
   farmerClaimStatus,
   formatClaimOpenedAt
 } from './farm-claim.ts';
@@ -62,4 +63,28 @@ test('an unknown refusal falls back to the server message', () => {
     message: 'Gagal.',
     refresh: false
   });
+});
+
+test('a changed claim (409) on resolve refreshes with the app copy', () => {
+  assert.deepEqual(claimResolutionFailure({ status: 409, message: 'Conflict' }), {
+    message: 'Status klaim sudah berubah. Halaman diperbarui.',
+    refresh: true
+  });
+});
+
+test('a missing claim (404) on resolve refreshes too', () => {
+  assert.deepEqual(claimResolutionFailure({ status: 404, message: 'Claim not found' }), {
+    message: 'Klaim tidak ditemukan.',
+    refresh: true
+  });
+});
+
+test('a closed farm (403) on resolve keeps the server copy verbatim (D-055)', () => {
+  assert.deepEqual(
+    claimResolutionFailure({
+      status: 403,
+      message: 'Kebun Anda sedang ditangguhkan.'
+    }),
+    { message: 'Kebun Anda sedang ditangguhkan.', refresh: false }
+  );
 });

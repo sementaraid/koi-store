@@ -83,6 +83,11 @@ import {
 } from "./admin/claims/validators"
 import { AdminGetReportsParams } from "./admin/reports/validators"
 import {
+  AdminGetStrikesParams,
+  AdminGiveStrike,
+  AdminRemoveStrike,
+} from "./admin/strikes/validators"
+import {
   adminPiiMask,
   storePiiMask,
   vendorPiiMask,
@@ -361,6 +366,13 @@ export default defineMiddlewares({
         validateAndTransformBody(StoreCreateClaimBody),
       ],
     },
+    // US-056 T-056.1a: the winner confirms the resolved claim (`resolved →
+    // confirmed`). No body.
+    {
+      method: ["POST"],
+      matcher: "/store/won-lots/:id/claims/confirm",
+      middlewares: [authenticate("customer", ["bearer", "session"])],
+    },
     // US-051 T-051.6 / US-053 T-053.2: the caller's own won lots, read only.
     // Customer token; no farmer contact in either response (D-052).
     {
@@ -588,6 +600,23 @@ export default defineMiddlewares({
           defaultLimit: 20,
         }),
       ],
+    },
+    // US-059 T-059.1a (AC1, AC4, D-041): give a strike, read one customer's
+    // history, remove a strike. Every mutation takes the written reason.
+    {
+      method: ["POST"],
+      matcher: "/admin/strikes",
+      middlewares: [validateAndTransformBody(AdminGiveStrike)],
+    },
+    {
+      method: ["GET"],
+      matcher: "/admin/strikes",
+      middlewares: [validateAndTransformQuery(AdminGetStrikesParams, {})],
+    },
+    {
+      method: ["POST"],
+      matcher: "/admin/strikes/:id/remove",
+      middlewares: [validateAndTransformBody(AdminRemoveStrike)],
     },
     // US-055 T-055.1b: the admin's final decision on a disputed claim. Both
     // take the written reason (AC2).

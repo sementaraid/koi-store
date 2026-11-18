@@ -6,8 +6,8 @@ import { requireAdmin } from '@/lib/guard';
 import { sdk } from '../client';
 import { getAuthHeaders } from '../cookies';
 
-/** The report lifecycle (US-058). One value: only the admin leaves `open`,
- * by giving a strike (US-059). */
+/** The report lifecycle (US-058). One value: only the admin leaves `open`, by
+ * giving a strike (US-059). */
 export type ReportStatus = 'open';
 
 /** One unpaid-winner report in the `/laporan` queue (US-058 T-058.4).
@@ -24,9 +24,13 @@ export type AdminReport = {
   reported_at: string;
   /** D-058's payment deadline; null when the lot has no `closed_at`. */
   pay_by: string | null;
-  winner: { name: string };
+  winner: { id: string; name: string; customer_id: string | null };
   seller: { name: string };
   product: { title: string | null; thumbnail: string | null };
+  /** The winner's derived ban state (US-059 T-059.1a): the admin sees the
+      count before giving a second strike. */
+  active_strikes: number;
+  banned: boolean;
 };
 
 export type ReportList = {

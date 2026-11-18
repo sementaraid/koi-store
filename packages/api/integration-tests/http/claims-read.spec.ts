@@ -102,6 +102,8 @@ medusaIntegrationTestRunner({
       const signIn = await api.post("/auth/member/emailpass", { email, password })
       return {
         seller,
+        // The farm's own account (D-003), for the T-059.2 strike test.
+        customerId: customer.id,
         vendor: {
           authorization: `Bearer ${signIn.data.token}`,
           "x-seller-id": seller.id,
@@ -334,6 +336,9 @@ medusaIntegrationTestRunner({
               winner: { name: "Siti Rahmawati" },
               // product_id has no matching product row in this seed.
               product: { title: null, thumbnail: null },
+              // US-056: unset while open.
+              resolved_at: null,
+              confirmed_at: null,
             },
           ],
           count: 1,
@@ -472,10 +477,22 @@ medusaIntegrationTestRunner({
           opened_at: new Date(first.created_at).toISOString(),
           has_video: true,
           winner: { name: "Siti Rahmawati" },
-          seller: { name: farm.seller.name },
+          seller: {
+            id: farm.seller.id,
+            name: farm.seller.name,
+            // US-059 T-059.2: the farm's member account (D-003).
+            customer_id: expect.any(String),
+          },
           product: { title: null, thumbnail: null },
           decision_reason: null,
           decided_at: null,
+          // US-056: unset while open.
+          approved_at: null,
+          resolved_at: null,
+          confirmed_at: null,
+          // US-059 T-059.1a: derived, 0/false with no strike.
+          active_strikes: 0,
+          banned: false,
         })
         expect(JSON.stringify(res.data)).not.toContain(disputed.id)
 
@@ -486,13 +503,13 @@ medusaIntegrationTestRunner({
           disputed.id,
         ])
 
-        // Masked PII only (D-042/D-052).
+        // Masked PII only (D-042/D-052). `seller.customer_id` is the farm's own
+        // account id (T-059.2), never the winner's.
         const json = JSON.stringify(res.data)
         for (const forbidden of [
           "private-",
           "http",
           "video_file_key",
-          "customer_id",
           buyer.id,
           WINNER_PHONE,
           SELLER_PHONE,
@@ -500,6 +517,51 @@ medusaIntegrationTestRunner({
         ]) {
           expect(json).not.toContain(forbidden)
         }
+      })
+
+      // US-059 T-059.2: the row's own ids let the admin strike the exact farm,
+      // not a guessed name.
+      it("carries seller.id and seller.customer_id, and the refused-claim strike lands", async () => {
+        const farm = await registerFarm()
+        const buyer = await winner()
+        const lotId = await lot({
+          sellerId: farm.seller.id,
+          winnerId: buyer.id,
+          status: "delivered",
+          deliveredAgoMs: HOUR,
+        })
+        await claim({
+          lotId,
+          customerId: buyer.id,
+          sellerId: farm.seller.id,
+          status: "approved",
+        })
+
+        const res = await api.get("/admin/claims?status=approved", {
+          headers: admin,
+        })
+        expect(res.status).toEqual(200)
+        const [row] = res.data.claims
+        expect(row.seller).toEqual({
+          id: farm.seller.id,
+          name: farm.seller.name,
+          customer_id: farm.customerId,
+        })
+
+        const strike = await api.post(
+          "/admin/strikes",
+          {
+            customer_id: row.seller.customer_id,
+            reason_type: "farmer_claim_refused",
+            reason: "Menolak klaim yang sudah disetujui.",
+          },
+          { headers: admin }
+        )
+        expect(strike.status).toEqual(201)
+        expect(strike.data.strike).toMatchObject({
+          customer_id: farm.customerId,
+          reason_type: "farmer_claim_refused",
+        })
       })
     })
 

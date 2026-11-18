@@ -18,11 +18,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@koi/ui/primitives/tab
 import { approveClaim, getClaimVideo, rejectClaim, type AdminClaim } from '@/lib/data/claims';
 import {
   claimDecisionFailure,
+  claimOverdue,
   claimRemedyLabel,
   claimStatusLabel,
   claimStatusTone,
   formatClaimDate
 } from '@/lib/helpers/claim-format';
+import { activeStrikeLabel, banLabel } from '@/lib/helpers/strike-format';
+
+import { StrikePanel } from './StrikePanel';
 
 /** Props for {@link ClaimQueue}. */
 export type ClaimQueueProps = {
@@ -32,19 +36,23 @@ export type ClaimQueueProps = {
   disputedTotal: number;
   /** Approved and rejected claims, oldest first. */
   decided: AdminClaim[];
+  /** The server's clock as ISO, so both renders compute the same deadline. */
+  now: string;
 };
 
 /**
- * The `/klaim` queue (US-054 AC3, US-055 AC2): disputes first, each with the
- * lot, the farm, the winner and the unboxing video, then the decisions already
- * taken.
+ * The `/klaim` queue (US-054 AC3, US-055 AC2; US-059 T-059.2): disputes first,
+ * each with the lot, the farm, the winner and the unboxing video, then the
+ * decisions already taken.
  *
  * @remarks
  * Only `disputed` claims carry a decision form. The decision is final
  * (D-038), so the reason is required and the confirm copy says so; a decided
- * claim sits in its own tab so it cannot be decided twice.
+ * claim sits in its own tab so it cannot be decided twice. An approved claim
+ * is also where the admin gives a `farmer_claim_refused` strike, off the row's
+ * own `seller`.
  */
-export function ClaimQueue({ disputed, disputedTotal, decided }: ClaimQueueProps) {
+export function ClaimQueue({ disputed, disputedTotal, decided, now }: ClaimQueueProps) {
   return (
     <Card>
       <CardHeader>
@@ -78,7 +86,7 @@ export function ClaimQueue({ disputed, disputedTotal, decided }: ClaimQueueProps
             {decided.length === 0 ? (
               <p className="text-sm text-muted-foreground">Belum ada klaim yang diputuskan.</p>
             ) : (
-              decided.map((claim) => <DecidedRow key={claim.id} claim={claim} />)
+              decided.map((claim) => <DecidedRow key={claim.id} claim={claim} now={now} />)
             )}
           </TabsContent>
         </Tabs>
@@ -102,6 +110,10 @@ function ClaimFacts({ claim }: { claim: AdminClaim }) {
               {claimStatusLabel(claim.status)}
             </Badge>
             <span className="text-sm text-muted-foreground">{claimRemedyLabel(claim.remedy)}</span>
+            <Badge variant={claim.active_strikes >= 2 ? 'urgent' : 'muted'}>
+              {activeStrikeLabel(claim.active_strikes)}
+            </Badge>
+            <Badge variant={claim.banned ? 'urgent' : 'neutral'}>{banLabel(claim.banned)}</Badge>
           </div>
         </div>
       </div>
@@ -128,10 +140,31 @@ function DisputedRow({ claim }: { claim: AdminClaim }) {
 }
 
 /** One decided claim: the facts and the reason the decision was taken. */
-function DecidedRow({ claim }: { claim: AdminClaim }) {
+function DecidedRow({ claim, now }: { claim: AdminClaim; now: string }) {
+  /* US-056 AC2: only an `approved` claim has a running 3-day clock. A missed
+     deadline makes the farmer strike-eligible; the strike itself is US-059. */
+  const deadline = claim.status === 'approved' ? claimOverdue(claim.approved_at, now) : null;
+
   return (
     <div className="grid gap-3 rounded-md border border-border p-3">
       <ClaimFacts claim={claim} />
+      {claim.status === 'approved' && claim.approved_at ? (
+        <div className="grid gap-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">
+              Disetujui {formatClaimDate(claim.approved_at)}
+            </span>
+            {deadline && deadline.label ? (
+              <Badge variant={deadline.overdue ? 'attention' : 'muted'}>{deadline.label}</Badge>
+            ) : null}
+          </div>
+          {deadline?.overdue ? (
+            <p className="text-xs text-muted-foreground">
+              Petani melewati batas 3 hari dan menjadi layak menerima strike.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
       {claim.decision_reason ? (
         <p className="text-sm">Alasan: {claim.decision_reason}</p>
       ) : null}
@@ -139,6 +172,18 @@ function DecidedRow({ claim }: { claim: AdminClaim }) {
         <p className="text-xs text-muted-foreground">
           Diputuskan {formatClaimDate(claim.decided_at)}
         </p>
+      ) : null}
+      {/* US-059 T-059.2: refusing an approved claim is what earns this strike. */}
+      {claim.status === 'approved' ? (
+        <StrikePanel
+          defaultReasonType="farmer_claim_refused"
+          customerId={claim.seller.customer_id}
+          target={
+            claim.seller.customer_id
+              ? { customer_id: claim.seller.customer_id }
+              : { seller_id: claim.seller.id }
+          }
+        />
       ) : null}
     </div>
   );

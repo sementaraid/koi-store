@@ -26,6 +26,9 @@ export type ClaimListRow = {
   has_video: boolean
   winner: { name: string }
   product: { title: string | null; thumbnail: string | null }
+  // US-056: the two resolution timestamps, ISO or null.
+  resolved_at: string | null
+  confirmed_at: string | null
 }
 
 export type VendorClaimsResponse = {
@@ -41,6 +44,8 @@ type ClaimRecord = {
   status: string
   remedy: string
   created_at: Date | string
+  resolved_at: Date | string | null
+  confirmed_at: Date | string | null
 }
 
 // D-042/D-052: name only. `phone`, `email` and the id are never selected.
@@ -122,6 +127,12 @@ export const toClaimListRows = (
         title: lot?.product?.title ?? null,
         thumbnail: lot?.product?.thumbnail ?? null,
       },
+      resolved_at: claim.resolved_at
+        ? new Date(claim.resolved_at).toISOString()
+        : null,
+      confirmed_at: claim.confirmed_at
+        ? new Date(claim.confirmed_at).toISOString()
+        : null,
     }
   })
 
@@ -143,7 +154,15 @@ export const GET = async (
 
   const { data, metadata } = await query.graph({
     entity: "claim",
-    fields: ["id", "lot_id", "status", "remedy", "created_at"],
+    fields: [
+      "id",
+      "lot_id",
+      "status",
+      "remedy",
+      "created_at",
+      "resolved_at",
+      "confirmed_at",
+    ],
     filters: { seller_id: sellerId, ...(status ? { status } : {}) },
     pagination: { skip: offset, take: limit, order: { created_at: "DESC" } },
   })

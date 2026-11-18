@@ -533,6 +533,11 @@ export type Routes = {
         };
         reports: typeof import("../src/api/admin/reports/route");
         settings: typeof import("../src/api/admin/settings/route");
+        strikes: typeof import("../src/api/admin/strikes/route") & {
+            $id: {
+                remove: typeof import("../src/api/admin/strikes/[id]/remove/route");
+            };
+        };
         topupRequests: typeof import("../src/api/admin/topup-requests/route") & {
             $id: {
                 approve: typeof import("../src/api/admin/topup-requests/[id]/approve/route");
@@ -684,7 +689,9 @@ export type Routes = {
         wallet: typeof import("../src/api/store/wallet/route");
         wonLots: typeof import("../src/api/store/won-lots/route") & {
             $id: typeof import("../src/api/store/won-lots/[id]/route") & {
-                claims: typeof import("../src/api/store/won-lots/[id]/claims/route");
+                claims: typeof import("../src/api/store/won-lots/[id]/claims/route") & {
+                    confirm: typeof import("../src/api/store/won-lots/[id]/claims/confirm/route");
+                };
                 delivered: typeof import("../src/api/store/won-lots/[id]/delivered/route");
                 reveal: typeof import("../src/api/store/won-lots/[id]/reveal/route");
             };
@@ -721,6 +728,7 @@ export type Routes = {
                 request: typeof import("@mercurjs/core/api/vendor/claims/[id]/request/route");
                 accept: typeof import("../src/api/vendor/claims/[id]/accept/route");
                 dispute: typeof import("../src/api/vendor/claims/[id]/dispute/route");
+                resolve: typeof import("../src/api/vendor/claims/[id]/resolve/route");
                 video: typeof import("../src/api/vendor/claims/[id]/video/route");
             };
         };

@@ -324,6 +324,34 @@ export const openClaim = async (
   }
 };
 
+/** The winner confirms the farmer settled their `resolved` claim
+ * (`resolved → confirmed`, US-056 T-056.2b, AC1, D-038, D-058).
+ *
+ * @remarks
+ * Keyed by lot: the route finds the caller's own claim on it. Nothing moves on
+ * the platform; the status is re-read after a success. A 409 body is rewritten
+ * by Medusa, so the caller keys on the status (D-055). */
+export const confirmClaim = async (lotId: string): Promise<OpenClaimResult> => {
+  const headers = await getAuthHeaders();
+  if (!('authorization' in headers)) {
+    return { success: false, message: 'Sesi Anda telah berakhir. Masuk lagi.' };
+  }
+
+  try {
+    await sdk.store.wonLots.$id.claims.confirm.mutate({
+      $id: lotId,
+      fetchOptions: { headers }
+    });
+    revalidatePath(ROUTES.wonLots);
+    return { success: true };
+  } catch (err: unknown) {
+    if (err instanceof ClientError) {
+      return { success: false, message: err.message, code: err.code, status: err.status };
+    }
+    return { success: false, message: 'Gagal mengonfirmasi klaim. Coba lagi.' };
+  }
+};
+
 /* US-042 T-042.3. `POST /store/bids` — customer token only, identity from the
    token. The server owns every bidding rule (D-023); this only carries the
    typed request and hands the refusal back. */

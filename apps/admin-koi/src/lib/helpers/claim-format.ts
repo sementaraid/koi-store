@@ -72,6 +72,40 @@ export function claimDecisionFailure(status: number | undefined, message: string
   };
 }
 
+/** The farmer's deadline after an admin/farmer approval (US-056 AC2, D-038).
+    Mirrors the backend's `CLAIM_CONFIRM_WINDOW_MS`. */
+export const CLAIM_DEADLINE_MS = 3 * 24 * 60 * 60 * 1000;
+
+export type ClaimOverdue = {
+  /** Whether `approved_at + 3 days` has passed. */
+  overdue: boolean;
+  /** The row's badge/text label; empty when the date is unknown. */
+  label: string;
+};
+
+/** How far an approved claim is past its 3-day deadline.
+ *
+ * @remarks
+ * `now` comes from the server so both renders read the same instant (no
+ * text-diff hydration error). A missing or unreadable date never flags. */
+export function claimOverdue(approvedAt: string | null, now: string | Date): ClaimOverdue {
+  if (!approvedAt) return { overdue: false, label: '' };
+
+  const start = new Date(approvedAt).getTime();
+  const current = typeof now === 'string' ? new Date(now).getTime() : now.getTime();
+  if (Number.isNaN(start) || Number.isNaN(current)) return { overdue: false, label: '' };
+
+  const remaining = start + CLAIM_DEADLINE_MS - current;
+  if (remaining <= 0) return { overdue: true, label: 'Lewat tenggat 3 hari' };
+
+  const days = Math.floor(remaining / (24 * 60 * 60 * 1000));
+  const hours = Math.floor((remaining % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+  const parts = [days > 0 ? `${days} hari` : null, hours > 0 ? `${hours} jam` : null].filter(
+    (part): part is string => part !== null
+  );
+  return { overdue: false, label: `Sisa ${parts.length ? parts.join(' ') : 'kurang dari 1 jam'}` };
+}
+
 /** The claim's open time in Jakarta time, like every other admin timestamp. */
 export function formatClaimDate(iso: string): string {
   return new Intl.DateTimeFormat('id-ID', {

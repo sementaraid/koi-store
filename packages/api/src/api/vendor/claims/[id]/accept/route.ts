@@ -19,6 +19,8 @@ export type ClaimDecisionRow = {
   approved_at: string | null
   farmer_decided_at: string | null
   decision_reason: string | null
+  resolved_at: string | null
+  confirmed_at: string | null
 }
 
 export type VendorClaimDecisionResponse = { claim: ClaimDecisionRow }
@@ -32,6 +34,8 @@ type ClaimRecord = {
   approved_at: Date | string | null
   farmer_decided_at: Date | string | null
   decision_reason: string | null
+  resolved_at: Date | string | null
+  confirmed_at: Date | string | null
 }
 
 // D-018/D-042/D-052: the farmer's row carries the decision timestamps only.
@@ -49,6 +53,12 @@ export const toClaimDecisionRow = (claim: ClaimRecord): ClaimDecisionRow => ({
     ? new Date(claim.farmer_decided_at).toISOString()
     : null,
   decision_reason: claim.decision_reason,
+  resolved_at: claim.resolved_at
+    ? new Date(claim.resolved_at).toISOString()
+    : null,
+  confirmed_at: claim.confirmed_at
+    ? new Date(claim.confirmed_at).toISOString()
+    : null,
 })
 
 // US-055 T-055.1a (AC1, D-038, D-054, D-055): the farmer accepts, straight to

@@ -38,6 +38,7 @@ import { listOrderGroups } from './AccountPage';
 import { countOpen } from './components/Orders';
 import { AccountFrame } from './components/AccountFrame';
 import { ClaimDecision } from './components/ClaimDecision';
+import { ClaimResolution } from './components/ClaimResolution';
 import { ClaimVideo } from './components/ClaimVideo';
 import { MarkPaid } from './components/MarkPaid';
 import { ReportUnpaid } from './components/ReportUnpaid';
@@ -211,6 +212,11 @@ function ClaimBlock({ claim }: { claim: VendorClaim }): ReactNode {
       ) : null}
       {claim.status === 'open' ? (
         <ClaimDecision claimId={claim.id} remedy={claim.remedy} />
+      ) : null}
+      {/* US-056 T-056.2a: the farmer settled off-platform; marking it done only
+          moves the claim to `resolved` (D-058). */}
+      {claim.status === 'approved' ? (
+        <ClaimResolution claimId={claim.id} remedy={claim.remedy} />
       ) : null}
     </div>
   );

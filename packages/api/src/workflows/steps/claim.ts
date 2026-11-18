@@ -306,6 +306,162 @@ export const decideClaimAsAdminStep = createStep(
   }
 )
 
+// US-056 (AC1, D-027, D-038): the winner has 3 days from `resolved_at` to
+// confirm; T-056.1b's job and admin-koi's flag both mirror this number. One
+// constant, no env var.
+export const CLAIM_CONFIRM_WINDOW_MS = 3 * 24 * 60 * 60 * 1000
+
+export type GetResolvableClaimInput = {
+  // From req.seller_context, never the body (D-003).
+  seller_id: string
+  claim_id: string
+}
+
+// US-056 (AC1, D-038, D-055): read-only guard, run under the `claim:<id>`
+// lock. Another farm's claim and an unknown claim are the same 404 (no
+// existence leak); any status but `approved` is a 409, so a repeat and a
+// resolution of an undecided/closed claim are both refused.
+export const getResolvableClaimStep = createStep(
+  "get-resolvable-claim",
+  async (input: GetResolvableClaimInput, { container }) => {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const {
+      data: [claim],
+    } = await query.graph({
+      entity: "claim",
+      fields: ["id", "seller_id", "status"],
+      filters: { id: input.claim_id },
+    })
+    if (!claim || claim.seller_id !== input.seller_id) {
+      throw new MedusaError(MedusaError.Types.NOT_FOUND, "Klaim tidak ditemukan.")
+    }
+    if (claim.status !== "approved") {
+      throw new MedusaError(
+        MedusaError.Types.CONFLICT,
+        "Klaim ini belum disetujui.",
+        "claim_not_approved"
+      )
+    }
+    return new StepResponse<DecidableClaim>({ id: claim.id })
+  }
+)
+
+export type ResolveClaimStepInput = { claim_id: string }
+
+// US-056 (AC1, D-058): `approved → resolved`, one mutation. The timestamp is
+// the server's clock, set here and not in the route (CLAUDE.md §8). No money
+// moves: an off-platform refund is the farmer paying the winner directly.
+// Compensation restores exactly `status` and `resolved_at`.
+export const resolveClaimStep = createStep(
+  "resolve-claim",
+  async (input: ResolveClaimStepInput, { container }) => {
+    const service = container.resolve<ModerationModuleService>(MODERATION_MODULE)
+    const previous = await service.retrieveClaim(input.claim_id)
+    const now = new Date()
+    const [updated] = await service.updateClaims([
+      { id: input.claim_id, status: "resolved", resolved_at: now },
+    ])
+    return new StepResponse(updated, {
+      id: input.claim_id,
+      previous: { status: previous.status, resolved_at: previous.resolved_at },
+    })
+  },
+  async (
+    compensation:
+      | {
+          id: string
+          previous: { status: ClaimStatus; resolved_at: Date | null }
+        }
+      | undefined,
+    { container }
+  ) => {
+    if (!compensation) {
+      return
+    }
+    const service = container.resolve<ModerationModuleService>(MODERATION_MODULE)
+    await service.updateClaims([
+      { id: compensation.id, ...compensation.previous },
+    ])
+  }
+)
+
+export type GetConfirmableClaimInput = {
+  claim_id: string
+  // The winner's customer id. Omitted by T-056.1b's job, which confirms on
+  // the 3-day deadline rather than on a caller.
+  winner_customer_id?: string
+}
+
+// US-056 (AC1, D-038, D-055): read-only guard, run under the `claim:<id>`
+// lock. An unknown claim, a claim of another customer and a claim with no
+// winner id to match are the same 404 (no existence leak); only `resolved` is
+// confirmable, everything else is a 409.
+export const getConfirmableClaimStep = createStep(
+  "get-confirmable-claim",
+  async (input: GetConfirmableClaimInput, { container }) => {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const {
+      data: [claim],
+    } = await query.graph({
+      entity: "claim",
+      fields: ["id", "customer_id", "status"],
+      filters: { id: input.claim_id },
+    })
+    if (
+      !claim ||
+      (input.winner_customer_id !== undefined &&
+        claim.customer_id !== input.winner_customer_id)
+    ) {
+      throw new MedusaError(MedusaError.Types.NOT_FOUND, "Klaim tidak ditemukan.")
+    }
+    if (claim.status !== "resolved") {
+      throw new MedusaError(
+        MedusaError.Types.CONFLICT,
+        "Klaim ini belum ditandai selesai.",
+        "claim_not_resolved"
+      )
+    }
+    return new StepResponse<DecidableClaim>({ id: claim.id })
+  }
+)
+
+export type ConfirmClaimStepInput = { claim_id: string }
+
+// US-056 (AC1, D-058): `resolved → confirmed`, one mutation, server clock.
+// Compensation restores exactly `status` and `confirmed_at`.
+export const confirmClaimStep = createStep(
+  "confirm-claim",
+  async (input: ConfirmClaimStepInput, { container }) => {
+    const service = container.resolve<ModerationModuleService>(MODERATION_MODULE)
+    const previous = await service.retrieveClaim(input.claim_id)
+    const now = new Date()
+    const [updated] = await service.updateClaims([
+      { id: input.claim_id, status: "confirmed", confirmed_at: now },
+    ])
+    return new StepResponse(updated, {
+      id: input.claim_id,
+      previous: { status: previous.status, confirmed_at: previous.confirmed_at },
+    })
+  },
+  async (
+    compensation:
+      | {
+          id: string
+          previous: { status: ClaimStatus; confirmed_at: Date | null }
+        }
+      | undefined,
+    { container }
+  ) => {
+    if (!compensation) {
+      return
+    }
+    const service = container.resolve<ModerationModuleService>(MODERATION_MODULE)
+    await service.updateClaims([
+      { id: compensation.id, ...compensation.previous },
+    ])
+  }
+)
+
 export type CreateClaimStepInput = {
   lot_id: string
   customer_id: string

@@ -1,5 +1,6 @@
 import { createWorkflow, transform, WorkflowResponse } from "@medusajs/framework/workflows-sdk"
 import { acquireLockStep, releaseLockStep } from "@medusajs/medusa/core-flows"
+import { assertNotBannedStep } from "./steps/ban"
 import {
   createBidStep,
   extendLotEndTimeStep,
@@ -27,6 +28,12 @@ export const placeBidWorkflow = createWorkflow(
     const lotLock = transform(input, ({ lot_id }) => `lot:${lot_id}`)
     acquireLockStep({ key: lotLock, timeout: 10, ttl: 30 }).config({
       name: "place-bid-lock",
+    })
+
+    // US-059 AC2 (D-047): a banned customer cannot bid. First, inside the lock.
+    assertNotBannedStep({
+      customer_id: input.customer_id,
+      code: "banned_customer",
     })
 
     const biddable = getBiddableLotStep(input)

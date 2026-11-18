@@ -48,6 +48,7 @@ export default async function ClaimsRoute() {
           disputed={disputed.claims}
           disputedTotal={disputed.count}
           decided={decided}
+          now={new Date().toISOString()}
         />
       ) : (
         <Card>

@@ -3,6 +3,7 @@ import { test } from 'node:test';
 
 import {
   claimFailureInfo,
+  claimConfirmFailure,
   claimStatusLabel,
   claimWindowInfo,
   CLAIM_VIDEO_MAX_BYTES,
@@ -57,8 +58,7 @@ test('each claim status reads in Indonesian', () => {
   assert.equal(claimStatusLabel('other'), 'other');
 });
 
-test('a rewritten 409 refreshes, a 404 leaves the winner view, a 400 keeps the server copy', () => {
-  assert.deepEqual(claimFailureInfo({ status: 409, message: 'Conflict' }), {
+test('a rewritten 409 refreshes, a 404 leaves the winner view, a 400 keeps the server copy', () => {  assert.deepEqual(claimFailureInfo({ status: 409, message: 'Conflict' }), {
     message: 'Status lot atau klaim sudah berubah. Halaman diperbarui.',
     refresh: true
   });
@@ -69,5 +69,19 @@ test('a rewritten 409 refreshes, a 404 leaves the winner view, a 400 keeps the s
   assert.deepEqual(claimFailureInfo({ status: 400, message: 'Ukuran video maksimal 100 MB.' }), {
     message: 'Ukuran video maksimal 100 MB.',
     refresh: false
+  });
+});
+
+test('a second confirm (409) refreshes with the app copy', () => {
+  assert.deepEqual(claimConfirmFailure({ status: 409, message: 'Conflict' }), {
+    message: 'Klaim sudah dikonfirmasi. Halaman diperbarui.',
+    refresh: true
+  });
+});
+
+test('a missing claim (404) on confirm refreshes too', () => {
+  assert.deepEqual(claimConfirmFailure({ status: 404, message: 'Claim not found' }), {
+    message: 'Klaim tidak ditemukan.',
+    refresh: true
   });
 });

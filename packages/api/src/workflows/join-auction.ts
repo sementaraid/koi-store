@@ -1,5 +1,6 @@
 import { createWorkflow, transform, WorkflowResponse } from "@medusajs/framework/workflows-sdk"
 import { acquireLockStep, releaseLockStep } from "@medusajs/medusa/core-flows"
+import { assertNotBannedStep } from "./steps/ban"
 import {
   chargeJoinFeeStep,
   checkJoinFeeBalanceStep,
@@ -28,6 +29,13 @@ export const joinAuctionWorkflow = createWorkflow(
     )
     acquireLockStep({ key: joinLock, timeout: 10, ttl: 30 }).config({
       name: "join-auction-lock",
+    })
+
+    // US-059 AC2 (D-047): a banned customer cannot join. First, inside the
+    // lock, before any other guard.
+    assertNotBannedStep({
+      customer_id: input.customer_id,
+      code: "banned_customer",
     })
 
     const joinable = getJoinableAuctionStep(input)

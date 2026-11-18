@@ -540,11 +540,12 @@ medusaIntegrationTestRunner({
 
         for (const body of [approve.data, reject.data, list.data]) {
           const json = JSON.stringify(body)
+          // `seller.customer_id` is the farm's own member account (T-059.2),
+          // never the winner's; the winner's id must not appear.
           for (const forbidden of [
             "private-",
             "http",
             "video_file_key",
-            "customer_id",
             buyer.id,
             WINNER_PHONE,
             "phone",

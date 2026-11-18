@@ -16,8 +16,9 @@ are defined in `docs/product/overview.md`.
 
 ## Status as of 2026-11-18
 
-**Last accepted stories:** US-046 (Epic 4) and US-058 (Epic 5), qa PASS on every
-AC, one fix round each, accepted 2026-11-18. Before them: US-051 and US-052 (Epic 5), qa PASS on every AC,
+**Last accepted stories:** US-056 and US-059 (Epic 5), qa PASS on every
+AC, no fix rounds, accepted 2026-11-18. Before them: US-046 (Epic 4) and US-058
+(Epic 5), qa PASS on every AC, one fix round each, accepted 2026-11-18. Before them: US-051 and US-052 (Epic 5), qa PASS on every AC,
 accepted 2026-11-18 after D-058/D-059 re-opened them. Before them: US-055
 (Epic 5), qa PASS on AC1–AC2, accepted
 2026-11-17, plus the unplanned `@koi/ui` tab-orientation fix. Before it: US-054
@@ -39,15 +40,15 @@ code are committed (`d67d3c8`).
 | 2 Becoming a farmer | 2 | 0 | 0 | 0 | 0 | 11 | 5 | 0 |
 | 3 Auctions for farmers | 4 | 0 | 0 | 0 | 0 | 23 | 0 | 0 |
 | 4 Joining and bidding | 7 | 0 | 0 | 0 | 0 | 27 | 0 | 0 |
-| 5 Closing and after-sale | 7 | 0 | 5 | 0 | 0 | 37 | 23 | 0 |
-| 6 Admin operations | 0 | 0 | 6 | 0 | 0 | 0 | 22 | 0 |
+| 5 Closing and after-sale | 9 | 0 | 3 | 0 | 0 | 47 | 13 | 0 |
+| 6 Admin operations | 0 | 0 | 6 | 0 | 0 | 0 | 30 | 0 |
 | 7 WhatsApp bot | 0 | 0 | 0 | 0 | 6 | 0 | 12 | 0 |
 | 8 Pilot | 0 | 0 | 1 | 0 | 0 | 0 | 5 | 0 |
 | Unplanned | 1 | 0 | 0 | 0 | 0 | 1 | 0 | 0 |
-| **Total** | **30** | **0** | **12** | **0** | **6** | **130** | **67** | **0** |
+| **Total** | **32** | **0** | **10** | **0** | **6** | **140** | **65** | **0** |
 
-Stories: 30 done of 48 (63%), 12 todo, 6 blocked, none parked.
-Tasks: 130 done of 197 active (66%), 67 open, none parked.
+Stories: 32 done of 48 (67%), 10 todo, 6 blocked, none parked.
+Tasks: 140 done of 205 active (68%), 65 open, none parked.
 
 **Payment model decided (2026-11-17, D-058).** The MVP pays off-platform: the
 winner pays the farmer directly within 1×24 h, the farmer marks the lot paid
@@ -85,12 +86,11 @@ were already what the story required.
   MVP stories; D-058 keeps it for beta only.
 
 **Next in milestone order:**
-1. **US-056** (claim resolution, direct refund off-platform); then US-057,
-   US-059, US-060, US-061. US-058 shipped, so US-059's "winner didn't pay"
-   strike has its report rows to read.
+1. **US-057** (winner rates the farmer), then US-060, US-061. US-056 and US-059
+   shipped 2026-11-18.
 2. Small backend swap in the same window: **US-055 T-055.5** (D-060), one guard
    change in two workflows and one spec case.
-US-046, US-051, US-052, US-053, US-054, US-055 and US-058 remain `done`. T-020.10 can run any
+US-046, US-051, US-052, US-053, US-054, US-055, US-056, US-058 and US-059 remain `done`. T-020.10 can run any
 time; qa's admin browser checks need it.
 
 ## Epic 0: Foundations (Milestone 1)
@@ -4104,7 +4104,7 @@ Do not change app code. Report PASS/FAIL per AC with file:line and command
 output; bugs with repro and expected/actual.
 ```
 
-### US-056 Approved claims are resolved · `todo` (unparked 2026-11-17 by D-058; briefs written 2026-11-17)
+### US-056 Approved claims are resolved · `done (evidence: packages/api/integration-tests/http/won-lot-claim-resolution.spec.ts:261-482 (17/17); claim-auto-confirm.spec.ts:76-184 (6/6; a second run leaves `confirmed_at` byte-identical); packages/api/src/workflows/resolve-claim.ts:25-49; confirm-claim.ts:24-47; steps/claim.ts:324-347,355-386,399-426,432-463; src/jobs/confirm-claims.ts:17-63; src/api/vendor/claims/[id]/resolve/route.ts:29-49; src/api/store/won-lots/[id]/claims/confirm/route.ts:33-77; apps/admin-koi/src/lib/helpers/claim-format.ts:88-118; components/ClaimQueue.tsx:143-167; browser farmer "Tandai klaim selesai" → "Menunggu konfirmasi", winner "Konfirmasi klaim selesai" → "Selesai", overdue badge on the 4-day row only; qa PASS on AC1–AC4, no bugs)` (unparked 2026-11-17 by D-058; briefs written 2026-11-17)
 **D-058 restores the direct path.** The MVP pays off-platform, so the 2026-11-16
 escrow note is void: the farmer refunds the winner directly or ships a
 replacement, exactly as AC1 says. No escrow, no platform refund, no ledger row;
@@ -4115,12 +4115,19 @@ whole. *(Plan: Dead-on-arrival claims 4–6; D-027, D-038, D-058)*
 - AC2: Missing the 3 days, or refusing an approved claim, makes the farmer eligible for a strike (US-059).
 - AC3: The farmer stays responsible even if a courier caused the death.
 - AC4: If the winner doesn't confirm within 3 days of `resolved`, the existing scheduled job sets the claim to `confirmed` (D-027).
-- [ ] T-056.1a [backend] `claim.resolved_at` + `confirmed_at`; `resolve` (`approved → resolved`) and `confirm` (`resolved → confirmed`) workflows and routes; `resolved_at`/`confirmed_at` on the farmer, winner-adjacent and admin claim rows, `approved_at` on the admin row
-- [ ] T-056.1b [backend] The 3-day auto-confirm job (`resolved → confirmed` after `resolved_at` + 3 days), idempotent, batched (new `src/jobs/confirm-claims.ts`, not `close-lots.ts`)
-- [ ] T-056.2a [storefront] Farmer marks an `approved` claim done on `/akun/kebun/terjual`
-- [ ] T-056.2b [storefront] Winner confirms a `resolved` claim on `/akun/menang`
-- [ ] T-056.3 [admin] Overdue `approved` claims flagged on `/klaim`'s approved tab (the flag only; the strike itself is US-059 T-059.2)
-- [ ] T-056.4 [qa] `approved → resolved → confirmed` in order; a `resolved` claim older than 3 days becomes `confirmed` once; running the job twice changes nothing; no money moves
+- [x] T-056.1a [backend] `claim.resolved_at` + `confirmed_at`; `resolve` (`approved → resolved`) and `confirm` (`resolved → confirmed`) workflows and routes; `resolved_at`/`confirmed_at` on the farmer, winner-adjacent and admin claim rows, `approved_at` on the admin row — `models/claim.ts`, `Migration20261118074445.ts`, `resolve-claim.ts`, `confirm-claim.ts`, `steps/claim.ts:324-463`, `vendor/claims/[id]/resolve/route.ts`, `store/won-lots/[id]/claims/confirm/route.ts`; `won-lot-claim-resolution.spec.ts` 17/17; qa PASS
+- [x] T-056.1b [backend] The 3-day auto-confirm job (`resolved → confirmed` after `resolved_at` + 3 days), idempotent, batched (new `src/jobs/confirm-claims.ts`, not `close-lots.ts`) — `jobs/confirm-claims.ts:17-63` (PAGE 50, per-id try/catch, hourly); `claim-auto-confirm.spec.ts` 6/6, second run byte-identical `confirmed_at`; qa PASS
+- [x] T-056.2a [storefront] Farmer marks an `approved` claim done on `/akun/kebun/terjual` — `lib/data/claims.ts` `resolveClaim`, `helpers/farm-claim.ts` `claimResolutionFailure`, `ClaimResolution.tsx`, `SoldLotsPage.tsx`; browser → "Menunggu konfirmasi"; qa PASS
+- [x] T-056.2b [storefront] Winner confirms a `resolved` claim on `/akun/menang` — `lib/data/lots.ts` `confirmClaim`, `helpers/claim.ts` `claimConfirmFailure`, `ConfirmClaim.tsx`, `WonLotsPage.tsx`; browser → "Selesai"; qa PASS
+- [x] T-056.3 [admin] Overdue `approved` claims flagged on `/klaim`'s approved tab (the flag only; the strike itself is US-059 T-059.2) — `helpers/claim-format.ts:88-118` `claimOverdue`, `ClaimQueue.tsx:143-167`, server `now` from `klaim/page.tsx`; browser "Lewat tenggat 3 hari" on the 4-day row, "Sisa 2 hari" on the fresh one; qa PASS
+- [x] T-056.4 [qa] `approved → resolved → confirmed` in order; a `resolved` claim older than 3 days becomes `confirmed` once; running the job twice changes nothing; no money moves — qa PASS, wallet_transaction 7 rows / 6,100,000 unchanged
+
+**Shipped decision (2026-11-18):** `mvp-Q47`'s option (a) is what shipped. No refusal state exists: a refusal the farmer does not act on is the 3-day miss, so T-056.3 flags an `approved` claim past `approved_at + 3 days` and the strike is offered there (US-059 T-059.2). No `refused` column, no new enum value.
+
+**Non-blocking notes from qa (2026-11-18):**
+- **Documented deviation from the brief, not a defect:** `POST /vendor/claims/:id/resolve` with a member token and no `x-seller-id` answers **400** from Mercur's `ensureSellerMiddleware`, not 401 as the T-056.1a brief said. This is platform-wide `vendor` behaviour, not introduced by this story. Every authenticated resolve with a seller id behaves as the contract says (404/409/403).
+- Known upstream base-ui `useId` attribute diff on some page loads; not from our code, not blocking.
+- Data left behind by qa: none — claim 0, strike 0, lot_report 0, wallet unchanged.
 
 **Readiness 2026-11-17: ready (`todo`). Nothing blocks it.**
 - AC1/AC4 are decided: D-038 gives the enum and the clock start (`approved_at` on both paths),
@@ -5229,17 +5236,24 @@ with repro and expected/actual.
 field), T-058.4 (nothing shown about an offer), T-058.5. Plan "Winner doesn't pay" and the
 report half of "Strikes" are covered here; the strike and ban are US-059.
 
-### US-059 Strikes and bans · `todo` (the "winner didn't pay" strike part is back in scope, 2026-11-17, D-058)
+### US-059 Strikes and bans · `done (evidence: packages/api/integration-tests/http/strikes.spec.ts:224-471 (15/15); strikes-ban.spec.ts:265-436 (10/10, incl. 1 strike joins/bids, one removed or 181-day-old lifts the ban, banned farmer still marks paid/ships/accepts a claim); packages/api/src/utils/strike.ts:12-56 (180-day window, `isBanned` >=2, one batched read); src/workflows/steps/ban.ts:19-44; gates at join-auction.ts:33-40, place-bid.ts:31-38, create-auction.ts:48-56; src/workflows/give-strike.ts, remove-strike.ts; src/api/admin/strikes/{route.ts,[id]/remove/route.ts,rows.ts,validators.ts}; admin rows `active_strikes`/`banned` in admin/claims/route.ts and admin/reports/route.ts (one batched read each); apps/admin-koi StrikePanel.tsx + data/strikes.ts on /laporan and /klaim; unit 25/25; browser 403 banned_customer/banned_seller with the exact Indonesian message and no row, removal writes three columns + reason, second remove 404, blank reason refused in both forms; qa PASS on AC1–AC4, no bugs)` (the "winner didn't pay" strike part is back in scope, 2026-11-17, D-058)
 As an **admin**, I want to give strikes after checking a report so that repeat
 offenders are banned. *(Plan: Strikes; D-058)*
 - AC1: Admin gives each strike with a reason (winner: didn't pay; farmer: didn't ship a paid lot, or refused an approved claim). *(The "winner didn't pay" reason is in scope again: D-058 restores the 1×24 h deadline (`closed_at` + 24 h, US-058) and the farmer's report, so all three reasons build.)*
 - AC2: 2 active strikes = ban. A banned winner can't join or bid. A banned farmer can't create auctions.
 - AC3: Strikes expire after 6 months. Admin can remove a strike with a reason.
 - AC4: Every ban and every suspend needs a written reason, the same rule as a farm rejection (D-041). admin-koi refuses the action without one.
-- [ ] T-059.1a [backend] `strike` model + migration + give/remove workflows + three admin routes + `active_strikes`/`banned` on the report and claim rows
-- [ ] T-059.1b [backend] `assertNotBannedStep` wired into join, bid and create-auction (D-047's deferred checks)
-- [ ] T-059.2 [admin] Strike button on a `/laporan` row and on an overdue `/klaim` row, plus the user's strike history and remove action
-- [ ] T-059.3 [qa] Expiry, removal lifting the ban, and all three refused actions (US-041 AC4, US-042 AC1 ban clauses)
+- [x] T-059.1a [backend] `strike` model + migration + give/remove workflows + three admin routes + `active_strikes`/`banned` on the report and claim rows — `modules/moderation/models/strike.ts`, `Migration20261118064124.ts`, `utils/strike.ts:12-56`, `workflows/give-strike.ts`, `remove-strike.ts`, `steps/strike.ts`, `api/admin/strikes/{route.ts,[id]/remove/route.ts,rows.ts,validators.ts}`, batched reads in `admin/claims/route.ts` and `admin/reports/route.ts`; `strikes.spec.ts` 15/15; `strike.unit.spec.ts` passes; qa PASS
+- [x] T-059.1b [backend] `assertNotBannedStep` wired into join, bid and create-auction (D-047's deferred checks) — `steps/ban.ts:19-44`; gates at `join-auction.ts:33-40`, `place-bid.ts:31-38`, `create-auction.ts:48-56`; `strikes-ban.spec.ts` 10/10; banned farmer still marks paid, ships and decides claims (200); qa PASS
+- [x] T-059.2 [admin] Strike button on a `/laporan` row and on an overdue `/klaim` row, plus the user's strike history and remove action — `components/StrikePanel.tsx`, `lib/data/strikes.ts` (each server action calls `requireAdmin` itself: :66, :83, :107), `helpers/strike-format.ts`, wired into `ReportQueue.tsx` and `ClaimQueue.tsx`; browser give/remove/history, blank reason refused; admin-koi `bun run check` 53/53; qa PASS
+- [x] T-059.3 [qa] Expiry, removal lifting the ban, and all three refused actions (US-041 AC4, US-042 AC1 ban clauses) — qa PASS (180-day boundary, removal, all three gates, no wallet row)
+
+**Non-blocking notes from qa (2026-11-18):**
+- **Documented deviation from the brief, not a defect:** a `vendor` call with a member token and no `x-seller-id` answers **400** from Mercur's `ensureSellerMiddleware`, not 401. Platform-wide `vendor` behaviour; not introduced by this story.
+- No end-to-end spec gives a `farmer_claim_refused` strike from an overdue claim; the enum (three types) and the `/klaim` approved-row default cover it.
+- `StrikePanel` accepts a `seller_id` target that neither queue passes — a harmless unused option.
+- Known upstream base-ui `useId` attribute diff on some page loads; not from our code, not blocking.
+- Data left behind by qa: none — strike 0, claim 0, lot_report 0, wallet unchanged.
 
 **Readiness 2026-11-18: ready (`todo`). Nothing blocks it. One new question,
 non-blocking (`mvp-Q49`), with the build default pinned below.**

@@ -191,10 +191,15 @@ export const POST = async (
   req: AuthenticatedMedusaRequest<VendorCreateAuctionType>,
   res: MedusaResponse<VendorAuctionResponse>
 ) => {
+  // US-059 AC2 (D-003): the farmer's customer id, as submit reads it. Absent
+  // on an incomplete profile → the ban check is skipped (submit refuses then).
+  const customerId = req.auth_context.app_metadata?.customer_id
+
   const { result } = await createAuctionWorkflow(req.scope).run({
     input: {
       seller_id: req.seller_context!.seller_id,
       member_id: req.auth_context.actor_id,
+      customer_id: typeof customerId === "string" ? customerId : undefined,
       fee_category_id: req.validatedBody.fee_category_id,
       // Workflow input crosses steps as JSON, so dates go as ISO strings.
       start_at: req.validatedBody.start_at.toISOString(),

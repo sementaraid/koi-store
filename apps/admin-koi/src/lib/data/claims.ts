@@ -35,11 +35,19 @@ export type AdminClaim = {
   opened_at: string;
   has_video: boolean;
   winner: { name: string };
-  seller: { name: string };
+  /** The farm behind the claim. `id` and `customer_id` are what the strike
+      action targets (US-059 T-059.2); `customer_id` is null when the seller's
+      identity has no customer yet. */
+  seller: { id: string; name: string; customer_id: string | null };
   product: { title: string | null; thumbnail: string | null };
   /** Set once an admin decides (US-055 AC2); null while disputed. */
   decided_at: string | null;
   decision_reason: string | null;
+  /** The farmer's 3-day clock starts here (US-056). */
+  approved_at: string | null;
+  /** The seller's derived ban state (US-059 T-059.1a). */
+  active_strikes: number;
+  banned: boolean;
 };
 
 export type ClaimList = {

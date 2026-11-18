@@ -1,7 +1,8 @@
-import { createWorkflow, transform, WorkflowResponse } from "@medusajs/framework/workflows-sdk"
+import { createWorkflow, transform, when, WorkflowResponse } from "@medusajs/framework/workflows-sdk"
 import { createProductsWorkflow } from "@mercurjs/core/workflows"
 import { ProductStatus } from "@mercurjs/types"
 import { validateSellerOpenStep } from "./steps/validate-seller-open"
+import { assertNotBannedStep } from "./steps/ban"
 import {
   createAuctionStep,
   createLotsStep,
@@ -26,6 +27,10 @@ export type CreateAuctionWorkflowInput = {
   seller_id: string
   // The acting member, recorded as the product creator.
   member_id: string
+  // US-059 AC2 (D-003): the member token's app_metadata.customer_id, else
+  // absent — submit then refuses the incomplete profile (unchanged). Not in
+  // the body.
+  customer_id?: string
   fee_category_id: string
   // ISO strings: step data is serialized between steps, so Dates don't survive
   // the workflow boundary. Converted back inside the steps.
@@ -37,10 +42,20 @@ export type CreateAuctionWorkflowInput = {
 
 // US-030 T-030.2. Checks the US-015 limits, snapshots the current extend
 // window and the category's fees, and creates the auction as `draft` (AC6–AC8).
-// First step: the farm must be `open` (AC5, T-021.5).
+// First step: the farm must be `open` (AC5, T-021.5). Before it, US-059 AC2
+// (D-047): a banned farmer cannot create an auction.
 export const createAuctionWorkflow = createWorkflow(
   "create-auction",
   function (input: CreateAuctionWorkflowInput) {
+    when({ input }, ({ input }) => Boolean(input.customer_id)).then(() => {
+      assertNotBannedStep(
+        transform({ input }, ({ input }) => ({
+          customer_id: input.customer_id as string,
+          code: "banned_seller" as const,
+        }))
+      )
+    })
+
     validateSellerOpenStep({ seller_id: input.seller_id })
 
     const settings = getAuctionSettingsStep()

@@ -20,6 +20,9 @@ export type VendorClaim = {
   status: string;
   remedy: string;
   opened_at: string;
+  /** US-056 T-056.1a: ISO or null. */
+  resolved_at: string | null;
+  confirmed_at: string | null;
   has_video: boolean;
   winner: { name: string };
   product: { title: string | null; thumbnail: string | null };
@@ -129,3 +132,24 @@ export const acceptClaim = async (id: string): Promise<ClaimDecisionResult> =>
 /** The farmer disputes an `open` claim: `open → disputed`, admin decides. */
 export const disputeClaim = async (id: string): Promise<ClaimDecisionResult> =>
   decideClaim(id, 'dispute', 'Gagal mengajukan sengketa. Coba lagi.');
+
+/** The farmer marks an `approved` claim done: `approved → resolved` (US-056
+ * T-056.2a, AC1, D-038, D-058).
+ *
+ * @remarks
+ * The farmer settled the refund or the replacement off-platform, so nothing
+ * moves here beyond the claim's state. Same rules as {@link decideClaim}: the
+ * status is re-read after a success, and the caller maps the refusal. */
+export const resolveClaim = async (id: string): Promise<ClaimDecisionResult> => {
+  try {
+    const headers = await vendorHeaders();
+    await sdk.vendor.claims.$id.resolve.mutate({ $id: id, fetchOptions: { headers } });
+    revalidatePath(ROUTES.farmSold);
+    return { success: true };
+  } catch (err: unknown) {
+    if (err instanceof ClientError) {
+      return { success: false, message: err.message, code: err.code, status: err.status };
+    }
+    return { success: false, message: 'Gagal menandai klaim selesai. Coba lagi.' };
+  }
+};

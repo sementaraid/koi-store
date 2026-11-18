@@ -624,12 +624,17 @@ medusaIntegrationTestRunner({
           pay_by: new Date(
             firstLot.closed_at!.getTime() + PAY_WINDOW
           ).toISOString(),
-          winner: { name: "Siti Rahmawati" },
+          // US-059 T-059.2: the winner's id for the strike calls (same id as
+          // its customer_id), still no PII.
+          winner: { id: buyer.id, name: "Siti Rahmawati", customer_id: buyer.id },
           seller: { name: farm.seller.name },
           product: {
             title: "Kohaku admin",
             thumbnail: "http://localhost:9000/static/admin.jpg",
           },
+          // US-059 T-059.1a: derived, 0/false with no strike.
+          active_strikes: 0,
+          banned: false,
         })
 
         const json = JSON.stringify(res.data)
@@ -645,8 +650,48 @@ medusaIntegrationTestRunner({
         ]) {
           expect(json).not.toContain(forbidden)
         }
+        // US-059 T-059.2: the id is nested in `winner`, never a top-level key.
         expect(res.data.reports[0]).not.toHaveProperty("winner_customer_id")
         expect(res.data.reports[0]).not.toHaveProperty("winner_id")
+      })
+
+      it("gives a winner_unpaid strike from the report row's winner.customer_id (US-059 T-059.2)", async () => {
+        const farm = await registerFarm({ approve: true })
+        const buyer = await winner()
+        const lot = await soldLot({
+          sellerId: farm.seller.id,
+          winnerId: buyer.id,
+          status: "won",
+        })
+        await reportRow({
+          lotId: lot.id,
+          sellerId: farm.seller.id,
+          winnerId: buyer.id,
+        })
+
+        const reports = await api.get("/admin/reports", { headers: admin })
+        const row = reports.data.reports[0]
+        expect(row.winner.id).toEqual(buyer.id)
+        expect(row.winner.customer_id).toEqual(buyer.id)
+
+        const res = await api.post(
+          "/admin/strikes",
+          {
+            customer_id: row.winner.customer_id,
+            reason_type: "winner_unpaid",
+            reason: "Pemenang tidak membayar.",
+          },
+          { headers: admin }
+        )
+        expect(res.status).toEqual(201)
+        expect(res.data.strike.customer_id).toEqual(buyer.id)
+
+        const history = await api.get(
+          `/admin/strikes?customer_id=${row.winner.customer_id}`,
+          { headers: admin }
+        )
+        expect(history.status).toEqual(200)
+        expect(history.data.count).toEqual(1)
       })
 
       it("accepts ?status=open explicitly (AC1)", async () => {

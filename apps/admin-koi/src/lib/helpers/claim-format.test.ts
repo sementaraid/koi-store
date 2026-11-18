@@ -3,6 +3,7 @@ import { test } from 'node:test';
 
 import {
   claimDecisionFailure,
+  claimOverdue,
   claimRemedyLabel,
   claimStatusLabel,
   claimStatusTone,
@@ -59,5 +60,38 @@ test('any other refusal keeps the server message, minus Medusa\'s prefix (D-055)
   assert.deepEqual(claimDecisionFailure(undefined, ''), {
     message: 'Gagal memutuskan klaim. Coba lagi.',
     refresh: false
+  });
+});
+
+/* US-056 AC2: 3 days from `approved_at` (D-038). `now` is passed in so the
+   render never depends on the browser's clock (no text-diff hydration). */
+test('an approved claim past 3 days is overdue', () => {
+  assert.deepEqual(claimOverdue('2026-11-14T08:00:00.000Z', '2026-11-18T08:00:00.000Z'), {
+    overdue: true,
+    label: 'Lewat tenggat 3 hari'
+  });
+});
+
+test('a fresh approved claim is not overdue and counts down', () => {
+  assert.deepEqual(claimOverdue('2026-11-17T08:00:00.000Z', '2026-11-18T08:00:00.000Z'), {
+    overdue: false,
+    label: 'Sisa 2 hari'
+  });
+  assert.deepEqual(claimOverdue('2026-11-17T08:00:00.000Z', '2026-11-17T12:00:00.000Z'), {
+    overdue: false,
+    label: 'Sisa 2 hari 20 jam'
+  });
+});
+
+test('just under the deadline is still not overdue', () => {
+  const due = claimOverdue('2026-11-15T08:00:00.000Z', '2026-11-18T07:59:00.000Z');
+  assert.equal(due.overdue, false);
+});
+
+test('an unknown or unreadable date never flags', () => {
+  assert.deepEqual(claimOverdue(null, '2026-11-18T08:00:00.000Z'), { overdue: false, label: '' });
+  assert.deepEqual(claimOverdue('not-a-date', '2026-11-18T08:00:00.000Z'), {
+    overdue: false,
+    label: ''
   });
 });

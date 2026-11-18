@@ -43,6 +43,12 @@ export const Claim = model
     decided_by: model.text().nullable(),
     decided_at: model.dateTime().nullable(),
     decision_reason: model.text().nullable(),
+    // US-056: `approved → resolved` (the farmer marked the refund or the
+    // replacement done) and `resolved → confirmed` (the winner confirmed it).
+    // Both nullable, both saved from the server's clock when the action
+    // happens (CLAUDE.md §8).
+    resolved_at: model.dateTime().nullable(),
+    confirmed_at: model.dateTime().nullable(),
   })
   .indexes([
     // One claim per lot, whatever its status (mvp-Q44 a): the DB is the guard

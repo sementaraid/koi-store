@@ -17,8 +17,8 @@ export type JoinableAuction = {
 
 // Read-only guard (US-041 AC1–AC4). Run under the per (auction, customer) lock,
 // so the already-joined read and the participant write can't interleave.
-// ponytail: the ban check (AC4) lands in US-059 T-059.1 (D-047); this step
-// deliberately has none. Upgrade: add it here, before the balance step.
+// The ban check (AC4, D-047) is US-059's `assertNotBannedStep`, run before
+// this step in join-auction.ts.
 export const getJoinableAuctionStep = createStep(
   "get-joinable-auction",
   async (

@@ -59,3 +59,26 @@ export function claimDecisionFailure(input: {
     refresh: false
   };
 }
+
+/** Read one refused "Tandai klaim selesai" (US-056 T-056.2a, AC1, D-055).
+ *
+ * @remarks
+ * Same rewrite rule as {@link claimDecisionFailure}: the 409 status is the
+ * signal, so the app writes its own copy; a 404 refreshes too (the claim is
+ * gone). A 403 keeps the server's own Indonesian message (`validateSellerOpenStep`). */
+export function claimResolutionFailure(input: {
+  code?: string;
+  status?: number;
+  message: string;
+}): ClaimDecisionFailure {
+  if (input.status === 409) {
+    return { message: 'Status klaim sudah berubah. Halaman diperbarui.', refresh: true };
+  }
+  if (input.status === 404) {
+    return { message: 'Klaim tidak ditemukan.', refresh: true };
+  }
+  return {
+    message: input.message || 'Gagal menandai klaim selesai. Coba lagi.',
+    refresh: false
+  };
+}

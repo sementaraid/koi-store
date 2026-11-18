@@ -105,3 +105,26 @@ export function claimFailureInfo(input: {
   }
   return { message: input.message || 'Gagal mengajukan klaim. Coba lagi.', refresh: false };
 }
+
+/** Read one refused "Konfirmasi klaim selesai" (US-056 T-056.2b, AC1, D-055).
+ *
+ * @remarks
+ * The 409 body is rewritten by Medusa, so the status carries the meaning and
+ * the app writes its own copy. A 404 also refreshes: the claim is gone or
+ * belongs to another customer. */
+export function claimConfirmFailure(input: {
+  code?: string;
+  status?: number;
+  message: string;
+}): ClaimFailure {
+  if (input.status === 409) {
+    return { message: 'Klaim sudah dikonfirmasi. Halaman diperbarui.', refresh: true };
+  }
+  if (input.status === 404) {
+    return { message: 'Klaim tidak ditemukan.', refresh: true };
+  }
+  return {
+    message: input.message || 'Gagal mengonfirmasi klaim. Coba lagi.',
+    refresh: false
+  };
+}

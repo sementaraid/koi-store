@@ -21,6 +21,7 @@ import { getShell } from '@/lib/shell';
 import { listOrderGroups } from './AccountPage';
 import { countOpen } from './components/Orders';
 import { AccountFrame } from './components/AccountFrame';
+import { ConfirmClaim } from './components/ConfirmClaim';
 import { RevealBank } from './components/RevealBank';
 
 /** How many won lots one page shows (matches the route's own default). */
@@ -169,6 +170,11 @@ function WonLots({
                             {claimStatusLabel(lot.claim.status)} ·{' '}
                             {remedyLabel(lot.claim.remedy)}
                           </span>
+                          {/* US-056 T-056.2b: the farmer settled off-platform;
+                              the winner confirms (D-058). */}
+                          {lot.claim.status === 'resolved' ? (
+                            <ConfirmClaim lotId={lot.id} />
+                          ) : null}
                         </div>
                       ) : claimWindow ? (
                         <span className="text-xs text-muted-foreground">

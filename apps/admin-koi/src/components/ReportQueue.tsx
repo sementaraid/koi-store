@@ -12,6 +12,9 @@ import {
   reportDeadlineLabel,
   reportStatusLabel
 } from '@/lib/helpers/report-format';
+import { activeStrikeLabel, banLabel } from '@/lib/helpers/strike-format';
+
+import { StrikePanel } from './StrikePanel';
 
 /** Props for {@link ReportQueue}. */
 export type ReportQueueProps = {
@@ -22,12 +25,15 @@ export type ReportQueueProps = {
 };
 
 /**
- * The `/laporan` queue (US-058 AC1, admin half): what the farmer reported,
- * with the lot, the farm and the winner.
+ * The `/laporan` queue (US-058 AC1, admin half; US-059 T-059.2): what the
+ * farmer reported, with the lot, the farm and the winner, and the strike the
+ * admin can give from the row.
  *
  * @remarks
- * A report never changes the lot (D-026). Read-only — the strike is US-059's.
- * Names only — no phone or address reaches this page (D-042/D-052).
+ * A report never changes the lot (D-026). The strike is given as
+ * `winner_unpaid` off the row's `lot_id` — the backend resolves that lot's
+ * winner, so the screen never names the account. Names only — no phone or
+ * address reaches this page (D-042/D-052).
  */
 export function ReportQueue({ reports, total }: ReportQueueProps) {
   return (
@@ -55,7 +61,8 @@ export function ReportQueue({ reports, total }: ReportQueueProps) {
   );
 }
 
-/** One report: the lot, the farm, the winner and both timestamps. */
+/** One report: the lot, the farm, the winner, both timestamps, and the strike
+    action for the winner (US-059 T-059.2). */
 function ReportRow({ report }: { report: AdminReport }) {
   return (
     <div className="grid gap-3 rounded-md border border-border p-3 sm:grid-cols-[auto_1fr] sm:items-start sm:gap-4">
@@ -81,6 +88,25 @@ function ReportRow({ report }: { report: AdminReport }) {
           </span>
         </div>
         <p className="text-xs text-muted-foreground">{reportDeadlineLabel(report.pay_by)}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant={report.active_strikes >= 2 ? 'urgent' : 'muted'}>
+            {activeStrikeLabel(report.active_strikes)}
+          </Badge>
+          <Badge variant={report.banned ? 'urgent' : 'neutral'}>{banLabel(report.banned)}</Badge>
+        </div>
+        {/* A lot with no winner cannot take a winner strike: the backend
+            sends `winner.id` as "" for that impossible row (T-059.1a). */}
+        {report.winner.id ? (
+          <StrikePanel
+            defaultReasonType="winner_unpaid"
+            customerId={report.winner.customer_id}
+            target={
+              report.winner.customer_id
+                ? { customer_id: report.winner.customer_id }
+                : { lot_id: report.lot_id }
+            }
+          />
+        ) : null}
       </div>
     </div>
   );
