@@ -3,8 +3,8 @@ import { Lot } from "./lot"
 
 // plan.md "Custom modules": a bid records the bidder, the amount, the source
 // (web or WhatsApp) and the server time it was accepted (US-042 AC5).
-// Removal (D-024, D-036) is US-072 T-072.1: it adds the removed_at/removed_by
-// pair here; until then every row is a live bid.
+// US-072 (D-024, D-036): a removed bid is never deleted; the three removal
+// columns mark it, and it stops counting for the price and the winner.
 export const BID_SOURCES = ["web", "whatsapp"] as const
 
 export type BidSource = (typeof BID_SOURCES)[number]
@@ -16,6 +16,9 @@ export const Bid = model
     customer_id: model.text(),
     amount: model.number(),
     source: model.enum([...BID_SOURCES]).default("web"),
+    removed_at: model.dateTime().nullable(),
+    removed_by: model.text().nullable(),
+    removed_reason: model.text().nullable(),
     lot: model.belongsTo(() => Lot, { mappedBy: "bids" }),
   })
   .indexes([{ on: ["lot_id"] }])

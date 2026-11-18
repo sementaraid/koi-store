@@ -71,6 +71,9 @@ export const STORE_LOT_FIELDS = [
   "bids.customer_id",
   "bids.amount",
   "bids.created_at",
+  // US-072 T-072.1c (AC2): removed rows are dropped from the count and the
+  // detail history; the field itself is never re-emitted.
+  "bids.removed_at",
   "ob",
   "kb",
   "current_price",
@@ -117,7 +120,7 @@ const toStoreLot = (
     | undefined
   const status = row.status as string
   const cancelled = status === "cancelled"
-  const bids = (row.bids ?? []) as { id: string }[]
+  const bids = (row.bids ?? []) as { id: string; removed_at: string | null }[]
 
   return {
     id: row.id as string,
@@ -138,7 +141,10 @@ const toStoreLot = (
           : null,
     cancelled,
     // D-050: a cancelled lot shows no bids, so neither the count nor the rows.
-    bid_count: cancelled ? 0 : bids.length,
+    // US-072 AC2: a removed bid never counts.
+    bid_count: cancelled
+      ? 0
+      : bids.filter((bid) => bid.removed_at == null).length,
     auction: {
       id: auction.id as string,
       status: auction.status as string,
@@ -207,9 +213,17 @@ export const getPublicLots = async (
 // limit plus `has_more` when a lot can carry more.
 export const toStoreBids = async (
   scope: MedusaContainer,
-  rows: { id: string; customer_id: string; amount: number; created_at: string }[]
+  rows: {
+    id: string
+    customer_id: string
+    amount: number
+    created_at: string
+    removed_at?: string | null
+  }[]
 ): Promise<StoreBid[]> => {
-  const ids = [...new Set(rows.map((b) => b.customer_id))]
+  // US-072 AC2: a removed bid is not part of the history shown to customers.
+  const visible = rows.filter((bid) => bid.removed_at == null)
+  const ids = [...new Set(visible.map((b) => b.customer_id))]
   const query = scope.resolve(ContainerRegistrationKeys.QUERY)
   const { data: customers } = ids.length
     ? await query.graph({
@@ -225,7 +239,7 @@ export const toStoreBids = async (
     ])
   )
 
-  return [...rows]
+  return [...visible]
     .sort(
       (a, b) =>
         new Date(b.created_at).getTime() -

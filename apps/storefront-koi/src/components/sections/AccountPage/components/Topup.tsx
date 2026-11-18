@@ -17,6 +17,7 @@ import {
   parseTopupAmount,
   screenshotError
 } from '@/lib/helpers/topup-request';
+import { stripValidationPrefix } from '@/lib/helpers/validation-message';
 import type { HeaderAccount, HeaderCart } from '@/types/header';
 
 import { AccountFrame } from './AccountFrame';
@@ -85,7 +86,7 @@ export function Topup({ requests, bankAccount, failed, openOrders, account, cart
     const result = await createTopupRequest(parsed.amount, file);
 
     if (!result.success) {
-      toast.error(result.error);
+      toast.error(stripValidationPrefix(result.error));
       return;
     }
 

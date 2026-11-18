@@ -56,6 +56,8 @@ export type ClosableLot = { close: boolean; update: LotFields }
 // extended lot is not due yet). A cancelled lot, a lot of a scheduled or
 // cancelled auction, or one already closed is skipped, not an error.
 // Winner = highest bid; of equal amounts the first recorded (plan "Bidding").
+// US-072 (AC2): a removed bid never wins, so the read skips it; every bid
+// removed makes the lot `unsold`.
 export const getClosableLotStep = createStep(
   "get-closable-lot",
   async (input: { lot_id: string }, { container }) => {
@@ -76,14 +78,13 @@ export const getClosableLotStep = createStep(
       return new StepResponse<ClosableLot>({ close: false, update: {} })
     }
 
-    // US-072 T-072.1: exclude removed bids here once removal exists; until
-    // then every bid row counts.
+    // US-072 T-072.1a (AC2): removed bids are excluded from the winner.
     const {
       data: [top],
     } = await query.graph({
       entity: "bid",
       fields: ["customer_id", "amount"],
-      filters: { lot_id: input.lot_id },
+      filters: { lot_id: input.lot_id, removed_at: null },
       pagination: { take: 1, order: { amount: "DESC", created_at: "ASC" } },
     })
 

@@ -521,6 +521,11 @@ export type Routes = {
                 reject: typeof import("../src/api/admin/auctions/[id]/reject/route");
             };
         };
+        bids: {
+            $id: {
+                remove: typeof import("../src/api/admin/bids/[id]/remove/route");
+            };
+        };
         custom: typeof import("../src/api/admin/custom/route");
         farms: typeof import("../src/api/admin/farms/route") & {
             $id: typeof import("../src/api/admin/farms/[id]/route") & {
@@ -530,6 +535,10 @@ export type Routes = {
         };
         feeCategories: typeof import("../src/api/admin/fee-categories/route") & {
             $id: typeof import("../src/api/admin/fee-categories/[id]/route");
+        };
+        liveAuctions: typeof import("../src/api/admin/live-auctions/route");
+        liveLots: {
+            $id: typeof import("../src/api/admin/live-lots/[id]/route");
         };
         reports: typeof import("../src/api/admin/reports/route");
         settings: typeof import("../src/api/admin/settings/route");

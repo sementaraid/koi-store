@@ -23,8 +23,8 @@ class BidTooLowError extends MedusaError {
 export type BiddableLot = {
   lot_id: string
   // The lowest amount this bid may carry: OB when the lot has no bid yet,
-  // else current price + KB (D-023). "First" means no bid that isn't removed;
-  // removal (D-036) is US-072, so every existing row counts today.
+  // else current price + KB (D-023). "First" means no bid that isn't removed
+  // (US-072, D-036).
   minimum: number
   previous_price: number
   ob: number
@@ -39,8 +39,8 @@ export type BiddableLot = {
 // the bid/price writes cannot interleave with another bid on the same lot.
 // The gate is the AUCTION's `live` status, not the lot's: a lot is `open`
 // while its auction is still `scheduled` (US-033, US-050).
-// ponytail: the ban check (AC1) lands in US-059 T-059.1 (D-047); this step
-// deliberately has none. Upgrade: add it here, before the amount check.
+// The ban check (AC1, D-047) is US-059's `assertNotBannedStep`, run before
+// this step in place-bid.ts.
 export const getBiddableLotStep = createStep(
   "get-biddable-lot",
   async (
@@ -135,12 +135,14 @@ export const getBiddableLotStep = createStep(
       )
     }
 
+    // US-072 (D-036): a removed bid is not the last live bid, so the minimum
+    // falls back to OB once every bid is removed.
     const {
       data: [lastBid],
     } = await query.graph({
       entity: "bid",
       fields: ["id"],
-      filters: { lot_id: input.lot_id },
+      filters: { lot_id: input.lot_id, removed_at: null },
       pagination: { take: 1, order: { created_at: "DESC" } },
     })
 
@@ -246,6 +248,118 @@ export const setLotCurrentPriceStep = createStep(
     await container.resolve<AuctionModuleService>(AUCTION_MODULE).updateLots([
       { id: restore.lot_id, current_price: restore.previous_price },
     ])
+  }
+)
+
+export type RemovableBid = { lot_id: string; ob: number; current_price: number }
+
+// Read-only guard for US-072 T-072.1a (AC5, D-024, D-036), run under the
+// `lot:<id>` lock. The caller resolved bid → lot already; this re-checks the
+// pair inside the lock, so a bid whose lot changed (it never does) or a lot
+// closed meanwhile is caught here. Errors are Indonesian (D-055).
+export const getRemovableBidStep = createStep(
+  "get-removable-bid",
+  async (input: { bid_id: string; lot_id: string }, { container }) => {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const {
+      data: [bid],
+    } = await query.graph({
+      entity: "bid",
+      fields: ["id", "lot_id", "removed_at"],
+      filters: { id: input.bid_id },
+    })
+    if (!bid || bid.lot_id !== input.lot_id) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_FOUND,
+        "Bid tidak ditemukan."
+      )
+    }
+    if (bid.removed_at) {
+      throw new MedusaError(
+        MedusaError.Types.CONFLICT,
+        "Bid ini sudah dihapus.",
+        "bid_already_removed"
+      )
+    }
+
+    const {
+      data: [lot],
+    } = await query.graph({
+      entity: "lot",
+      fields: ["id", "ob", "current_price", "status"],
+      filters: { id: input.lot_id },
+    })
+    if (!lot) {
+      throw new MedusaError(MedusaError.Types.NOT_FOUND, "Lot tidak ditemukan.")
+    }
+    // AC5 / D-036: only an `open` lot accepts a removal.
+    if (lot.status !== "open") {
+      throw new MedusaError(
+        MedusaError.Types.CONFLICT,
+        "Bid hanya bisa dihapus saat lot masih terbuka.",
+        "lot_not_open"
+      )
+    }
+
+    const removable: RemovableBid = {
+      lot_id: input.lot_id,
+      ob: Number(lot.ob),
+      // The compensation value for setLotCurrentPriceStep.
+      current_price: Number(lot.current_price),
+    }
+    return new StepResponse(removable)
+  }
+)
+
+export type MarkBidRemovedStepInput = {
+  bid_id: string
+  // req.auth_context.actor_id, never the body.
+  admin_id: string
+  reason: string
+}
+
+// Single mutation (AC2, D-024): the three removal columns, from the server
+// clock. The row and its amount/customer stay. Compensation restores all three
+// to null (the guard already refused an already-removed bid, so this is exact).
+export const markBidRemovedStep = createStep(
+  "mark-bid-removed",
+  async (input: MarkBidRemovedStepInput, { container }) => {
+    const service = container.resolve<AuctionModuleService>(AUCTION_MODULE)
+    const [updated] = await service.updateBids([
+      {
+        id: input.bid_id,
+        removed_at: new Date(),
+        removed_by: input.admin_id,
+        removed_reason: input.reason,
+      },
+    ])
+    return new StepResponse(updated, input.bid_id)
+  },
+  async (id: string | undefined, { container }) => {
+    if (!id) {
+      return
+    }
+    await container.resolve<AuctionModuleService>(AUCTION_MODULE).updateBids([
+      { id, removed_at: null, removed_by: null, removed_reason: null },
+    ])
+  }
+)
+
+// Read only. US-072 AC3: the highest NON-removed bid, ties going to the first
+// recorded (same rule as the close step). Null when every bid is removed.
+export const getHighestRemainingBidStep = createStep(
+  "get-highest-remaining-bid",
+  async (input: { lot_id: string }, { container }) => {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const {
+      data: [top],
+    } = await query.graph({
+      entity: "bid",
+      fields: ["amount"],
+      filters: { lot_id: input.lot_id, removed_at: null },
+      pagination: { take: 1, order: { amount: "DESC", created_at: "ASC" } },
+    })
+    return new StepResponse<number | null>(top ? Number(top.amount) : null)
   }
 )
 

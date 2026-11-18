@@ -42,6 +42,12 @@ export const NAV: NavGroup[] = [
         ready: true
       },
       {
+        href: ROUTES.liveAuctions,
+        label: 'Pantau lelang',
+        hint: 'Hapus bid yang salah dan hentikan lelang yang rusak.',
+        ready: true
+      },
+      {
         href: ROUTES.claims,
         label: 'Klaim DOA',
         hint: 'Tinjau video unboxing dan putuskan sengketa.',

@@ -37,10 +37,17 @@ export const GET = async (
     )
   }
 
-  // US-072 T-072.1: filter removed bids here once `removed_at` exists.
+  // US-072 T-072.1c (AC2): `toStoreBids` drops removed rows, so the history
+  // matches the count. The rows stay in the DB, never in this payload.
   const bidRows =
     (rows[0].bids as
-      | { id: string; customer_id: string; amount: number; created_at: string }[]
+      | {
+          id: string
+          customer_id: string
+          amount: number
+          created_at: string
+          removed_at?: string | null
+        }[]
       | undefined) ?? []
 
   res.json({

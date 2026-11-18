@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, FormField, RenderIf } from '@koi/ui';
 import { setAuctionLiveLink, type Auction } from '@/lib/data/auctions';
 import { isLiveStreamUrl } from '@/lib/helpers/live-stream-url';
+import { stripValidationPrefix } from '@/lib/helpers/validation-message';
 
 /** Length only; the host rule is the server's, mirrored here as a visible
     pre-check rather than a blocker, so its own Indonesian 400 still reaches
@@ -76,7 +77,7 @@ export function LiveLinkForm({ auction, onSaved }: LiveLinkFormProps) {
     setBusy(null);
 
     if (!result.success) {
-      toast.error(result.error);
+      toast.error(stripValidationPrefix(result.error));
       return;
     }
 
@@ -91,7 +92,7 @@ export function LiveLinkForm({ auction, onSaved }: LiveLinkFormProps) {
     setBusy(null);
 
     if (!result.success) {
-      toast.error(result.error);
+      toast.error(stripValidationPrefix(result.error));
       return;
     }
 

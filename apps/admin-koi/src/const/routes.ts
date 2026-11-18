@@ -27,6 +27,8 @@ export const ROUTES = {
   fees: '/pengaturan/biaya',
   /** Auctions waiting on approval. */
   auctions: '/lelang',
+  /** Live auctions and their lots, with bid removal (US-072 T-072.2a/.2b). */
+  liveAuctions: '/lelang/langsung',
   /** Accounts: strikes, bans, who is who. */
   users: '/pengguna',
   /** Dead-on-arrival claims an operator has to decide. */

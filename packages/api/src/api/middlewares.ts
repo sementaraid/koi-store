@@ -89,6 +89,8 @@ import {
   AdminGiveStrike,
   AdminRemoveStrike,
 } from "./admin/strikes/validators"
+import { AdminRemoveBid } from "./admin/bids/validators"
+import { AdminGetLiveAuctionsParams } from "./admin/live-auctions/validators"
 import {
   adminPiiMask,
   storePiiMask,
@@ -642,6 +644,25 @@ export default defineMiddlewares({
       method: ["POST"],
       matcher: "/admin/strikes/:id/remove",
       middlewares: [validateAndTransformBody(AdminRemoveStrike)],
+    },
+    // US-072 T-072.1a (AC1, AC5, D-024, D-055): the admin removes a bid with a
+    // written reason. Admin auth is Medusa's /admin default.
+    {
+      method: ["POST"],
+      matcher: "/admin/bids/:id/remove",
+      middlewares: [validateAndTransformBody(AdminRemoveBid)],
+    },
+    // US-072 T-072.1b (D-002): the admin-koi live monitoring list; only paging.
+    {
+      method: ["GET"],
+      matcher: "/admin/live-auctions",
+      middlewares: [
+        validateAndTransformQuery(AdminGetLiveAuctionsParams, {
+          defaults: [],
+          isList: true,
+          defaultLimit: 20,
+        }),
+      ],
     },
     // US-055 T-055.1b: the admin's final decision on a disputed claim. Both
     // take the written reason (AC2).
