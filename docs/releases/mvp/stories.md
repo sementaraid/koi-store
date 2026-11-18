@@ -6063,8 +6063,404 @@ T-061.1 (deletion and retention), T-061.2. Plan "Dead-on-arrival claims" item 7
 As an **admin**, I want to see users with their strikes and bans so that I can
 act on bad actors. *(Plan: Users and roles, Strikes)*
 **PII (D-039, D-042):** phone and NIK on these screens are masked, as on every admin route; the full value only through the logged reveal. US-092 applies.
-- [ ] T-070.1 [backend] `/admin` user list and detail with wallet, strikes and ban status
-- [ ] T-070.2 [admin] `/pengguna` screens
+- [ ] T-070.1a [backend] `/admin/accounts` list and detail (wallet, strikes, ban, farm), masked
+- [ ] T-070.1b [backend] `POST /admin/customers/:id/reveal` for the phone, one audit row
+- [ ] T-070.2a [admin] `/pengguna` list with search
+- [ ] T-070.2b [admin] `/pengguna/[id]` profile, masked phone + reveal, wallet
+- [ ] T-070.2c [admin] Strike and Laporan tabs on the user page
+- [ ] T-070.3 [qa] Masked everywhere, reveal logs one row, ban state derived, no N+1
+
+**Readiness 2026-11-18: ready (`todo`). Nothing blocks it.** The masking half of
+US-092 is in the tree (`utils/mask.ts:15-50`, the global `/admin` response mask at
+`api/middlewares.ts:306-308`, the farm queue's masked fields at
+`api/admin/farms/route.ts:194-218`, the logged reveal at
+`api/admin/farms/[id]/reveal/route.ts` + `steps/pii-reveal.ts`). US-092's
+column-level encryption (AC1/AC2) is still unbuilt; this story stores no PII, so
+it is not a dependency — say so if qa asks. No new owner question.
+
+**What "manages users" covers, pinned:**
+
+| Action | In this story? | Where / why |
+|---|---|---|
+| View a user list and one user's detail, with wallet balance, strikes and derived ban | **yes** | T-070.1a, T-070.2a/.2b |
+| Search by name or email | **yes** | an admin cannot pick a user from an unfiltered list |
+| Give / remove a strike | **yes, by reusing US-059's panel and routes** | AC1 of US-059; ban is derived (`active_count >= 2`) and `mvp-Q49` covers automatic vs explicit |
+| Reveal a user's own phone (logged) | **yes** | D-042 requires a reveal for a full value; only the farm reveal exists today and it is farm-scoped |
+| Suspend a farm | **no** | stays on `/kebun` (`POST /admin/sellers/:id/suspend`, reason enforced at `middlewares.ts:670`); D-054/D-060 untouched |
+| Ban a customer by hand | **no separate action** | D-028 means "ban by giving strikes"; an explicit ban is `mvp-Q49`'s question, not built here |
+| Reset a password / edit profile data | **no** | no route exists for it in the plan, Mercur or the tree; out of scope |
+
+**PII per field, pinned (D-042/D-045):**
+
+| Field | List | Detail | Full value |
+|---|---|---|---|
+| Name | full | full | — (not in D-042's masked set; the report and claim rows already show full names) |
+| Email | full | full | — (already returned by `/admin/farms`) |
+| Phone | `maskPhone` | `maskPhone` | only `POST /admin/customers/:id/reveal`, one audit row |
+| NIK | not shown | not shown | stays on `/kebun` (already masked there) |
+| Bank account | not shown | not shown | stays on `/kebun` |
+| Wallet | balance only | balance + 20 latest ledger rows | — |
+
+**A suspend reason is mandatory (D-041) — but this story adds no suspend.** If
+one is ever added, `POST /admin/sellers/:id/suspend` already refuses a blank
+reason (`middlewares.ts:239-252`), and a customer ban would need the same rule.
+
+**Endpoint inventory (story)**
+
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| GET | /admin/accounts | **no** (T-070.1a) | `?q=&limit=&offset=` → `{ accounts: [{ id, first_name, last_name, email, phone, created_at, balance, active_strikes, banned, farm: { id, name, status } \| null }], count, limit, offset }`; phone masked; 400 `"Kata kunci terlalu panjang."` (>100) |
+| GET | /admin/accounts/:id | **no** (T-070.1a) | `{ account: { …same row } }`; 404 `"Akun tidak ditemukan."` |
+| POST | /admin/customers/:id/reveal | **no** (T-070.1b) | body `{ field: "phone" }` → 200 `{ field, value }`; one `pii_reveal_audit` row (`record_type: "customer"`, `field: "phone"`); 400 `"Kolom yang bisa ditampilkan hanya nomor telepon."`; 404 `"Akun tidak ditemukan."` |
+| GET | /admin/customers/:id/wallet | yes (US-013) | `{ balance, transactions, count, limit, offset }` — reuse |
+| GET | /admin/strikes?customer_id=:id | yes (US-059) | history + `active_count` + `banned` — reuse |
+| POST | /admin/strikes, POST /admin/strikes/:id/remove | yes (US-059) | reuse; the panel lives on the user page |
+| GET | /admin/reports?winner_id=:id | yes (US-058 T-058.3) | all time (D-037) — reuse |
+| POST | /admin/sellers/:id/suspend | yes (Mercur) | **not used here** |
+
+#### Briefs
+
+```text
+Story: US-070 (task T-070.1a)   Release: mvp
+Agent: backend   Expected: <=45 min
+
+## Acceptance criteria
+- T-070.1a: an admin reads a user list and one user's detail with wallet,
+  strikes and ban status.
+- AC (PII): phone masked everywhere; names/emails as on the existing admin rows.
+
+## Decisions in force
+D-002: `/admin/*` only; Medusa's /admin auth is the guard.
+D-042/D-045: admins get the mask; no full PII on any response.
+D-037: the strike/ban state is the derived `active_count >= 2`, no ban table.
+D-055: Indonesian messages; apps key on status/code.
+D-058: the wallet is read only; no ledger write.
+
+## Endpoint inventory
+| GET | /admin/accounts | no, this task |
+| GET | /admin/accounts/:id | no, this task |
+
+## Build
+- src/api/admin/accounts/validators.ts: `AdminGetAccountsParams`
+  `{ q: z.string().trim().max(100).optional(), limit, offset }` (same bounds as
+  admin claims); an Indonesian message via refine for >100.
+- src/api/admin/accounts/route.ts (GET):
+  - `query.graph` on `customer`, fields `id, first_name, last_name, email, phone,
+    created_at, wallet.id`, filters `q ? { $or: [{ email: { $ilike: `%q%` } },
+    { first_name: { $ilike: `%q%` } }, { last_name: { $ilike: `%q%` } }] } : {}`,
+    `created_at DESC`, paginated. `$ilike` and `$or` are supported by Query
+    (Medusa docs, "Apply Filters" / OperatorMap).
+  - ONE batched `wallet_transaction` read for the page's wallet ids
+    (`wallet_id: { $in: ids }`, fields `amount`), summed per wallet in memory.
+    Never call `walletBalance` per row.
+  - ONE batched `seller` read for the page's emails: fields
+    `id, name, status, members.email`, filter `{ members: { email: { $in: emails } } }`;
+    map email → seller. If that relation filter fails in the spec, fall back to
+    one unfiltered-by-email read and match in memory — say which you used.
+  - `readActiveStrikeCounts(query, ids)` (utils/strike.ts:38) for strikes/banned.
+  - Mask with `maskPhone` (utils/mask.ts:46); return the same row shape for
+    `/accounts/:id` (one customer, one wallet read, one seller read).
+  - 404 on the detail route with `"Akun tidak ditemukan."`.
+- middlewares.ts: `validateAndTransformQuery(AdminGetAccountsParams, { defaults: [],
+  isList: true, defaultLimit: 20 })` on GET /admin/accounts.
+- `bun run codegen`.
+
+## Start from
+- packages/api/src/api/admin/reports/route.ts:37-160 (batched lot read + strike read + row mapper)
+- packages/api/src/api/admin/farms/route.ts:132-178 (`applicantsByEmail`: email → customer batching)
+- packages/api/src/api/admin/customers/[id]/wallet/route.ts (wallet read to reuse)
+- packages/api/src/utils/strike.ts:38-64 (`readActiveStrikeCounts`)
+
+## Do not touch
+- apps/**; Mercur's `/admin/customers` catch-all; the farm, strike and report routes.
+
+## Spec (packages/api/integration-tests/http/admin-accounts.spec.ts)
+- two customers seeded; one with 2 active strikes (insert via the moderation
+  service) → `banned: true`, the other `false`
+- `?q=` matches an email substring and a last-name substring, case-insensitively;
+  a blank/absent `q` lists all, newest first; `limit`/`offset` and `count`
+- a farmer customer's row carries `farm: { id, name, status }`; a plain customer
+  has `farm: null`
+- `balance` equals the sum of that wallet's ledger rows
+- serialised JSON has no `ktp_nik`, bank field, address or password; `phone`
+  contains `*`
+- detail 404 for an unknown id; no admin token → 401/403
+
+## Cross-cutting checklist
+- [ ] Read only: `query.graph`, no workflow, no write
+- [ ] One batched read per concern; no per-row query
+- [ ] D-042/D-045: phone masked, nothing else about a person leaks
+- [ ] D-055: the 400 and 404 are Indonesian, written here
+- [ ] `bun run codegen`; both Koi apps' `bun run tsc` clean
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean
+cd packages/api && bun run codegen → run; list `admin.accounts` and its `$id`
+cd packages/api && bun run test:integration:http -- admin-accounts → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + API contract (both routes, shapes, errors) + which
+seller-by-email read you used.
+```
+
+```text
+Story: US-070 (task T-070.1b)   Release: mvp
+Agent: backend   Expected: <=30 min
+Starts after: T-070.1a.
+
+## Acceptance criteria
+- The phone on `/pengguna` is reachable in full only through a logged reveal (D-042).
+
+## Decisions in force
+D-042: one audit row per reveal, with who, when, record and field.
+D-045: self-view is the only unmasked non-reveal path; admins are not exempt.
+D-055: Indonesian messages.
+
+## Endpoint inventory
+| POST | /admin/customers/:id/reveal | no, this task |
+
+## Build
+- src/api/admin/customers/[id]/reveal/route.ts: body `{ field: "phone" }` (strict),
+  calls `revealCustomerPiiWorkflow`; returns `{ field, value }` after the audit row
+  (same order as the farm reveal).
+- src/workflows/reveal-customer-pii.ts + a read step beside
+  `readFarmPiiStep` (steps/pii-reveal.ts): read `customer.phone`; 404
+  `"Akun tidak ditemukan."`; `createPiiRevealAuditStep({ record_type: "customer",
+  record_id: customer_id, field: "phone", actor_* from req.auth_context })`.
+- No change to `src/api/utils/mask-response.ts`: `maskPii` only rewrites keys
+  named `phone`, `ktp_nik` and `payment_details`, and the reveal's payload is
+  `{ field, value }`, so the full number is not re-masked. Verify that in the
+  spec: the 200 body's `value` is not starred.
+- validators.ts beside the farm reveal's; middlewares entry for the POST.
+- `bun run codegen`.
+
+## Start from
+- packages/api/src/workflows/reveal-farm-pii.ts:15-40
+- packages/api/src/workflows/steps/pii-reveal.ts:57-90 (`createPiiRevealAuditStep`)
+- packages/api/src/api/admin/farms/[id]/reveal/route.ts
+
+## Do not touch
+- apps/**; the farm reveal; `maskPii`'s field rules; US-070/091 screens.
+
+## Spec (append to admin-accounts.spec.ts)
+- reveal → 200 full phone, exactly one `pii_reveal_audit` row with actor = admin,
+  record_type `customer`, record_id = the customer, field `phone`
+- unknown customer → 404, zero audit rows
+- `{ field: "ktp_nik" }` → 400, no audit row
+- a second reveal writes a second row (append-only)
+- the list route still returns the mask after a reveal (nothing stored changed)
+
+## Cross-cutting checklist
+- [ ] The value is returned only after the audit row exists
+- [ ] No PHI/PII in logs; no phone in the audit row beyond `field`
+- [ ] `bun run codegen`; both Koi apps' tsc clean
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean
+cd packages/api && bun run codegen → run; list `admin.customers.$id.reveal`
+cd packages/api && bun run test:integration:http -- admin-accounts → pass (alone)
+cd apps/admin-koi && bun run tsc → clean
+Report: standard header + the reveal contract + the audit row fields.
+```
+
+```text
+Story: US-070 (task T-070.2a)   Release: mvp
+Agent: frontend (admin-koi)   Expected: <=45 min
+Starts after: T-070.1a codegen.
+
+## Acceptance criteria
+- T-070.2a: an operator finds a user and sees name, email, masked phone, wallet
+  balance, strikes and the ban state.
+
+## Decisions in force
+D-002: this app only. D-042/D-045: phone stays masked; no reveal on this screen
+(the detail owns it). D-055: Indonesian copy. Admin-koi rule: every server
+action calls `requireAdmin()` itself.
+
+## Endpoint inventory
+| GET | /admin/accounts | no → T-070.1a, first | `{ accounts, count, limit, offset }`; `?q=` |
+| GET | /admin/accounts/:id | no → T-070.1a | `{ account }` |
+
+## Build (one surface: the `/pengguna` list)
+- src/const/routes.ts: keep `users: '/pengguna'` and add
+  `export const userHref = (id: string) => `${ROUTES.users}/${id}`` beside the
+  map (the storefront's `lotHref` shape, `apps/storefront-koi/src/const/routes.ts:76`).
+- src/const/nav.ts: flip `users.ready` to `true`, hint stays as written.
+- src/lib/data/accounts.ts: `listAccounts(q, limit, offset)` and `getAccount(id)`,
+  each calling `requireAdmin(ROUTES.users)` first; the same narrow cast as
+  `farms.ts:88` (query validated into `validatedQuery`).
+- src/app/(app)/pengguna/page.tsx: `requireAdmin(ROUTES.users)`; reads
+  `searchParams.q`; a plain GET form (no client debounce); passes rows to
+  `AccountList.tsx`.
+- src/components/AccountList.tsx: rows with name, email, masked phone, balance
+  formatted `id-ID`, `active_strikes` and a `Diblokir` / `Tidak diblokir` badge,
+  farm name when present; each row links to `/pengguna/<id>`; empty copy
+  "Tidak ada akun yang cocok."; loading/error states like `FarmQueue.tsx:59-103`.
+- src/lib/helpers/account-format.ts (+ test): `accountName`, `banLabel` (reuse
+  `strike-format.ts:22-24` if it fits), `formatJoinedAt`.
+
+## Start from
+- apps/admin-koi/src/components/FarmQueue.tsx:59-107 (queue shell, empty/error)
+- apps/admin-koi/src/lib/data/farms.ts:80-125 (guarded list + cast)
+- apps/admin-koi/src/components/ReportQueue.tsx:38-90 (row layout)
+
+## Do not touch
+- packages/api; apps/storefront-koi; the detail page (T-070.2b); strikes UI.
+
+## Cross-cutting checklist
+- [ ] `requireAdmin(ROUTES.users)` in the data function, not only the page
+- [ ] No raw `fetch`; no money maths
+- [ ] No reveal button, no NIK, no bank field
+- [ ] Render check `/pengguna` (empty, one farmer, one banned customer)
+
+## Definition of done
+cd apps/admin-koi && bun run check → pass
+render check (/pengguna as admin@koi.dev: search by email, a banned row shows
+"Diblokir", a farmer row shows the farm) → clean; screenshot path reported.
+Report: standard header + render check + screenshot path.
+```
+
+```text
+Story: US-070 (task T-070.2b)   Release: mvp
+Agent: frontend (admin-koi)   Expected: <=45 min
+Starts after: T-070.1b codegen.
+
+## Acceptance criteria
+- The detail shows the masked phone, reveals the full one on an explicit click
+  (one audit row), and shows the wallet balance and recent ledger.
+- T-070.1a: wallet and ban state visible for one account.
+
+## Decisions in force
+D-042: the reveal is the only path to the full value and is click-only (never on
+render). D-055: Indonesian copy. Admin-koi rule: guarded server actions.
+
+## Endpoint inventory
+| GET | /admin/accounts/:id | yes (T-070.1a) | `{ account }` |
+| POST | /admin/customers/:id/reveal | yes (T-070.1b) | `{ field: "phone" }` → `{ field, value }` |
+| GET | /admin/customers/:id/wallet | yes (US-013) | `{ balance, transactions, count, limit, offset }` |
+
+## Build (one surface: `/pengguna/[id]`, profile + wallet)
+- src/app/(app)/pengguna/[id]/page.tsx: `requireAdmin(ROUTES.users)`;
+  `getAccount`, `getAccountWallet` (new, in `accounts.ts`: `requireAdmin(ROUTES.users)`
+  then `sdk.admin.customers.$id.wallet.query` — do **not** call
+  `wallet-adjustments.ts`'s `getCustomerWallet`, whose guard is
+  `ROUTES.adjustments`); not-found copy.
+- src/lib/data/accounts.ts: `revealCustomerPhone(id)` calling the reveal route
+  with the existing header helper; returns `{ success, value } | { success:false, error }`.
+- src/components/AccountDetail.tsx: header (name, email, joined, farm, ban
+  badge), a `RevealValue`-shaped phone control copied from `FarmQueue.tsx:261-328`
+  (idle → "Tampilkan" → full value; never auto-fetch), then the wallet block:
+  balance + 20 rows with `walletTransactionTypeLabel` and `formatRupiah`
+  (`lib/helpers/wallet-format.ts`). Tabs live here; the Strike and Laporan tabs
+  are T-070.2c.
+- Wallet/transactions formatting: reuse, never re-derive.
+
+## Start from
+- apps/admin-koi/src/components/FarmQueue.tsx:261-328 (`RevealValue`)
+- apps/admin-koi/src/components/BalanceCorrection.tsx (wallet rows)
+- apps/admin-koi/src/lib/data/wallet-adjustments.ts:85-98 (the `$id.wallet.query`
+  call shape to copy; the guard there is not reusable)
+
+## Do not touch
+- packages/api; apps/storefront-koi; the list page; the strike/report tabs.
+
+## Cross-cutting checklist
+- [ ] The reveal fires only from the click; one click = one call (one audit row)
+- [ ] Phone is masked until revealed; masked again on refresh
+- [ ] Money `id-ID`, integers only, no client maths
+- [ ] Render check `/pengguna/<id>`: reveal on/off, wallet rows, signed out → `/masuk`
+
+## Definition of done
+cd apps/admin-koi && bun run check → pass
+render check (/pengguna/<seeded id> as admin@koi.dev: masked phone → "Tampilkan"
+→ full; wallet balance and rows; a refresh returns to the mask) → clean;
+screenshot path reported.
+Report: standard header + render check + screenshot path.
+```
+
+```text
+Story: US-070 (task T-070.2c)   Release: mvp
+Agent: frontend (admin-koi)   Expected: <=35 min
+Starts after: T-070.2b (the page's tabs).
+
+## Acceptance criteria
+- An admin acts on a bad actor from the user page: gives or removes a strike with
+  a written reason; reads that user's unpaid reports.
+- T-070.1a: strikes and ban status on one user.
+
+## Decisions in force
+D-041/D-015: a written reason is mandatory; the UI refuses a blank one.
+D-028/mvp-Q49: no ban button — the second active strike is the ban.
+D-042: strike and report rows carry no phone/NIK/bank.
+D-055: the app writes its own copy on 400/404; never keys on message text.
+
+## Endpoint inventory
+| GET | /admin/strikes?customer_id=:id | yes (US-059) | `{ strikes, active_count, banned, count, limit, offset }` |
+| POST | /admin/strikes | yes (US-059) | `{ customer_id, reason_type, reason }` → `{ strike, ban }` |
+| POST | /admin/strikes/:id/remove | yes (US-059) | `{ reason }` → `{ strike, ban }` |
+| GET | /admin/reports?winner_id=:id | yes (US-058 T-058.3) | report rows, all time |
+
+## Build (two tabs on `/pengguna/[id]`)
+- "Strike" tab: render the existing `StrikePanel` (`components/StrikePanel.tsx`)
+  with `customerId={account.id}`, `target={{ customer_id: account.id }}`,
+  `defaultReasonType="winner_unpaid"`. Do not fork the panel.
+- "Laporan" tab: `listWinnerReports(account.id)` — add it beside `listReports`
+  (`lib/data/reports.ts:48-62`) passing `winner_id`, guarded on
+  `requireAdmin(ROUTES.users)` — rendered read-only in `ReportQueue`'s row shape
+  (or a compact list); empty copy "Tidak ada laporan untuk akun ini."
+- `@koi/ui/primitives/tabs`, keyboard-reachable, like `/kebun` uses tabs.
+
+## Start from
+- apps/admin-koi/src/components/StrikePanel.tsx:31-120 (props and history)
+- apps/admin-koi/src/components/ReportQueue.tsx:38-120 (row)
+- apps/admin-koi/src/components/FarmQueue.tsx:60-103 (tab shell)
+
+## Do not touch
+- packages/api; the strike panel itself; the wallet/profile tab; US-071's tab.
+
+## Cross-cutting checklist
+- [ ] The panel's own writes stay the only strike mutation; no new route
+- [ ] Confirmation + required reason; blank refused on the client too
+- [ ] No PII beyond names and reasons
+- [ ] Render check: give a first strike, a second → "Diblokir", remove → "Tidak diblokir"
+
+## Definition of done
+cd apps/admin-koi && bun run check → pass
+render check (/pengguna/<id> as admin@koi.dev, seeded customer with 1 strike:
+give a second → badge "Diblokir"; remove one → "Tidak diblokir"; Laporan tab
+lists that winner's reports) → clean; screenshot path reported.
+Report: standard header + render check + screenshot path.
+```
+
+```text
+Story: US-070 (task T-070.3)   Release: mvp
+Agent: qa   Expected: <=30 min
+Starts when: no backend agent and no other Jest run is active.
+
+## Acceptance criteria
+Verify the story's ACs (view users with strikes and bans; phone masked; full
+phone only through the logged reveal). Decisions: D-002, D-028, D-037, D-041,
+D-042, D-045, D-055.
+Code under test: api/admin/accounts/**, api/admin/customers/[id]/reveal/route.ts,
+workflows/reveal-customer-pii.ts, api/utils/mask-response.ts:148,
+components/AccountList.tsx, AccountDetail.tsx, the two tabs.
+Commands (alone): bun run test:integration:http -- admin-accounts. Then
+bun run check in admin-koi.
+Browser (render-check): /pengguna with search, a farmer row, a 2-strike customer;
+/pengguna/<id> for each; signed out → /masuk.
+Watch for: a full phone anywhere in the list payload or page source; the reveal
+writing two audit rows for one click; a second reveal not writing a row; a bid
+or strike count off by one; a banned state from one strike; an N+1 read (say how
+you checked); the list showing a full name/email that conflicts with D-042 (it
+does not — names and emails are not in the masked set).
+Do not change app code. Report PASS/FAIL per AC with file:line and command
+output; bugs with repro and expected/actual.
+```
+
+**Coverage:** plan "Users and roles" (the Admin row: strikes and bans; moderating
+users) and "Strikes" (ban state visible) → T-070.1a, .1b, .2a–.2c, .3. Plan
+"Personal data protection" (masked admin screens, logged reveal) → T-070.1b,
+.2b, .3. The ban action itself is US-059's; `mvp-Q49` covers whether it stays
+derived.
 
 ### US-071 Admin spots shill bidding · `todo`
 As an **admin**, I want to see bid patterns per bidder and farmer so that I can
@@ -6074,8 +6470,215 @@ spot shill bidding. *(Plan: Fair play; D-028, D-037)*
 - AC2: A bidder is flagged when at least 50% of their bids are on that farmer's lots, or when they have at least 2 unpaid wins from that farmer.
 - AC3: Flags take no automatic action. The admin bans by hand (US-059, US-070).
 - [ ] T-071.1 [backend] `/admin` read route: per-farmer bidder table with the two flags (read only, `query.graph`)
-- [ ] T-071.2 [admin] Bidder table on the farmer page, flagged rows marked
+- [ ] T-071.2 [admin] Bidder table on the user page, flagged rows marked
 - [ ] T-071.3 [qa] Flag thresholds at exactly 50% and exactly 2 unpaid wins; a flag changes no account
+
+**Readiness 2026-11-18: ready (`todo`). Nothing blocks it.** The report table
+this story counts exists in the working tree (`modules/moderation/models/lot-report.ts`,
+`api/admin/reports/route.ts`, `api/vendor/sold-lots/[id]/report` — US-058
+is still `todo` but its files are present, untracked). US-058's acceptance is
+not this story's gate; if it is rejected, this story's counts have no source and
+T-071.1 must wait. The table's `seller_id`/`winner_customer_id` and the report
+per lot are what D-037 defines.
+
+**Exact flag maths, pinned** (`bidder` = one `customer_id`, `farmer` = one
+`seller_id`; every count all time, D-037):
+
+| Column | Definition |
+|---|---|
+| bid count (`farm_bids`) | count of that bidder's `bid` rows on lots of that farmer's auctions, **excluding removed bids** |
+| lots bid on | distinct lot ids among those rows |
+| wins | lots of that farmer with `winner_customer_id = bidder` and status in `won, paid, shipped, delivered, claimed` (a cancelled/unsold lot never had a winner) |
+| unpaid wins | count of `lot_report` rows with `seller_id = farmer` and `winner_customer_id = bidder` (a report stays a report even if the lot is later marked paid — D-037, US-058) |
+| total bid count (`total_bids`) | count of **all** that bidder's `bid` rows on any lot, any farmer, removed excluded |
+| flag A (share) | `farm_bids * 2 >= total_bids` (at least 50%, 0 excluded because a row needs `farm_bids > 0`) |
+| flag B (unpaid) | `unpaid_wins >= 2` |
+| flagged | flag A or flag B |
+
+Removed bids are excluded from every bid count because US-072 AC2 says a removed
+bid does not count. No automatic action exists anywhere: the route is read-only,
+writes nothing, and T-071.3 asserts no strike, ban, seller status or customer row
+changes.
+
+**PII on this table, pinned:** the row carries the bidder's full `name` and the
+opaque `customer_id` (it links to `/pengguna/<id>`, where the strike is given).
+No phone, email, NIK, bank or address. D-042 masks phone/NIK/bank/account
+holder, not names, and every existing admin row already returns a full name
+(`api/admin/reports/route.ts:74-85` shows `winner.name`); D-051's masked-bidder
+format governs **public** pages only and is not used here. Masking the name
+without a lookup would leave the admin unable to identify the bidder.
+
+**Endpoint inventory (story)**
+
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| GET | /admin/farms/:id/bidders | **no** (T-071.1) | `?limit=&offset=` → `{ seller: { id, name }, bidders: [{ customer_id, name, bid_count, lots_bid_on, wins, unpaid_wins, flags: { share: boolean, unpaid: boolean }, flagged }], count, limit, offset }`; full `name`, no contact field; 404 `"Kebun tidak ditemukan."` |
+| GET | /admin/accounts/:id | no → US-070 T-070.1a | the user page this table sits on |
+| POST | /admin/strikes | yes (US-059) | the ban by hand happens there, not here |
+
+#### Briefs
+
+```text
+Story: US-071 (task T-071.1)   Release: mvp
+Agent: backend   Expected: <=45 min
+
+## Acceptance criteria
+- AC1: for each farmer, bidder, bid count, lots bid on, wins, unpaid wins; an
+  unpaid win is a US-058 report from that farmer; all counts all time.
+- AC2: flagged at >=50% of the bidder's bids on that farmer's lots, or >=2 unpaid
+  wins from that farmer.
+- AC3: flags take no automatic action.
+
+## Decisions in force
+D-028: the table exists for a human ban; no action here.
+D-037: unpaid win = the lot_report row; every count all time.
+D-051/D-042: D-051's mask is for public pages; this admin table shows a full
+name (like the report rows) and no contact field.
+D-055: Indonesian 404.
+CLAUDE.md §9: read-only route, `query.graph`, thin.
+
+## Endpoint inventory
+| GET | /admin/farms/:id/bidders | no, this task |
+
+## Build
+- src/api/admin/farms/[id]/bidders/validators.ts: `limit`/`offset` like the other
+  admin params (default 50, max 100).
+- src/api/admin/farms/[id]/bidders/route.ts (GET):
+  1. seller exists? `query.graph` seller fields `id, name`; else 404
+     "Kebun tidak ditemukan."
+  2. lots: `query.graph` `lot` fields `id, status, winner_customer_id` filter
+     `{ auction: { seller_id: id } }` (same-module relation filter).
+  3. farm bids: `query.graph` `bid` fields `id, customer_id, amount, lot_id,
+     removed_at` filter `{ lot_id: { $in: lotIds } }`; drop `removed_at != null`
+     in memory.
+  4. per bidder: `farm_bids`, distinct `lots`, `wins` from step 2.
+  5. unpaid: `query.graph` `lot_report` fields `winner_customer_id` filter
+     `{ seller_id: id }`; count per winner.
+  6. denominator: `query.graph` `bid` fields `customer_id, removed_at` filter
+     `{ customer_id: { $in: biddersOfFarm } }`; drop removed; count per bidder.
+  7. `share = farm_bids * 2 >= total_bids`; `unpaid = unpaid_wins >= 2`;
+     `flagged = share || unpaid`.
+  8. names: one `query.graph` `customer` fields `id, first_name, last_name` for
+     the page's bidders; join into `name` (full, like the report rows).
+  9. sort flagged first, then `farm_bids` DESC; paginate after the computation
+     (count = number of bidders).
+- Put the pure maths in `src/utils/shill.ts` + `__tests__/shill.unit.spec.ts`
+  (`isShillShare(farmBids, totalBids)`, `isShillUnpaid(n)`) so the boundary cases
+  are unit-tested.
+- middlewares.ts: query validator for GET /admin/farms/:id/bidders.
+- `bun run codegen`.
+
+## Start from
+- packages/api/src/api/admin/reports/route.ts:37-160 (batched reads + `winnersById` name map)
+- packages/api/src/utils/strike.ts:38-64 (batched count pattern to copy)
+
+## Do not touch
+- apps/**; the lot_report table/model; any bid write; strikes; US-072.
+
+## Spec (packages/api/integration-tests/http/admin-shill-bidders.spec.ts)
+- 10 bids total for A, 5 on the farm → `flagged` true (exactly 50%)
+- 5 of 11 → false; 6 of 11 → true
+- 1 unpaid report → false; 2 → true, even when the lots were later paid
+- a bid 2 years old counts (all time)
+- a removed bid is not counted in either side of the ratio
+- a bidder with no bids on the farm but a report? impossible; report-only row must
+  not appear (a bidder row needs `farm_bids > 0`) — assert it
+- no writes: count `strike`, `lot_report`, `customer`, `seller` rows before/after
+- unknown farm → 404; no admin token → 401/403
+- serialised JSON has no phone, email, NIK, bank or address; a full name is
+  present (the table needs it) and `customer_id` is present (to link)
+
+## Cross-cutting checklist
+- [ ] Pure maths in `utils/shill.ts`, unit-tested at both exact thresholds
+- [ ] One batched read per concern; no per-row query
+- [ ] Full name + opaque id only; no phone, email, NIK or bank field selected
+- [ ] No write anywhere; no workflow
+- [ ] `bun run codegen`; both Koi apps' tsc clean
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean
+cd packages/api && bun run test:unit → the shill unit spec passes
+cd packages/api && bun run codegen → run; list `admin.farms.$id.bidders`
+cd packages/api && bun run test:integration:http -- admin-shill-bidders → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + API contract + the four formulas as built.
+```
+
+```text
+Story: US-071 (task T-071.2)   Release: mvp
+Agent: frontend (admin-koi)   Expected: <=40 min
+Starts after: T-071.1 codegen AND US-070 T-070.2b (the user page's tabs).
+
+## Acceptance criteria
+- AC1/AC2 on screen: the farmer's bidder table with the five counts and the flags.
+- AC3: no action button on the row; the ban is given on the Strike tab.
+
+## Decisions in force
+D-002: this app only. D-028: a flag never acts. D-037: labels say "sepanjang waktu".
+D-042: no contact field on the row; the name and opaque id are shown as the
+backend returns them (D-051's mask is for public pages). D-055: Indonesian copy.
+
+## Endpoint inventory
+| GET | /admin/farms/:id/bidders | no → T-071.1, first | `{ seller, bidders, count, limit, offset }` |
+
+## Build (one surface: the "Pola bid" tab on `/pengguna/[id]`)
+- src/lib/data/bidders.ts: `listFarmBidders(farmId)`, `requireAdmin(ROUTES.users)`.
+- src/components/ShillTable.tsx: columns Bidder (name as returned) · Jumlah bid · Lot ·
+  Menang · Menang belum dibayar · Tanda. A flagged row gets a `Badge` "Ditandai"
+  (tone urgent) and a caption "Ditandai bila ≥50% bid di kebun ini atau ≥2
+  kemenangan belum dibayar. Tanda tidak memblokir akun."
+- Each row links to `/pengguna/<customer_id>`; no strike button here.
+- Empty copy "Belum ada bid di kebun ini."; the tab renders only when
+  `account.farm` exists.
+- Add the tab in the same tab list as T-070.2c.
+
+## Start from
+- apps/admin-koi/src/components/ReportQueue.tsx:38-120 (table-row layout)
+- apps/admin-koi/src/components/ClaimQueue.tsx (badges + tabs)
+- apps/admin-koi/src/lib/data/reports.ts:45-70 (guarded read + cast)
+
+## Do not touch
+- packages/api; the Strike tab's panel; the farm queue.
+
+## Cross-cutting checklist
+- [ ] Guarded server read; no raw fetch
+- [ ] No phone/email/NIK/bank on the screen or in the page source
+- [ ] No action on a flagged row
+- [ ] Render check with a flagged and an unflagged bidder
+
+## Definition of done
+cd apps/admin-koi && bun run check → pass
+render check (/pengguna/<farmer id> → "Pola bid": one 50% bidder flagged, one
+with 1 report not flagged) → clean; screenshot path reported.
+Report: standard header + render check + screenshot path.
+```
+
+```text
+Story: US-071 (task T-071.3)   Release: mvp
+Agent: qa   Expected: <=25 min
+Starts when: no backend agent and no other Jest run is active.
+
+## Acceptance criteria
+AC1–AC3, with the exact thresholds.
+Decisions: D-028, D-037, D-042, D-051, D-055.
+Code under test: api/admin/farms/[id]/bidders/**, utils/shill.ts,
+components/ShillTable.tsx.
+Commands (alone): bun run test:unit; bun run test:integration:http --
+admin-shill-bidders. Then bun run check in admin-koi.
+Browser (render-check): /pengguna/<farmer> as admin@koi.dev, one flagged and one
+unflagged bidder.
+Watch for: 50% treated as 49% or 51%; an unpaid win counted from another farmer;
+a paid-later lot dropping its report; a removed bid counted; a flag giving a
+strike or changing seller status; a phone or email in the payload; a write of
+any kind.
+Do not change app code. Report PASS/FAIL per AC with file:line and command
+output; bugs with repro and expected/actual.
+```
+
+**Coverage:** plan "Fair play" (the bidder table, both thresholds, no automatic
+action) → T-071.1, .2, .3; D-037's unpaid-win definition → T-071.1 (spec);
+D-028's hand-made ban → T-071.2 (link to the Strike tab) and US-059.
+Plan "Users and roles" (moderate users) is US-070's.
 
 ### US-072 Admin monitors live auctions and removes wrong bids · `todo`
 As an **admin**, I want to watch live auctions and remove obviously wrong bids
@@ -6085,9 +6688,408 @@ so that auctions stay fair. *(Plan: Bidding, Milestone 6; D-024, D-036)*
 - AC3: The lot's current price goes back to the highest remaining bid, or OB if none is left (D-024).
 - AC4: Any extend the removed bid caused stays. The lot's end time is never shortened (D-024).
 - AC5: A bid can be removed only while its lot is `open`. After close, removal is refused; the fix is a lot cancel (US-091). Once every bid is removed, the next bid may equal OB again (D-036, D-023).
-- [ ] T-072.1 [backend] Remove-bid workflow (row lock on the lot, mark removed, recompute current price) + `/admin` route
-- [ ] T-072.2 [admin] Live monitoring screen with remove-bid and a required reason
+- [ ] T-072.1a [backend] Bid removal fields, remove-bid workflow + `/admin` route, and the two server-side bid reads
+- [ ] T-072.1b [backend] `/admin` live-auction and live-lot read routes
+- [ ] T-072.1c [backend] Exclude removed bids from the public lot feed and lot page
+- [ ] T-072.2a [admin] `/lelang/langsung` monitoring list
+- [ ] T-072.2b [admin] Lot bid panel with remove-bid and a required reason
 - [ ] T-072.3 [qa] After removal: bid row still exists and is marked removed; price = highest remaining bid or OB; end time unchanged; removal on a closed lot refused; after removing every bid, a bid = OB is accepted
+
+**Readiness 2026-11-18: ready (`todo`). Nothing blocks it.** The bid column is
+**not built**: `modules/auction/models/bid.ts` has `id, customer_id, amount,
+source, lot` only (`bid.ts:1-27`), and four comments name this story as where
+removal lands (`bid.ts:4-7`, `steps/bid.ts:27`, `steps/lot.ts:79`,
+`api/store/lots/[id]/route.ts:40`). The `ponytail:` at
+`api/store/lots/route.ts:206` is unrelated (it caps bid-history size, not
+removal). D-024/D-036 decide every rule AC1–AC5 restate; no new question.
+
+**Answers pinned:**
+
+| Question | Answer | Source |
+|---|---|---|
+| Which column, where | `bid.removed_at` (dateTime, nullable), `bid.removed_by` (text, nullable, admin id), `bid.removed_reason` (text, nullable) — one migration, no new index (id lookups only) | AC2; D-024 |
+| A removed top bid and the running price | always recompute `current_price = max(amount)` over **non-removed** bids of the lot, else `lot.ob` — so removing the top drops it to the next one, removing a middle bid leaves it as it was | AC3; D-024 |
+| The winner | the winner is saved only at close (`getClosableLotStep`), so removal never rewrites a saved winner; the close step must pick the highest **non-removed** bid, and if none is left the lot closes `unsold` | AC2; CLAUDE.md §8 |
+| The lot's state | status stays `open`, `end_time` untouched (never shortened) | AC4; D-024 |
+| When removal is refused | `status !== "open"` → 409 `lot_not_open`, even if `end_time` has passed but the close job has not run yet (AC5 says `open`, not "before the timer") | AC5; D-036 |
+| Extend | no extend change; the removed bid's extend already moved the end time and stays | AC4 |
+| Next bid after a full removal | `getBiddableLotStep` counts only non-removed rows, so with none left `minimum = ob` and `has_bid` is false (its `bidTooLowMessage` says OB) | AC5; D-036; `steps/bid.ts:138-171` |
+| Audit trail | the row is never deleted or updated in amount/customer; it keeps every original field and gains the three removal fields; `removed_by = req.auth_context.actor_id`, `removed_at` from the server clock | AC1/AC2 |
+| Customer-facing history | `bid_count` and the lot detail's bid rows exclude removed bids; the admin's monitoring panel shows them with a "Dihapus" mark | AC2 |
+| Does the monitoring screen poll | no — server-rendered and a "Muat ulang" link; ACs ask to watch, not live-refresh (a poll would be an unrequested feature; US-045's helper exists if the owner later wants it) | simpl. |
+
+**Endpoint inventory (story)**
+
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| POST | /admin/bids/:id/remove | **no** (T-072.1a) | body `{ reason }` → 200 `{ bid: { id, lot_id, amount, customer_id, source, created_at, removed_at, removed_by, removed_reason }, lot: { id, current_price, end_time } }`; 400 `"Alasan penghapusan wajib diisi."`; 404 `"Bid tidak ditemukan."`; 409 `bid_already_removed` `"Bid ini sudah dihapus."`; 409 `lot_not_open` `"Bid hanya bisa dihapus saat lot masih terbuka."` |
+| GET | /admin/live-auctions | **no** (T-072.1b) | `{ auctions: [{ id, seller: { id, name }, start_at, end_at, status, lots: [{ id, title, thumbnail, ob, kb, current_price, end_time, status, bid_count, cancel_reason }] }], count, limit, offset }`; only `status: "live"` |
+| GET | /admin/live-lots/:id | **no** (T-072.1b) | `{ lot: { id, auction_id, status, ob, kb, current_price, end_time, cancel_reason }, bids: [{ id, amount, created_at, source, removed_at, removed_reason, bidder: { customer_id, name } }] }` — full name + opaque id (as US-070/US-071), no phone/email/NIK; 404 `"Lot tidak ditemukan."` |
+| GET | /store/lots, /store/lots/:id | yes (US-040/US-044) | `bid_count` and the detail history exclude removed rows (T-072.1c); shapes unchanged |
+
+#### Briefs
+
+```text
+Story: US-072 (task T-072.1a)   Release: mvp
+Agent: backend   Expected: <=45 min
+
+## Acceptance criteria
+- AC1: removal needs a reason and is the admin's recorded act.
+- AC2 (server half): the bid is marked removed with reason/admin/time, never
+  deleted; it does not count for the price or the winner.
+- AC3: `current_price` = highest remaining bid, or OB.
+- AC4: end_time unchanged.
+- AC5: only while the lot is `open`; after every bid is removed, the next bid may
+  equal OB.
+
+## Decisions in force
+D-024: the four rules above. D-036: open only; OB applies again after removals.
+D-023: first bid may equal OB. D-055: Indonesian messages/codes.
+D-058: no money. CLAUDE.md §8: lock the row, server clock, workflow.
+
+## Endpoint inventory
+| POST | /admin/bids/:id/remove | no, this task |
+
+## Build
+- models/bid.ts: add `removed_at: model.dateTime().nullable()`,
+  `removed_by: model.text().nullable()`,
+  `removed_reason: model.text().nullable()`. No index. Delete the
+  "until then every row is a live bid" comment. Migration:
+  `bun x medusa db:generate auction` (container env URL + `?sslmode=disable`).
+- steps/bid.ts:
+  - `getBiddableLotStep`: filter the last-bid read with `removed_at: null`
+    (:138-151). `minimum` and `has_bid` then follow the remaining bids.
+  - new `getRemovableBidStep({ bid_id, lot_id })` (read only, INSIDE the lock):
+    `query.graph` `bid` fields `id, lot_id, removed_at`; missing or
+    `bid.lot_id !== lot_id` → NOT_FOUND "Bid tidak ditemukan."; `removed_at` set
+    → CONFLICT "Bid ini sudah dihapus." code `bid_already_removed`; then the lot
+    (`id, ob, current_price, status`), missing → 404; `status !== "open"` →
+    CONFLICT "Bid hanya bisa dihapus saat lot masih terbuka." code
+    `lot_not_open`. Return `{ ob, current_price }` (the second is
+    `setLotCurrentPriceStep`'s `previous_price` for compensation).
+  - the route resolves `bid_id → lot_id` with one `query.graph` (a bid never
+    changes lots, so it cannot go stale) and passes both into the workflow; the
+    lock key is `transform(input, ({ lot_id }) => `lot:${lot_id}`)`, the exact
+    `place-bid.ts:26-28` shape, and the step re-checks the pair inside the lock.
+  - new `markBidRemovedStep({ bid_id, admin_id, reason })`: one `updateBids`
+    setting the three columns from the server clock; compensation restores all
+    three to `null`.
+  - new `getHighestRemainingBidStep({ lot_id })`: `query.graph` `bid` fields
+    `amount` filter `{ lot_id, removed_at: null }` order
+    `{ amount: "DESC", created_at: "ASC" }` take 1; returns the amount or null.
+  - reuse `setLotCurrentPriceStep({ lot_id, amount: highest ?? ob,
+    previous_price: removable.current_price })` (:224-260) for AC3 and its
+    compensation.
+- workflows/remove-bid.ts `{ bid_id, lot_id, reason, admin_id }`:
+  `getRemovableBidStep` → `markBidRemovedStep` → `getHighestRemainingBidStep` →
+  `setLotCurrentPriceStep`. The lock is acquired before the guard with the
+  route-supplied `lot_id` (same key as place-bid and close-lot); no extend step
+  (AC4).
+- Route src/api/admin/bids/[id]/remove/route.ts: admin auth is the guard; body
+  from `validateAndTransformBody`; `admin_id = req.auth_context.actor_id`; one
+  `query.graph` reads the bid's `lot_id` (404 if absent) and passes it into the
+  workflow so the lock key exists before any guard runs; read the bid back
+  (`query.graph`, fields incl. the three removal fields) and return the envelope
+  with `lot.current_price`/`end_time` from the post-step read.
+- validators.ts: `AdminRemoveBid = z.object({ reason }).strict()`, `reason` read
+  as unknown, trimmed, non-blank with the Indonesian message (claim validator
+  shape, `api/admin/claims/validators.ts:20-31`). Middlewares entry for the POST.
+- steps/lot.ts `getClosableLotStep` (:79-88): filter the top-bid read with
+  `removed_at: null` (AC2's winner clause). Delete its US-072 comment.
+- `bun run codegen`.
+
+## Start from
+- packages/api/src/workflows/place-bid.ts:24-60 (lock + guards + price step)
+- packages/api/src/workflows/steps/bid.ts:224-260 (`setLotCurrentPriceStep`)
+- packages/api/src/workflows/steps/strike.ts:120-180 (marker update + compensation)
+- packages/api/src/api/admin/strikes/[id]/remove/route.ts (thin route, reason body)
+
+## Do not touch
+- apps/**; the public lot reads (T-072.1c); lot cancel (US-091); the bid amount
+  or customer on any row; US-043's extend.
+
+## Spec (packages/api/integration-tests/http/admin-remove-bid.spec.ts)
+Seed a live auction with an open lot (ob 100, kb 50) and bids 100/150/200 by
+three customers via the place-bid workflow.
+- remove 200 → `current_price` 150; remove 150 → 100; remove 100 → `current_price`
+  100 (= ob), a bid of 100 accepted, 99 refused `bid_too_low`
+- remove the middle bid with the top intact → `current_price` unchanged
+- the removed row still exists with `removed_at`, `removed_by` (the admin id),
+  `removed_reason`; `amount`/`customer_id` unchanged
+- `end_time` byte-equal before and after each removal
+- a `won`/`paid`/`unsold`/`cancelled` lot → 409 `lot_not_open`, no write
+- unknown bid → 404; second removal → 409 `bid_already_removed`
+- blank/absent reason → 400; no admin token → 401/403
+- remove the top bid, then `closeLotWorkflow` → winner is the next bidder and
+  `final_price` matches; remove every bid, then close → `unsold`
+- forced failure after the mark (test wrapper) → the row is unmarked and
+  `current_price` restored
+- no `wallet_transaction` row and no balance change
+
+## Cross-cutting checklist
+- [ ] One mutation per step with compensation; all inside `lot:<id>` lock
+- [ ] Removed bids excluded from pricing, `minimum`/`has_bid`, and the winner
+- [ ] End time never written by this workflow
+- [ ] D-055: Indonesian messages and codes on every error
+- [ ] `bun run codegen`; both Koi apps' tsc clean
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean
+cd packages/api && bun run codegen → run; list `admin.bids.$id.remove`
+cd packages/api && bun run test:integration:http -- admin-remove-bid → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + API contract + migration name + the recompute rule.
+```
+
+```text
+Story: US-072 (task T-072.1b)   Release: mvp
+Agent: backend   Expected: <=30 min
+Starts after: T-072.1a (the columns exist).
+
+## Acceptance criteria
+- The monitoring screen's reads: live auctions, their lots, and one lot's bids
+  including removed rows marked as such.
+- PII: bidder names masked; US-091's note ("bidder and participant details …
+  are masked") applies to this screen.
+
+## Decisions in force
+D-002: `/admin/*`. D-042: masked bidder details. D-055: Indonesian 404.
+Read only.
+
+## Endpoint inventory
+| GET | /admin/live-auctions | no, this task |
+| GET | /admin/live-lots/:id | no, this task |
+
+## Build
+- src/api/admin/live-auctions/validators.ts + route.ts: `query.graph` `auction`
+  fields `id, seller.id, seller.name, start_at, end_at, status` filter
+  `{ status: "live" }`, newest `start_at` first; then one `query.graph` `lot` for
+  the page's auctions with `id, product.title, product.thumbnail, ob, kb,
+  current_price, end_time, status, cancel_reason, auction_id, bids.id,
+  bids.removed_at`; compute `bid_count` = non-removed rows; return the envelope
+  in the story's inventory.
+- src/api/admin/live-lots/[id]/route.ts: lot by id with
+  `id, auction_id, status, ob, kb, current_price, end_time, cancel_reason`; its
+  bids `id, amount, created_at, source, removed_at, removed_reason,
+  customer_id`; one batched `customer` read (`id, first_name, last_name`) and a
+  full `name` per bidder; never select phone, email, NIK or address. 404
+  "Lot tidak ditemukan.".
+- middlewares.ts: query validator on the list route (`limit`/`offset`).
+- `bun run codegen`.
+
+## Start from
+- packages/api/src/api/admin/auctions/route.ts (auction + lots mapper)
+- packages/api/src/api/admin/reports/route.ts:37-90 (batched read + name map)
+- packages/api/src/api/store/lots/route.ts:205-235 (`toStoreBids` row shape)
+
+## Do not touch
+- apps/**; the store reads (T-072.1c); removal writes; US-091.
+
+## Spec (packages/api/integration-tests/http/admin-live-auctions.spec.ts)
+- only `live` auctions returned; a `scheduled` and a `closed` one absent
+- each lot carries `bid_count` excluding a removed bid
+- `/admin/live-lots/:id` returns removed bids with `removed_at`/`removed_reason`,
+  full name and opaque id present, no phone, email, NIK or address
+- unknown lot → 404; no admin token → 401/403
+
+## Cross-cutting checklist
+- [ ] Two routes, read only, one batched read per relation
+- [ ] Full name + opaque id only (as US-070/US-071); no phone, email, NIK or bank
+- [ ] `bun run codegen`; both Koi apps' tsc clean
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean
+cd packages/api && bun run codegen → run; list `admin.liveAuctions`, `admin.liveLots.$id`
+cd packages/api && bun run test:integration:http -- admin-live-auctions → pass (alone)
+cd apps/admin-koi && bun run tsc → clean
+Report: standard header + both contracts + the masking rule as built.
+```
+
+```text
+Story: US-072 (task T-072.1c)   Release: mvp
+Agent: backend   Expected: <=30 min
+Starts after: T-072.1a.
+
+## Acceptance criteria
+- AC2: removed bids do not count for "the bid history shown to customers".
+
+## Decisions in force
+D-024/D-036 (removed rows never returned), D-050 (a cancelled lot shows no bids
+anyway), D-051 (masked history on open and closed lots).
+
+## Endpoint inventory
+| GET | /store/lots | yes | `bid_count` excludes removed rows |
+| GET | /store/lots/:id | yes | the shown history excludes removed rows |
+
+## Build
+- api/store/lots/route.ts: add `"bids.removed_at"` to `STORE_LOT_FIELDS` (:68-95);
+  in `toStoreLot` (:130-145) count only rows with `removed_at == null`; in
+  `toStoreBids` (:205-235) drop removed rows before sorting/masking. No payload
+  field changes — `removed_at` is never returned.
+- api/store/lots/[id]/route.ts: filter removed rows before `toStoreBids` (the
+  `US-072 T-072.1` comment at :40 goes away).
+- Delete the two now-stale comments naming US-072 at `steps/bid.ts:27` (if
+  T-072.1a did not already) and `api/store/lots/[id]/route.ts:40`.
+- `bun run codegen` is not needed (no route shape change); run it only if the
+  generated types moved.
+
+## Start from
+- packages/api/src/api/store/lots/route.ts:68-145, 205-235
+- packages/api/src/api/store/lots/[id]/route.ts:38-51
+
+## Do not touch
+- apps/**; the admin reads; pricing/winner logic (T-072.1a); masking format.
+
+## Spec (append to packages/api/integration-tests/http/store-lots.spec.ts)
+- open lot, 3 bids, one removed → feed `bid_count` 2; detail history 2 rows at
+  the expected amounts; no `removed_at` key in the payload
+- a closed lot whose winning bid was removed before close → the history shows the
+  remaining bids and the top row is the actual winner's mask
+- a cancelled lot still shows no bids (D-050) — unchanged
+
+## Cross-cutting checklist
+- [ ] No new public field; removal data stays server-side
+- [ ] Mask order unchanged
+- [ ] Both Koi apps' tsc clean
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean
+cd packages/api && bun run test:integration:http -- store-lots → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + the two changed reads + payload keys as built.
+```
+
+```text
+Story: US-072 (task T-072.2a)   Release: mvp
+Agent: frontend (admin-koi)   Expected: <=40 min
+Starts after: T-072.1b codegen.
+
+## Acceptance criteria
+- An admin can watch the live auctions and their lots (price, time left, bid
+  count) on one screen.
+
+## Decisions in force
+D-002 only. D-042: masked bidder details (the panel is T-072.2b). D-055 copy.
+
+## Endpoint inventory
+| GET | /admin/live-auctions | no → T-072.1b, first | `{ auctions, count, limit, offset }` |
+
+## Build (one surface: `/lelang/langsung`)
+- src/const/routes.ts: `liveAuctions: '/lelang/langsung'`.
+- src/const/nav.ts: an "Antrean" item "Pantau lelang", hint "Hapus bid yang salah
+  dan hentikan lelang yang rusak.", `ready: true`.
+- src/lib/data/live-auctions.ts: `listLiveAuctions()`, `requireAdmin(ROUTES.liveAuctions)`.
+- src/app/(app)/lelang/langsung/page.tsx: `?lot=<id>` selects the panel
+  (T-072.2b); an auction card per live auction with seller, window and its lot
+  rows (thumbnail, title, OB/KB, current price `id-ID`, end time WIB, status,
+  bid count) and a link to each lot's panel.
+- A `Muat ulang` link (`router.refresh()` button or a plain link); no polling.
+- Empty copy "Tidak ada lelang yang sedang berjalan."
+
+## Start from
+- apps/admin-koi/src/components/AuctionQueue.tsx:60-120 (auction + lot cards)
+- apps/admin-koi/src/lib/data/auctions.ts:60-80 (guarded read + cast)
+- apps/admin-koi/src/lib/helpers/auction-format.ts (date/rupiah helpers)
+
+## Do not touch
+- packages/api; the approval queue `/lelang`; the bid panel (T-072.2b).
+
+## Cross-cutting checklist
+- [ ] Guarded read; no raw fetch; no client money maths
+- [ ] No bidder data on this screen
+- [ ] Render check with two live auctions and an empty state
+
+## Definition of done
+cd apps/admin-koi && bun run check → pass
+render check (/lelang/langsung as admin@koi.dev, one live auction with three
+lots: prices, countdown time, bid counts; empty state when none) → clean;
+screenshot path reported.
+Report: standard header + render check + screenshot path.
+```
+
+```text
+Story: US-072 (task T-072.2b)   Release: mvp
+Agent: frontend (admin-koi)   Expected: <=45 min
+Starts after: T-072.2a and T-072.1b.
+
+## Acceptance criteria
+- AC1: removing a bid needs a written reason and a confirmation.
+- AC2: the panel shows removed bids marked removed, so the admin sees the audit.
+
+## Decisions in force
+D-002; D-042 (bidder name + opaque id only, no contact field); D-055 (the app
+writes its own copy on 400/404/409, keys on status/code); admin-koi's
+punishing-action rule.
+
+## Endpoint inventory
+| GET | /admin/live-lots/:id | no → T-072.1b | `{ lot, bids }` |
+| POST | /admin/bids/:id/remove | no → T-072.1a | `{ reason }` → `{ bid, lot }` |
+
+## Build (one surface: the lot panel at `/lelang/langsung?lot=<id>`)
+- src/lib/data/live-auctions.ts: `getLiveLot(id)` and `removeBid(id, reason)`,
+  both `requireAdmin(ROUTES.liveAuctions)`.
+- src/components/LiveLotPanel.tsx (client): lot header (OB/KB/current price/end
+  time/status) and the bid rows: bidder name, amount, time, source, and a
+  "Dihapus" badge with the reason on removed rows.
+- "Hapus bid" on a non-removed row while the lot is `open`: confirm dialog
+  ("Bid akan ditandai dihapus, tidak dihapus permanen. Harga berjalan dihitung
+  ulang.") with a required textarea (reject blank on the client) → server action
+  → toast "Bid dihapus." → `router.refresh()`.
+- After success the panel shows the recomputed `current_price` from the server;
+  never compute it here.
+- `src/lib/helpers/live-bid-format.ts` (+ test): `bidFailureInfo({status, code})`
+  for 400/404/409 copy; `sourceLabel` (web/WhatsApp).
+
+## Start from
+- apps/admin-koi/src/components/StrikePanel.tsx:68-180 (confirm + required reason)
+- apps/admin-koi/src/components/ClaimQueue.tsx:120-180 (badges on rows)
+- apps/admin-koi/src/lib/data/strikes.ts:60-120 (guarded action result shape)
+
+## Do not touch
+- packages/api; the list page's cards; the auction cancel (US-091).
+
+## Cross-cutting checklist
+- [ ] Confirmation + written reason; blank refused on both sides
+- [ ] Removed rows stay visible with their reason (audit)
+- [ ] D-055: 409 copy is the app's own; no keying on message text
+- [ ] Render check: one removal, one refused (lot closed)
+
+## Definition of done
+cd apps/admin-koi && bun run check → pass
+render check (/lelang/langsung?lot=<open lot> as admin@koi.dev: remove the top
+bid → price drops, row marked "Dihapus"; a closed lot's panel shows no remove
+button) → clean; screenshot path reported.
+Report: standard header + render check + screenshot path.
+```
+
+```text
+Story: US-072 (task T-072.3)   Release: mvp
+Agent: qa   Expected: <=30 min
+Starts when: no backend agent and no other Jest run is active.
+
+## Acceptance criteria
+AC1–AC5 exactly.
+Decisions: D-023, D-024, D-036, D-042, D-051, D-055, D-058.
+Code under test: modules/auction/models/bid.ts, workflows/remove-bid.ts,
+steps/bid.ts, steps/lot.ts, api/admin/bids/[id]/remove/route.ts,
+api/admin/live-*/**, api/store/lots/**.
+Commands (alone): bun run test:integration:http -- admin-remove-bid; then
+-- admin-live-auctions; then -- store-lots. Then bun run check in admin-koi.
+Browser (render-check): /lelang/langsung and ?lot=<id> as admin@koi.dev; the lot
+page and /lelang as a customer before/after a removal.
+Watch for: the row deleted or its amount changed; `current_price` not reset to
+the highest remaining / OB; an end time shortened; removal allowed on a
+non-open lot; a removed bid still setting the winner at close; a removed bid in
+`bid_count` or the public history; a bet of OB refused after every removal; a
+email, phone, NIK or bank in the admin payload; any money movement.
+Do not change app code. Report PASS/FAIL per AC with file:line and command
+output; bugs with repro and expected/actual.
+```
+
+**Coverage:** plan "Bidding" (removal paragraph) → T-072.1a (marking, price,
+open-only), .1b (monitoring reads), .1c (customer history), .2b (reason), .3.
+Plan "Fair play"'s "admin can see bid patterns" is US-071; "moderate bids" in
+"Users and roles" → T-072.2a/.2b. D-024/D-036 are quoted in every AC's task.
 
 ### US-091 Admin cancels lots and live auctions · `todo`
 **Depends on:** US-092 (masking of bidder details; the full value only through the logged reveal, D-042).
@@ -6098,9 +7100,306 @@ a broken listing can be stopped. *(Plan: Cancellations, Lot lifecycle; D-022, D-
 - AC3: An admin cancel of an auction refunds every participant's join fee as a `refund` (+), the same as a farmer cancel. The listing fee is not refunded (D-034).
 **Answered `mvp-Q32` (D-050):** a cancelled lot inside a public auction stays on `/store/lots` and its lot page, labelled "Dibatalkan", with no price, final price, sold label, winner or bids. US-040 T-040.1/2a/2b already return and render it; this story only produces the cancelled lots (no change needed on the public pages).
 **PII (D-039, D-042):** bidder and participant details shown on the cancel and monitoring screens are masked, as on every admin route; the full value only through the logged reveal. US-092 delivers it.
-- [ ] T-091.1 [backend] Cancel-lot and cancel-live-auction workflows + `/admin` routes (moved from T-072.1)
+- [ ] T-091.1a [backend] Cancel-lot workflow + `/admin/lots/:id/cancel` (`cancel_reason` is already on the lot model)
+- [ ] T-091.1b [backend] `auction.cancel_reason` column + cancel-live-auction workflow + `/admin/auctions/:id/cancel` with join-fee refunds
 - [ ] T-091.2 [admin] Cancel actions with a required reason on the live monitoring screen
 - [ ] T-091.3 [qa] A farmer can't reach either cancel; a cancelled lot has no winner and is skipped by the close job; refunds total exactly the join fees collected; no `listing_fee` refund; statuses follow the plan's enums only; after the cancel, the lot is still on `/lelang` and its lot page is 200 with "Dibatalkan" and no price (D-050, US-040 already renders it)
+
+**Readiness 2026-11-18: ready (`todo`), with two ordering dependencies, not
+policy blockers.**
+- **T-091.1b needs US-060 T-060.1's refund read step** (`getJoinFeeRefundsStep`,
+  pinned in US-060's brief). US-060 is `todo`; dispatch T-060.1 first, or in the
+  same window before T-091.1b. If its final name differs, adapt only the import.
+- **T-091.2 needs US-072's monitoring screen** (T-072.2a/.2b) — AC's task text
+  puts both cancels there.
+- **One new question, non-blocking (`mvp-Q50`) with the build default pinned:**
+  an admin cancel of a `live` auction sets `auction.cancelled`, but the plan
+  never says what happens to its lots. The plan's own guardrails leave only one
+  coherent answer: `open` lots are cancelled with the same reason (they cannot
+  stay open under a cancelled auction — `getClosableLotStep` requires a `live`
+  auction, so they would otherwise hang forever), and lots already closed
+  (`won`/`unsold`) keep their saved results. The auction being `cancelled` takes
+  it and its lots off the public pages (D-046's "cancelled auctions never
+  public"), while D-050's "a cancelled lot stays visible" applies only to lots
+  cancelled inside a still-public auction. `mvp-Q50` asks whether a closed lot
+  should also be hidden or the auction kept visible; option (a) = what is built.
+- **`mvp-Q51`, non-blocking:** the admin can cancel only a `live` auction
+  (literal AC2/plan); `draft`/`pending_approval`/`scheduled` stay the farmer's
+  (US-060). If the owner wants an admin stop before the start, it is one more
+  allowed status in the same guard. Default built: `live` only.
+- No earlier release rule changes: D-035's lot enum and D-050's public rendering
+  are used as-is; the farmer-cancel path (US-060) is untouched.
+
+**Answers pinned:**
+
+| Question | Answer | Source |
+|---|---|---|
+| Which lots can be cancelled | any lot with `status = "open"` (with or without bids, any auction status; the API, D-035). `won/paid/shipped/delivered/claimed/unsold/cancelled` → 409 | AC1, D-035 |
+| What is saved on the lot | `status: "cancelled"`, `cancel_reason` = the admin's reason; winner/final price stay null (an `open` lot has none) | AC1; `models/lot.ts:43-44` |
+| Is a cancelled lot reopened | never. No transition out of `cancelled`; a second cancel → 409 | AC1, plan "Lot lifecycle" |
+| Does the close job touch it | no: `getClosableLotStep` requires `status === "open"`; the auction-close step counts any non-open lot as closed, so a cancelled lot lets its auction close | `steps/lot.ts:59-100`, `close-auction.ts` |
+| Public rendering | already built (US-040): `cancelled: true`, no price/final price/sold/bids; D-050 | `api/store/lots/route.ts:130-145` |
+| Which auctions the admin cancels | `status = "live"` only. `draft`/`pending_approval`/`scheduled` → 409 (the farmer's, US-060); `closed`/`cancelled` → 409 | AC2, D-022, `mvp-Q51` |
+| What the auction cancel writes | `status: "cancelled"`, `cancel_reason` (new column, nullable, so the farmer/admin can read why); every `open` lot cancelled with the same reason; closed lots untouched | AC2, `mvp-Q50` |
+| The refund | one `refund` (+) row per participant, equal to that customer's recorded `join_fee` (`reference = auction_id`); a Rp0 join gets no row; never the auction's `join_fee` field, never a recomputation — exactly US-060's rule | AC3, D-034, US-060 T-060.1 |
+| The listing fee | never refunded (charged at approval, D-020) | AC3 |
+| Bids and participants | bid rows untouched (a cancelled lot shows no history anyway); participant rows kept (audit); no new joins because joining needs `scheduled`/`live` (D-048) | D-048, D-050 |
+| Money/loss | the refund is platform credit returning to the wallet (US-060's reading of D-058: join fees are not sale money); no payout, no lot price | D-058, US-060 |
+| PII | the monitoring screen shows a bidder's name and opaque id only; phone, email, NIK, bank and address are never selected (D-042's masked set is phone/NIK/bank/holder; names are not in it, same as the report rows) | D-042, US-091 |
+| Auction cancel idempotence / lock | `auction:<id>` lock, status re-read inside; a retry → 409, no second refund batch | CLAUDE.md §8 |
+
+**Endpoint inventory (story)**
+
+| Method | Path | Exists? | Shape / owner |
+|---|---|---|---|
+| POST | /admin/lots/:id/cancel | **no** (T-091.1a) | body `{ reason }` → 200 `{ lot: { id, status: "cancelled", cancel_reason, auction_id } }`; 400 `"Alasan pembatalan wajib diisi."`; 404 `"Lot tidak ditemukan."`; 409 `lot_not_cancellable` `"Hanya lot yang masih terbuka yang bisa dibatalkan."` |
+| POST | /admin/auctions/:id/cancel | **no** (T-091.1b) | body `{ reason }` → 200 `{ auction: { id, status: "cancelled", cancel_reason }, refund: { participants, total } }`; 400 `"Alasan pembatalan wajib diisi."`; 404 `"Lelang tidak ditemukan."`; 409 `auction_not_cancellable` `"Hanya lelang yang sedang berjalan yang bisa dibatalkan admin."` |
+| GET | /admin/live-auctions, /admin/live-lots/:id | no → US-072 T-072.1b | the screen's reads |
+| POST | /vendor/auctions/:id/cancel | no → US-060 T-060.1 | the farmer's path; unchanged here |
+| GET | /store/lots, /store/lots/:id | yes | already render a cancelled lot (D-050) |
+
+#### Briefs
+
+```text
+Story: US-091 (task T-091.1a)   Release: mvp
+Agent: backend   Expected: <=40 min
+
+## Acceptance criteria
+- AC1: only admin; `open → cancelled`; reason saved; no winner.
+
+## Decisions in force
+D-035: the one lot transition, admin only. D-050: the public pages already
+handle it. D-055: Indonesian messages. D-024: a cancelled lot never takes a bid
+(its status guard already refuses). CLAUDE.md §8: lock, workflow, no skipped state.
+
+## Endpoint inventory
+| POST | /admin/lots/:id/cancel | no, this task |
+
+## Build
+- steps/lot.ts: add `"cancel_reason"` to `LotFields` (:10-22) so
+  `setLotFieldsStep` can write it (its compensation already restores every key).
+- steps/lot.ts: `getCancellableLotStep({ lot_id })`: `query.graph` `lot` fields
+  `id, status, auction_id`; missing → NOT_FOUND "Lot tidak ditemukan.";
+  `status !== "open"` → CONFLICT "Hanya lot yang masih terbuka yang bisa
+  dibatalkan." code `lot_not_cancellable`. Return `{ id, auction_id, status }`.
+- workflows/cancel-lot.ts `{ lot_id, reason }`: lock `lot:<id>` (same key as
+  place-bid/close-lot) → guard → `setLotFieldsStep({ status: "cancelled",
+  cancel_reason: reason })` → release. No bid write, no winner write.
+- Route src/api/admin/lots/[id]/cancel/route.ts: admin auth is the guard;
+  `{ lot }` read back with `id, status, cancel_reason, auction_id`; 200.
+- validators.ts: `AdminCancelReason` read as unknown, trimmed, non-blank with
+  "Alasan pembatalan wajib diisi." (claim validator shape,
+  api/admin/claims/validators.ts:20-31). Middlewares entry for the POST.
+- `bun run codegen`.
+
+## Start from
+- packages/api/src/workflows/mark-lot-sold-status.ts:120-166 (lock + guard + lot write)
+- packages/api/src/workflows/steps/lot.ts:10-45 (`LotFields`, `setLotFieldsStep`)
+- packages/api/src/api/admin/strikes/[id]/remove/route.ts (thin route with a reason)
+
+## Do not touch
+- apps/**; the auction cancel; the refund code; `end_time`; bids; D-035's enum.
+
+## Spec (packages/api/integration-tests/http/admin-cancel-lot.spec.ts)
+- an `open` lot with bids in a live auction → 200; status `cancelled`,
+  `cancel_reason` saved; `winner_customer_id`/`final_price` null; bids still exist
+- a close-job pass afterwards changes nothing (status not `open`)
+- an `open` lot of a `scheduled` auction → 200 (API allows any open lot; say so)
+- `won`/`paid`/`shipped`/`delivered`/`claimed`/`unsold`/`cancelled` → 409
+  `lot_not_cancellable`, no write
+- unknown id → 404; blank reason → 400; no admin token → 401/403
+- forced failure after the write → status and `cancel_reason` restored (null)
+- the store lot detail then returns `cancelled: true`, null price, no bids
+
+## Cross-cutting checklist
+- [ ] One mutation, compensated; the lot lock is the same key as bid/close
+- [ ] No winner written; no bid touched; end time untouched
+- [ ] D-055: Indonesian messages/codes
+- [ ] `bun run codegen`; both Koi apps' tsc clean
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean
+cd packages/api && bun run codegen → run; list `admin.lots.$id.cancel`
+cd packages/api && bun run test:integration:http -- admin-cancel-lot → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + API contract + the guard as built.
+```
+
+```text
+Story: US-091 (task T-091.1b)   Release: mvp
+Agent: backend   Expected: <=45 min
+Starts after: US-060 T-060.1 (the refund read step) and T-091.1a.
+
+## Acceptance criteria
+- AC2: a `live` auction is cancelled only by admin.
+- AC3: every participant's join fee is refunded; no listing fee.
+
+## Decisions in force
+D-022/D-034: live-only, refunds as the farmer cancel. D-020: listing fee never
+refunded. D-035/D-050: the open lots cancelled with it (mvp-Q50 default).
+D-058 (US-060 reading): a join fee is platform credit, so its refund IS a
+`refund` ledger row; no sale money moves. D-055: Indonesian messages.
+CLAUDE.md §8: append-only ledger, workflow with compensation.
+
+## Endpoint inventory
+| POST | /admin/auctions/:id/cancel | no, this task |
+
+## Build
+- models/auction.ts: add `cancel_reason: model.text().nullable()` (beside
+  `rejection_reason`); add it to `AuctionFields` (steps/auction.ts:406-419).
+  Migration: `bun x medusa db:generate auction`.
+- US-060's `getJoinFeeRefundsStep` (steps/join-fee.ts, as its brief defines):
+  reuse it unchanged. If US-060 left the refund insert inline, extract
+  `refundJoinFeesStep({ rows })` beside it and point US-060's workflow at it —
+  one write, one rule; note the touched US-060 line in the report.
+- steps/auction-cancel.ts:
+  - `getCancellableLiveAuctionStep({ auction_id })`: `query.graph` auction
+    `id, status`; missing → 404 "Lelang tidak ditemukan."; status !== "live" →
+    CONFLICT "Hanya lelang yang sedang berjalan yang bisa dibatalkan admin."
+    code `auction_not_cancellable`.
+  - `cancelOpenLotsStep({ auction_id, reason })`: read the auction's `open` lots
+    (`id, status, cancel_reason`), ONE `updateLots` setting `cancelled` +
+    `cancel_reason` for all of them; compensation restores each lot's previous
+    status/reason. Single mutation.
+- workflows/cancel-live-auction.ts `{ auction_id, reason }`: lock
+  `auction:<id>` → guard → refunds read → cancel open lots → set auction
+  `status: "cancelled"`, `cancel_reason: reason` (`setAuctionFieldsStep`) →
+  `refundJoinFeesStep` (one batched insert, last, append-only, no compensation)
+  → release. Return `{ auction, refund: { participants, total } }`.
+- Route src/api/admin/auctions/[id]/cancel/route.ts: `{ auction }` read back
+  (`id, status, cancel_reason`) + the refund envelope.
+- validators.ts + middlewares entry, same reason validator as T-091.1a.
+- `bun run codegen`.
+
+## Start from
+- packages/api/src/workflows/decide-auction.ts:25-100 (lock, guard, status step, last mutation)
+- packages/api/src/workflows/steps/auction.ts:424-451 (`setAuctionFieldsStep`)
+- packages/api/src/workflows/steps/join-fee.ts (US-060's refund read/write)
+
+## Do not touch
+- apps/**; the farmer's cancel route; the listing-fee charge; US-072's removal;
+  lot statuses other than `open`; the close job.
+
+## Spec (packages/api/integration-tests/http/admin-cancel-auction.spec.ts)
+Seed a `live` auction, 2 participants each with a real join fee, 3 open lots and
+1 `won` lot, a listing fee charged.
+- cancel → 200, auction `cancelled` with the reason; `refund.participants` 2;
+  two `refund` (+) rows equal to each customer's `join_fee`; balances rise
+  exactly; no `listing_fee` refund row
+- the 3 open lots are `cancelled` with the same reason; the `won` lot is
+  untouched (status, winner, final price)
+- a participant with a Rp0 join gets no refund row
+- `draft`/`pending_approval`/`scheduled`/`closed`/`cancelled` → 409, no write
+- unknown id → 404; blank reason → 400; no admin token → 401/403
+- forced failure inside the refund step → auction back to `live`, lots back to
+  `open`, zero refund rows
+- no `adjustment` row; no payout; no bid change
+- a second cancel → 409 `auction_not_cancellable`, one refund batch only
+
+## Cross-cutting checklist
+- [ ] Refund mirrors the charge exactly; one batched insert; never edited
+- [ ] Listing fee never refunded; no sale money
+- [ ] One mutation per step with compensation; the insert is last
+- [ ] D-055: Indonesian messages and codes
+- [ ] `bun run codegen`; both Koi apps' tsc clean
+
+## Definition of done
+cd packages/api && bun x tsc --noEmit -p . → clean
+cd packages/api && bun run codegen → run; list `admin.auctions.$id.cancel`
+cd packages/api && bun run test:integration:http -- admin-cancel-auction → pass (alone)
+cd apps/storefront-koi && bun run tsc; cd apps/admin-koi && bun run tsc → clean
+Report: standard header + API contract + migration name + the refund and
+lot-cancel rules as built.
+```
+
+```text
+Story: US-091 (task T-091.2)   Release: mvp
+Agent: frontend (admin-koi)   Expected: <=45 min
+Starts after: T-091.1a, T-091.1b and US-072 T-072.2a/.2b (the screen).
+
+## Acceptance criteria
+- AC1/AC2 on screen: both cancels need a written reason and a confirmation.
+- AC3's copy: join fees come back; the listing fee does not; a cancelled lot
+  cannot be reopened.
+
+## Decisions in force
+D-035: a cancelled lot is final. D-034: the refund copy. D-050: the public label
+"Dibatalkan". D-055: the app writes its own copy on 400/404/409.
+
+## Endpoint inventory
+| POST | /admin/lots/:id/cancel | no → T-091.1a | `{ reason }` → `{ lot }` |
+| POST | /admin/auctions/:id/cancel | no → T-091.1b | `{ reason }` → `{ auction, refund }` |
+| GET | /admin/live-auctions, /admin/live-lots/:id | no → US-072 T-072.1b | the list and panel |
+
+## Build (two actions on the existing monitoring screen)
+- src/lib/data/live-auctions.ts: `cancelLot(id, reason)` and
+  `cancelAuction(id, reason)`, each `requireAdmin(ROUTES.liveAuctions)`, same
+  result shape as `removeBid`.
+- Auction card: "Batalkan lelang" (live only) with a confirm dialog and a
+  required reason. Copy: "Semua biaya ikut lelang dikembalikan ke saldo peserta.
+  Biaya pasang lelang tidak dikembalikan. Semua lot yang masih terbuka ikut
+  dibatalkan."
+- Lot row/panel: "Batalkan lot" on `open` lots, confirm + required reason. Copy:
+  "Lot tidak bisa dibuka lagi. Peserta yang sudah ikut tidak otomatis
+  dikembalikan kecuali lelangnya dibatalkan."
+- On success: toast (with `refund.participants` and `total` for the auction),
+  `router.refresh()`; the row reads "Dibatalkan" and the buttons disappear.
+- Helpers: extend `live-bid-format.ts` with `cancelFailureInfo({status, code})`.
+
+## Start from
+- apps/admin-koi/src/components/AuctionQueue.tsx:250-330 (confirm + reason forms)
+- apps/admin-koi/src/components/StrikePanel.tsx:68-180 (dialog + required reason)
+- apps/admin-koi/src/lib/data/strikes.ts (guarded action result)
+
+## Do not touch
+- packages/api; the farmer's cancel UI; the remove-bid action.
+
+## Cross-cutting checklist
+- [ ] Confirmation + written reason on both actions; blank refused on both sides
+- [ ] No client money maths; the server returns the refund total
+- [ ] Destructive copy names both money facts and the finality
+- [ ] Render check: cancel a lot, cancel a live auction (refund toast), a closed
+      auction shows no cancel
+
+## Definition of done
+cd apps/admin-koi && bun run check → pass
+render check (/lelang/langsung as admin@koi.dev: cancel one lot → "Dibatalkan",
+button gone; cancel a live auction → toast with participants/total; the auction
+reads "Dibatalkan") → clean; screenshot path reported.
+Report: standard header + render check + screenshot path.
+```
+
+```text
+Story: US-091 (task T-091.3)   Release: mvp
+Agent: qa   Expected: <=30 min
+Starts when: no backend agent and no other Jest run is active.
+
+## Acceptance criteria
+AC1–AC3, plus D-050 on the public pages.
+Decisions: D-020, D-022, D-034, D-035, D-046, D-048, D-050, D-055, D-058,
+and the US-060 refund reading.
+Code under test: workflows/cancel-lot.ts, cancel-live-auction.ts,
+steps/auction-cancel.ts, api/admin/lots/[id]/cancel, api/admin/auctions/[id]/cancel,
+components on /lelang/langsung.
+Commands (alone): bun run test:integration:http -- admin-cancel-lot; then
+-- admin-cancel-auction. Then bun run check in admin-koi.
+Browser (render-check): /lelang/langsung as admin@koi.dev; /lelang and the lot
+page as a customer for the cancelled lot.
+Watch for: a refund larger or smaller than the charge; a `listing_fee` refund; a
+refund for a Rp0 join; an already-closed lot changed; open lots left `open`
+under a cancelled auction; a cancelled lot reopened or rewritten by the close
+job; a farmer able to reach either route; refunds written twice; the public lot
+page showing a price/bids/winner for a cancelled lot; a bidder's phone, email or
+NIK in the admin payload; any money other than the join-fee refunds.
+Do not change app code. Report PASS/FAIL per AC with file:line and command
+output; bugs with repro and expected/actual.
+```
+
+**Coverage:** plan "Cancellations (MVP)" (both admin bullets) and "Lot
+lifecycle" (the `open → cancelled` arrow) → T-091.1a, .1b, .2, .3; plan "Refunds
+in the MVP" (admin cancel refunds join fees, never the listing fee) → T-091.1b,
+.3; D-050's public rendering is US-040's and is re-asserted here. `mvp-Q50` and
+`mvp-Q51` are the two open, non-blocking shape questions raised by this section.
 
 ### US-092 Personal data is encrypted and masked · `todo`
 As a **customer**, I want my personal data encrypted at rest and hidden behind
@@ -6333,4 +7632,6 @@ is built. Record the answer here, in `plan.md`, and as a decision in `docs/produ
 | mvp-Q47 | **Open (2026-11-17, non-blocking).** US-056 AC2 says "missing the 3 days, **or refusing an approved claim**", but D-038's enum has no `refused` state, so a refusal has nowhere to be recorded. Shipped: (a) no new state — a refusal not acted on is the 3-day miss, and T-056.3 flags `approved` older than 3 days. Options: (a) keep it (recommended; no column, so copy can change without a migration); (b) add a refusal state out of `approved` (new decision + enum change + migration; touches US-055's finality). *(Was: how is a farmer's explicit refusal of an approved claim recorded?)* Re-checked 2026-11-18 at US-051/US-052 acceptance: still open, non-blocking, touches neither story. | none (was US-056 T-056.3) |
 | mvp-Q48 | **Open (2026-11-18, non-blocking).** US-057 AC1 says a winner may rate "once the lot is `shipped`". Does that mean exactly `shipped`, or `shipped` or later (delivered, claimed)? And the plan says "1-5 stars and a comment" — is the comment required? Shipped: shipped|delivered|claimed, comment optional and <=300 chars. Options: (a) what is built (recommended); (b) exactly `shipped` and a required comment. No migration either way. *(Was: when exactly may a winner rate, and is the comment required?)* | US-057 T-057.1 |
 | mvp-Q49 | **Open (2026-11-18, non-blocking).** US-059 AC2 reads "2 active strikes = ban", i.e. automatic. Should a ban instead be an explicit admin action so a second strike never silently blocks an account? Shipped: automatic at the second active strike, using that strike's written reason, ban derived from `active_count` (no ban table). Note: `farmer_not_shipped` has no queue row in the MVP (no shipping deadline exists), so the route accepts it directly. Options: (a) automatic (built, recommended); (b) an explicit ban action (new table/route/UI). *(Was: is a ban automatic at the second strike or an explicit admin action?)* | US-059 T-059.1a |
+| mvp-Q50 | **Open (2026-11-18, non-blocking).** When an admin cancels a `live` auction, what happens to its lots? Shipped (a): the auction's `open` lots are cancelled with the same reason — they cannot stay open under a cancelled auction because the close step needs a `live` auction, so they would hang forever; lots already `won`/`unsold` keep their saved results. Options: (a) as built (recommended); (b) also hide already-closed lots / keep the auction page visible read-only. *(Was: what happens to the lots of an admin-cancelled live auction?)* | US-091 T-091.1b |
+| mvp-Q51 | **Open (2026-11-18, non-blocking).** May an admin cancel an auction before it is `live`? AC2 and the plan give the admin only the live case; `draft`/`pending_approval`/`scheduled` stay the farmer's (US-060). Options: (a) `live` only (built, recommended); (b) also the pre-start statuses (one guard line + one spec case). *(Was: can an admin cancel a not-yet-live auction?)* | US-091 T-091.1b |
 | — (payment model) | **Answered 2026-11-17 (D-058):** the MVP pays off-platform — the winner pays the farmer directly within 1×24 h, the farmer marks the lot paid (`won → paid`) then ships; the platform holds and pays out no money. Xendit escrow stays the planned beta direction, out of MVP scope. Un-parks US-056, US-058, US-059's payment strike and T-052.4; restores D-044/D-057 through D-059. *(Was: does the MVP pay in-app (Xendit escrow or wallet escrow), or off-platform?)* | none (was US-052 T-052.4, US-056, US-058, US-059) |
