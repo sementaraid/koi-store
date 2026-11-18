@@ -39,15 +39,15 @@ code are committed (`d67d3c8`).
 | 2 Becoming a farmer | 2 | 0 | 0 | 0 | 0 | 11 | 5 | 0 |
 | 3 Auctions for farmers | 4 | 0 | 0 | 0 | 0 | 23 | 0 | 0 |
 | 4 Joining and bidding | 7 | 0 | 0 | 0 | 0 | 27 | 0 | 0 |
-| 5 Closing and after-sale | 7 | 0 | 5 | 0 | 0 | 37 | 22 | 0 |
+| 5 Closing and after-sale | 7 | 0 | 5 | 0 | 0 | 37 | 23 | 0 |
 | 6 Admin operations | 0 | 0 | 6 | 0 | 0 | 0 | 22 | 0 |
 | 7 WhatsApp bot | 0 | 0 | 0 | 0 | 6 | 0 | 12 | 0 |
 | 8 Pilot | 0 | 0 | 1 | 0 | 0 | 0 | 5 | 0 |
 | Unplanned | 1 | 0 | 0 | 0 | 0 | 1 | 0 | 0 |
-| **Total** | **30** | **0** | **12** | **0** | **6** | **130** | **66** | **0** |
+| **Total** | **30** | **0** | **12** | **0** | **6** | **130** | **67** | **0** |
 
 Stories: 30 done of 48 (63%), 12 todo, 6 blocked, none parked.
-Tasks: 130 done of 196 active (66%), 66 open, none parked.
+Tasks: 130 done of 197 active (66%), 67 open, none parked.
 
 **Payment model decided (2026-11-17, D-058).** The MVP pays off-platform: the
 winner pays the farmer directly within 1×24 h, the farmer marks the lot paid
@@ -4885,15 +4885,17 @@ admin can act. *(Plan: Winner doesn't pay; D-026, D-058)*
 - [x] T-058.1 [backend] `lot_report` model (one per lot) + `reportUnpaidLotWorkflow` + `POST /vendor/sold-lots/:id/report` + `pay_by`/`unpaid` on the sold-lot row
 - [x] T-058.2 [storefront] "Laporkan belum dibayar" on a `won` sold lot once the deadline passes
 - [x] T-058.3 [backend] `GET /admin/reports` (queue by status, per-winner by `winner_id`), names only
-- [x] T-058.4 [admin] `/laporan` queue and a `/pengguna` "Laporan belum dibayar" tab (read-only; the strike is US-059 T-059.2 — the `/pengguna` tab is not built; `/laporan` is)
+- [x] T-058.4 [admin] `/laporan` queue (read-only; the strike is US-059 T-059.2)
+- [ ] T-058.4b [admin] `/pengguna` "Laporan belum dibayar" tab — not built; the brief made it optional, and the queue covers AC1's admin half. Build it with `/pengguna` (US-070)
 - [x] T-058.5 [qa] The deadline gates the report; a second report is refused; the lot never changes; nothing about a second bidder is stored or shown
 
 **Accepted 2026-11-18 (qa PASS, fix round 1).** AC2 checked against the DB:
 after a report the lot row is byte-identical (status `won`, same winner, same
 `final_price`, same `updated_at`), `lot_report` holds one row and
 `wallet_transaction` none. No second-bidder field exists in `packages/api` or
-either app. The `/pengguna` tab from T-058.4 was not built; `/laporan` carries
-the queue and the owner's tab can be a follow-up inside US-070.
+either app. The `/pengguna` tab from T-058.4 was not built (it was optional in
+the brief); `/laporan` carries the queue, and `T-058.4b` tracks the tab inside
+US-070.
 
 **Readiness 2026-11-17: ready (`todo`). Nothing blocks it, and no new question.**
 - The deadline source is decided and already in the tree: `lot.closed_at` (US-050) + 24 h,
