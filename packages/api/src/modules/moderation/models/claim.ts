@@ -49,6 +49,11 @@ export const Claim = model
     // happens (CLAUDE.md §8).
     resolved_at: model.dateTime().nullable(),
     confirmed_at: model.dateTime().nullable(),
+    // US-061 (AC1, D-018/D-027/D-038): set by the cleanup job after the
+    // private video is deleted, 30 days after the claim closed. The row and
+    // the key stay; `has_video` is derived from this. Null while the video is
+    // still there.
+    video_deleted_at: model.dateTime().nullable(),
   })
   .indexes([
     // One claim per lot, whatever its status (mvp-Q44 a): the DB is the guard

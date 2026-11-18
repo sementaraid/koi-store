@@ -46,6 +46,8 @@ type ClaimRecord = {
   created_at: Date | string
   resolved_at: Date | string | null
   confirmed_at: Date | string | null
+  // US-061: null while the private video is still stored.
+  video_deleted_at: Date | string | null
 }
 
 // D-042/D-052: name only. `phone`, `email` and the id are never selected.
@@ -120,8 +122,8 @@ export const toClaimListRows = (
       status: claim.status,
       remedy: claim.remedy,
       opened_at: new Date(claim.created_at).toISOString(),
-      // The POST requires an upload and every row stores its key.
-      has_video: true,
+      // US-061 (AC1): false once the cleanup job deleted the private file.
+      has_video: claim.video_deleted_at === null,
       winner: (winnerId && winners.get(winnerId)) || { name: "" },
       product: {
         title: lot?.product?.title ?? null,
@@ -162,6 +164,7 @@ export const GET = async (
       "created_at",
       "resolved_at",
       "confirmed_at",
+      "video_deleted_at",
     ],
     filters: { seller_id: sellerId, ...(status ? { status } : {}) },
     pagination: { skip: offset, take: limit, order: { created_at: "DESC" } },

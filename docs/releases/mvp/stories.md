@@ -16,7 +16,9 @@ are defined in `docs/product/overview.md`.
 
 ## Status as of 2026-11-18
 
-**Last accepted stories:** US-057 and US-060 (Epic 5), qa PASS on every
+**Last accepted story:** US-061 (Epic 5), qa PASS on AC1, no fix rounds,
+accepted 2026-11-18. It is the last M5 story: **Milestone 5 is complete, 12 of
+12 stories `done`.** M5 stops there. Before it: US-057 and US-060 (Epic 5), qa PASS on every
 AC after one fix round, accepted 2026-11-18. Before them: US-056 and US-059 (Epic 5), qa PASS on every
 AC, no fix rounds, accepted 2026-11-18. Before them: US-046 (Epic 4) and US-058
 (Epic 5), qa PASS on every AC, one fix round each, accepted 2026-11-18. Before them: US-051 and US-052 (Epic 5), qa PASS on every AC,
@@ -41,15 +43,15 @@ code are committed (`d67d3c8`).
 | 2 Becoming a farmer | 2 | 0 | 0 | 0 | 0 | 11 | 5 | 0 |
 | 3 Auctions for farmers | 4 | 0 | 0 | 0 | 0 | 23 | 0 | 0 |
 | 4 Joining and bidding | 7 | 0 | 0 | 0 | 0 | 27 | 0 | 0 |
-| 5 Closing and after-sale | 11 | 0 | 1 | 0 | 0 | 55 | 5 | 0 |
+| 5 Closing and after-sale | 12 | 0 | 0 | 0 | 0 | 58 | 2 | 0 |
 | 6 Admin operations | 0 | 0 | 6 | 0 | 0 | 0 | 30 | 0 |
 | 7 WhatsApp bot | 0 | 0 | 0 | 0 | 6 | 0 | 12 | 0 |
 | 8 Pilot | 0 | 0 | 1 | 0 | 0 | 0 | 5 | 0 |
 | Unplanned | 1 | 0 | 0 | 0 | 0 | 1 | 0 | 0 |
-| **Total** | **34** | **0** | **8** | **0** | **6** | **148** | **57** | **0** |
+| **Total** | **35** | **0** | **7** | **0** | **6** | **151** | **54** | **0** |
 
-Stories: 34 done of 48 (71%), 8 todo, 6 blocked, none parked.
-Tasks: 148 done of 205 active (72%), 57 open, none parked.
+Stories: 35 done of 48 (73%), 7 todo, 6 blocked, none parked.
+Tasks: 151 done of 205 active (74%), 54 open, none parked.
 
 **Payment model decided (2026-11-17, D-058).** The MVP pays off-platform: the
 winner pays the farmer directly within 1×24 h, the farmer marks the lot paid
@@ -86,20 +88,20 @@ were already what the story required.
 - `docs/releases/README.md:32` still calls escrow the planned direction for the
   MVP stories; D-058 keeps it for beta only.
 
-**Owner scope change (2026-11-18): work pauses at the M5 boundary.** M5 delivery
+**Owner scope change (2026-11-18): work paused at the M5 boundary.** M5 delivery
 time is being compared against a fresh M6 estimate, so no agent starts M6 work
-(US-070, US-071, US-072) until the owner says so. M5 stands at **11 of 12 stories
-`done`**; US-061 is still `todo` and is **not** accepted on a build agent's report
-alone — it needs qa PASS and an AC-by-AC check before it can close. (An earlier
-expected figure of 10 of 12 is superseded: US-057 and US-060 were both accepted
-in this round.) US-061 and US-072 stay `todo`.
+(US-070, US-071, US-072, US-091) until the owner says so. **Milestone 5 is
+complete: 12 of 12 stories `done`**, US-061 included after qa PASS on 2026-11-18.
+US-072 and every other M6 story stay `todo` and untouched. (Earlier figures of
+10 and 11 of 12 are superseded: US-057 and US-060 were accepted in this round,
+then US-061.)
 
 **Next in milestone order:**
-1. **Nothing until the owner lifts the M5 pause.** The only M5 story left is
-   US-061 (claim video cleanup), which needs qa PASS first.
+1. **Nothing until the owner lifts the M5 boundary pause.** M5 has no story
+   left; M6 is not started.
 2. After the pause: US-070 – US-072 and US-091 in milestone order (M6). US-055
    T-055.5 (D-060) remains a small backend swap that can run any time.
-US-046, US-051, US-052, US-053, US-054, US-055, US-056, US-058 and US-059 remain `done`. T-020.10 can run any
+US-046, US-051, US-052, US-053, US-054, US-055, US-056, US-058, US-059 and US-061 remain `done`. T-020.10 can run any
 time; qa's admin browser checks need it.
 
 ## Epic 0: Foundations (Milestone 1)
@@ -5883,13 +5885,29 @@ T-060.1, T-060.2, T-060.3; AC3 → T-060.1 (server), T-060.2 (screen), T-060.3.
 Plan "Cancellations (MVP)" farmer-cancel bullet and "Refunds in the MVP" are
 covered; the admin cancel (live auction, D-034) stays US-091.
 
-### US-061 Claim videos are cleaned up · `todo`
+### US-061 Claim videos are cleaned up · `done (evidence: qa PASS 2026-11-18 on claim-video-cleanup 8/8 + claims-read/won-lots 22 tests; Migration20261118114730; models/claim.ts:56; steps/claim.ts:485-537; jobs/delete-claim-videos.ts; workflows/delete-claim-video.ts:26-53; reads won-lots:264, vendor/claims:126, admin/claims:83; qa PASS)`
 As the **platform**, I want claim videos deleted 30 days after a claim closes so
 that storage stays bounded. *(Plan: Dead-on-arrival claims 7; D-027)*
 - AC1: A claim is closed when its status is `confirmed` or `rejected` (D-027). Its video is deleted 30 days after it closed; the claim record stays.
-- [ ] T-061.1 [backend] The scheduled job deletes the files and keeps the claim record
-- [ ] T-061.1b [backend] `video_deleted_at` on the claim row and `has_video` derived from it on the three claim rows
-- [ ] T-061.2 [qa] Only `confirmed` or `rejected` claims closed more than 30 days ago are affected
+- [x] T-061.1 [backend] The scheduled job deletes the files and keeps the claim record
+- [x] T-061.1b [backend] `video_deleted_at` on the claim row and `has_video` derived from it on the three claim rows
+- [x] T-061.2 [qa] Only `confirmed` or `rejected` claims closed more than 30 days ago are affected
+
+**Accepted 2026-11-18.** AC1 checked against qa's evidence, line by line:
+`Migration20261118114730.ts:6` adds `video_deleted_at timestamptz null`; the
+model has it (`models/claim.ts:56`); the guard (`workflows/steps/claim.ts:485-537`)
+closes `confirmed` at `confirmed_at`, `rejected` at `decided_at`, and skips
+`closedAt >= now - 30d` (`:524-525`), so only strictly older rows pass, and
+missing / already-deleted / not-closed rows skip. The job
+(`jobs/delete-claim-videos.ts`) filters, pages 50 by `id ASC`, isolates one
+failure per id, logs a summary and runs `0 3 * * *`. The read surfaces derive
+`has_video` from `video_deleted_at` (`store/won-lots/route.ts:264`,
+`vendor/claims/route.ts:126`, admin through `toClaimListRows` and
+`admin/claims/route.ts:83`), and none returns `video_file_key`. No money, no
+ledger row. qa: claim-video-cleanup 8/8, claims-read|won-lots 22 across 2
+suites, test:unit 25/25, admin-koi check 58/58, storefront 238/238, plus the
+browser check of `/klaim` and `/akun/kebun/terjual`. Complements qa's own spec
+run; no fix rounds.
 
 **Readiness 2026-11-18: ready (`todo`). Nothing blocks it. One ordering
 dependency, no question.**

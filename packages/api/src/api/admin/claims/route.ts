@@ -52,6 +52,8 @@ type ClaimRecord = {
   approved_at: Date | string | null
   resolved_at: Date | string | null
   confirmed_at: Date | string | null
+  // US-061: null while the private video is still stored.
+  video_deleted_at: Date | string | null
 }
 
 // Medusa's /admin auth rejects any non-admin actor before this runs (D-002).
@@ -78,6 +80,7 @@ export const GET = async (
       "approved_at",
       "resolved_at",
       "confirmed_at",
+      "video_deleted_at",
     ],
     filters: { status },
     pagination: { skip: offset, take: limit, order: { created_at: "ASC" } },

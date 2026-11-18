@@ -1,4 +1,8 @@
-import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
+import {
+  ContainerRegistrationKeys,
+  MedusaError,
+  Modules,
+} from "@medusajs/framework/utils"
 import type { RemoteQueryFunction } from "@medusajs/framework/types"
 import { createStep, StepResponse } from "@medusajs/framework/workflows-sdk"
 import { MODERATION_MODULE } from "../../modules/moderation"
@@ -449,6 +453,118 @@ export const confirmClaimStep = createStep(
           id: string
           previous: { status: ClaimStatus; confirmed_at: Date | null }
         }
+      | undefined,
+    { container }
+  ) => {
+    if (!compensation) {
+      return
+    }
+    const service = container.resolve<ModerationModuleService>(MODERATION_MODULE)
+    await service.updateClaims([
+      { id: compensation.id, ...compensation.previous },
+    ])
+  }
+)
+
+// US-061 (AC1, D-027/D-038): the retention window after a claim closes.
+// One constant, no env var.
+export const CLAIM_VIDEO_RETENTION_MS = 30 * 24 * 60 * 60 * 1000
+
+export type DeletableClaim = {
+  // true → nothing to delete (missing, already cleaned, not closed, or
+  // still inside the window). A skip, never an error.
+  skip: boolean
+  reason: string | null
+  file_key: string | null
+}
+
+// US-061 (AC1, D-018, D-027, D-038): read-only guard, run under the
+// `claim:<id>` lock. A closed claim's closed-at is `confirmed_at` for
+// `confirmed` and `decided_at` for `rejected`; only a row strictly older than
+// 30 days is deletable. `video_deleted_at` set makes a re-run a no-op.
+export const getDeletableClaimStep = createStep(
+  "get-deletable-claim",
+  async (
+    input: { claim_id: string },
+    { container }
+  ): Promise<StepResponse<DeletableClaim>> => {
+    const skip = (reason: string): StepResponse<DeletableClaim> =>
+      new StepResponse({ skip: true, reason, file_key: null })
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const {
+      data: [claim],
+    } = await query.graph({
+      entity: "claim",
+      fields: [
+        "id",
+        "status",
+        "video_file_key",
+        "video_deleted_at",
+        "confirmed_at",
+        "decided_at",
+      ],
+      filters: { id: input.claim_id },
+    })
+    if (!claim) {
+      return skip("not_found")
+    }
+    if (claim.video_deleted_at != null) {
+      return skip("already_deleted")
+    }
+    const closedAt =
+      claim.status === "confirmed"
+        ? claim.confirmed_at
+        : claim.status === "rejected"
+          ? claim.decided_at
+          : null
+    if (!closedAt) {
+      return skip("not_closed")
+    }
+    if (
+      new Date(closedAt as string).getTime() >=
+      Date.now() - CLAIM_VIDEO_RETENTION_MS
+    ) {
+      return skip("inside_window")
+    }
+    return new StepResponse({
+      skip: false,
+      reason: null,
+      file_key: claim.video_file_key as string,
+    })
+  }
+)
+
+// US-061 (AC1, D-018): the bytes are private and gone for good. The local
+// provider ignores ENOENT, so a file deleted out of band is not an error.
+// No compensation: a deleted private video of a closed claim is not
+// recoverable and nothing reads it again.
+export const deleteClaimVideoFileStep = createStep(
+  "delete-claim-video-file",
+  async (input: { file_key: string }, { container }) => {
+    const fileModule = container.resolve(Modules.FILE)
+    await fileModule.deleteFiles(input.file_key)
+    return new StepResponse(void 0)
+  }
+)
+
+// US-061 (AC1): one mutation, after the delete returned. Compensation
+// restores the previous value (null on the normal path).
+export const markClaimVideoDeletedStep = createStep(
+  "mark-claim-video-deleted",
+  async (input: { claim_id: string }, { container }) => {
+    const service = container.resolve<ModerationModuleService>(MODERATION_MODULE)
+    const previous = await service.retrieveClaim(input.claim_id)
+    const [updated] = await service.updateClaims([
+      { id: input.claim_id, video_deleted_at: new Date() },
+    ])
+    return new StepResponse(updated, {
+      id: input.claim_id,
+      previous: { video_deleted_at: previous.video_deleted_at },
+    })
+  },
+  async (
+    compensation:
+      | { id: string; previous: { video_deleted_at: Date | null } }
       | undefined,
     { container }
   ) => {

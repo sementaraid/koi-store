@@ -213,12 +213,8 @@ export const readSellerBanks = async (
   )
 }
 
-// US-054 T-054.1b: `claim_window_ends_at` and the caller's own `claim`, read
-// for a whole page in one query (plus the shared settings read), never per
-// row. `video_file_key` is never selected (D-018); every claim row has one
-// (POST requires the upload), so `has_video` is true by construction.
-// US-057 T-057.1: the caller's own rating joins the same one query. Only the
-// four display fields, never the rater's `customer_id` (D-042/D-045).
+// US-057 T-057.1: the caller's own rating for a whole page in one query, never
+// per row. Only the four display fields, never `customer_id` (D-042/D-045).
 export const readWonLotExtras = async (
   query: Query,
   rows: Record<string, unknown>[],
@@ -240,7 +236,7 @@ export const readWonLotExtras = async (
       ),
       query.graph({
         entity: "claim",
-        fields: ["id", "lot_id", "status", "remedy", "created_at"],
+        fields: ["id", "lot_id", "status", "remedy", "created_at", "video_deleted_at"],
         filters: { lot_id: ids, customer_id: customerId },
       }),
       query.graph({
@@ -257,13 +253,15 @@ export const readWonLotExtras = async (
     status: string
     remedy: string
     created_at: Date | string
+    video_deleted_at: Date | string | null
   }[]) {
     claimByLot.set(claim.lot_id, {
       id: claim.id,
       status: claim.status,
       remedy: claim.remedy,
       opened_at: new Date(claim.created_at).toISOString(),
-      has_video: true,
+      // US-061 (AC1): false once the cleanup job deleted the private file.
+      has_video: claim.video_deleted_at === null,
     })
   }
 
