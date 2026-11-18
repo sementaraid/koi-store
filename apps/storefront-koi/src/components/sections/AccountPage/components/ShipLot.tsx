@@ -8,7 +8,7 @@ import { Button, FormField } from '@koi/ui';
 import { markSoldLotShipped } from '@/lib/data/sold-lots';
 import {
   parseTrackingNumber,
-  shipFailureInfo,
+  soldLotFailureInfo,
   trackingRequired
 } from '@/lib/helpers/sold-lot-actions';
 
@@ -23,11 +23,11 @@ export type ShipLotProps = {
  * The "Tandai dikirim" action on one `paid` sold lot (US-052 T-052.2).
  *
  * @remarks
- * Only the shift `paid → shipped` exists here; `won` waits for the parked
- * payment step, and every later status shows no action at all. The status is
+ * Only the shift `paid → shipped` exists here; `won` is the mark-paid action
+ * and every later status shows no action at all. The status is
  * never flipped in this component: a success re-reads the server's row, and a
  * refused call either shows the server's reason or refreshes a stale row
- * (`shipFailureInfo`). The tracking field is required-looking for a courier lot
+ * (`soldLotFailureInfo`). The tracking field is required-looking for a courier lot
  * and optional for self-delivery, matching the server's own guard.
  */
 export function ShipLot({ lotId, deliveryMethod }: ShipLotProps) {
@@ -63,7 +63,7 @@ export function ShipLot({ lotId, deliveryMethod }: ShipLotProps) {
       return;
     }
 
-    const info = shipFailureInfo(result);
+    const info = soldLotFailureInfo(result);
     setError(info.message);
     toast.error(info.message);
     if (info.refresh) router.refresh();

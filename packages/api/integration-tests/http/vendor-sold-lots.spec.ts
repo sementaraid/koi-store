@@ -15,6 +15,8 @@ import type { AuctionStatus } from "../../src/modules/auction/models/auction"
 import type { LotStatus } from "../../src/modules/auction/models/lot"
 import { PII_AUDIT_MODULE } from "../../src/modules/pii-audit"
 import type PiiAuditModuleService from "../../src/modules/pii-audit/service"
+import { WALLET_MODULE } from "../../src/modules/wallet"
+import type WalletModuleService from "../../src/modules/wallet/service"
 import { createStep, createWorkflow } from "@medusajs/framework/workflows-sdk"
 import { setLotFieldsStep } from "../../src/workflows/steps/lot"
 
@@ -482,6 +484,121 @@ medusaIntegrationTestRunner({
         expect(await reveal(farmer.vendor, {})).toEqual(400)
         expect(await reveal(farmer.customerHeaders, { field: "shipping_address" })).toEqual(401)
         expect(await auditRows(lotId)).toHaveLength(0)
+      })
+    })
+
+    describe("paid", () => {
+      const seedPayable = async (options: { status?: LotStatus } = {}) => {
+        const farmer = await registerFarm()
+        const winnerCustomer = await winner([])
+        const a = await auction(farmer.seller.id)
+        const prod = await p(`p${Math.random().toString(36).slice(2, 6)}`)
+        const lotId = await lot({
+          auctionId: a,
+          productId: prod.id,
+          status: options.status ?? "won",
+          winnerCustomerId: winnerCustomer.id,
+        })
+        return { farmer, winnerCustomer, lotId }
+      }
+
+      const pay = (headers: Record<string, string>, lotId: string) =>
+        statusOf(api.post(`/vendor/sold-lots/${lotId}/paid`, {}, { headers }))
+
+      it("marks a won lot paid (AC1)", async () => {
+        const { farmer, lotId } = await seedPayable()
+        const res = await api.post(
+          `/vendor/sold-lots/${lotId}/paid`,
+          {},
+          { headers: farmer.vendor }
+        )
+        expect(res.status).toEqual(200)
+        expect(res.data.lot).toMatchObject({ id: lotId, status: "paid" })
+        expect((await auctions().retrieveLot(lotId)).status).toEqual("paid")
+      })
+
+      it("refuses paid, shipped, delivered and cancelled lots with 409 (AC1)", async () => {
+        for (const status of [
+          "paid",
+          "shipped",
+          "delivered",
+          "cancelled",
+        ] as LotStatus[]) {
+          const seeded = await seedPayable({ status })
+          expect(await pay(seeded.farmer.vendor, seeded.lotId)).toEqual(409)
+          expect((await auctions().retrieveLot(seeded.lotId)).status).toEqual(
+            status
+          )
+        }
+        // A second mark is refused too.
+        const twice = await seedPayable()
+        expect(await pay(twice.farmer.vendor, twice.lotId)).toEqual(200)
+        expect(await pay(twice.farmer.vendor, twice.lotId)).toEqual(409)
+      })
+
+      it("404s another seller's lot and leaves it unchanged (AC1)", async () => {
+        const owner = await seedPayable()
+        const other = await registerFarm()
+        expect(await pay(other.vendor, owner.lotId)).toEqual(404)
+        expect((await auctions().retrieveLot(owner.lotId)).status).toEqual("won")
+      })
+
+      it("refuses anonymous callers with 401", async () => {
+        const { lotId } = await seedPayable()
+        expect(await statusOf(api.post(`/vendor/sold-lots/${lotId}/paid`, {}))).toEqual(
+          401
+        )
+        expect((await auctions().retrieveLot(lotId)).status).toEqual("won")
+      })
+
+      it("allows a suspended farm and refuses a terminated one (AC4, D-054)", async () => {
+        const container = getContainer()
+        const suspended = await seedPayable()
+        await suspendSellerWorkflow(container).run({
+          input: { seller_id: suspended.farmer.seller.id, reason: "qa suspend" },
+        })
+        expect(await pay(suspended.farmer.vendor, suspended.lotId)).toEqual(200)
+
+        const terminated = await seedPayable()
+        await terminateSellerWorkflow(container).run({
+          input: { seller_id: terminated.farmer.seller.id, reason: "qa terminate" },
+        })
+        expect(await pay(terminated.farmer.vendor, terminated.lotId)).toEqual(403)
+        expect((await auctions().retrieveLot(terminated.lotId)).status).toEqual(
+          "won"
+        )
+      })
+
+      it("moves no money: no ledger row, no balance change (D-058)", async () => {
+        const { farmer, lotId } = await seedPayable()
+        const walletService =
+          getContainer().resolve<WalletModuleService>(WALLET_MODULE)
+        const [farmerWallet] = await walletService.createWallets([{}])
+        const [winnerWallet] = await walletService.createWallets([{}])
+        await walletService.createWalletTransactions([
+          { wallet_id: farmerWallet.id, type: "manual_topup", amount: 70_000 },
+          { wallet_id: winnerWallet.id, type: "manual_topup", amount: 90_000 },
+        ])
+
+        const before = await walletService.listWalletTransactions()
+        const balanceBefore = await Promise.all(
+          before.map((t) => Number(t.amount))
+        ).then((amounts) => amounts.reduce((sum, n) => sum + n, 0))
+
+        expect(await pay(farmer.vendor, lotId)).toEqual(200)
+
+        const after = await walletService.listWalletTransactions()
+        expect(after).toHaveLength(before.length)
+        expect(after.reduce((sum, t) => sum + Number(t.amount), 0)).toEqual(
+          balanceBefore
+        )
+        // Both seeded wallets are untouched.
+        expect(
+          await walletService.listWalletTransactions({ wallet_id: farmerWallet.id })
+        ).toHaveLength(1)
+        expect(
+          await walletService.listWalletTransactions({ wallet_id: winnerWallet.id })
+        ).toHaveLength(1)
       })
     })
 

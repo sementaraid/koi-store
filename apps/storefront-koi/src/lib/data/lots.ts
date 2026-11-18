@@ -147,11 +147,22 @@ export type WonLotClaim = {
   has_video: boolean;
 };
 
+/** US-051 T-051.1a (D-059): the farmer's payout account, always masked here.
+    The full number and holder name leave the server only through
+    {@link revealWonLotBank}. Never a phone (D-052). */
+export type WonLotSellerBank = {
+  bank_name: string | null;
+  holder_name: string | null;
+  account_number: string | null;
+};
+
 export type WonLot = {
   id: string;
   status: string;
   final_price: number | null;
   closed_at: string | null;
+  /** US-051 T-051.1a (D-058): `closed_at` + 24 h, ISO; null with no `closed_at`. */
+  pay_by: string | null;
   tracking_number: string | null;
   delivered_at: string | null;
   /** AC1: `delivered_at + claim_window_hours`, or null when not delivered. */
@@ -160,7 +171,7 @@ export type WonLot = {
   claim: WonLotClaim | null;
   auction: { id: string; delivery_method: string };
   product: { title: string | null; thumbnail: string | null };
-  seller: { id: string; name: string };
+  seller: { id: string; name: string; payment_details: WonLotSellerBank | null };
 };
 
 export type WonLotsPage = {
@@ -192,6 +203,35 @@ export const listWonLots = async (
       fetchOptions: { headers, cache: 'no-store' }
     } as never) as unknown as Promise<WonLotsPage>
   ).catch(() => ({ lots: [], count: 0, limit, offset, has_shipping_address: false }));
+};
+
+/** The farmer's full payout account for one of the caller's own won lots
+ * (US-051 T-051.2a, AC3, D-057, D-059).
+ *
+ * @remarks
+ * Every call writes one `pii_reveal_audit` row on the backend, so it is only
+ * ever called from an explicit "Tampilkan rekening" click — never on render.
+ * One call returns both the account number and the holder name (D-057). */
+export const revealWonLotBank = async (
+  id: string
+): Promise<{ value: WonLotSellerBank } | { error: string }> => {
+  const headers = await getAuthHeaders();
+  if (!('authorization' in headers)) {
+    return { error: 'Sesi Anda telah berakhir. Masuk lagi.' };
+  }
+
+  try {
+    const result = await sdk.store.wonLots.$id.reveal.mutate({
+      $id: id,
+      field: 'bank_account',
+      fetchOptions: { headers }
+    });
+    return { value: result.value };
+  } catch (err: unknown) {
+    return {
+      error: err instanceof ClientError ? err.message : 'Gagal menampilkan rekening.'
+    };
+  }
 };
 
 /** The caller's own won lot, or `null` when they are not its winner.

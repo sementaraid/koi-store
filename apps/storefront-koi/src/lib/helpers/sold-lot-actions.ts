@@ -4,11 +4,13 @@
    src/workflows/mark-lot-sold-status.ts) so the form refuses what the server
    would, without matching on the server's message text. */
 
-export type SoldLotAction = 'ship';
+export type SoldLotAction = 'pay' | 'ship';
 
-/** The one action a row offers: `paid → shipped` (AC1). A `won` lot waits for
-    the parked payment step (T-052.4); `shipped` onward is done. */
+/** The one action a row offers, in order (AC1, D-058): `won → paid` (the
+    winner paid off-platform), then `paid → shipped`. `shipped` onward is
+    done. */
 export function soldLotAction(status: string): SoldLotAction | null {
+  if (status === 'won') return 'pay';
   return status === 'paid' ? 'ship' : null;
 }
 
@@ -36,21 +38,21 @@ export function parseTrackingNumber(raw: string, deliveryMethod: string): Parsed
   return { ok: true, trackingNumber: value };
 }
 
-export type ShipFailure = {
-  /** What the farmer reads under the form. */
+export type SoldLotFailure = {
+  /** What the farmer reads under the action. */
   message: string;
   /** Whether the row is stale and must be re-read from the server. */
   refresh: boolean;
 };
 
-/** Read one refused ship. Medusa rewrites a 409 body, so the status is the
-    signal there; a 403 (`seller_terminated`) keeps the server's own Indonesian
-    message (D-055). */
-export function shipFailureInfo(input: {
+/** Read one refused paid or shipped mark. Medusa rewrites a 409 body, so the
+    status is the signal there; a 403 (`seller_terminated`) keeps the server's
+    own Indonesian message (D-055). */
+export function soldLotFailureInfo(input: {
   code?: string;
   status?: number;
   message: string;
-}): ShipFailure {
+}): SoldLotFailure {
   if (input.status === 409) {
     return {
       message: 'Status lot sudah berubah. Halaman diperbarui — periksa lagi.',
@@ -60,7 +62,7 @@ export function shipFailureInfo(input: {
   if (input.status === 404) {
     return { message: 'Lot ini tidak ditemukan.', refresh: false };
   }
-  return { message: input.message || 'Gagal menandai lot dikirim. Coba lagi.', refresh: false };
+  return { message: input.message || 'Gagal memperbarui status lot. Coba lagi.', refresh: false };
 }
 
 /** The resi line on a shipped-or-later row, or `null` while there is nothing

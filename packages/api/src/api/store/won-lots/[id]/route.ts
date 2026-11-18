@@ -50,10 +50,11 @@ export const GET = async (
   const extras = await readWonLotExtras(query, [row], customerId)
 
   res.json({
-    lot: toWonLot(
-      row,
-      extras.get(row.id as string) ?? { claim_window_ends_at: null, claim: null }
-    ),
+    lot: toWonLot(row, extras.get(row.id as string) ?? {
+      claim_window_ends_at: null,
+      claim: null,
+      seller_bank: null,
+    }),
     has_shipping_address,
   })
 }

@@ -69,9 +69,36 @@ export const revealSoldLotAddress = async (
   }
 };
 
-export type MarkShippedResult =
+export type SoldLotResult =
   | { success: true }
   | { success: false; message: string; code?: string; status?: number };
+
+/** Mark one of the farmer's own `won` lots paid (US-052 T-052.2, AC1, D-058).
+ *
+ * @remarks
+ * The winner paid the farmer directly, off-platform; this moves no money and
+ * the status is never flipped here: the server's row is re-read after success
+ * (`revalidatePath`) and a refused call answers with its reason. A stale row
+ * (409) refreshes; a terminated farm's 403 keeps the server's own Indonesian
+ * message (D-055). */
+export const markSoldLotPaid = async (id: string): Promise<SoldLotResult> => {
+  try {
+    const headers = await vendorHeaders();
+    await sdk.vendor.soldLots.$id.paid.mutate({ $id: id, fetchOptions: { headers } });
+    revalidatePath(ROUTES.farmSold);
+    return { success: true };
+  } catch (err: unknown) {
+    if (err instanceof ClientError) {
+      return {
+        success: false,
+        message: err.message,
+        code: err.code,
+        status: err.status
+      };
+    }
+    return { success: false, message: 'Gagal menandai lot dibayar. Coba lagi.' };
+  }
+};
 
 /** Mark one of the farmer's own `paid` lots shipped (US-052 T-052.2, AC1 AC2).
  *
@@ -84,7 +111,7 @@ export type MarkShippedResult =
 export const markSoldLotShipped = async (
   id: string,
   trackingNumber?: string
-): Promise<MarkShippedResult> => {
+): Promise<SoldLotResult> => {
   try {
     const headers = await vendorHeaders();
     await sdk.vendor.soldLots.$id.shipped.mutate({

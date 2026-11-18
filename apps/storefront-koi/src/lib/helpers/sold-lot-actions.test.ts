@@ -3,15 +3,15 @@ import { test } from 'node:test';
 
 import {
   parseTrackingNumber,
-  shipFailureInfo,
+  soldLotFailureInfo,
   shippedTrackingLabel,
   soldLotAction,
   trackingRequired
 } from './sold-lot-actions.ts';
 
-test('only a paid lot offers the ship action', () => {
+test('a won lot is marked paid, a paid lot shipped, in order', () => {
+  assert.equal(soldLotAction('won'), 'pay');
   assert.equal(soldLotAction('paid'), 'ship');
-  assert.equal(soldLotAction('won'), null);
   assert.equal(soldLotAction('shipped'), null);
   assert.equal(soldLotAction('delivered'), null);
 });
@@ -41,11 +41,11 @@ test('the resi is trimmed and capped at 100 characters', () => {
 });
 
 test('a rewritten 409 refreshes the row; 404 says not found', () => {
-  assert.deepEqual(shipFailureInfo({ status: 409, message: 'Conflict' }), {
+  assert.deepEqual(soldLotFailureInfo({ status: 409, message: 'Conflict' }), {
     message: 'Status lot sudah berubah. Halaman diperbarui — periksa lagi.',
     refresh: true
   });
-  assert.deepEqual(shipFailureInfo({ status: 404, message: 'Lot tidak ditemukan.' }), {
+  assert.deepEqual(soldLotFailureInfo({ status: 404, message: 'Lot tidak ditemukan.' }), {
     message: 'Lot ini tidak ditemukan.',
     refresh: false
   });
@@ -53,7 +53,7 @@ test('a rewritten 409 refreshes the row; 404 says not found', () => {
 
 test('a 403 keeps the server message verbatim (D-055)', () => {
   assert.deepEqual(
-    shipFailureInfo({ status: 403, code: 'seller_terminated', message: 'Akun kebun ini sudah ditutup.' }),
+    soldLotFailureInfo({ status: 403, code: 'seller_terminated', message: 'Akun kebun ini sudah ditutup.' }),
     { message: 'Akun kebun ini sudah ditutup.', refresh: false }
   );
 });

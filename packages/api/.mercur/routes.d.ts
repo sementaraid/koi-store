@@ -684,6 +684,7 @@ export type Routes = {
             $id: typeof import("../src/api/store/won-lots/[id]/route") & {
                 claims: typeof import("../src/api/store/won-lots/[id]/claims/route");
                 delivered: typeof import("../src/api/store/won-lots/[id]/delivered/route");
+                reveal: typeof import("../src/api/store/won-lots/[id]/reveal/route");
             };
         };
     };
@@ -986,6 +987,7 @@ export type Routes = {
         feeCategories: typeof import("../src/api/vendor/fee-categories/route");
         soldLots: typeof import("../src/api/vendor/sold-lots/route") & {
             $id: {
+                paid: typeof import("../src/api/vendor/sold-lots/[id]/paid/route");
                 reveal: typeof import("../src/api/vendor/sold-lots/[id]/reveal/route");
                 shipped: typeof import("../src/api/vendor/sold-lots/[id]/shipped/route");
             };

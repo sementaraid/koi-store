@@ -38,6 +38,7 @@ import { countOpen } from './components/Orders';
 import { AccountFrame } from './components/AccountFrame';
 import { ClaimDecision } from './components/ClaimDecision';
 import { ClaimVideo } from './components/ClaimVideo';
+import { MarkPaid } from './components/MarkPaid';
 import { RevealAddress } from './components/RevealAddress';
 import { ShipLot } from './components/ShipLot';
 
@@ -316,6 +317,7 @@ function SoldLots({
                       {tracking ? (
                         <p className="text-xs text-muted-foreground">{tracking}</p>
                       ) : null}
+                      {action === 'pay' ? <MarkPaid lotId={lot.id} /> : null}
                       {action === 'ship' ? (
                         <ShipLot
                           lotId={lot.id}

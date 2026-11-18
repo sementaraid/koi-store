@@ -47,7 +47,10 @@ import {
 import { StorePhone } from "./store/customers/validators"
 import { StoreGetWalletParams } from "./store/wallet/validators"
 import { StoreGetLotsParams } from "./store/lots/validators"
-import { StoreGetWonLotsParams } from "./store/won-lots/validators"
+import {
+  StoreGetWonLotsParams,
+  StoreRevealWonLot,
+} from "./store/won-lots/validators"
 import { StorePlaceBid } from "./store/bids/validators"
 import {
   SCREENSHOT_MAX_BYTES,
@@ -374,6 +377,16 @@ export default defineMiddlewares({
       method: ["GET"],
       matcher: "/store/won-lots/:id",
       middlewares: [authenticate("customer", ["bearer", "session"])],
+    },
+    // US-051 T-051.3a (D-057): the winner reveals the farmer's bank account.
+    // Auth first, so an anonymous request never gets its body parsed.
+    {
+      method: ["POST"],
+      matcher: "/store/won-lots/:id/reveal",
+      middlewares: [
+        authenticate("customer", ["bearer", "session"]),
+        validateAndTransformBody(StoreRevealWonLot),
+      ],
     },
     {
       method: ["GET"],

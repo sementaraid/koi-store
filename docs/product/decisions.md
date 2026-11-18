@@ -765,8 +765,11 @@ takes effect with it.
 farmer's full `account_number` and `holder_name` through the existing logged
 reveal (one `pii_reveal_audit` row, `record_type: "lot"`,
 `field: "bank_account"`). No phone, no `wa.me` link — D-052 stands unchanged.
-The reveal is the only way; the account is never in a list response, never
-masked-and-partially-shown.
+The reveal is the only way to get the full account number: a list or detail
+response carries at most a mask (last 4 digits, holder name masked per word,
+both from `src/utils/mask.ts`), never the full number. (Wording corrected
+2026-11-18: US-051 AC3 requires the mask on the winner's row, so "never in a
+list response" was wrong.)
 **Reason:** D-058 makes the winner the payer, and a payer with no account
 number cannot pay.
 **Source:** Owner (2026-11-17), after D-058.

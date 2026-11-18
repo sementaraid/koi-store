@@ -21,6 +21,7 @@ import { getShell } from '@/lib/shell';
 import { listOrderGroups } from './AccountPage';
 import { countOpen } from './components/Orders';
 import { AccountFrame } from './components/AccountFrame';
+import { RevealBank } from './components/RevealBank';
 
 /** How many won lots one page shows (matches the route's own default). */
 const PER_PAGE = 20;
@@ -117,12 +118,11 @@ function WonLots({
                     ? claimWindowInfo(lot.claim_window_ends_at, now)
                     : null;
                 return (
-                  <Link
+                  <div
                     key={lot.id}
-                    href={lotHref(lot.id)}
                     className="flex flex-wrap items-start justify-between gap-4 border-b border-border py-4 last:border-b-0"
                   >
-                    <div className="flex min-w-0 items-start gap-3">
+                    <Link href={lotHref(lot.id)} className="flex min-w-0 items-start gap-3">
                       {lot.product.thumbnail ? (
                         <img
                           src={lot.product.thumbnail}
@@ -147,8 +147,18 @@ function WonLots({
                             </p>
                           )}
                         </RenderIf>
+                        {/* D-058: the 1×24 h payment deadline (T-051.2a). Shown
+                            only while the winner still owes the farmer, so a
+                            paid row never carries a stale "bayar sebelum". */}
+                        <RenderIf when={lot.status === 'won' ? lot.pay_by : null}>
+                          {(payBy) => (
+                            <p className="mt-0.5 text-xs font-medium text-foreground">
+                              Bayar sebelum {formatDeadline(payBy)} WIB
+                            </p>
+                          )}
+                        </RenderIf>
                       </div>
-                    </div>
+                    </Link>
 
                     <div className="grid min-w-[160px] justify-end gap-2 text-right">
                       <Badge variant={status.tone}>{status.label}</Badge>
@@ -179,8 +189,11 @@ function WonLots({
                           </span>
                         )}
                       </RenderIf>
+                      {/* US-051 T-051.2a (D-059): the farm's payout account,
+                          masked until the winner's logged reveal. */}
+                      <RevealBank lotId={lot.id} details={lot.seller.payment_details} />
                     </div>
-                  </Link>
+                  </div>
                 );
               })}
             </Card>

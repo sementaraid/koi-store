@@ -5,6 +5,7 @@ import type {
 } from "@medusajs/framework/http"
 import type { RemoteQueryFunction } from "@medusajs/framework/types"
 import type { LotStatus } from "../../../modules/auction/models/lot"
+import { maskAccountNumber, maskName } from "../../../utils/mask"
 import { readClaimWindowHours } from "../../../workflows/steps/claim"
 import type { StoreGetWonLotsParamsType } from "./validators"
 
@@ -30,11 +31,23 @@ export type WonLotClaim = {
   has_video: boolean
 }
 
+// US-051 T-051.1a (D-052, D-059): the farmer's payout account, always masked
+// here. The full number and holder name only leave the server through the
+// winner's logged reveal (T-051.3a). No phone field, selected or returned.
+export type WonLotSellerBank = {
+  bank_name: string | null
+  holder_name: string | null
+  account_number: string | null
+}
+
 // Per-row values the shared mapper can't get from the lot row alone.
 export type WonLotExtras = {
   // delivered_at + claim_window_hours; null unless the lot is `delivered`.
   claim_window_ends_at: string | null
   claim: WonLotClaim | null
+  // null when the seller has no payment_details row. Internal to the mapper:
+  // the row exposes it as `seller.payment_details`, never at the top level.
+  seller_bank: WonLotSellerBank | null
 }
 
 export type WonLot = {
@@ -42,12 +55,16 @@ export type WonLot = {
   status: string
   final_price: number | null
   closed_at: string | null
+  // D-058: closed_at + 24 h, ISO. null when the lot has no closed_at.
+  pay_by: string | null
   tracking_number: string | null
   delivered_at: string | null
+  claim_window_ends_at: string | null
+  claim: WonLotClaim | null
   auction: { id: string; delivery_method: string }
   product: { title: string | null; thumbnail: string | null }
-  seller: { id: string; name: string }
-} & WonLotExtras
+  seller: { id: string; name: string; payment_details: WonLotSellerBank | null }
+}
 
 export type StoreWonLotsResponse = {
   lots: WonLot[]
@@ -64,7 +81,8 @@ export type StoreWonLotResponse = {
 
 // The caller's own lots only, so `winner_customer_id` is used as a filter, not
 // selectable. `auction.seller.*` is the farm name shown on the row — never
-// `.phone` or `.payment_details`.
+// `.phone` or `.payment_details` (the payout account is a separate batched read
+// below, so only the masked row leaves the mapper).
 export const WON_LOT_FIELDS = [
   "id",
   "status",
@@ -79,6 +97,9 @@ export const WON_LOT_FIELDS = [
   "product.title",
   "product.thumbnail",
 ]
+
+// D-058: the winner pays the farmer directly within 1×24 h of the close.
+const PAY_WINDOW_MS = 24 * 60 * 60 * 1000
 
 // Same list as the farmer's sold lots: a closed lot with a winner (D-035).
 export const WON_LOT_STATUSES = [
@@ -105,11 +126,16 @@ export const toWonLot = (
     | { title?: string | null; thumbnail?: string | null }
     | null
     | undefined
+  const { seller_bank: _bank, ...rest } = extras
   return {
     id: row.id as string,
     status: row.status as string,
     final_price: (row.final_price as number | null) ?? null,
     closed_at: iso(row.closed_at),
+    pay_by: row.closed_at
+      ? new Date(new Date(row.closed_at as string).getTime() + PAY_WINDOW_MS)
+          .toISOString()
+      : null,
     tracking_number: (row.tracking_number as string | null) ?? null,
     delivered_at: iso(row.delivered_at),
     auction: {
@@ -123,9 +149,57 @@ export const toWonLot = (
     seller: {
       id: seller?.id as string,
       name: (seller?.name ?? "") as string,
+      payment_details: extras.seller_bank,
     },
-    ...extras,
+    ...rest,
   }
+}
+
+// US-051 T-051.1a (D-044, D-052, D-059): the farmer's payout account, one
+// batched read per page, masked before it leaves the mapper. Read where the
+// seller's bank data lives today: `seller.payment_details`
+// (`*payment_details` in Mercur's vendor seller query config). Never `phone`.
+const maskBank = (
+  details: {
+    bank_name?: string | null
+    holder_name?: string | null
+    account_number?: string | null
+  } | null
+): WonLotSellerBank | null =>
+  details
+    ? {
+        bank_name: details.bank_name ?? null,
+        holder_name: maskName(details.holder_name) ?? null,
+        account_number: maskAccountNumber(details.account_number) ?? null,
+      }
+    : null
+
+export const readSellerBanks = async (
+  query: Query,
+  sellerIds: string[]
+): Promise<Map<string, WonLotSellerBank | null>> => {
+  const ids = [...new Set(sellerIds)]
+  if (!ids.length) return new Map()
+  const { data } = await query.graph({
+    entity: "seller",
+    fields: [
+      "id",
+      "payment_details.bank_name",
+      "payment_details.holder_name",
+      "payment_details.account_number",
+    ],
+    filters: { id: ids },
+  })
+  return new Map(
+    (data as {
+      id: string
+      payment_details?: {
+        bank_name?: string | null
+        holder_name?: string | null
+        account_number?: string | null
+      } | null
+    }[]).map((seller) => [seller.id, maskBank(seller.payment_details ?? null)])
+  )
 }
 
 // US-054 T-054.1b: `claim_window_ends_at` and the caller's own `claim`, read
@@ -140,8 +214,16 @@ export const readWonLotExtras = async (
   const ids = rows.map((row) => row.id as string)
   if (!ids.length) return new Map()
 
-  const [windowHours, { data: claims }] = await Promise.all([
+  const [windowHours, sellerBanks, { data: claims }] = await Promise.all([
     readClaimWindowHours(query),
+    readSellerBanks(
+      query,
+      rows.map(
+        (row) =>
+          ((row.auction ?? {}) as { seller?: { id?: string } }).seller
+            ?.id as string
+      )
+    ),
     query.graph({
       entity: "claim",
       fields: ["id", "lot_id", "status", "remedy", "created_at"],
@@ -178,6 +260,12 @@ export const readWonLotExtras = async (
     byId.set(row.id as string, {
       claim_window_ends_at: endsAt,
       claim: claimByLot.get(row.id as string) ?? null,
+      seller_bank:
+        sellerBanks.get(
+          (
+            (row.auction ?? {}) as { seller?: { id?: string } }
+          ).seller?.id as string
+        ) ?? null,
     })
   }
   return byId
@@ -236,6 +324,7 @@ export const GET = async (
         rowExtras.get(row.id as string) ?? {
           claim_window_ends_at: null,
           claim: null,
+          seller_bank: null,
         }
       )
     ),
