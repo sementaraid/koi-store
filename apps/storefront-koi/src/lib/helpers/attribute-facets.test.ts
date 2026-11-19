@@ -17,8 +17,6 @@ test("reads only the handles the catalog offers a facet for", () => {
 })
 
 test("an unknown param never reaches the API", () => {
-  /* Medusa answers an unknown attribute filter with an empty feed, so a stale
-     link must not be forwarded — it would read as "no koi in stock". */
   assert.deepEqual(readAttributeSelection(facets, { warna: "merah" }), {})
 })
 

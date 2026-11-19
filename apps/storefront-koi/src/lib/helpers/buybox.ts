@@ -1,9 +1,5 @@
 import type { OfferDTO } from '@mercurjs/types';
 
-/**
- * `inventory_quantity` is a computed field the store offers route adds when
- * `+inventory_quantity` is requested; it is not part of `OfferDTO`.
- */
 export type StoreOffer = OfferDTO & { inventory_quantity?: number | null };
 
 export const getOfferAmount = (offer: StoreOffer): number | null =>
@@ -15,10 +11,6 @@ export const getOfferStock = (offer: StoreOffer): number =>
 export const isPurchasable = (offer: StoreOffer): boolean =>
   getOfferStock(offer) > 0 && getOfferAmount(offer) !== null;
 
-/**
- * Buybox comparator (best first): in-stock before out-of-stock, then lowest
- * price, then premium seller, then oldest offer as a stable tie-break.
- */
 export const compareOffers = (a: StoreOffer, b: StoreOffer): number => {
   const aBuyable = isPurchasable(a);
   const bBuyable = isPurchasable(b);
@@ -44,7 +36,6 @@ export const getVariantOffers = (
 ): StoreOffer[] =>
   rankOffers(offers.filter((offer) => offer.variant_id === variantId));
 
-/** First purchasable offer in buybox order, else the top-ranked offer. */
 export const getBuyboxWinner = (
   rankedOffers: StoreOffer[]
 ): StoreOffer | undefined =>

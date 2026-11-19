@@ -10,7 +10,6 @@ import { requireAdmin } from '@/lib/guard';
 import { sdk } from '../client';
 import { getAuthHeaders } from '../cookies';
 
-/** The lot states the backend's enum allows (D-035). */
 export type LiveLotStatus =
   | 'open'
   | 'unsold'
@@ -21,11 +20,8 @@ export type LiveLotStatus =
   | 'claimed'
   | 'cancelled';
 
-/** US-042's bid source enum. */
 export type BidSource = 'web' | 'whatsapp';
 
-/** One lot on the `/lelang/langsung` list (T-072.2a). `bid_count` counts only
-    non-removed bids; names and ids only (D-042/D-052). */
 export type AdminLiveLot = {
   id: string;
   title: string | null;
@@ -39,7 +35,6 @@ export type AdminLiveLot = {
   cancel_reason: string | null;
 };
 
-/** One live auction and its lots, as `GET /admin/live-auctions` returns it. */
 export type AdminLiveAuction = {
   id: string;
   seller: { id: string; name: string } | null;
@@ -56,13 +51,6 @@ type LiveAuctionList = {
   offset: number;
 };
 
-/* ponytail: one page of 50, no paging — same shape and reason as
-   `getAuctionQueue`'s one-page read. Add "muat lagi" when the live set passes
-   50.
-
-   Same client-typing gap as `farms.ts`'s `listByStatus`: the route validates
-   its query into `validatedQuery`, which the client derives no input type
-   from, so the query is passed with the same narrow cast. */
 export async function listLiveAuctions(): Promise<{ auctions: AdminLiveAuction[]; total: number } | null> {
   await requireAdmin(ROUTES.liveAuctions);
 
@@ -79,9 +67,6 @@ export async function listLiveAuctions(): Promise<{ auctions: AdminLiveAuction[]
   }
 }
 
-/** One bid row in a lot's panel; removed rows stay visible for the audit
-    (T-072.2b AC2). The bidder is a name plus an opaque id — no contact field
-    (D-042/D-052). */
 export type AdminLiveLotBid = {
   id: string;
   amount: number;
@@ -92,7 +77,6 @@ export type AdminLiveLotBid = {
   bidder: { customer_id: string; name: string };
 };
 
-/** The lot header the panel reads, plus its bids newest first. */
 export type AdminLiveLotDetail = {
   lot: {
     id: string;
@@ -107,7 +91,6 @@ export type AdminLiveLotDetail = {
   bids: AdminLiveLotBid[];
 };
 
-/** The panel's read. Null when the lot is gone or the call failed. */
 export async function getLiveLot(id: string): Promise<AdminLiveLotDetail | null> {
   await requireAdmin(ROUTES.liveAuctions);
 
@@ -125,8 +108,6 @@ export type RemoveBidResult =
   | { success: true; lot: { id: string; current_price: number; end_time: string } }
   | { success: false; error: string; status?: number; refresh: boolean };
 
-/** Mark one bid removed with the operator's written reason (T-072.2b AC1).
-    Returns the lot's recomputed `current_price` — never computed here. */
 export async function removeBid(id: string, reason: string): Promise<RemoveBidResult> {
   await requireAdmin(ROUTES.liveAuctions);
 

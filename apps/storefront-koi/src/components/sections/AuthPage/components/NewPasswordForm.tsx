@@ -15,25 +15,11 @@ import type { HeaderAccount, HeaderCart } from '@/types/header';
 import { AuthFrame } from './AuthFrame';
 import { PASSWORD_RULES, newPasswordSchema, type NewPasswordData } from './schema';
 
-/**
- * Set a new password, with the token the reset email carries.
- *
- * @remarks
- * The token is the credential here — `updateCustomerPassword` sends it as the
- * bearer, and the action has no other way to know which account is being
- * changed. So a page reached without one cannot do anything, and says so
- * instead of drawing a form that would fail on submit.
- *
- * The action removes the auth cookie on success, so the visitor signs in again
- * with what they just chose; this page sends them there rather than pretending
- * they are already in.
- */
 export function NewPasswordForm({
   token,
   account,
   cart
 }: {
-  /** From `?token=` — the reset email's own credential. */
   token?: string;
   account?: HeaderAccount;
   cart?: HeaderCart;
@@ -69,8 +55,6 @@ export function NewPasswordForm({
     router.refresh();
   }
 
-  /* No token: the link was truncated, expired, or opened by hand. Saying so is
-     a shorter path back than a form that fails at the last step. */
   if (!token) {
     return (
       <AuthFrame

@@ -24,55 +24,16 @@ import type {
 
 export type * from "@/types/header"
 
-/**
- * Props for {@link Header}: the pieces it is built from, plus whatever the
- * caller wants on the element itself.
- *
- * @remarks
- * The slots are the shared types (`HeaderBrand`, `HeaderSearch`, `HeaderBack`)
- * rather than nine loose fields, so the mark, the search box and the back
- * control each declare themselves once — in `types/header.ts` — and the bar
- * composes them. `NavLinks` and `SearchField` take those same types, which is
- * what stops the bar and its parts from disagreeing about a prop name.
- */
 export type HeaderProps = ComponentProps<"header"> &
   HeaderBrand &
   HeaderSearch & {
-    /** Given, the left slot is a way back instead of the brand mark. */
     back?: HeaderBack
-    /** Desktop nav. @defaultValue the default two links */
     links?: HeaderLink[]
-    /** Current path, so the matching link takes `aria-current="page"`. */
     activeHref?: string
-    /** Signed-in state. Omit and the bar offers sign-in instead. */
     account?: HeaderAccount
-    /** The cart door and how much is behind it. Omitted, no cart is shown — a
-        page that is not part of a purchase does not have to carry it. */
     cart?: HeaderCart
   }
 
-/**
- * Site header for the Indokoi auction shell.
- *
- * Two faces, switched at `lg`:
- * - **Desktop** — brand mark, nav links, search field, profile dropdown.
- * - **Phone** — back arrow, search field, bell. The nav and the account pages
- *   live in `BottomNav`, which the caller renders; the bar here stays a bar.
- *
- * Presentation only: it does not fetch, route or bid.
- *
- * @remarks
- * Sticky rather than the design's `fixed`, so the caller does not have to offset
- * their own content by the bar height.
- *
- * @example
- * <Header
- *   activeHref="/lelang"
- *   back={{ label: "Katalog", href: "/katalog" }}
- *   account={{ user: { name: "Bpk. Hendra S.", role: "VIP Kolektor" }, unread: 1 }}
- *   onSearch={(q) => navigate(`/katalog?q=${q}`)}
- * />
- */
 export function Header({
   brandIcon = DEFAULT_BRAND_ICON,
   brandHref = "/",
@@ -102,8 +63,6 @@ export function Header({
         )}
       >
         <div className="flex min-w-0 shrink-0 items-center gap-2 lg:gap-4">
-          {/* Phone: a way back, and nothing else on the left. Desktop: the
-              brand mark, with the nav beside it. */}
           <RenderIf when={back}>
             {(value) => <BackButton {...value} className="lg:hidden" />}
           </RenderIf>
@@ -115,8 +74,6 @@ export function Header({
           </nav>
         </div>
 
-        {/* Search is the one control at every width; on a phone it takes the
-            room the nav left behind. */}
         <span className="flex min-w-0 flex-1 justify-end lg:justify-start">
           <SearchField
             onSearch={onSearch}
@@ -126,18 +83,13 @@ export function Header({
         </span>
 
         <div className="flex shrink-0 items-center gap-2 lg:gap-3">
-          {/* The cart sits before the account: it belongs to the visit, not to
-              the visitor, so it is there signed in or out. */}
           <RenderIf when={cart}>{(value) => <CartLink {...value} />}</RenderIf>
 
-          {/* Only inside a TalkJS session, and only once somebody is signed
-              in — the component itself returns nothing when there is none. */}
           <RenderIf when={account}>{() => <ChatLink />}</RenderIf>
 
           <RenderIf when={account}>
             {(value) => <AccountCluster account={value} />}
           </RenderIf>
-          {/* Signed out: the cluster's two calls to action, standing alone. */}
           <RenderIf when={!account}>
             {() => (
               <>

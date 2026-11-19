@@ -51,26 +51,14 @@ import { CancelAuctionButton } from './CancelAuctionButton';
 import { LiveLinkForm } from './LiveLinkForm';
 import { SubmitAuctionButton } from './SubmitAuctionButton';
 
-/** Props for {@link EditAuction}. */
 export type EditAuctionProps = {
   auction: AuctionDetail;
-  /** The fee table, or `null` when it could not be read. */
   categories: FeeCategory[] | null;
   openOrders: number;
   account?: HeaderAccount;
   cart?: HeaderCart;
 };
 
-/** Edit a draft auction (US-030 AC8, US-032 T-032.5).
- *
- * @remarks
- * A draft is editable: its own fields, its lots, and then submit. Any later
- * status draws the auction read-only, so a farmer never fills in a form whose
- * submit the server refuses with a 409. A rejected auction is a draft again,
- * with the admin's reason shown above the form.
- *
- * Fees are not editable and do not change on a lot edit; the next submit
- * recomputes them (D-032), which the copy under the figures says. */
 export function EditAuction({ auction: initial, categories, openOrders, account, cart }: EditAuctionProps) {
   const router = useRouter();
   const [auction, setAuction] = useState(initial);
@@ -122,8 +110,6 @@ export function EditAuction({ auction: initial, categories, openOrders, account,
     router.refresh();
   }
 
-  /* Submit saves any unsaved field edits first, so the auction that goes for
-     approval is the one on screen. An invalid form aborts the submit. */
   const prepareSubmit = () =>
     new Promise<boolean>((resolve) => {
       void handleSubmit(
@@ -132,7 +118,6 @@ export function EditAuction({ auction: initial, categories, openOrders, account,
       )();
     });
 
-  /* Add lot: the rejected draft may need one more koi (T-032.5). */
   const {
     register: registerLot,
     handleSubmit: handleLotSubmit,
@@ -222,14 +207,10 @@ export function EditAuction({ auction: initial, categories, openOrders, account,
         </>
       }
       description="Hanya draf yang bisa diubah. Setelah dikirim, lelang menunggu persetujuan admin."
-      /* US-060 AC3: the cancel is offered only before `live`; after it succeeds
-         the server's `cancelled` drops the button. */
       action={
         canCancelAuction(auction.status) ? (
           <CancelAuctionButton
             auctionId={auction.id}
-            /* The cancel route returns the auction without lots; keep the ones
-               the page already holds so the count does not drop to 0. */
             onSuccess={(next) => setAuction((cur) => ({ ...next, lots: cur.lots }))}
           />
         ) : undefined
@@ -257,7 +238,6 @@ export function EditAuction({ auction: initial, categories, openOrders, account,
         )}
       </RenderIf>
 
-      {/* The live-link response carries no lots, so take its field only. */}
       <LiveLinkForm
         auction={auction}
         onSaved={(next) => setAuction((cur) => ({ ...cur, live_stream_url: next.live_stream_url }))}

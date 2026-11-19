@@ -13,15 +13,12 @@ import type { HeaderAccount, HeaderCart } from '@/types/header';
 
 import { AccountFrame } from './AccountFrame';
 
-/** How the house is still reading a pending review — shown instead of a tone
-    that would claim it is already public. */
 const STATUS_LABEL: Record<StoreReview['status'], string> = {
   pending: 'Menunggu tinjauan',
   published: 'Tayang',
   rejected: 'Ditolak'
 };
 
-/** Props for {@link Reviews}. */
 export type ReviewsProps = {
   reviews: StoreReview[];
   openOrders: number;
@@ -29,17 +26,6 @@ export type ReviewsProps = {
   cart?: HeaderCart;
 };
 
-/**
- * Every review the customer has written, newest first.
- *
- * @remarks
- * `/store/reviews` hands a review back without the `reference_id` it was
- * written against — see `lib/data/reviews.ts` — so a row here says "ulasan
- * produk" or "ulasan penjual" rather than naming the fish or the farm. The
- * subject is still known at the moment the review is written (the sheet that
- * opens from an order's parcel), just not at the moment this list reads it
- * back.
- */
 export function Reviews({ reviews, openOrders, account, cart }: ReviewsProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [removed, setRemoved] = useState<Set<string>>(new Set());
@@ -55,9 +41,6 @@ export function Reviews({ reviews, openOrders, account, cart }: ReviewsProps) {
       toast.error('Gagal menghapus ulasan.');
       return;
     }
-    /* `deleteReview` already revalidates the `reviews` tag for the next visit,
-       but this list is drawn from props handed in on the request that is still
-       on screen — dropped here too so the row does not wait for a reload. */
     setRemoved((prev) => new Set(prev).add(review.id));
     toast.success('Ulasan dihapus.');
   }

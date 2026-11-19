@@ -24,27 +24,6 @@ export type {
   PartnerFarm,
 } from "@/components/organisms/PartnerCard/PartnerCard"
 
-/**
- * The house's front page: the bar, the hero, the floor, and the footer.
- *
- * Data in, page out — the same seam every koi module uses. It does not fetch,
- * bid or route: the app hands it lots (US-040 T-040.2c), or it draws the pitch
- * without them.
- *
- * @remarks
- * Signed out unless an `account` arrives, because a landing page meets a
- * visitor and the bar's Masuk/Daftar pair is that meeting.
- *
- * Known cross-links go through {@link ROUTES}: plain anchors the koi `Link`
- * draws, so the router swap is one file's worth of change rather than a rewrite.
- * Search stays on {@link Header}'s native GET fallback until a router owns
- * `/catalog`.
- *
- * @example
- * // App (US-040 T-040.2c)
- * const { featured, lots } = await loadHomeLots()
- * <Home featured={featured} lots={lots} account={session} />
- */
 export function Home({
   featured,
   lots = [],
@@ -66,7 +45,6 @@ export function Home({
       account={account}
       {...props}
     >
-      {/* Hero: the pitch on the left, the lot that is closing on the right. */}
       <section className={`${CONTAINER} py-10 lg:py-16`}>
         <div className="grid items-center gap-10 lg:grid-cols-2">
           <div className="flex flex-col items-start gap-5">
@@ -120,8 +98,6 @@ export function Home({
             </RenderIf>
           </div>
 
-          {/* The one lot worth a full tile: the next one to close. No lot, no
-              tile — the pitch stands alone. */}
           <RenderIf when={featured ?? null}>
             {(lot) => (
               <div className="w-full max-w-md justify-self-start lg:justify-self-end">
@@ -141,8 +117,6 @@ export function Home({
         </div>
       </section>
 
-      {/* The floor itself. An empty list drops the band — a heading over an
-            empty grid reads as a broken page, not an idle one. */}
       <RenderIf when={lots.length ? lots : null}>
         {(items) => (
           <section className="border-y border-border bg-muted/40">
@@ -186,8 +160,6 @@ export function Home({
         )}
       </RenderIf>
 
-      {/* The verified-breeder directory: who stands behind the lots, and the
-            way into each farm. Empty list drops the band, as the floor does. */}
       <RenderIf when={partners.length ? partners : null}>
         {(farms) => (
           <section className="border-t border-border bg-muted/40">
@@ -225,7 +197,6 @@ export function Home({
         )}
       </RenderIf>
 
-      {/* Why the house, in three claims. */}
       <RenderIf when={claims.length ? claims : null}>
         {(panels) => (
           <section className={`${CONTAINER} py-10 lg:py-14`}>
@@ -256,7 +227,6 @@ export function Home({
         )}
       </RenderIf>
 
-      {/* Closing ask. */}
       <section className="bg-muted/40">
         <div className={`${CONTAINER} py-14`}>
           <div className="flex flex-col items-center gap-4 px-6 py-10 text-center">

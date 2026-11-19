@@ -9,8 +9,6 @@ import { requireAdmin } from '@/lib/guard';
 import { sdk } from '../client';
 import { getAuthHeaders } from '../cookies';
 
-/** The plan's four approved categories (US-014 AC1–AC2). `listing_fee` is per
-    lot, `join_fee` once per auction — both whole rupiah. */
 export type FeeCategory = {
   id: string;
   name: string;
@@ -18,8 +16,6 @@ export type FeeCategory = {
   join_fee: number;
 };
 
-/** The fee table, or `null` when the fetch failed — the page shows a retry
-    state rather than an empty table that reads as "no categories yet". */
 export const getFeeCategories = async (): Promise<FeeCategory[] | null> => {
   return sdk.admin.feeCategories
     .query({
@@ -31,7 +27,6 @@ export const getFeeCategories = async (): Promise<FeeCategory[] | null> => {
 
 type Result = { success: true } | { success: false; error: string };
 
-/** Add a category (US-014 AC1). */
 export async function createFeeCategory(
   name: string,
   listingFee: number,
@@ -56,8 +51,6 @@ export async function createFeeCategory(
     }));
 }
 
-/** Change a category's fees (US-014 AC1, AC3 — only new auctions see this,
-    enforced by the snapshot the backend takes when an auction is created). */
 export async function updateFeeCategory(
   id: string,
   listingFee: number,
@@ -82,8 +75,6 @@ export async function updateFeeCategory(
     }));
 }
 
-/** Remove a category. The admin confirms first — see `FeeTable`'s delete
-    handler. */
 export async function deleteFeeCategory(id: string): Promise<Result> {
   await requireAdmin(ROUTES.fees);
 

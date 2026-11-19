@@ -8,21 +8,10 @@ import { Button } from '@koi/ui';
 import { confirmClaim } from '@/lib/data/lots';
 import { claimConfirmFailure } from '@/lib/helpers/claim';
 
-/** Props for {@link ConfirmClaim}. */
 export type ConfirmClaimProps = {
-  /** The won lot id: the confirm route is keyed by lot. */
   lotId: string;
 };
 
-/**
- * The winner confirms an `resolved` claim (US-056 T-056.2b, AC1, D-038).
- *
- * @remarks
- * The farmer settled off-platform (D-058); this only moves the claim
- * `resolved → confirmed`. The status is never flipped here — a success
- * re-reads the server's row, and a refused call either shows the server's
- * Indonesian reason or refreshes a stale row (`claimConfirmFailure`).
- */
 export function ConfirmClaim({ lotId }: ConfirmClaimProps) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);

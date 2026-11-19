@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 
 import { LoginPage } from '@/components/sections';
 import { ROUTES } from '@/const/routes';
-import { retrieveCustomer } from '@/lib/data/customer';
+import { getSession } from '@/lib/data/session';
 
 export const metadata: Metadata = {
   title: 'Masuk',
@@ -12,8 +12,8 @@ export const metadata: Metadata = {
 };
 
 export default async function MasukRoute() {
-  const customer = await retrieveCustomer();
-  if (customer) redirect(ROUTES.home);
+  const session = await getSession();
+  if (session.status === 'authenticated') redirect(ROUTES.home);
 
   return (
     <Suspense>

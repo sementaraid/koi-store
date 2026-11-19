@@ -1,6 +1,3 @@
-/* The tier barrel, as `apps/storefront` keeps one per component tier: a route
-   imports `@/components/sections`, never a deep path, so a section can be split
-   or renamed without touching `app/`. */
 
 export { AccountPage } from './AccountPage/AccountPage';
 export { AddressesPage } from './AccountPage/AddressesPage';
@@ -28,8 +25,8 @@ export { CategoriesPage } from './CategoryPage/CategoriesPage';
 export { CategoryPage, getCategory } from './CategoryPage/CategoryPage';
 export { HomePage } from './HomePage/HomePage';
 export { InfoPage, getInfoDoc } from './InfoPage/InfoPage';
-export { LivePage } from './LivePage/LivePage';
 export { LotDetailsPage } from './LotDetailsPage/LotDetailsPage';
+export { LiveRoomPage } from './LiveRoomPage/LiveRoomPage';
 export { ProductDetailsPage, getProduct } from './ProductDetailsPage/ProductDetailsPage';
 export { MarketplacePage } from './MarketplacePage/MarketplacePage';
 export { PartnerPage, getPartner } from './PartnerPage/PartnerPage';

@@ -21,37 +21,6 @@ import { formatDeadline } from "@/lib/helpers/format-deadline"
 
 export type { CartLine, CartPageProps } from "@/types/cart"
 
-/**
- * The cart: everything the visitor owes the house, whichever way they came by
- * it — a lot they won on the floor, and stock they took off a shelf.
- *
- * @remarks
- * The two are one page because they are one act of paying, but they are not one
- * transaction, and the page says so: a won lot is drawn under its own heading,
- * unremovable and with the house's payment window running against it, while an
- * order off a shelf is droppable and counted. The rail adds them without hiding
- * which is which, because the hurry in a cart belongs to the invoice, not to the
- * food.
- *
- * The page opens with a *breadcrumb*, not the feed band the floor and the shops
- * wear: nothing here is for browsing. A visitor is mid-checkout with something
- * already decided, and the only question left is whether they are done — so the
- * page states its step instead of selling anything.
- *
- * Data in, page out — it does not fetch, price, or take money: the app hands it
- * the lines and hears back through the handlers. Until then the kit's demo cart
- * renders, which is what Storybook and a fresh checkout show.
- *
- * @example
- * // App, once the router owns /keranjang
- * <CartPage
- *   lines={lines}
- *   onQuantityChange={(item, quantity) => setQuantity(item.id, quantity)}
- *   onRemove={(item) => remove(item.id)}
- *   onCheckout={() => go("pengiriman")}
- *   account={session}
- * />
- */
 export function CartPage({
   lines = DEFAULT_CART_LINES,
   money,
@@ -69,8 +38,6 @@ export function CartPage({
   const totals = cartTotals(lines)
   const won = lines.filter((line) => line.product.kind === "auction")
   const bought = lines.filter((line) => line.product.kind !== "auction")
-  /* The bar's count is the cart's own arithmetic, not a second tally: a caller
-     that hands this page its lines gets the pill right without counting. */
   const bar = cart ?? { count: totals.units }
 
   return (
@@ -84,11 +51,7 @@ export function CartPage({
       trail={[{ label: "Beranda", href: ROUTES.home }, { label: "Keranjang" }]}
       {...rest}
     >
-      {/* No `pt` of its own: the shell's breadcrumb is the page's top, and a
-          second inset under it would put the h1 a step lower than a lot's. */}
       <div className={`${CONTAINER} pb-16`}>
-        {/* Where the visitor is, and how much is waiting on them. The count
-            comes off the whole cart, not a narrowing — a cart has no facets. */}
         <div className="mb-7 flex flex-wrap items-end justify-between gap-6">
           <div>
             <h1 className="font-heading text-3xl font-extrabold lg:text-4xl">
@@ -107,8 +70,6 @@ export function CartPage({
           {() => (
             <div className="flex flex-wrap items-start gap-12">
               <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-10">
-                {/* The alarm, over the list it is about. Only when a win is
-                    unsettled — a cart of shelf goods has no deadline to race. */}
                 <RenderIf when={won.length ? won : null}>
                   {() => (
                     <CartDeadline
@@ -119,10 +80,6 @@ export function CartPage({
                   )}
                 </RenderIf>
 
-                {/* The two shelves, in the order the money is owed: the invoice
-                    the house raised, then the order nothing has shipped. Each
-                    heading is drawn only when its half has lines — a heading
-                    over an empty list is a claim about nothing. */}
                 <RenderIf when={won.length ? won : null}>
                   {(list) => (
                     <section aria-labelledby="cart-won">
@@ -182,8 +139,6 @@ export function CartPage({
           )}
         </RenderIf>
 
-        {/* Nothing carried at all. A cart cannot be narrowed, so there is no
-            reset to offer — the two doors forward are the two shops. */}
         <RenderIf when={!lines.length}>
           {() => (
             <EmptyFeed
@@ -218,8 +173,6 @@ export function CartPage({
   )
 }
 
-/** A shelf of cart rows and the heading over it: the group's name, how many are
-    in it, and whatever the house has to say about that half. */
 function SectionHead({
   id,
   title,
@@ -229,8 +182,6 @@ function SectionHead({
   id: string
   title: string
   count: number
-  /** The half's own remark, e.g. when its money falls due. Omitted, the head is
-      the name and the count alone. */
   note?: string
 }) {
   return (
@@ -249,9 +200,6 @@ function SectionHead({
   )
 }
 
-/** The rows of one shelf. A fragment, not a list element: the heading above is
-    the section's, and the rows are its articles — a `role="list"` here would
-    wrap articles in a list they do not need to be. */
 function Lines({
   lines,
   onQuantityChange,

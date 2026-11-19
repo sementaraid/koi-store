@@ -13,9 +13,6 @@ import type { MediaItem } from '@/types/lot';
 
 import { LotDossier } from './components/LotDossier';
 
-/** One lot's dossier: the API's own lot (404 when it is missing or its
-    auction is not public, T-040.1), plus the open feed for the grid under
-    it. */
 export async function LotDetailsPage({ id }: { id: string }) {
   const [{ account, cart }, storeLot, open] = await Promise.all([
     getShell(),
@@ -31,9 +28,6 @@ export async function LotDetailsPage({ id }: { id: string }) {
 
   const { join, bid } = await getLotControls(storeLot, id);
 
-  /* US-053 T-053.2: only a sold lot has a winner. `getWonLot` returns null for
-     a signed-out visitor without calling the authenticated route, and null for
-     anyone who did not win — both keep the ordinary public view. */
   const mine = storeLot.sold ? await getWonLot(id) : null;
   const wonLot = mine
     ? {
@@ -42,8 +36,6 @@ export async function LotDetailsPage({ id }: { id: string }) {
         hasShippingAddress: mine.has_shipping_address,
         claimWindowEndsAt: mine.lot.claim_window_ends_at,
         claim: mine.lot.claim,
-        /* US-054 AC1: the server's clock, so the claim window's copy renders
-           identically on both sides of hydration. */
         now: Date.now()
       }
     : undefined;
@@ -62,18 +54,7 @@ export async function LotDetailsPage({ id }: { id: string }) {
   );
 }
 
-/** The lot page's two controls, decided on the server from one set of reads
-    (US-041 T-041.2, US-042 T-042.3).
-
-    The join slot: the caller's join answer, their balance, and whether the lot
-    is theirs. Owner is matched through the member farm's seller id — the same
-    seller the lot names — not a client-side guess; the server's `own_auction`
-    still backs it up (AC4).
-
-    The bid slot exists only for a joined, signed-in, non-owner customer on a
-    live auction (AC1). Both slots are `undefined` when the lot is not open to
-    joins at all (D-048, D-050) — a closed or cancelled lot's band says why. */
-async function getLotControls(
+export async function getLotControls(
   storeLot: NonNullable<Awaited<ReturnType<typeof getLot>>>,
   lotId: string
 ): Promise<{ join?: JoinControl; bid?: BidControl }> {
@@ -91,8 +72,6 @@ async function getLotControls(
   const joinState = await getJoinState(auction.id);
   const signedIn = joinState !== null;
 
-  /* Only a signed-in customer has a farm or a balance to read; a signed-out
-     visitor gets the sign-in link and needs neither. */
   const [farm, wallet] = signedIn
     ? await Promise.all([getMyFarm().catch(() => null), getWallet(1).catch(() => null)])
     : [null, null];

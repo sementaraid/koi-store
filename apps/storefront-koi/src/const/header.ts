@@ -13,29 +13,12 @@ import {
 import { ROUTES } from "@/const/routes"
 import type { HeaderAccountLink, HeaderLink } from "@/types/header"
 
-/** The nav a caller gets without saying otherwise. */
 export const DEFAULT_LINKS: HeaderLink[] = [
-  /* `Lelang Live` points at the room, not the auction list: it is the page that
-     is showing what is on air right now, which is what the pulse promises. */
-  { label: "Lelang Live", href: ROUTES.live, live: true },
+  { label: "Lelang Live", href: ROUTES.auctions, live: true },
   { label: "Katalog Koi", href: ROUTES.catalogs },
   { label: "Perlengkapan Kolam Koi", href: ROUTES.marketplace },
 ]
 
-/**
- * The account menu, grouped by what the customer came to do — not by page:
- * - **Ikhtisar** — where they are with the house.
- * - **Transaksi** — what they have bought and what they are still carrying.
- * - **Akun** — where it is delivered, and how the account is kept.
- *
- * Only rows with a page behind them are listed. Bidding history, the watchlist
- * and the deposit balance were drawn here while the dashboard was a mockup;
- * nothing in Mercur backs them, so a row here would be a promise the site
- * cannot keep.
- *
- * Sign-out carries no `group`, so it falls to the trailing block: the last row
- * of the menu, under a rule of its own.
- */
 export const DEFAULT_ACCOUNT_LINKS: HeaderAccountLink[] = [
   {
     label: "Beranda akun",
@@ -84,14 +67,6 @@ export const DEFAULT_ACCOUNT_LINKS: HeaderAccountLink[] = [
 
 export const DEFAULT_SEARCH_PLACEHOLDER = "Cari varietas, sertifikat, breeder…"
 
-/** The kit's logo. No `public/` art exists yet — `undefined` so `BrandMark`
-    draws its fish glyph on purpose instead of firing a 404 image request for
-    a file that was never shipped. Point this at a real asset once one lands. */
 export const DEFAULT_BRAND_ICON = undefined
 
-/**
- * Member-tier ink — the gold of the design's own palette. A token rather than
- * an inline value (`--gold-ink`), because the same ink is now one of the kit's
- * text tones: see `src/components/css/ui.css`.
- */
 export const GOLD_TEXT = "text-gold-ink"

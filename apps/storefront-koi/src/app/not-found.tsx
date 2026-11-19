@@ -14,25 +14,7 @@ export const metadata: Metadata = {
   description: 'Alamat yang Anda buka tidak ada di portal ini.'
 };
 
-/**
- * The page a bad address lands on.
- *
- * @remarks
- * Inside the full shell rather than bare, which is the whole reason this file
- * exists: three code paths call `notFound()` — a lot, a product, an order — and
- * every one of them was rendering Next's unstyled default, with no bar, no
- * footer and no way out except the back button. A visitor who mistypes a lot id
- * is still a visitor with a cart.
- *
- * `EmptyFeed` with `narrowing={false}`, because that is the kit's own wording of
- * "there is nothing here and you cannot undo your way to it" — the same panel
- * an empty cart and a matchless catalog draw, so a 404 reads as part of the
- * site rather than as the framework showing through.
- */
 export default async function NotFound() {
-  /* A 404 is reachable while signed in, so the bar says who that is. The shell
-     can fail on a bad session, and a broken 404 page is the one thing worse
-     than a bare one. */
   const { account, cart } = await getShell().catch(() => ({
     account: undefined,
     cart: undefined

@@ -1,4 +1,5 @@
 import { Boxes, PackageCheck } from "lucide-react"
+import { cn } from "cn"
 
 import { Button, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
@@ -32,39 +33,6 @@ export type {
   MarketTab,
 } from "@/types/marketplace"
 
-/**
- * The shop: everything the breeders sell that is not a koi — food, biotics,
- * water treatment, tools — narrowed by stock, category and order, then paged.
- *
- * The third feed, beside {@link Auctions} and {@link Catalogs}, and the only
- * one whose goods are not fish. That is the whole reason it is a page of its
- * own: a filter that reads "In stock / Low / Out" is not the same control as
- * one that reads "Live / Upcoming / Ended", and a shopper buying a sack of food
- * is not shopping for a koi.
- *
- * Data in, page out — it does not fetch or route: the app hands it the goods
- * and the current filter, and hears back through `onFilterChange` and
- * `onPageChange`. Until then the kit's demo shelf renders, which is what
- * Storybook and a fresh checkout show.
- *
- * @remarks
- * Stateless on purpose. `filter` and `page` are the caller's, which is exactly
- * what a URL search string will hold — so the router swap is one file's worth
- * of change at the call site, not a rewrite of the page.
- *
- * @example
- * // App, once the router owns /marketplace
- * const [filter, setFilter] = useState(DEFAULT_MARKET_FILTER)
- * const [page, setPage] = useSearchParams().page
- * <Marketplace
- *   goods={goods}
- *   filter={filter}
- *   page={page}
- *   onFilterChange={(next) => { setFilter(next); setPage(1) }}
- *   onPageChange={setPage}
- *   account={session}
- * />
- */
 export function Marketplace({
   goods = DEFAULT_SUPPLIES,
   filter = DEFAULT_MARKET_FILTER,
@@ -102,8 +70,6 @@ export function Marketplace({
   const narrowing =
     filter.status !== "all" || filter.category !== "" || narrowedByAttributes
 
-  /* One reset for the whole page: clearing the band's tabs but leaving a
-     weight picked is not what "Reset filter" says. */
   const reset = () => {
     onFilterChange?.(DEFAULT_MARKET_FILTER)
     if (narrowedByAttributes) onAttributesChange?.({})
@@ -118,9 +84,6 @@ export function Marketplace({
       account={account}
       {...props}
     >
-      {/* The band that says what page you are on and what is on it. The count
-          comes off the unfiltered shelf: it describes the shop's stock, not the
-          current narrowing. */}
       <FeedHero
         eyebrow={
           <>
@@ -149,10 +112,6 @@ export function Marketplace({
         allCategoriesLabel="Semua kategori"
       />
 
-      {/* A quarter to the filters, three quarters to the grid — as a four-track
-          grid rather than flex widths, so the split is one number in one place
-          and the cards cannot push the rail off the container. One column below
-          `lg`, where the filters sit above the feed instead. */}
       <div className={`${CONTAINER} grid gap-8 py-8 lg:grid-cols-4 lg:py-10`}>
         <FacetSidebar
           attributes={attributes}
@@ -160,10 +119,12 @@ export function Marketplace({
           {...(onAttributesChange ? { onAttributesChange } : {})}
         />
 
-        {/* `min-w-0` because a grid item defaults to `min-width:auto`: without
-            it a wide card floors the track at its own width and the three-track
-            span overflows instead of the cards narrowing. */}
-        <div className="min-w-0 lg:col-span-3">
+        <div
+          className={cn(
+            "min-w-0",
+            attributes?.length ? "lg:col-span-3" : "lg:col-span-4"
+          )}
+        >
           <FeedSummary
             total={total}
             statusLabel={STOCK_LABEL[filter.status]}
@@ -175,9 +136,6 @@ export function Marketplace({
 
           <RenderIf when={items.length ? items : null}>
             {(list) => (
-              /* Three across, not the default four: the sidebar took a quarter of
-                 the row, and a fourth card in three quarters of the width is a
-                 card too narrow to read a price off. */
               <FeedGrid cols={3}>
                 {list.map((item) => {
                   const level = item.sale.stock?.level
@@ -187,10 +145,6 @@ export function Marketplace({
                       product={item}
                       href={goodHref(item.id)}
                       action={
-                        /* The one good you can act on leads with the solid fill;
-                           the rest fall back to the quiet detail link. Neither is
-                           disabled — both land on the good's own page, which is
-                           where the buy actually happens. */
                         <Button
                           render={<Link href={goodHref(item.id)} />}
                           size="sm"
@@ -209,8 +163,6 @@ export function Marketplace({
             )}
           </RenderIf>
 
-          {/* Nothing matched. The copy differs by cause: a narrowed shelf is not
-              the same as an empty shop. */}
           <RenderIf when={!items.length}>
             {() => (
               <EmptyFeed

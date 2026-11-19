@@ -7,30 +7,16 @@ import { formatAuctionDate } from '@/lib/helpers/auction-format';
 import { lotStatusLabel, lotStatusTone, timeLeftLabel } from '@/lib/helpers/live-bid-format';
 import { formatRupiah } from '@/lib/helpers/topup-format';
 
-/** Props for {@link LiveAuctions}. */
 export type LiveAuctionsProps = {
-  /** Only `live` auctions, newest start first. */
   auctions: AdminLiveAuction[];
-  /** How many are live in total; may exceed `auctions.length`. */
   total: number;
-  /** The server's clock, so every countdown reads the same on both renders. */
   now: string;
 };
 
-/** Where a lot's panel lives; the list page reads `?lot=<id>`. */
 export function lotPanelHref(lotId: string): string {
   return `${ROUTES.liveAuctions}?lot=${encodeURIComponent(lotId)}`;
 }
 
-/**
- * The `/lelang/langsung` monitoring list (US-072 T-072.2a): every live auction
- * with its seller and window, and its lots with price, time left, status and
- * bid count. Each lot links to its bid panel (T-072.2b).
- *
- * @remarks
- * Read-only and no polling. No bidder data on this screen (D-042/D-052) — the
- * names live in the panel, one lot at a time.
- */
 export function LiveAuctions({ auctions, total, now }: LiveAuctionsProps) {
   return (
     <Card>
@@ -59,7 +45,6 @@ export function LiveAuctions({ auctions, total, now }: LiveAuctionsProps) {
   );
 }
 
-/** One live auction: seller, window, then its lots. */
 function AuctionCard({ auction, now }: { auction: AdminLiveAuction; now: string }) {
   return (
     <div className="grid gap-2 rounded-md border border-border p-3">
@@ -80,7 +65,6 @@ function AuctionCard({ auction, now }: { auction: AdminLiveAuction; now: string 
   );
 }
 
-/** One lot row: photo, title, OB/KB, current price, time left, status, bids. */
 function LotRow({ lot, now }: { lot: AdminLiveLot; now: string }) {
   return (
     <div className="grid gap-2 rounded-md border border-border p-2 text-sm sm:grid-cols-[6rem_1fr]">

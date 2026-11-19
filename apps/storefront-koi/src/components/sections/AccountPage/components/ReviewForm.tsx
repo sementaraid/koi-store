@@ -20,38 +20,16 @@ import type { ReviewSubject } from '@/lib/helpers/review-subjects';
 
 import { reviewSchema, type ReviewData } from './schema';
 
-/** What the sheet is being opened about: one subject, on one order. */
 export type ReviewTarget = ReviewSubject & {
-  /** The per-seller order the review is evidence of — the backend checks it
-      belongs to the customer, and refuses a second review of the same subject
-      on the same order. */
   orderId: string;
 };
 
-/** Props for {@link ReviewForm}. */
 export type ReviewFormProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** The farm or the koi being rated. Absent while the sheet is closed. */
   target?: ReviewTarget;
 };
 
-/**
- * The sheet that writes one review: a score, and optionally what the customer
- * wants to say about it.
- *
- * @remarks
- * A sheet, like `AddressForm`, for the same reason — the kit has no modal and
- * `ui/sheet.tsx` was already here.
- *
- * The score goes through a `Controller` rather than `register`: `StarsInput`
- * is a controlled group of radios reporting a number, not an input whose `ref`
- * and `onChange` can be spread onto it.
- *
- * The note is a bare `<textarea>` carrying the `Input` atom's own ring and
- * border classes: `FormField` wraps an `<input>`, and a 300-character review
- * typed into a one-line field is a field the customer cannot read back.
- */
 export function ReviewForm({ open, onOpenChange, target }: ReviewFormProps) {
   const id = useId();
   const ratingErrorId = `${id}-rating-error`;
@@ -80,9 +58,6 @@ export function ReviewForm({ open, onOpenChange, target }: ReviewFormProps) {
     });
 
     if (!result.success) {
-      /* The one failure worth its own words: the backend rejects a second
-         review of the same subject on the same order, and "coba lagi" would
-         send the customer back to a form that cannot succeed. */
       toast.error(
         /already exists/i.test(result.error ?? '')
           ? 'Anda sudah menulis ulasan untuk ini.'

@@ -1,5 +1,3 @@
-/* The tier barrel, as `apps/storefront` keeps one per component tier. An organism
-   is a whole region of a page — a header, a stage, a cart summary. */
 
 export { BidTerminal } from './BidTerminal/BidTerminal';
 export { CartSummary } from './CartSummary/CartSummary';
@@ -18,4 +16,3 @@ export {
   SimpleProductCard,
 } from './ProductCard';
 export { SaleTerminal } from './SaleTerminal/SaleTerminal';
-export { SpotlightStage } from './SpotlightStage/SpotlightStage';

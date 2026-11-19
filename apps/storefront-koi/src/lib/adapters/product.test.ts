@@ -1,13 +1,8 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-/* Relative paths only, same reason as the helper tests: the runner strips types
-   without reading tsconfig, so `@/` does not resolve. Type-only imports erase. */
 import { toSimpleProduct, toSupplyStock, toVariantChoices } from "./product.ts"
 import type { StoreOffer } from "../helpers/buybox.ts"
-
-/* What this mapping goes wrong at: quoting the wrong offer's money, reading an
-   absent count as sold out, and a stock band off by one at its edges. */
 
 const offer = (price: number, stock: number) => ({
   id: `o-${price}`,
@@ -29,7 +24,7 @@ const product = (over: Record<string, unknown> = {}) =>
 
 test("picks the buybox winner, not the first offer", () => {
   const out = toSimpleProduct(product(), [
-    offer(900, 0), // dearer, out of stock
+    offer(900, 0),
     offer(500, 3),
   ])
 
@@ -54,9 +49,6 @@ test("falls back to the variant price when no offers are fetched", () => {
   assert.equal(out.sale.stock, undefined, "no offer, no count — not sold out")
 })
 
-/* Every feed tab reads a status off these two fields, so a product that leaves
-   both unsaid renders under "Semua" and nowhere else — which is how a seeded
-   catalog with untracked inventory emptied all three stock tabs. */
 test("an untracked variant is stocked, not statusless", () => {
   const out = toSimpleProduct(
     product({ variants: [{ title: "62 cm", manage_inventory: false }] })
@@ -95,9 +87,6 @@ test("maps seller, category and spec off the winner's offer", () => {
   assert.equal(out.listing?.spec, "62 cm")
 })
 
-/* The buybox is ranked *within* a variant: a page that ranked the whole field
-   would quote a price for a size the picker cannot sell. */
-
 const variant = (id: string, title: string) => ({ id, title }) as never
 
 const onVariant = (id: string, variant_id: string, price: number, stock: number) =>
@@ -109,7 +98,6 @@ test("each variant quotes its own winner", () => {
     [
       onVariant("o1", "v45", 3_000_000, 4),
       onVariant("o2", "v60", 9_000_000, 2),
-      // Undercuts the first 60 cm offer, and must not lift the 45 cm pick.
       onVariant("o3", "v60", 7_500_000, 1),
     ]
   )

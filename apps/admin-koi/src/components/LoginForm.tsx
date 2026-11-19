@@ -19,10 +19,6 @@ import { ROUTES } from '@/const/routes';
 import { login } from '@/lib/data/auth';
 import { safeRedirect } from '@/lib/helpers/safe-redirect';
 
-/* The sign-in shape. Loose on purpose: the back office checks credentials
-   against the server, and a password rule enforced here would only lock out an
-   operator whose password predates it. The storefront's `schema.ts` makes the
-   same call for the same reason. */
 const schema = z.object({
   email: z.string().trim().min(1, 'Masukkan email Anda').pipe(z.email('Format email tidak valid')),
   password: z.string().min(1, 'Masukkan kata sandi Anda')
@@ -30,7 +26,6 @@ const schema = z.object({
 
 type LoginData = z.infer<typeof schema>;
 
-/** Why they were sent here, when they did not come on their own. */
 const NOTICES: Record<string, string> = {
   sessionExpired: 'Sesi Anda telah berakhir. Masuk lagi untuk melanjutkan.',
   sessionRequired: 'Masuk dulu untuk melanjutkan.'
@@ -63,11 +58,7 @@ export function LoginForm() {
       return;
     }
 
-    /* Only a path of this app's own: an absolute URL in `?redirect=` is a
-       phishing link wearing the back office's domain, handed to someone who
-       just typed an admin password. */
     router.push(safeRedirect(params.get('redirect'), ROUTES.home));
-    /* The chrome is a server component holding the signed-out face. */
     router.refresh();
   }
 

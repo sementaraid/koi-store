@@ -12,24 +12,11 @@ import {
   trackingRequired
 } from '@/lib/helpers/sold-lot-actions';
 
-/** Props for {@link ShipLot}. */
 export type ShipLotProps = {
   lotId: string;
-  /** `courier` needs a resi, `self_delivery` does not (AC2). */
   deliveryMethod: string;
 };
 
-/**
- * The "Tandai dikirim" action on one `paid` sold lot (US-052 T-052.2).
- *
- * @remarks
- * Only the shift `paid → shipped` exists here; `won` is the mark-paid action
- * and every later status shows no action at all. The status is
- * never flipped in this component: a success re-reads the server's row, and a
- * refused call either shows the server's reason or refreshes a stale row
- * (`soldLotFailureInfo`). The tracking field is required-looking for a courier lot
- * and optional for self-delivery, matching the server's own guard.
- */
 export function ShipLot({ lotId, deliveryMethod }: ShipLotProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);

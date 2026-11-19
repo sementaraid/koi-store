@@ -9,29 +9,13 @@ import { ROUTES } from '@/const/routes';
 import type { PartnerFarm } from '@/components/organisms/PartnerCard/PartnerCard';
 import type { HeaderAccount, HeaderCart } from '@/types/header';
 
-/** Props for {@link Partners}. */
 export type PartnersProps = {
   farms: PartnerFarm[];
-  /** How many sellers the marketplace lists in all. */
   total: number;
   account?: HeaderAccount;
   cart?: HeaderCart;
 };
 
-/**
- * The directory of breeder farms the house has verified.
- *
- * @remarks
- * A plain grid rather than a filterable feed, on purpose: `GET /store/sellers`
- * returns the whole public list, and a marketplace at this scale lists fewer
- * farms than one screen of cards. `ponytail:` the day that stops being true,
- * this grows a pager (the count is already passed down) rather than a facet bar
- * — a breeder is looked up by name, not narrowed by price.
- *
- * Presentational: the caller fetches and maps. The shell is the page's own
- * because the directory is a public page and the bar still says who is signed
- * in.
- */
 export function Partners({ farms, total, account, cart }: PartnersProps) {
   return (
     <PageShell

@@ -1,9 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-/* Relative paths only: the test runner strips types without reading tsconfig,
-   so the `@/` alias does not resolve here. Type-only imports are erased, which
-   is why the component modules can be named at all. */
 import { DEFAULT_CATALOG_KOI } from "../../const/catalog.ts"
 import { DEFAULT_SUPPLIES } from "../../const/marketplace.ts"
 import type {
@@ -24,12 +21,6 @@ import {
   saleStatus,
 } from "./filter-goods.ts"
 
-/* A feed is the page's whole read model, and the ways it goes wrong silently: a
-   filter that matches nothing, a page past the end, and an order that is not
-   the one asked for. Run for both simple feeds — the koi with an availability,
-   the shop with a stock band — and for the floor, whose order has a deadline in
-   it. */
-
 const simple = (
   id: string,
   availability: Availability | undefined,
@@ -44,8 +35,6 @@ const simple = (
   sale: { price, availability, stock: stock && { level: stock } },
 })
 
-/* Listed newest-first, which is what the `newest` sort means and what the API
-   is expected to hand over. */
 const KOI: SimpleProduct[] = [
   simple("a", "available", 30, "Kohaku"),
   simple("b", "reserved", 10, "Sanke"),
@@ -53,8 +42,6 @@ const KOI: SimpleProduct[] = [
   simple("d", "sold", 40, "Showa"),
 ]
 
-/* A shelf good usually publishes a count instead of an availability, so its
-   status is the stock band — the same filter, a different vocabulary. */
 const SUPPLIES: SimpleProduct[] = [
   simple("f", undefined, 90, "Pakan", "in-stock"),
   simple("g", undefined, 40, "Pakan", "out-of-stock"),
@@ -129,9 +116,6 @@ test("category options come off the whole feed, not the narrowed one", () => {
   assert.deepEqual(categories, ["Kohaku", "Sanke", "Showa"])
 })
 
-/* The shop's half: nothing here has an availability, so a good that only
-   carries a count must still tab — which is the whole reason `saleStatus` reads
-   stock first. */
 test("a shop good tabs by its stock band", () => {
   const { items } = readKoi(SUPPLIES, { ...ALL, status: "in-stock" })
   assert.deepEqual(
@@ -151,10 +135,6 @@ test("the price sorts read the asking price, not a bid", () => {
   )
 })
 
-/* The floor, through the same read model: the status is the lifecycle, the
-   figure is the current bid, and only this feed has a deadline to order by.
-   A local fixture (T-040.2b) rather than `const/auctions.ts`'s demo lots —
-   the floor now reads the API, so this test owns its own lots. */
 const floor = {
   statusOf: lotStatus,
   priceOf: lotPrice,

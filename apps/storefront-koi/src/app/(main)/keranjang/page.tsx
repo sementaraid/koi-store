@@ -6,7 +6,6 @@ import { Cart } from '@/components/sections';
 export const metadata: Metadata = {
   title: 'Keranjang',
   description: 'Lot yang Anda menangkan dan barang yang Anda beli.',
-  /* A visitor's own cart is nobody else's page. */
   robots: { index: false, follow: false }
 };
 

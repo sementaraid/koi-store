@@ -10,22 +10,10 @@ import {
   TRUST_STAMPS,
 } from "@/const/stamps"
 
-/** A fixed-price item, and the card props every treatment shares. */
 export type SimpleProductCardProps = Omit<ProductCardOwnProps, "product"> & {
   product: SimpleProduct
 }
 
-/**
- * Anything sold outright: photo, trust and stock pills, title, seller,
- * category and spec, the price, and how much is left.
- *
- * @remarks
- * One card for a koi at a fixed price and a good off the shelf, because the
- * seller is the only thing that changes. A koi counts itself in stock bands
- * nobody set (`availability`: tersedia, terpesan, terjual); a shop counts in
- * units (`stock`). The card prefers `stock`, and shows the number when the
- * seller publishes one, so "Stok 24" stands where a koi would read "Tersedia".
- */
 export function SimpleProductCard({
   product,
   href,

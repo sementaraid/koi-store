@@ -11,23 +11,11 @@ import {
   type MaskedAddress
 } from '@/lib/helpers/sold-lot';
 
-/** Props for {@link RevealAddress}. */
 export type RevealAddressProps = {
   lotId: string;
-  /** The masked address the list already carries (city + province, D-056).
-      `null` means the winner has no default shipping address: no button. */
   address: MaskedAddress | null;
 };
 
-/** One sold lot's winner address: masked to city + province, with an explicit
- *  "Tampilkan alamat" that fetches the full address once (D-056, US-051 AC5).
- *
- * @remarks
- * Same rule as the admin farm queue's `RevealValue` (D-042): the full address
- * is fetched only on a click — every reveal writes an audit row — and lives in
- * this component's state only, dropped on "Sembunyikan" or when the row
- * unmounts. A phone never appears here, whether or not the payload carries one.
- */
 export function RevealAddress({ lotId, address }: RevealAddressProps) {
   const [state, setState] = useState<
     | { status: 'idle' }

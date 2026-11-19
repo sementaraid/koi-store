@@ -3,14 +3,12 @@ import { Award, ShieldCheck, Truck } from "lucide-react"
 import type { PartnerFarm } from "@/components/organisms/PartnerCard/PartnerCard"
 import type { HomeClaim, HomeStat } from "@/types/home"
 
-/** The hero's proof row. */
 export const DEFAULT_HOME_STATS: HomeStat[] = [
   { value: "12.400+", label: "Lot terjual" },
   { value: "180+", label: "Breeder terverifikasi" },
   { value: "100%", label: "Jaminan ikan hidup" },
 ]
 
-/** The verified-breeder directory band. Figures as the house publishes them. */
 export const DEFAULT_HOME_PARTNERS: PartnerFarm[] = [
   {
     id: "sentra-blitar-premier",
@@ -92,7 +90,6 @@ export const DEFAULT_HOME_PARTNERS: PartnerFarm[] = [
   },
 ]
 
-/** The "why us" panels: quarantine, breeder verification, delivery. */
 export const DEFAULT_HOME_CLAIMS: HomeClaim[] = [
   {
     icon: ShieldCheck,

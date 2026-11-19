@@ -1,5 +1,3 @@
-/* Three cards over one frame — the frame is what makes them look like one family,
-   so the directory exports all of it rather than making callers reach for a file. */
 
 export { AuctionProductCard } from './AuctionProductCard';
 export {

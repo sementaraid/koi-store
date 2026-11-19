@@ -1,15 +1,8 @@
 import { ROUTES } from './routes';
 
-/* The back office's sidebar, in build order.
- *
- * Every screen the MVP plan asks for is listed, with `ready` saying whether it
- * exists yet — the nav draws the whole map greyed rather than growing a link at
- * a time, so an operator can see what is coming and a developer can see what is
- * left. Flip `ready` in the same commit that adds the page. */
 export type NavItem = {
   href: string;
   label: string;
-  /** One line under the label: what an operator does on that screen. */
   hint: string;
   ready: boolean;
 };

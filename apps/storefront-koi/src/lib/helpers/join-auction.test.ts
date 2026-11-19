@@ -50,8 +50,6 @@ test('a short balance offers the top-up prompt in Indonesian, naming the fee (AC
     fee: 100_000
   });
   assert.deepEqual(info, {
-    /* `Intl` puts a non-breaking space after "Rp"; build the expectation from
-       the same formatter the copy uses rather than a literal. */
     message: `Biaya ikut lelang ini ${formatPrice(100_000)}. Saldo Anda belum cukup.`,
     topUp: true,
     refresh: false

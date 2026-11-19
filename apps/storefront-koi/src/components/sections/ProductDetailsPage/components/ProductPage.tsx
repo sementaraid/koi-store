@@ -7,7 +7,6 @@ import {
   DEFAULT_CATALOG_KOI,
 } from "@/const/catalog"
 import { CONTAINER, SECTION_LABEL } from "@/const/layout"
-import { DEFAULT_LIVE_MEDIA } from "@/const/live"
 import { ROUTES, goodHref, koiHref, partnerHref } from "@/const/routes"
 import { EmptyFeed } from "@/components/cells/EmptyFeed/EmptyFeed"
 import { FeedGrid } from "@/components/atoms/FeedGrid/FeedGrid"
@@ -32,45 +31,13 @@ export type {
   ProductPageProps,
 } from "@/types/product-page"
 
-/** Where an item's own page is: a koi's under the catalog, anything else under
-    the shop it came off. One page takes both, so the link out of a shelf tile
-    has to know which it is. */
 const itemHref = (item: SimpleProduct) =>
   item.listing?.sellerKind === "shop" ? goodHref(item.id) : koiHref(item.id)
 
-/**
- * One item the breeder sells outright: a koi at a fixed price, or a good off the
- * shelf.
- *
- * @remarks
- * The direct-sale rung, and the twin of {@link LotPage} — same dossier, same
- * frame, same shelf under it, and no bidding anywhere on it. Where a lot's page
- * sends the bidder to the room, this one takes the money itself: a price, a buy
- * control, and what the house holds the money under.
- *
- * It is the page a `SimpleProduct` has instead of a room, which is why one page
- * takes both a catalog koi and a sack of food: they differ in their price's unit
- * and in whether a stock is counted, not in how a buyer reads them. The half
- * that is a koi's alone — the live-arrival guarantee, the bloodline grid — is
- * keyed off the seller's own standing, the same field the tile behind and the
- * identity above already read.
- *
- * @example
- * // App, once the router owns /koi/:id
- * const [filter, setFilter] = useState(DEFAULT_CATALOG_FILTER)
- * <ProductPage
- *   product={koi}
- *   shelf={shelf}
- *   filter={filter}
- *   onFilterChange={setFilter}
- *   onBuy={(item) => checkout(item.id)}
- *   account={session}
- * />
- */
 export function ProductPage({
   product = DEFAULT_CATALOG_KOI[0],
   shelf = DEFAULT_CATALOG_KOI,
-  media = DEFAULT_LIVE_MEDIA,
+  media = [],
   onBuy,
   backHref,
   description,
@@ -97,10 +64,6 @@ export function ProductPage({
   const { listing, info } = product
   const koi = listing?.sellerKind === "farm"
 
-  /* The terminal quotes the *picked* variant, not the product-wide buybox: its
-     price, its stock and (through `ProductDetail`'s `onBuy`) the offer a click
-     actually buys. With no picker — one variant, or none — the product's own
-     sale stands. */
   const picked = variants?.find((variant) => variant.id === selectedVariantId)
   const quoted: SimpleProduct = picked
     ? {
@@ -114,9 +77,6 @@ export function ProductPage({
       }
     : product
   const narrowing = filter.status !== "all" || filter.category !== ""
-  /* Where the item came from, said twice — the step's wording and where it
-     goes. A koi is a breeder's, a good is a shop's, and the trail is the one
-     place on the page that has to name which. */
   const origin = koi
     ? { label: "Katalog", href: ROUTES.catalogs }
     : { label: "Perlengkapan", href: ROUTES.marketplace }
@@ -127,8 +87,6 @@ export function ProductPage({
     pageCount,
     page: current,
   } = filterGoods(
-    /* The item itself stays off the grid below — the page's own subject, already
-       read in full, is not "yang lain". */
     shelf.filter((other) => other.id !== product.id),
     filter,
     { statusOf: koiStatus, priceOf: salePrice },
@@ -155,15 +113,7 @@ export function ProductPage({
           <>
             <MediaStage items={media} />
 
-            {/* The seller's word, then the facts behind it — one column, because
-                a buyer weighing the two reads them together. Each half is drawn
-                only when it has something to say, and the section as a whole
-                collapses when neither does. */}
             <section className="flex flex-col gap-8">
-              {/* The seller's own listing text. Plain text, never HTML — the
-                  field is whatever a seller typed into the vendor panel, and a
-                  customer page must not execute it. Same rule as the breeder
-                  bio on `/mitra/[handle]`. */}
               <RenderIf when={description}>
                 {(text) => (
                   <div className="flex flex-col gap-3">
@@ -190,9 +140,6 @@ export function ProductPage({
 
               <SpecSheet listing={listing} info={info} />
 
-              {/* The catalogue's own attributes — arbitrary per marketplace, so
-                  a list rather than cells in the sheet above, which holds the
-                  koi facts every product can be asked for. */}
               <RenderIf when={attributes?.length ? attributes : null}>
                 {(rows) => (
                   <section className="flex flex-col gap-3">
@@ -228,9 +175,6 @@ export function ProductPage({
         }
         aside={
           <>
-            {/* Which one is for sale. Only drawn when there is a real choice:
-                the buybox is ranked within a variant, so picking one changes
-                both the money quoted below and the offer a click buys. */}
             <RenderIf when={variants && variants.length > 1 ? variants : undefined}>
               {(choices) => (
                 <div className="flex flex-col gap-2">
@@ -266,14 +210,8 @@ export function ProductPage({
               )}
             </RenderIf>
 
-            {/* The board is the identity's whole right-hand column: a fixed
-                price is a thing you take or leave, and the panel says what it
-                costs, whether it is still there, and what holds the money. */}
             <SaleTerminal product={quoted} onBuy={onBuy} className="p-0" />
 
-            {/* The way through to whoever is selling it. Only drawn when the
-                seller publishes a handle, because the page behind it is looked
-                up by handle. */}
             <RenderIf when={sellerHandle}>
               {(handle) => (
                 <Link
@@ -293,9 +231,6 @@ export function ProductPage({
               )}
             </RenderIf>
 
-            {/* Ask the seller directly, before buying. Drawn only when the
-                buybox's seller is known and a chat session exists — the
-                component decides the latter. */}
             <RenderIf when={chatPartner}>
               {(partner) => (
                 <ChatButton
@@ -306,24 +241,16 @@ export function ProductPage({
               )}
             </RenderIf>
 
-            {/* Every seller's own price, where more than one lists it. */}
             <OfferComparison
               offers={offers ?? []}
               {...(offerWinnerId ? { winnerId: offerWinnerId } : {})}
             />
 
-            {/* What backs the money. A shelf good keeps the escrow and the
-                seller's standing; the live-arrival promise and the breeder's
-                verification drop, because a bag of food arrives neither alive
-                nor bred. */}
             <LotTrustList sellerKind={listing?.sellerKind} koi={koi} />
           </>
         }
       />
 
-      {/* The rest of the shelf. A band of its own, below the dossier and below
-          the fold — a buyer who came to read this item should not meet the grid
-          before they read it. */}
       <section aria-labelledby="product-shelf">
         <div className={`${CONTAINER} py-8`}>
           <h2 id="product-shelf" className={`${SECTION_LABEL} mb-6`}>
@@ -354,10 +281,6 @@ export function ProductPage({
             )}
           </RenderIf>
 
-          {/* Nothing matched: the same copy the catalog gives, because it is the
-              same feed with the same controls. This grid has no empty-shelf
-              state to word — the page's own item is on the shelf by definition —
-              so the narrowing branch is the only one asked for. */}
           <RenderIf when={!items.length}>
             {() => (
               <EmptyFeed
@@ -378,7 +301,6 @@ export function ProductPage({
             )}
           </RenderIf>
 
-          {/* Pages, keyed to this item's own path so a link still lands. */}
           <FeedPagination
             page={current}
             pageCount={pageCount}

@@ -1,18 +1,5 @@
 'use client';
 
-/**
- * The last resort: a crash in the root layout itself.
- *
- * @remarks
- * This one replaces the whole document, so it renders its own `<html>` and
- * `<body>` and may import nothing that assumes the layout's providers — which
- * is why it reaches for neither `PageShell` nor the kit's atoms. Inline styles
- * rather than Tailwind classes, because a failure in the stylesheet is one of
- * the things that gets you here.
- *
- * Styled 404s and expected failures do not come through here: a bad address
- * renders `not-found.tsx`, inside the full shell.
- */
 export default function GlobalError({
   reset
 }: {

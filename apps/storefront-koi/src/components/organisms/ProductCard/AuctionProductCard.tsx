@@ -15,20 +15,10 @@ import {
   TRUST_STAMPS,
 } from "@/const/stamps"
 
-/** A lot, and the card props every treatment shares. */
 export type AuctionProductCardProps = Omit<ProductCardOwnProps, "product"> & {
   product: AuctionProduct
 }
 
-/**
- * A lot on the floor: photo, state and highlight pills, title, lot number and
- * breeder, variety and size, what the bidding stands at, and the clock.
- *
- * @remarks
- * The only treatment with a deadline, and the only one whose right-hand column
- * carries a tally. Both follow from `auction`, which the type requires — so this
- * card never checks whether there is a bid state, it is handed one.
- */
 export function AuctionProductCard({
   product,
   href,
@@ -38,13 +28,7 @@ export function AuctionProductCard({
   const { title, image, listing, auction, highlights, stamps, info } = product
   const { currentBid, currency, bidCount, endsAt, cancelled, sold } = auction
   const remaining = useCountdown(endsAt)
-  /* A closed lot (D-046) shows its final price and "Terjual" / "Tidak
-     terjual" — never a live "Bid" or a clock. `sold` is set only by the
-     adapter on a closed lot, so `undefined` means still open. */
   const closed = closedLotLabel(sold)
-  /* One pill row, two vocabularies: what the floor earned — reads as bid
-     highlights, only a lot can have them — then who stands behind the lot,
-     which a shelf good can have too. */
   const badges = [...(highlights ?? []), ...(stamps ?? [])]
 
   return (
@@ -68,9 +52,6 @@ export function AuctionProductCard({
           info={info}
           infoLookup={INFO}
           priceLabel={closed?.priceLabel ?? "Bid"}
-          /* A cancelled lot (D-050) has no price, no tally, no clock — the
-             status pill above already says "Dibatalkan". A closed lot (D-046)
-             swaps the tally and clock for "Terjual" / "Tidak terjual". */
           trailing={
             closed ? (
               <div className="font-medium">{closed.statusLabel}</div>
@@ -93,8 +74,6 @@ export function AuctionProductCard({
               </>
             )
           }
-          /* The bid state, spread so the price row reads `currentBid` and its
-             currency without a second shape to pass around. */
           sale={cancelled ? undefined : { price: currentBid, currency }}
         />
       }

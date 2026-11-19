@@ -31,7 +31,6 @@ test('labels both remedies', () => {
   assert.equal(claimRemedyLabel('replacement'), 'Penggantian ikan');
 });
 
-/* Jakarta is UTC+7: a claim stored at 17.20 UTC is the next day's 00.20 WIB. */
 test('reads the open time in Jakarta time', () => {
   const formatted = formatClaimDate('2026-11-14T17:20:00.000Z');
   assert.match(formatted, /2026/);
@@ -63,8 +62,6 @@ test('any other refusal keeps the server message, minus Medusa\'s prefix (D-055)
   });
 });
 
-/* US-056 AC2: 3 days from `approved_at` (D-038). `now` is passed in so the
-   render never depends on the browser's clock (no text-diff hydration). */
 test('an approved claim past 3 days is overdue', () => {
   assert.deepEqual(claimOverdue('2026-11-14T08:00:00.000Z', '2026-11-18T08:00:00.000Z'), {
     overdue: true,

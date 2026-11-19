@@ -5,7 +5,6 @@ interface MinPricedProduct extends HttpTypes.StoreProduct {
   _minPrice?: number;
 }
 
-// Sorts by price client-side until the store API supports ordering by price.
 export function sortProducts(
   products: HttpTypes.StoreProduct[],
   sortBy: SortOptions

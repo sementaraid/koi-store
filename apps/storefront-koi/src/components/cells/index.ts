@@ -1,7 +1,4 @@
-/* The tier barrel, as `apps/storefront` keeps one per component tier. A cell is
-   one job done in one place — a link, a field, a list — built from atoms. */
 
-/* Shared with the back office since the `packages/ui` extraction. */
 export { FormField } from '@koi/ui';
 
 export { AccountCluster } from './AccountMenu/AccountCluster';
@@ -9,7 +6,6 @@ export { AccountMenu } from './AccountMenu/AccountMenu';
 export { AccountNav } from './AccountNav/AccountNav';
 export { BackButton } from './BackButton/BackButton';
 export { BrandMark } from './BrandMark/BrandMark';
-export { BroadcastBar } from './BroadcastBar/BroadcastBar';
 export { CartDeadline } from './CartDeadline/CartDeadline';
 export { CartLink } from './CartLink/CartLink';
 export { CartSteps, CHECKOUT_STEPS } from './CartSteps/CartSteps';

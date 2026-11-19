@@ -23,27 +23,21 @@ import type { HeaderAccount, HeaderCart } from '@/types/header';
 import { AccountFrame } from './AccountFrame';
 import { topupSchema, type TopupFormData } from './schema';
 
-/** Props for {@link Topup}. */
 export type TopupProps = {
   requests: TopupRequestsPage;
   bankAccount: PlatformBankAccount | null;
-  /** The requests fetch failed — see {@link import('./Wallet.tsx').WalletProps}
-      for why this is drawn separately from "no requests yet". */
   failed: boolean;
   openOrders: number;
   account?: HeaderAccount;
   cart?: HeaderCart;
 };
 
-/** How a request's status reads, in the house's Indonesian. */
 const STATUS_LABEL: Record<TopupRequestsPage['requests'][number]['status'], string> = {
   pending: 'Menunggu',
   approved: 'Disetujui',
   rejected: 'Ditolak'
 };
 
-/** Top up the wallet: the bank account to transfer to, the upload form, and
-    every request's status (US-011). */
 export function Topup({ requests, bankAccount, failed, openOrders, account, cart }: TopupProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const {
@@ -67,9 +61,6 @@ export function Topup({ requests, bankAccount, failed, openOrders, account, cart
   }
 
   async function submit(data: TopupFormData) {
-    /* The amount rule lives in `parseTopupAmount` (tested) rather than being
-       re-derived here: the schema's regex only stops the obvious typos, and
-       this is what the request actually sends. */
     const parsed = parseTopupAmount(data.amount);
     if (!parsed.ok) {
       setError('amount', { message: parsed.error });
@@ -178,7 +169,6 @@ export function Topup({ requests, bankAccount, failed, openOrders, account, cart
               <RenderIf when={preview}>
                 {(src) => (
                   // eslint-disable-next-line @next/next/no-img-element -- a
-                  // just-picked file has no Next-servable URL to optimize.
                   <img
                     src={src}
                     alt="Pratinjau bukti transfer"

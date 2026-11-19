@@ -3,19 +3,13 @@
 import { HttpTypes } from '@medusajs/types';
 
 import { sdk } from '../client';
-import { getAuthHeaders, getCacheOptions } from './cookies';
 
 export const listCartPaymentMethods = async (regionId: string) => {
-  const next = {
-    ...(await getCacheOptions('payment_providers'))
-  };
-
   return (sdk.store.paymentProviders
     .query({
       region_id: regionId,
       fetchOptions: {
-        headers: { ...(await getAuthHeaders()) },
-        next,
+        next: { revalidate: 3600 },
         cache: 'force-cache'
       }
     } as never) as unknown as Promise<HttpTypes.StorePaymentProviderListResponse>)

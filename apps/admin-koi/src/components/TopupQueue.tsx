@@ -30,24 +30,11 @@ import {
   topupStatusTone
 } from '@/lib/helpers/topup-format';
 
-/** Props for {@link TopupQueue}. */
 export type TopupQueueProps = {
-  /** Requests still waiting on a decision, newest first. */
   pending: TopupRequest[];
-  /** Requests already decided (approved and rejected), newest first. */
   decided: TopupRequest[];
 };
 
-/**
- * The top-up queue (US-012): pending requests first, each with its transfer
- * screenshot, then a decision form that records the bank reference (approve)
- * or the reason the customer will read (reject).
- *
- * @remarks
- * Decided requests sit in their own tab rather than below the queue: the
- * operator's job is the pending list, and an approved row between two pending
- * ones invites a second approval of the same transfer (AC3).
- */
 export function TopupQueue({ pending, decided }: TopupQueueProps) {
   return (
     <Card>
@@ -89,7 +76,6 @@ export function TopupQueue({ pending, decided }: TopupQueueProps) {
   );
 }
 
-/** The signed-in customer behind a request, or a dash when the API omitted it. */
 function customerName(request: TopupRequest): string {
   const customer = request.customer;
   if (!customer) return '—';
@@ -97,10 +83,7 @@ function customerName(request: TopupRequest): string {
   return name || customer.email || '—';
 }
 
-/** One pending request: the facts, the screenshot, and the two decisions. */
 function PendingRow({ request }: { request: TopupRequest }) {
-  /* One decision at a time per row: the two forms are separate, and approving
-     while a rejection is on the wire is two answers to one question (AC3). */
   const [busy, setBusy] = useState(false);
 
   return (
@@ -133,7 +116,6 @@ function PendingRow({ request }: { request: TopupRequest }) {
   );
 }
 
-/** One decided request: its outcome and the reason the customer sees. */
 function DecidedRow({ request }: { request: TopupRequest }) {
   return (
     <div className="grid gap-1 rounded-md border border-border p-3 text-sm">
@@ -154,15 +136,6 @@ function DecidedRow({ request }: { request: TopupRequest }) {
   );
 }
 
-/**
- * The transfer screenshot, fetched through the admin-only route (D-018, AC4).
- *
- * @remarks
- * The backend returns bytes, never a URL. They arrive as base64 from the
- * server action and become a blob URL here, revoked when this row unmounts or
- * the operator asks for it again — a 5 MB proof should not sit in memory for
- * the rest of the shift.
- */
 function ScreenshotView({ id }: { id: string }) {
   const [state, setState] = useState<
     | { status: 'idle' }
@@ -172,8 +145,6 @@ function ScreenshotView({ id }: { id: string }) {
   >({ status: 'idle' });
   const [url, setUrl] = useState<string | null>(null);
 
-  /* One effect owns the URL's whole life: revoke the previous one when it is
-     replaced, and the current one on unmount. */
   useEffect(() => {
     return () => {
       if (url) URL.revokeObjectURL(url);
@@ -235,14 +206,12 @@ function ScreenshotView({ id }: { id: string }) {
   );
 }
 
-/* Appraising money: the bank statement's reference is required (AC1). */
 const approveSchema = z.object({
   bank_reference: z.string().trim().min(1, 'Masukkan referensi mutasi bank')
 });
 
 type ApproveData = z.infer<typeof approveSchema>;
 
-/** Approve, with the bank reference that ties the credit to a real transfer. */
 function ApproveForm({
   id,
   busy,
@@ -263,8 +232,6 @@ function ApproveForm({
   });
 
   async function submit(data: ApproveData) {
-    /* Busy before the dialog: a second click while `confirm()` is open is the
-       same double approval AC3 forbids. */
     onBusyChange(true);
     if (!confirm('Setujui top-up ini dan tambahkan saldo pelanggan?')) {
       onBusyChange(false);
@@ -300,14 +267,12 @@ function ApproveForm({
   );
 }
 
-/* A rejection is final for the customer, so it needs a reason they can read (AC2). */
 const rejectSchema = z.object({
   reason: z.string().trim().min(1, 'Masukkan alasan penolakan')
 });
 
 type RejectData = z.infer<typeof rejectSchema>;
 
-/** Reject, with the reason the customer will see. Records no transaction. */
 function RejectForm({
   id,
   busy,

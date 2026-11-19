@@ -14,7 +14,6 @@ import { AccountFrame } from './AccountFrame';
 import { AddressForm } from './AddressForm';
 import type { AddressData } from './schema';
 
-/** Props for {@link Addresses}. */
 export type AddressesProps = {
   addresses: HttpTypes.StoreCustomerAddress[];
   openOrders: number;
@@ -22,7 +21,6 @@ export type AddressesProps = {
   cart?: HeaderCart;
 };
 
-/** An address row's edit target, read back out of the one it was shown for. */
 function toFormData(address: HttpTypes.StoreCustomerAddress): AddressData & { addressId: string } {
   return {
     addressId: address.id,
@@ -38,16 +36,6 @@ function toFormData(address: HttpTypes.StoreCustomerAddress): AddressData & { ad
   };
 }
 
-/**
- * Every address the customer has saved, each one editable or removable in
- * place, with one sheet shared between "tambah" and every "ubah".
- *
- * @remarks
- * A delete asks `confirm()` rather than drawing its own dialog: this is the
- * one destructive action on the page, it happens rarely, and the native
- * prompt already blocks the double-click that would otherwise fire two
- * `deleteCustomerAddress` calls for one address.
- */
 export function Addresses({ addresses, openOrders, account, cart }: AddressesProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState<(AddressData & { addressId: string }) | undefined>(

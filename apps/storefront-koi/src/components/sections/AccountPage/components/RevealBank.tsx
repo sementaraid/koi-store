@@ -5,24 +5,11 @@ import { useState } from 'react';
 import { Button } from '@koi/ui';
 import { revealWonLotBank, type WonLotSellerBank } from '@/lib/data/lots';
 
-/** Props for {@link RevealBank}. */
 export type RevealBankProps = {
   lotId: string;
-  /** The masked account the list already carries (D-059). `null` means the
-      farm has no bank row: no button (D-052, no phone either way). */
   details: WonLotSellerBank | null;
 };
 
-/** The winner's view of the farmer's payout account: bank name plus masked
- *  holder name and account number, with an explicit "Tampilkan rekening"
- *  that fetches the full pair once (US-051 T-051.2a, AC3, D-057, D-059).
- *
- * @remarks
- * Same rule as {@link RevealAddress} and the admin farm queue's `RevealValue`
- * (D-042): the full values are fetched only on a click — every reveal writes
- * one audit row — and live in this component's state only, dropped on
- * "Sembunyikan" or when the row unmounts. A phone never appears here.
- */
 export function RevealBank({ lotId, details }: RevealBankProps) {
   const [state, setState] = useState<
     | { status: 'idle' }

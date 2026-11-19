@@ -4,23 +4,10 @@ import { Inbox } from '@talkjs/react';
 import { useCallback } from 'react';
 import type Talk from 'talkjs';
 
-/** The customer's own thread with the site itself — the conversation the inbox
-    hangs every other thread under. Its id is per-customer, so two customers
-    never share a feed. */
 function conversationIdFor(meId: string) {
   return `koi-inbox-${meId}`;
 }
 
-/**
- * Every conversation the customer has, in the TalkJS inbox.
- *
- * @remarks
- * `syncConversation` is the inbox's own hook into the session: TalkJS creates a
- * conversation for the signed-in customer and lists every other thread they
- * share with a shop beneath it. Same construction `apps/storefront` uses, with
- * the id namespaced so both storefronts can share one TalkJS app without their
- * feeds colliding.
- */
 export function ChatInbox() {
   const syncConversation = useCallback((session: Talk.Session) => {
     const conversation = session.getOrCreateConversation(

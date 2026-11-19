@@ -14,7 +14,6 @@ import {
   type FeeCategory
 } from '@/lib/data/fee-categories';
 
-/* Whole rupiah, never negative — same rule as `SettingsForm`'s limits. */
 const fee = (label: string) =>
   z.number({ message: `Masukkan ${label}` }).int('Harus bilangan bulat').min(0, 'Tidak boleh negatif');
 
@@ -24,22 +23,10 @@ const newCategorySchema = feesSchema.extend({ name: z.string().trim().min(1, 'Wa
 type FeesData = z.infer<typeof feesSchema>;
 type NewCategoryData = z.infer<typeof newCategorySchema>;
 
-/** Props for {@link FeeTable}. */
 export type FeeTableProps = {
   categories: FeeCategory[];
 };
 
-/**
- * The fee table (US-014): the four approved categories, each one's listing
- * and join fee editable in place, plus adding and removing a category.
- *
- * @remarks
- * One `useForm` per row rather than one for the whole table: a save only ever
- * touches the row it is on, and a shared form would validate rows the admin
- * never opened. Deleting asks `confirm()` first, same as `Addresses.tsx` —
- * this removes a category other auctions may already reference, and a reason
- * typed into a dialog box nobody reads twice is no safer than the prompt.
- */
 export function FeeTable({ categories }: FeeTableProps) {
   const [adding, setAdding] = useState(false);
 
@@ -77,7 +64,6 @@ export function FeeTable({ categories }: FeeTableProps) {
   );
 }
 
-/** One category's own row: its name, and its two fees, saved together. */
 function CategoryRow({ category }: { category: FeeCategory }) {
   const {
     register,
@@ -144,7 +130,6 @@ function CategoryRow({ category }: { category: FeeCategory }) {
   );
 }
 
-/** The blank row that adds a category. */
 function NewCategoryRow({ onDone }: { onDone: () => void }) {
   const {
     register,

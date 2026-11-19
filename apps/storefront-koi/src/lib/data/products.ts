@@ -11,10 +11,6 @@ import { getAuthHeaders } from './cookies';
 import { CACHE_TAGS, getGlobalCacheOptions } from './cache-tags';
 import { getRegion, retrieveRegion } from './regions';
 
-/* `+categories.name` merges onto the route's defaults, same convention as
-   `OFFER_FIELDS` in `lib/data/offers.ts`: `toSimpleProduct`'s `category` read
-   (`product.categories?.[0]?.name`) is otherwise always `undefined`, and every
-   feed's facet bar is empty for it. */
 const PRODUCT_LIST_FIELDS =
   '*variants.calculated_price,+variants.inventory_quantity,*variants.options,*attribute_values,*attribute_values.attribute,+categories.id,+categories.name,+categories.handle';
 
@@ -26,28 +22,7 @@ type StoreProductAttribute = {
   values?: { name: string; rank?: number }[];
 };
 
-/**
- * The attribute facets a feed can be narrowed by, in the catalog's own rank
- * order, backed by `GET /store/product-attributes`.
- *
- * @remarks
- * The values come from the attribute's own definition, not from the products on
- * screen: a facet built off the current page would offer only what survived the
- * last narrowing, so widening it again would be impossible. There are no counts
- * for the same reason — the endpoint describes the attribute, not the feed, and
- * a count that is really "1" dressed as a tally is worse than none.
- *
- * Variant axes are kept: on koi the body-length axis (`ukuran`) is the one most
- * buyers filter on first.
- *
- * Attributes are global in Mercur — a koi's bloodline and a sack of food's
- * pellet size come back from the same endpoint — so a feed says which of them
- * are its own. Without that the shop offers "Bloodline" on a water treatment
- * and the catalog offers "Tipe Pakan" on a fish.
- */
 export const getAttributeFacets = async (
-  /** The handles this feed draws facets for, in the attribute's own rank order.
-      Omitted, every filterable attribute in the catalog. */
   handles?: readonly string[]
 ): Promise<AttributeFacet[]> => {
   const { product_attributes } = await (
@@ -61,8 +36,6 @@ export const getAttributeFacets = async (
     }>
   ).catch(() => ({ product_attributes: [] as StoreProductAttribute[] }));
 
-  /* Filtered here rather than in the request: the endpoint takes no handle
-     list, and 11 rows is not a fetch worth narrowing server-side. */
   const wanted = handles ? new Set(handles) : null;
 
   return product_attributes
@@ -74,19 +47,12 @@ export const getAttributeFacets = async (
         .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))
         .map((value) => value.name);
 
-      /* An attribute with nothing to pick is not a facet, it is an empty
-         select the visitor cannot use. */
       return values.length
         ? [{ handle: attribute.handle, label: attribute.name, values }]
         : [];
     });
 };
 
-/**
- * Products in Mercur are master products from a single shared catalog — they are
- * not owned by a seller. Seller-scoped listings and per-seller price/inventory
- * come from offers, not from a product→seller relation; use `lib/data/offers.ts`.
- */
 export const listProducts = async ({
   pageParam = 1,
   queryParams,
@@ -223,10 +189,6 @@ export const getProductByHandle = async (handle: string, regionId: string) => {
   ).then(({ products }) => products[0]);
 };
 
-/**
- * Price sorts are applied client-side because `/store/products` can only order
- * by product columns.
- */
 export const searchProducts = async ({
   query,
   countryCode,

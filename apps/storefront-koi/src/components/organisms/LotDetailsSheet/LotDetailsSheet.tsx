@@ -23,36 +23,13 @@ import { formatPrice } from "@/lib/helpers/format-price"
 import { formatRemaining } from "@/lib/helpers/format-remaining"
 import { useCountdown } from "@/hooks/use-countdown"
 
-/** Props for {@link LotDetailsSheet}. */
 export type LotDetailsSheetProps = {
-  /** The lot the drawer is about. Its `auction.bids` is the history. */
   lot: AuctionProduct
-  /** The control that opens the drawer, e.g. a koi `Button`. Rendered as the
-      sheet's trigger, so it keeps whatever the stage styled it with. */
   trigger: ReactNode
-  /** The lot's own page, when one exists. Omitted, the footer drops the link —
-      which is the honest state until a router owns `/lots/:id`. */
   detailsHref?: string
   className?: string
 }
 
-/**
- * The lot's spec and its bid history, in a drawer over the room rather than on a
- * page of its own.
- *
- * @remarks
- * A drawer, not a route, because the page this control would link to does not
- * exist yet and — more to the point — a bidder mid-auction should not leave the
- * room to read the spec. The two things the label promises are here: what the
- * lot is, and who bid what.
- *
- * The clock reads the lot's own `endsAt` through the same {@link useCountdown}
- * the stage uses, so the drawer and the board under it never disagree about how
- * long is left.
- *
- * @example
- * <LotDetailsSheet lot={featured} trigger={<Button>Lihat detail &amp; riwayat bid</Button>} />
- */
 export function LotDetailsSheet({
   lot,
   trigger,
@@ -66,8 +43,6 @@ export function LotDetailsSheet({
 
   return (
     <Sheet>
-      {/* `render` swaps the trigger element for the sheet's own, so the stage's
-          button keeps its size and tone instead of the sheet imposing one. */}
       <SheetTrigger render={trigger as ReactElement} />
 
       <SheetContent

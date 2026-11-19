@@ -10,13 +10,6 @@ export const metadata: Metadata = {
   title: 'Laporan belum dibayar'
 };
 
-/**
- * The unpaid-winner report queue (US-058 AC1, admin half).
- *
- * @remarks
- * One read: the open reports the backend keeps. Read-only — the strike is
- * US-059's — so there is nothing to decide on this screen.
- */
 export default async function ReportsRoute() {
   await requireAdmin(ROUTES.reports);
   const reports = await listReports('open');

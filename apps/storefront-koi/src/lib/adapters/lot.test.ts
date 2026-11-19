@@ -1,14 +1,8 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-/* Relative paths only, same reason as the helper tests: the runner strips
-   types without reading tsconfig, so `@/` does not resolve. */
 import { toAuctionProduct } from "./lot.ts"
 import type { StoreLot } from "../data/lots.ts"
-
-/* What this mapping goes wrong at: showing a price or a clock on a cancelled
-   lot (D-050), picking the wrong figure for a closed lot, and mislabelling a
-   scheduled lot as live. */
 
 const lot = (over: Partial<StoreLot> = {}): StoreLot => ({
   id: "lot_1",

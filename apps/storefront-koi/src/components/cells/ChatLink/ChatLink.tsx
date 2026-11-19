@@ -7,21 +7,6 @@ import { Link } from '@/components/atoms/Link/Link';
 import { RenderIf } from "@koi/ui";
 import { ROUTES } from '@/const/routes';
 
-/**
- * The inbox door on the bar, with how many threads have unread messages.
- *
- * @remarks
- * Drawn only inside a TalkJS session — `useUnreads` returns `undefined` when
- * there is none, which is also the answer for "chat is not configured", so a
- * site without an app id has no door to a page that cannot load.
- *
- * The count counts *conversations* with something unread, not messages: a
- * badge reading "7" over one shop reads as seven different shops waiting.
- *
- * Hidden below `lg` for the same reason `CartLink` is — the phone bar already
- * carries a back control, the search field and the bell, and the account pages
- * are in the bottom nav there.
- */
 export function ChatLink() {
   const unreads = useUnreads();
 

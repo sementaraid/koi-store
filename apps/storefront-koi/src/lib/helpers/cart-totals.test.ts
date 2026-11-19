@@ -1,18 +1,12 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-/* Relative paths only: the test runner strips types without reading tsconfig,
-   so the `@/` alias does not resolve here. Type-only imports are erased. */
 import type {
   AuctionProduct,
   SimpleProduct,
 } from "../../types/product.ts"
 
 import { cartTotals, isCounted, lineTotal, settlement } from "./cart-totals.ts"
-
-/* What a cart's arithmetic goes wrong at: a count that does not multiply, a fish
-   the seller counts that is not countable, and a deadline that is not the
-   soonest. */
 
 const lot = (id: string, bid: number, ref?: string): AuctionProduct => ({
   kind: "auction",
@@ -30,7 +24,6 @@ const good = (id: string, price: number, seller?: string): SimpleProduct => ({
   sale: { price, stock: { level: "in-stock", count: 9 } },
 })
 
-/** A fish bought outright: no stock block, so nothing counts it. */
 const koi = (id: string, price: number): SimpleProduct => ({
   kind: "simple",
   id,
@@ -50,13 +43,10 @@ test("a line is its hammer, or a counted good's price times the count", () => {
     lineTotal({ product: good("g1", 185_000), quantity: 3 }),
     555_000
   )
-  /* No count named is one of it — the same default the row draws. */
   assert.equal(lineTotal({ product: good("g2", 145_000) }), 145_000)
 })
 
 test("a fish is one of one however it was bought", () => {
-  /* A koi the breeder sells outright has no stock to count, so a count stamped
-     on it is a mistake the arithmetic refuses rather than multiplies. */
   assert.equal(
     lineTotal({ product: koi("k1", 7_800_000), quantity: 4 }),
     7_800_000
@@ -76,8 +66,6 @@ test("units count a fish once", () => {
 
   assert.equal(units, 5)
   assert.equal(lotLines, 1)
-  /* The bought koi is a bought line, not a won one — the split is auction
-     against everything else, which is what the rail's two rows are. */
   assert.equal(goodLines, 2)
 })
 
@@ -97,7 +85,6 @@ test("sellers are counted distinctly, and only where named", () => {
     { product: good("g1", 1, "Koi Jaya Aquatics") },
     { product: good("g2", 1, "Koi Jaya Aquatics") },
     { product: good("g3", 1, "Bogor Koi Sanctuary") },
-    /* Unnamed lines do not invent a seller to make the cart look spread out. */
     { product: good("g4", 1) },
   ])
 
@@ -151,9 +138,6 @@ test("an empty cart is empty, not a page of zeroes", () => {
   })
 })
 
-/* The delivery step's arithmetic: the same goods, the freight on top, and the
-   one case that must not produce a figure — a parcel nobody has quoted. */
-
 test("the bill is the goods and the freight, added once", () => {
   const bill = settlement(
     [{ product: good("g1", 185_000), quantity: 2 }],
@@ -166,7 +150,6 @@ test("the bill is the goods and the freight, added once", () => {
 })
 
 test("freight is summed per parcel, not per item", () => {
-  /* Two fish in one box pay one delivery, however many fish are in it. */
   const bill = settlement(
     [{ product: lot("l1", 11_600_000) }, { product: koi("k1", 7_800_000) }],
     [{ shipping: 850_000 }, { shipping: 0 }]
@@ -177,8 +160,6 @@ test("freight is summed per parcel, not per item", () => {
 })
 
 test("one unquoted parcel withholds the whole total", () => {
-  /* Not the quoted rows added together: a bill that omits a delivery it knows
-     is coming would change after the visitor agreed to it. */
   const bill = settlement(
     [{ product: good("g1", 185_000) }],
     [{ shipping: 850_000 }, {}]

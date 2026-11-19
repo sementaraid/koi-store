@@ -26,17 +26,12 @@ import { ConfirmClaim } from './components/ConfirmClaim';
 import { RateFarmer } from './components/RateFarmer';
 import { RevealBank } from './components/RevealBank';
 
-/** How many won lots one page shows (matches the route's own default). */
 const PER_PAGE = 20;
 
-/** Props for {@link WonLotsPage}: the route's own `?page=`, read server-side. */
 export type WonLotsPageProps = {
   page?: string | string[];
 };
 
-/** The winner's own won lots (US-051 T-051.7, AC6): status, final price and
-    the farm name, with no farmer contact (D-044 on hold, D-052). A winner
-    with no default shipping address sees a prompt to add one (D-056). */
 export async function WonLotsPage({ page: raw }: WonLotsPageProps) {
   const [, { account, cart }, groups] = await Promise.all([
     requireCustomer(ROUTES.wonLots),
@@ -75,7 +70,6 @@ export async function WonLotsPage({ page: raw }: WonLotsPageProps) {
   );
 }
 
-/** The list itself. */
 function WonLots({
   lots,
   hasShippingAddress,
@@ -87,8 +81,6 @@ function WonLots({
   page: number;
   pageCount: number;
 }): ReactNode {
-  /* Server-rendered once, so both the claim window copy and anything the client
-     paints from it agree (same rule as the lot page's `now`). */
   const now = Date.now();
 
   return (
@@ -113,9 +105,6 @@ function WonLots({
             <Card className="px-5 py-1">
               {list.map((lot) => {
                 const status = soldLotStatusLabel(lot.status);
-                /* US-054: the caller's own claim state. A delivered lot without
-                   one still has its window copy; the row links to the lot page,
-                   where the claim form lives. */
                 const claimWindow =
                   lot.status === 'delivered' && !lot.claim
                     ? claimWindowInfo(lot.claim_window_ends_at, now)
@@ -150,9 +139,6 @@ function WonLots({
                             </p>
                           )}
                         </RenderIf>
-                        {/* D-058: the 1×24 h payment deadline (T-051.2a). Shown
-                            only while the winner still owes the farmer, so a
-                            paid row never carries a stale "bayar sebelum". */}
                         <RenderIf when={lot.status === 'won' ? lot.pay_by : null}>
                           {(payBy) => (
                             <p className="mt-0.5 text-xs font-medium text-foreground">
@@ -165,10 +151,6 @@ function WonLots({
 
                     <div className="grid min-w-[160px] justify-end gap-2 text-right">
                       <Badge variant={status.tone}>{status.label}</Badge>
-                      {/* US-057 T-057.2 (AC1): rate the farmer once, from
-                          `shipped` on. Never on a `won`/`paid` row — the fish
-                          has not arrived. A rated row shows the saved stars,
-                          comment and date read-only. */}
                       {canRateLot({ status: lot.status, rating: lot.rating }).show ? (
                         <RateFarmer lotId={lot.id} sellerName={lot.seller.name} />
                       ) : null}
@@ -199,8 +181,6 @@ function WonLots({
                             {claimStatusLabel(lot.claim.status)} ·{' '}
                             {remedyLabel(lot.claim.remedy)}
                           </span>
-                          {/* US-056 T-056.2b: the farmer settled off-platform;
-                              the winner confirms (D-058). */}
                           {lot.claim.status === 'resolved' ? (
                             <ConfirmClaim lotId={lot.id} />
                           ) : null}
@@ -224,8 +204,6 @@ function WonLots({
                           </span>
                         )}
                       </RenderIf>
-                      {/* US-051 T-051.2a (D-059): the farm's payout account,
-                          masked until the winner's logged reveal. */}
                       <RevealBank lotId={lot.id} details={lot.seller.payment_details} />
                     </div>
                   </div>

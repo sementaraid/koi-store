@@ -3,8 +3,6 @@ import { test } from "node:test"
 
 import { formatAgo, toEpochMs } from "./format-ago.ts"
 
-/* A fixed clock: the whole point of the `now` parameter is that these do not
-   depend on when the suite runs. */
 const NOW = Date.UTC(2026, 9, 12, 12)
 const ago = (ms: number) => formatAgo(NOW - ms, NOW)
 

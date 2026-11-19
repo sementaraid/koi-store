@@ -13,23 +13,11 @@ import { getShell } from '@/lib/shell';
 
 import { MarketplaceFeed } from './components/MarketplaceFeed';
 
-/**
- * The shop, and a narrowing of it by attribute — the same page either way.
- *
- * The catalog's twin: `tipe-pakan=Pelet` is not something the page can filter
- * for itself (attribute values never reach `SimpleProduct`), so the narrowing
- * goes to the API and the feed comes back already cut. The facets are the
- * shop's own handles, not the catalog's — see `MARKET_ATTRIBUTE_HANDLES`.
- */
 export async function MarketplacePage({
   params
 }: {
-  /** The page's whole query string, as the route received it. The facet values
-      are read out of it by handle. See `CatalogPage`. */
   params?: Record<string, string | string[] | undefined>;
 } = {}) {
-  /* Fetched before the feed, because it decides what the feed is: the handles
-     are what tell a facet param from a stray one. */
   const facets = await getAttributeFacets(MARKET_ATTRIBUTE_HANDLES);
 
   const selected = readAttributeSelection(facets, params);
@@ -49,8 +37,6 @@ export async function MarketplacePage({
         }).then(({ response }) => response.products)
   ]);
 
-  /* The pager's anchors keep every narrowing, so page 2 is still the same
-     facets with JavaScript off. */
   const facetQuery = new URLSearchParams(selected).toString();
 
   return (

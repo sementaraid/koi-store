@@ -11,7 +11,6 @@ import { parseVariantIdsFromError } from '@/lib/helpers/parse-variant-error';
 import { sdk } from '../client';
 import {
   getAuthHeaders,
-  getCacheOptions,
   getCacheTag,
   getCartId,
   removeCartId,
@@ -129,9 +128,6 @@ export async function addToCart({
     ...(await getAuthHeaders())
   };
 
-  // Line items are offer-scoped: the same variant sold by two sellers are two
-  // distinct offers and two distinct lines. Dedup by the offer stamped on
-  // `metadata.offer_id` (requested by `retrieveCart`).
   const currentItem = cart.items?.find(
     item => item.metadata?.offer_id === offerId
   );
@@ -419,10 +415,6 @@ export async function placeOrder(cartId?: string) {
   if (res.data?.order_group) {
     revalidatePath(ROUTES.orders);
     removeCartId();
-    // The completed cart splits into one order group (many per-seller orders).
-    // Send the shopper to the order-group detail page, which renders every
-    // child order + aggregated totals. `order_group.id` is always present;
-    // `orders[0].id` is not (the complete route omits `orders` from its fields).
     redirect(orderHref(res.data.order_group.id));
   }
 
@@ -449,12 +441,6 @@ export async function updateRegion(countryCode: string, currentPath: string) {
   const productsCacheTag = await getCacheTag('products');
   revalidateTag(productsCacheTag);
 
-  /* Storefront prefixes the path with the country because its routes live
-     under `[locale]`. This storefront has no such segment — the country is a
-     constant (`lib/region.ts`) — so a prefixed path here is a 404. The
-     function has no caller for the same reason: there is nothing to switch.
-     ponytail: delete this and `updateRegionWithValidation` the day the
-     constant stays a constant; wire a selector first if it does not. */
   redirect(currentPath);
 }
 
@@ -507,7 +493,6 @@ export async function updateRegionWithValidation(
               });
               removedItems.push(item.product_title || 'Unknown product');
             } catch (deleteError) {
-              // ignore individual delete failures and continue removing the rest
             }
           }
         }
@@ -530,8 +515,6 @@ export async function updateRegionWithValidation(
   const productsCacheTag = await getCacheTag('products');
   revalidateTag(productsCacheTag);
 
-  /* Same country-prefix mismatch as `updateRegion` above, and the same reason
-     nothing calls this: no `[locale]` segment exists here to prefix. */
   return {
     removedItems,
     newPath: currentPath
@@ -543,13 +526,10 @@ export async function listCartOptions() {
   const headers = {
     ...(await getAuthHeaders())
   };
-  const next = {
-    ...(await getCacheOptions('shippingOptions'))
-  };
 
   return await (sdk.store.shippingOptions.query({
     cart_id: cartId,
-    fetchOptions: { headers, next, cache: 'force-cache' }
+    fetchOptions: { headers, cache: 'no-store' }
   } as never) as unknown as Promise<{
     shipping_options: HttpTypes.StoreCartShippingOption[];
   }>);

@@ -1,4 +1,3 @@
-/** Small live pulse, carried by whatever entry the nav marks `live`. */
 export function PulseIcon() {
   return (
     <span aria-hidden data-slot="pulse" className="relative flex size-2">

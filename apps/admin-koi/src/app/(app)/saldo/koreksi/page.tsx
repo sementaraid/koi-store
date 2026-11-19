@@ -8,9 +8,6 @@ export const metadata: Metadata = {
   title: 'Koreksi saldo'
 };
 
-/** The balance correction screen (US-013): find a customer, record a signed
-    adjustment with a written reason. Existing transactions are never changed
-    (AC2) — the backend's workflow only appends. */
 export default async function BalanceCorrectionRoute() {
   await requireAdmin(ROUTES.adjustments);
 

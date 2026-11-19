@@ -14,9 +14,6 @@ export async function generateMetadata({
   return { title: lot?.title ?? 'Lot lelang' };
 }
 
-/* No `Suspense`: an unknown id is a `notFound()` inside the section, and a
-   boundary above it would flush the shell before the 404 could be set. Same
-   reason the product route awaits its section. */
 export default async function LotRoute({
   params
 }: {

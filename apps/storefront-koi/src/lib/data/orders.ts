@@ -6,9 +6,8 @@ import { SellerDTO } from '@mercurjs/types';
 
 import { sdk } from '../client';
 import medusaError from '../helpers/medusa-error';
-import { getAuthHeaders, getCacheOptions } from './cookies';
+import { getAuthHeaders } from './cookies';
 
-// TODO: legacy returns endpoints — migrate when the returns module lands
 type LooseRoute = {
   query: <T = unknown>(i?: never) => Promise<T>;
   mutate: <T = unknown>(i?: never) => Promise<T>;
@@ -20,13 +19,6 @@ export const retrieveOrderGroup = async (id: string) => {
   return (
     sdk.store.orderGroups.$id.query({
       $id: id,
-      /* The route's curated defaults carry most of what the receipt draws, but
-         not a line's `product_id` — and a review is filed against that id, not
-         against the product's handle. `orders.items.product_id` by name is not
-         in the route's `allowed` list and would be silently stripped; the whole
-         relation is (Mercur lists `orders.items` as expandable), so the star
-         form is what actually brings the column back. Leading `*` also keeps
-         the defaults rather than replacing them. */
       fields: '*orders.items',
       fetchOptions: {
         headers: { ...(await getAuthHeaders()) },
@@ -39,10 +31,6 @@ export const retrieveOrderGroup = async (id: string) => {
 };
 
 export const retrieveOrder = async (id: string) => {
-  const next = {
-    ...(await getCacheOptions('orders'))
-  };
-
   return (
     sdk.store.orders.$id.query({
       $id: id,
@@ -50,8 +38,7 @@ export const retrieveOrder = async (id: string) => {
         '*payment_collections.payments,*items,*items.metadata,*items.variant,*items.product,*seller,*order_group',
       fetchOptions: {
         headers: { ...(await getAuthHeaders()) },
-        next,
-        cache: 'force-cache'
+        cache: 'no-store'
       }
     } as never) as unknown as Promise<
       HttpTypes.StoreOrderResponse & { seller: SellerDTO }
@@ -85,7 +72,7 @@ export const getReturns = async () => {
       fields: '*line_items.reason_id',
       fetchOptions: {
         headers: { ...(await getAuthHeaders()) },
-        cache: 'force-cache'
+        cache: 'no-store'
       }
     } as never)
     .then(res => res)
@@ -110,10 +97,6 @@ export const listOrders = async (
   offset: number = 0,
   filters?: Record<string, unknown>
 ) => {
-  const next = {
-    ...(await getCacheOptions('orders'))
-  };
-
   return (
     sdk.store.orders.query({
       limit,
@@ -124,8 +107,7 @@ export const listOrders = async (
       ...filters,
       fetchOptions: {
         headers: { ...(await getAuthHeaders()) },
-        next,
-        cache: 'no-cache'
+        cache: 'no-store'
       }
     } as never) as unknown as Promise<{
       orders: Array<
@@ -202,8 +184,8 @@ export const retrieveReturnReasons = async () => {
   return (
     sdk.store.returnReasons.query({
       fetchOptions: {
-        headers: { ...(await getAuthHeaders()) },
-        cache: 'force-cache'
+        cache: 'force-cache',
+        next: { revalidate: 3600 }
       }
     } as never) as unknown as Promise<{
       return_reasons: Array<HttpTypes.StoreReturnReason>;

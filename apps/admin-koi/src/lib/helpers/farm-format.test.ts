@@ -37,8 +37,6 @@ test('refuses a blank rejection reason', () => {
   assert.equal(normalizeRejectReason('  Foto kebun tidak jelas  '), 'Foto kebun tidak jelas');
 });
 
-/* Jakarta is UTC+7: a registration stored at 17.20 UTC is the next day's
-   00.20 WIB. */
 test('reads the registration date in Jakarta time', () => {
   const formatted = formatFarmDate('2026-11-14T17:20:00.000Z');
   assert.match(formatted, /2026/);

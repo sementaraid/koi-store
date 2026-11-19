@@ -9,36 +9,17 @@ import {
 
 export type { MediaItem }
 
-/** The stage's own switch: the breeder's stills, or the clip. Drawn only when
-    the lot carries both — a tab strip over one kind is a control that cannot
-    change anything. */
 const MEDIA_TABS = [
   { value: "image", label: "Foto" },
   { value: "video", label: "Video" },
 ] as const
 
-/** Props for {@link MediaStage}. */
 export type MediaStageProps = {
-  /** The lot's media, in display order. Empty renders nothing. */
   items: MediaItem[]
-  /** Anything the surface puts over the viewer's lower edge — a live room's
-      "just bid" line, say. Omitted, the viewer is bare. */
   overlay?: ReactNode
   className?: string
 }
 
-/**
- * The lot's media, with the two things a viewer over a photo needs on it:
- * which kind is showing, and where in the set it is.
- *
- * @remarks
- * A switch, not a filter: picking "Video" opens the first clip rather than
- * hiding the stills, so the strip under it keeps every item one pick away.
- *
- * ponytail: no lightbox. `Perbesar` in the reference needs a full-screen
- * viewer; add it when the kit has one to open, not as a button that does
- * nothing.
- */
 export function MediaStage({ items, overlay, className }: MediaStageProps) {
   const [index, setIndex] = useState(0)
   if (!items.length) return null
@@ -64,10 +45,6 @@ export function MediaStage({ items, overlay, className }: MediaStageProps) {
                   onClick={() =>
                     setIndex(items.findIndex((i) => i.kind === tab.value))
                   }
-                  /* A pill over the photo, not a toned surface: `Button` is
-                     here for its focus ring and press spring, with its own
-                     fill and sizing given up for this one's translucent
-                     glass look. */
                   className={cn(
                     "h-auto rounded-full px-3.5 py-2 text-2xs font-bold text-white backdrop-blur-sm",
                     kind === tab.value

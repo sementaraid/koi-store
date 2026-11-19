@@ -5,20 +5,10 @@ import { useEffect, useState } from 'react';
 import { Button } from '@koi/ui';
 import { getClaimVideo } from '@/lib/data/claims';
 
-/** Props for {@link ClaimVideo}. */
 export type ClaimVideoProps = {
   claimId: string;
 };
 
-/**
- * One claim's unboxing video (US-054 T-054.2c, AC3, D-018).
- *
- * @remarks
- * The backend returns bytes, never a URL. They arrive as base64 from the
- * server action and become a blob URL here, revoked when this row unmounts or
- * the farmer asks for it again — a private clip should not sit in memory for
- * the rest of the shift.
- */
 export function ClaimVideo({ claimId }: ClaimVideoProps) {
   const [state, setState] = useState<
     | { status: 'idle' }
@@ -28,8 +18,6 @@ export function ClaimVideo({ claimId }: ClaimVideoProps) {
   >({ status: 'idle' });
   const [url, setUrl] = useState<string | null>(null);
 
-  /* One effect owns the URL's whole life: revoke the previous one when it is
-     replaced, and the current one on unmount. */
   useEffect(() => {
     return () => {
       if (url) URL.revokeObjectURL(url);

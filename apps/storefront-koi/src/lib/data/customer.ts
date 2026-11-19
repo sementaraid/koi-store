@@ -7,45 +7,27 @@ import { redirect } from 'next/navigation';
 import { sdk } from '../client';
 import {
   getAuthHeaders,
-  getCacheOptions,
   getCacheTag,
   getCartId,
   removeAuthToken,
   removeCartId,
   removeMemberToken,
+  rotateCacheId,
   setAuthToken,
   setMemberToken
 } from './cookies';
 import { memberSignIn } from './member';
+import { getSession } from './session';
 
+/**
+ * The signed-in customer, or `null` when anonymous, expired or the API could
+ * not answer. Reads `getSession`, so it can never contradict the guards.
+ * Not cached: an identity must not outlive its token.
+ */
 export const retrieveCustomer = async (): Promise<HttpTypes.StoreCustomer | null> => {
-  const authHeaders = await getAuthHeaders();
+  const session = await getSession();
 
-  /* `getAuthHeaders()` returns `{}` when there is no token, and `{}` is truthy
-     — storefront's own `if (!authHeaders)` therefore never fires, and a
-     signed-out visitor goes on to make an unauthenticated `force-cache`
-     request for `customers/me`. Checking the key is what the guard meant. */
-  if (!('authorization' in authHeaders)) return null;
-
-  const headers = {
-    ...authHeaders
-  };
-
-  const next = {
-    ...(await getCacheOptions('customers'))
-  };
-
-  return await (sdk.store.customers.me
-    .query({
-      /* `*addresses` explicitly: the account's addresses page and the home
-         page's "Alamat utama" card both read `customer.addresses`, and a
-         relation that is only there by default is a relation that disappears
-         the day the default changes. */
-      fields: '*orders,*addresses',
-      fetchOptions: { headers, next, cache: 'force-cache' }
-    } as never) as unknown as Promise<{ customer: HttpTypes.StoreCustomer }>)
-    .then(({ customer }) => customer ?? null)
-    .catch(() => null);
+  return session.status === 'authenticated' ? session.customer : null;
 };
 
 export const updateCustomer = async (body: HttpTypes.StoreUpdateCustomer) => {
@@ -122,21 +104,19 @@ export async function login(formData: FormData) {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
 
+  if (!email || !password) {
+    return { success: false, message: 'Email dan kata sandi wajib diisi.' };
+  }
+
   try {
     const token = await (sdk.auth.$actorType.$authProvider
       .mutate({ $actorType: 'customer', $authProvider: 'emailpass', email, password } as never) as unknown as Promise<{ token: string }>)
       .then(({ token }) => token);
     await setAuthToken(token as string);
 
-    /* D-003: the same person also has a member face, and the Farmer area
-       reads the farm through it. Opened here, best effort, so a farmer who
-       signs in after both tokens expired still sees the farm status instead
-       of the registration form. A customer with no member yet gets an
-       actorless token, which `/vendor/*` answers 401 to — harmless. */
     await memberSignIn(email, password).then(setMemberToken).catch(() => undefined);
 
-    const customerCacheTag = await getCacheTag('customers');
-    revalidateTag(customerCacheTag);
+    await rotateCacheId();
 
     return { success: true };
   } catch (error: unknown) {
@@ -149,18 +129,11 @@ export async function login(formData: FormData) {
 
 export async function signout() {
   await removeAuthToken();
-  /* The farmer's member token belongs to the same person (D-003); leaving it
-     behind would leave the next visitor on this browser holding a `/vendor/*`
-     session. */
   await removeMemberToken();
-
-  const customerCacheTag = await getCacheTag('customers');
-  revalidateTag(customerCacheTag);
-
   await removeCartId();
 
-  const cartCacheTag = await getCacheTag('carts');
-  revalidateTag(cartCacheTag);
+  await rotateCacheId();
+
   redirect(`/`);
 }
 

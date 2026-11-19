@@ -21,24 +21,15 @@ import {
   wonLotStatusLabel
 } from '@/lib/helpers/won-lot';
 
-/** Props for {@link WonLotPanel}: the winner's own row (US-053 T-053.2,
-    US-054 T-054.2a). */
 export type WonLotPanelProps = {
   lotId: string;
   status: string;
-  /** Whether the winner has a default shipping address (US-051 AC6, D-056).
-      `false` shows a prompt to add one, so the farmer has somewhere to ship. */
   hasShippingAddress: boolean;
-  /** US-054 AC1: `delivered_at + claim_window_hours`, null when not delivered. */
   claimWindowEndsAt: string | null;
-  /** US-054 AC4: the caller's own claim on this lot, whatever its status. */
   claim: { status: string; remedy: string; opened_at: string } | null;
-  /** The server's clock at render. The window copy is drawn from this rather
-      than `Date.now()`, so server and client render the same text. */
   now: number;
 };
 
-/** One remedy choice as a labelled radio. */
 function RemedyOption({
   value,
   current,
@@ -62,20 +53,6 @@ function RemedyOption({
   );
 }
 
-/**
- * The winner's own band on a won lot's page (US-053 T-053.2, US-054
- * T-054.2a).
- *
- * @remarks
- * Only the winner's row reaches here: the page asks `GET /store/won-lots/:id`
- * for a signed-in customer, and a 404 (not the winner) keeps the ordinary
- * public view. A `shipped` lot gets "Tandai sudah diterima" behind a confirm.
- * A `delivered` lot inside the claim window and without a claim gets the
- * dead-on-arrival form (AC1, AC2); once a claim exists, or the window has
- * passed, that form is replaced by a line. The server is the guard either way:
- * a success re-reads the server's row (`router.refresh()`), and a stale 409
- * refreshes the same way.
- */
 export function WonLotPanel({
   lotId,
   status,
@@ -201,7 +178,6 @@ export function WonLotPanel({
         )}
       </RenderIf>
 
-      {/* US-054 AC4: the winner already has a claim on this lot. */}
       <RenderIf when={status === 'delivered' && claim ? claim : null}>
         {(mine) => (
           <p className="text-xs text-foreground">
@@ -211,7 +187,6 @@ export function WonLotPanel({
         )}
       </RenderIf>
 
-      {/* US-054 AC1: delivered, no claim, and the window has passed. */}
       <RenderIf when={status === 'delivered' && !claim && !window.open ? window.label : null}>
         {(text) => <p className="text-xs text-muted-foreground">{text}</p>}
       </RenderIf>

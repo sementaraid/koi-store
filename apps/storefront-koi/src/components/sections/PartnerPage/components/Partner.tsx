@@ -18,35 +18,18 @@ import type { SellerRatings } from '@/lib/data/ratings';
 import type { HeaderAccount, HeaderCart } from '@/types/header';
 import type { SimpleProduct } from '@/types/product';
 
-/** Props for {@link Partner}. */
 export type PartnerProps = {
   partner: PartnerProfile;
-  /** US-057 AC2: the farm's latest ratings; `count: 0` hides the block. */
   ratings: SellerRatings;
-  /** What this breeder has listed, this page's worth. */
   shelf: SimpleProduct[];
-  /** Offers the breeder has in all, across every page. */
   total: number;
   page: number;
   pageCount: number;
-  /** The breeder's handle, so the pager's links land back on this page. */
   handle: string;
   account?: HeaderAccount;
   cart?: HeaderCart;
 };
 
-/**
- * One breeder's own page: who they are, and everything they have listed.
- *
- * @remarks
- * The shelf is built from *offers*, not products, which is what makes this
- * different from the catalog with a filter on it — a breeder's page quotes the
- * breeder's own price for a koi even where another seller undercuts them on the
- * same master product.
- *
- * Presentational: the caller fetches, ranks and maps. The chat control draws
- * only when a TalkJS session exists — see `ChatButton`.
- */
 export function Partner({
   partner,
   ratings,
@@ -72,14 +55,10 @@ export function Partner({
         { label: name }
       ]}
     >
-      {/* The identity band, in the same material the feed pages open with. */}
       <section className="border-b border-border bg-muted/40">
         <div className={`${CONTAINER} py-8 lg:py-10`}>
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="flex min-w-0 items-start gap-4">
-              {/* The mark where the breeder has one, the monogram where they do
-                  not — the same fallback the directory card draws, so a farm
-                  reads the same in a grid and on its own page. */}
               <RenderIf when={logo}>
                 {(src) => (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -157,8 +136,6 @@ export function Partner({
             </div>
           </div>
 
-          {/* The breeder's own words, as text. Not HTML: see the remark on
-              `toPartnerProfile`. */}
           <RenderIf when={description}>
             {(bio) => (
               <p className="mt-6 max-w-2xl text-sm leading-relaxed whitespace-pre-line text-muted-foreground">
@@ -169,10 +146,6 @@ export function Partner({
         </div>
       </section>
 
-      {/* US-057 AC2: the farm's ratings, only when there are any. The average
-          is the server's, one decimal; formatting it here as a comma keeps
-          `id-ID` without trusting two ICU builds to agree (no hydration risk).
-          No ratings → no block, never "0,0" (lib/adapters/seller.ts:11-15). */}
       <RenderIf when={ratings.count > 0 ? ratings : null}>
         {(data) => (
           <section aria-labelledby="partner-ratings">
@@ -197,7 +170,6 @@ export function Partner({
                         {formatAgo(rating.created_at)}
                       </span>
                     </div>
-                    {/* The comment as text, never HTML. */}
                     <RenderIf when={rating.comment}>
                       {(comment) => (
                         <p className="text-sm leading-relaxed text-muted-foreground">
@@ -243,9 +215,6 @@ export function Partner({
             )}
           </RenderIf>
 
-          {/* An open breeder with nothing listed is a real state — a farm
-              between harvests — so there is no narrowing branch to word: this
-              shelf has no filters on it. */}
           <RenderIf when={!shelf.length}>
             {() => (
               <EmptyFeed

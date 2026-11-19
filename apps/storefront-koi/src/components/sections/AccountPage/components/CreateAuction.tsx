@@ -27,31 +27,17 @@ import type { HeaderAccount, HeaderCart } from '@/types/header';
 
 import { AccountFrame } from './AccountFrame';
 
-/** One lot's photos, held outside react-hook-form: a photo is a URL only
-    after it finishes uploading, and the field array needs that settled value,
-    not the `File` the input started from (same split as farm registration's
-    KTP and farm photos). */
 type LotPhotos = { urls: string[]; uploading: boolean };
 
 const EMPTY_LOT = { title: '', description: '', ob: 0, kb: 0 };
 
-/** Props for {@link CreateAuction}. */
 export type CreateAuctionProps = {
-  /** The fee table, or `null` when it could not be read. */
   categories: FeeCategory[] | null;
   openOrders: number;
   account?: HeaderAccount;
   cart?: HeaderCart;
 };
 
-/** Create a draft auction with its lots (US-030 AC1, AC2, AC8).
- *
- * @remarks
- * Every limit this form checks — lot count, auction length, OB/KB being
- * whole rupiah, one photo per lot — mirrors a check the server itself makes
- * (T-030.4); this form only says so before the submit returns the same 400.
- * Fees are never typed here (AC4): the category's listing and join fee are
- * shown read-only, and the server snapshots them onto the auction. */
 export function CreateAuction({ categories, openOrders, account, cart }: CreateAuctionProps) {
   const router = useRouter();
   const [photos, setPhotos] = useState<LotPhotos[]>([{ urls: [], uploading: false }]);

@@ -10,8 +10,6 @@ import { walletAdjustmentErrorMessage } from '@/lib/helpers/wallet-error';
 import { sdk } from '../client';
 import { getAuthHeaders } from '../cookies';
 
-/** A customer found by search (US-013). Minimal fields: enough to pick the
-    right person, nothing the screen doesn't show. */
 export type WalletCustomer = {
   id: string;
   email: string;
@@ -19,7 +17,6 @@ export type WalletCustomer = {
   last_name: string | null;
 };
 
-/** One entry on a customer's ledger, as the correction screen reads it. */
 export type WalletTransactionType =
   | 'manual_topup'
   | 'join_fee'
@@ -29,14 +26,9 @@ export type WalletTransactionType =
 
 export type WalletTransaction = {
   id: string;
-  /** The backend's enum, widened to `string`: the ledger read
-      (`GET .../wallet`) types this generically, and `walletTransactionTypeLabel`
-      already falls back to the raw value for anything unrecognized. */
   type: WalletTransactionType | string;
   amount: number;
   reference: string | null;
-  /** Only the adjustment the admin just recorded carries this; the ledger
-      read (`GET .../wallet`) doesn't return it. */
   created_by?: string | null;
   created_at: string;
 };
@@ -49,13 +41,6 @@ export type CustomerWallet = {
   offset: number;
 };
 
-/** Find a customer by name or email (US-013: picking who to correct).
- *
- * @remarks
- * Medusa core's `GET /admin/customers?q=` — no custom route needed. Empty
- * query returns no results rather than everyone, so the screen never shows a
- * giant unfiltered list.
- */
 export async function searchCustomers(q: string): Promise<WalletCustomer[] | null> {
   await requireAdmin(ROUTES.adjustments);
 
@@ -80,8 +65,6 @@ export async function searchCustomers(q: string): Promise<WalletCustomer[] | nul
   }
 }
 
-/** A customer's balance and recent ledger (US-013 AC1–AC2). `null` on a
-    fetch failure, so the screen can show a retry state. */
 export async function getCustomerWallet(customerId: string): Promise<CustomerWallet | null> {
   await requireAdmin(ROUTES.adjustments);
 
@@ -101,9 +84,6 @@ type AdjustResult =
   | { success: true; wallet_transaction: WalletTransaction; balance: number }
   | { success: false; error: string };
 
-/** What the form collects: a direction and a positive magnitude, never a
-    signed number — the server action is the one place that turns the two
-    into the signed amount the backend stores. */
 const adjustmentInput = z.object({
   direction: z.enum(['add', 'subtract']),
   amount: z.number().int('Jumlah harus bilangan bulat').min(1, 'Jumlah minimal Rp 1'),
@@ -112,10 +92,6 @@ const adjustmentInput = z.object({
 
 export type AdjustmentInput = z.infer<typeof adjustmentInput>;
 
-/** Record a correction (US-013 AC1). The signed amount (+ for "add", − for
-    "subtract") is built here, not in the browser — the component only ever
-    passes direction and a positive magnitude. The backend saves who did it
-    and returns the new balance; this never computes money itself. */
 export async function adjustWalletBalance(customerId: string, input: AdjustmentInput): Promise<AdjustResult> {
   await requireAdmin(ROUTES.adjustments);
 

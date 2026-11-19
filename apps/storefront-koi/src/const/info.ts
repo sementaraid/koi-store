@@ -1,63 +1,24 @@
-/* The house's standing pages, in one place. Plain data only — no React, no
-   imports.
 
-   These are the targets the footer and half the CTAs already pointed at before
-   anything answered them: the bidding guide, the escrow rules, the quarantine
-   standard, the legal row. Every one is prose the house writes once and changes
-   rarely, so they are a constant and one route rather than twelve route files
-   and twelve sections.
-
-   ponytail: copy lives here, not in a CMS. A marketing team that wants to edit
-   it without a deploy needs these rows behind an API — the route already reads
-   them through one lookup, so that swap is this file plus `InfoPage`. */
-
-/**
- * Where the seller panel lives. Its own app, on its own host, so it is an
- * environment value and not a route: there is nothing in this storefront to
- * link to.
- *
- * Falls back to Mercur's hosted panel, as the reference storefront does, so a
- * deploy that forgot the variable sends a breeder somewhere real rather than
- * to `/undefined`.
- */
 export const VENDOR_URL =
   process.env.NEXT_PUBLIC_VENDOR_URL || "https://vendor.mercurjs.com"
 
-/** One block of a standing page: a heading over its paragraphs. */
 export type InfoSection = {
   heading: string
-  /** Paragraphs, in order. Plain text — these are rendered as `<p>`, never as
-      HTML, so copy here cannot carry markup. */
   body: string[]
 }
 
-/** One standing page, as the route draws it. */
 export type InfoDoc = {
-  /** The small caps label above the heading. */
   eyebrow: string
-  /** The page's own `h1`, and its `<title>`. */
   title: string
-  /** The sentence under the heading, and the page's meta description. */
   lede: string
   sections: InfoSection[]
-  /** The one thing the page asks the reader to do, under the prose. Omitted on
-      most of them: a privacy policy wants nothing from the reader. The `href`
-      may be off-site — the seller panel is its own app. */
   action?: {
     label: string
     href: string
-    /** One line under the button, where the destination needs explaining. */
     note?: string
   }
 }
 
-/**
- * Every standing page, keyed by its own URL segment.
- *
- * The key is the path: `/panduan` is `INFO_DOCS.panduan`. A segment that is not
- * a key is a 404, which is what keeps the catch-all route from answering for
- * every typo on the site.
- */
 export const INFO_DOCS: Record<string, InfoDoc> = {
   panduan: {
     eyebrow: "Panduan",
@@ -344,8 +305,6 @@ export const INFO_DOCS: Record<string, InfoDoc> = {
         ]
       }
     ],
-    /* The panel is a separate app, so the URL is read from the environment
-       rather than written here — see `VENDOR_URL`. */
     action: {
       label: "Buka panel penjual",
       href: VENDOR_URL,
@@ -454,5 +413,4 @@ export const INFO_DOCS: Record<string, InfoDoc> = {
   }
 }
 
-/** Every segment the standing-page route answers for. */
 export const INFO_SLUGS = Object.keys(INFO_DOCS)

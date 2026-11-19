@@ -12,13 +12,6 @@ import { listOrderGroups } from './AccountPage';
 import { countOpen } from './components/Orders';
 import { CreateAuction } from './components/CreateAuction';
 
-/** Create an auction and its lots (US-030 T-030.3).
- *
- * @remarks
- * Gated the same way as the Farmer area home (US-021 AC4, AC5): only a seller
- * whose status is `open` reaches the form. Anyone else — no farm, pending,
- * rejected, suspended — is sent back to the Farmer area home, which already
- * draws the right closed state for each of those. */
 export async function CreateAuctionPage() {
   const [, { account, cart }, groups] = await Promise.all([
     requireCustomer(ROUTES.farmAuctionNew),

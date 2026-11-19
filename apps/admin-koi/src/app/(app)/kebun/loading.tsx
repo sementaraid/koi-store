@@ -1,6 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@koi/ui';
 
-/** The farm queue while the backend answers. */
 export default function FarmsLoading() {
   return (
     <div className="grid gap-6">

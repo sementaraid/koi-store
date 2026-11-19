@@ -3,17 +3,13 @@ import type { ShieldCheck } from "lucide-react"
 
 import { RenderIf } from "@koi/ui"
 
-/** Props for {@link TrustLine}. */
 export type TrustLineProps = {
   icon: typeof ShieldCheck
   title: string
   body: string
-  /** A link or control the claim carries, e.g. the escrow regulation. Omitted,
-      the line is copy alone. */
   action?: ReactNode
 }
 
-/** One line of what backs the money: a glyph, a claim, and its condition. */
 export function TrustLine({ icon: Icon, title, body, action }: TrustLineProps) {
   return (
     <li className="flex items-center gap-3 border-b border-border py-3 last:border-b-0">

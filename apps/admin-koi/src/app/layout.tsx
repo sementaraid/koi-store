@@ -7,8 +7,6 @@ export const metadata: Metadata = {
     template: '%s | Koi Store Admin',
     default: 'Koi Store Admin'
   },
-  /* A back office has nothing to say to a search engine, and `next.config.ts`
-     sends `X-Robots-Tag: noindex` besides. */
   robots: { 
     index: false, 
     follow: false 
@@ -16,8 +14,6 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  /* One locale, stated here: the operators are the same house as the
-     storefront's Indonesian. */
   return (
     <html lang="id">
       <body className="antialiased">

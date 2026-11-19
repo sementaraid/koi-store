@@ -7,14 +7,6 @@ export const metadata: Metadata = {
   title: 'Beranda'
 };
 
-/**
- * What needs attention today.
- *
- * ponytail: the queues are named but not counted — the wallet, auction and
- * moderation modules land in milestones 2–5, and a hardcoded "0 menunggu" would
- * be a number an operator learns to distrust. Each card grows its count in the
- * milestone that creates the table behind it.
- */
 export default function HomeRoute() {
   return (
     <div className="grid gap-6">

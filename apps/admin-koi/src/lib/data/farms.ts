@@ -10,11 +10,8 @@ import { requireAdmin } from '@/lib/guard';
 import { sdk } from '../client';
 import { getAuthHeaders } from '../cookies';
 
-/** A farm's seller status (US-021). Rejection is Mercur's `suspended` (D-015). */
 export type FarmStatus = 'pending_approval' | 'open' | 'suspended' | 'terminated';
 
-/** The customer behind a farm registration (D-003). Their name is what the
-    admin compares with the bank account's holder name. */
 export type FarmApplicant = {
   customer_id: string;
   email: string | null;
@@ -23,7 +20,6 @@ export type FarmApplicant = {
   phone: string | null;
 };
 
-/** The farm PII fields the logged reveal accepts (D-042, US-092 T-092.5). */
 export type FarmPiiField =
   | 'ktp_nik'
   | 'account_number'
@@ -31,13 +27,6 @@ export type FarmPiiField =
   | 'phone'
   | 'applicant_phone';
 
-/** One registration in the `/kebun` queue. The KTP photo is private and only
-    its presence travels here (D-017); the bytes come from `getFarmKtp`.
-
-    @remarks
-    NIK, the account number, the holder name and both phones arrive already
-    masked by the backend (D-042); `getFarmKtp` and `revealFarmPii` are the only
-    ways to a full value. */
 export type AdminFarm = {
   id: string;
   name: string;
@@ -63,9 +52,6 @@ export type AdminFarm = {
   has_ktp_photo: boolean;
   farm_photo_urls: string[];
   applicant: FarmApplicant | null;
-  /** Whether the bank account's holder matches the applicant (US-021 AC1).
-      Computed server-side from the full values, because both are masked here.
-      `null` means it cannot be compared: never read it as a match. */
   holder_matches_applicant: boolean | null;
 };
 
@@ -76,14 +62,6 @@ type FarmList = {
   offset: number;
 };
 
-/* The client derives a query call's input from the route's `validatedBody`
-   generic, which `/admin/farms` leaves `unknown` (its params are validated into
-   `validatedQuery`), so the filter has to be passed the way `auth.ts` passes
-   Medusa's `users.me`: the route itself is typed and the response below is
-   still `FarmList`. */
-/* ponytail: one page of 50 per status, no paging. The queue shows the total
-   from `count` and says when it is capped. Add offset paging (or a "muat lagi"
-   action) when a status regularly passes 50. */
 const listByStatus = async (status: FarmStatus, limit = 50): Promise<FarmList> => {
   return sdk.admin.farms.query({
     status,
@@ -93,15 +71,6 @@ const listByStatus = async (status: FarmStatus, limit = 50): Promise<FarmList> =
   } as never) as unknown as Promise<FarmList>;
 };
 
-/** The queue, oldest registration first, split into what waits and what is
-    decided.
- *
- * @remarks
- * Four calls, one per status: the route filters on one status at a time. The
- * decided lists are small next to the pending one, so they are fetched in
- * parallel rather than paged separately. Returns `null` on failure so the page
- * shows an error instead of an empty queue that reads as "nothing to approve".
- */
 export const getFarmQueues = async (): Promise<{
   pending: AdminFarm[];
   pendingTotal: number;
@@ -131,13 +100,9 @@ export const getFarmQueues = async (): Promise<{
 
 type Result = { success: true } | { success: false; error: string };
 
-/** Approve a registration: the farmer gains access (US-021 AC2). */
 export async function approveFarm(id: string): Promise<Result> {
   await requireAdmin(ROUTES.farms);
 
-  /* Mercur's lifecycle routes carry no body, and the client types their input
-     as an empty record that rejects `$id`; same narrow cast as the other
-     body-less admin calls. */
   return sdk.admin.sellers.$id.approve
     .mutate({
       $id: id,
@@ -153,13 +118,6 @@ export async function approveFarm(id: string): Promise<Result> {
     }));
 }
 
-/** Reject a registration with the reason the farmer reads (US-021 AC2–AC3).
- *
- * @remarks
- * Rejection is final and maps to Mercur's seller suspend (D-015). A blank
- * reason is refused here as well as in the form, because a server action can
- * be called without going through it.
- */
 export async function rejectFarm(id: string, reason: string): Promise<Result> {
   await requireAdmin(ROUTES.farms);
 
@@ -184,15 +142,6 @@ export async function rejectFarm(id: string, reason: string): Promise<Result> {
     }));
 }
 
-/** The full value of one farm PII field, through the audit-logged route
- * (US-092 T-092.5, D-042).
- *
- * @remarks
- * Called only from an explicit "Tampilkan" click: every call appends one audit
- * row on the backend (who, when, farm, field), so an automatic call on render
- * would defeat the log. The value is returned to the caller's state only and
- * never written anywhere else; the queue itself keeps showing the mask.
- */
 export const revealFarmPii = async (
   id: string,
   field: FarmPiiField
@@ -214,14 +163,6 @@ export const revealFarmPii = async (
   }
 };
 
-/** The KTP photo bytes, base64-encoded, for the client to turn into a blob URL.
- *
- * @remarks
- * Never a stored URL (D-017): the bytes come from the admin-only route with the
- * admin token. Same transport as the top-up screenshot: base64 because it is a
- * string across the server-action boundary. `Accept` is deliberately not JSON,
- * so `@mercurjs/client` hands back the raw `Response`.
- */
 export const getFarmKtp = async (
   id: string
 ): Promise<{ data: string; contentType: string } | { error: string }> => {

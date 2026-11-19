@@ -10,27 +10,11 @@ import { orderStatus } from '@/lib/helpers/order-status';
 import type { OrderGroup } from '@/lib/helpers/order-groups';
 import type { AccountOrder } from '@/types/order';
 
-/** Props for {@link OrderRow}. */
 export type OrderRowProps = {
-  /** One checkout, with every seller's order inside it. */
   group: OrderGroup<AccountOrder>;
   className?: string;
 };
 
-/**
- * One checkout as a single line: what was bought, from whom, when, and where it
- * has got to.
- *
- * @remarks
- * The customer paid once, so they read one row — even when the parcels behind
- * it come from three farms. The row names the first item and counts the rest
- * rather than listing them, because a row is a glance; the order's own page is
- * where the parcels are separated.
- *
- * The status is the *least* settled of the child orders' — a checkout with one
- * parcel delivered and one still being packed is not "Selesai", and a row that
- * says so sends the customer looking for a fish that is still in a bag.
- */
 export function OrderRow({ group, className }: OrderRowProps) {
   const orders = group.orders;
   const first = orders[0];
@@ -97,8 +81,6 @@ export function OrderRow({ group, className }: OrderRowProps) {
       <div className="flex items-center gap-4">
         <div className="text-end">
           <Badge variant={status.tone}>{status.label}</Badge>
-          {/* The kit's figure voice, as the cart's lines and rail set it: a
-              total is a total wherever the customer meets one. */}
           <p className="mt-1 font-heading text-lg font-extrabold text-foreground tabular-nums">
             {formatPrice(group.total, group.currency_code)}
           </p>
@@ -119,8 +101,6 @@ export function OrderRow({ group, className }: OrderRowProps) {
   );
 }
 
-/** The child order that has got furthest from done: unpaid beats packed beats
-    shipped beats delivered. */
 function worstStatus(orders: AccountOrder[]) {
   const statuses = orders.map(orderStatus);
   return (

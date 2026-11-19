@@ -10,9 +10,6 @@ export const metadata: Metadata = {
   title: 'Persetujuan lelang'
 };
 
-/** The `/lelang` approval queue (US-032): category, lot photos, fees, then
-    approve (at the recomputed fee or an override with a reason) or reject
-    with a reason. */
 export default async function AuctionsRoute() {
   await requireAdmin(ROUTES.auctions);
   const queue = await getAuctionQueue();

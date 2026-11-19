@@ -13,19 +13,9 @@ import type { HeaderAccount, HeaderCart } from '@/types/header';
 import { AuthFrame } from './AuthFrame';
 import { forgotPasswordSchema, type ForgotPasswordData } from './schema';
 
-/** Shown whatever `sendResetPasswordEmail` actually finds — see the remarks. */
 const NEUTRAL_MESSAGE =
   'Jika email ini terdaftar, kami telah mengirim tautan atur ulang kata sandi. Periksa kotak masuk dan folder spam Anda.';
 
-/**
- * Ask for a reset link.
- *
- * @remarks
- * The confirmation is the same sentence whether the email exists or not: a
- * form that says "we found no account for that email" is a visitor-by-visitor
- * way to find out which emails have accounts here, which is why the server
- * action itself answers `{ success: true }` either way.
- */
 export function ForgotPasswordForm({
   account,
   cart

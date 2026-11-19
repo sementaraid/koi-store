@@ -6,7 +6,6 @@ import { listOrderGroups } from './AccountPage';
 import { countOpen } from './components/Orders';
 import { Settings } from './components/Settings';
 
-/** Who the house addresses, and the password that opens the account. */
 export async function SettingsPage() {
   const [customer, { account, cart }] = await Promise.all([
     requireCustomer(ROUTES.settings),

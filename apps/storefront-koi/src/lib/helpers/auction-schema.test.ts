@@ -44,7 +44,6 @@ test('total listing fee is per-lot fee times lot count (D-032)', () => {
 });
 
 test('a Jakarta wall-clock value round-trips through the input helper', () => {
-  // 13:52 WIB is 06:52 UTC.
   assert.equal(jakartaInputValue('2026-11-16T06:52:00.000Z'), '2026-11-16T13:52');
   assert.equal(jakartaIso('2026-11-16T13:52'), '2026-11-16T06:52:00.000Z');
 });

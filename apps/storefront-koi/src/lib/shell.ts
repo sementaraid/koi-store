@@ -1,23 +1,17 @@
 import type { HeaderAccount, HeaderCart } from '@/types/header';
 import { retrieveCart } from '@/lib/data/cart';
-import { retrieveCustomer } from '@/lib/data/customer';
+import { getSession } from '@/lib/data/session';
 
-/**
- * The two pieces of session state every koi page's `PageShell` carries: who is
- * signed in, and what is in their cart.
- *
- * One function rather than a layout, because `PageShell` is rendered by each
- * page (that is the ported component's contract), and a layout cannot hand
- * props down to it.
- */
 export async function getShell(): Promise<{
   account?: HeaderAccount;
   cart?: HeaderCart;
 }> {
-  const [customer, cart] = await Promise.all([
-    retrieveCustomer().catch(() => null),
+  const [session, cart] = await Promise.all([
+    getSession().catch(() => ({ status: 'error' as const })),
     retrieveCart().catch(() => null)
   ]);
+
+  const customer = session.status === 'authenticated' ? session.customer : null;
 
   const account: HeaderAccount | undefined = customer
     ? {
@@ -31,8 +25,6 @@ export async function getShell(): Promise<{
       }
     : undefined;
 
-  /* A count only above zero, which is the header's own rule — omit the prop
-     and no count is drawn at all. */
   const count = cart?.items?.reduce((n, item) => n + item.quantity, 0) ?? 0;
 
   return { account, cart: cart ? { count } : undefined };

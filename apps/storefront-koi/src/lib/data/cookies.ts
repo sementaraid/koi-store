@@ -1,6 +1,14 @@
 import 'server-only';
 import { cookies as nextCookies } from 'next/headers';
 
+import { tokenSecondsRemaining } from '@/lib/helpers/token';
+
+/** The cookie must not outlive the token it carries; an unreadable token gets no cookie. */
+const TOKEN_FALLBACK_MAX_AGE = 60 * 60;
+
+const tokenCookieMaxAge = (token: string) =>
+  tokenSecondsRemaining(token) ?? TOKEN_FALLBACK_MAX_AGE;
+
 export const getAuthHeaders = async (): Promise<
   { authorization: string } | {}
 > => {
@@ -50,7 +58,7 @@ export const getCacheOptions = async (
 export const setAuthToken = async (token: string) => {
   const cookies = await nextCookies();
   cookies.set('_medusa_jwt', token, {
-    maxAge: 60 * 60 * 24 * 7,
+    maxAge: tokenCookieMaxAge(token),
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
@@ -64,13 +72,6 @@ export const removeAuthToken = async () => {
   });
 };
 
-/** The farmer's member token (D-003).
- *
- * @remarks
- * A second jar, not a second field: a Medusa token covers one actor, so the
- * customer session in `_medusa_jwt` cannot also answer `/vendor/*`. The farmer
- * is the same person and signs in with the same email and password; the two
- * cookies are that person's two faces. */
 export const getMemberAuthHeaders = async (): Promise<
   { authorization: string } | {}
 > => {
@@ -87,7 +88,7 @@ export const getMemberAuthHeaders = async (): Promise<
 export const setMemberToken = async (token: string) => {
   const cookies = await nextCookies();
   cookies.set('_medusa_member_jwt', token, {
-    maxAge: 60 * 60 * 24 * 7,
+    maxAge: tokenCookieMaxAge(token),
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
@@ -98,6 +99,16 @@ export const removeMemberToken = async () => {
   const cookies = await nextCookies();
   cookies.set('_medusa_member_jwt', '', {
     maxAge: -1,
+  });
+};
+
+/** New per-visitor cache id: entries tagged with the old session stop being read. */
+export const rotateCacheId = async () => {
+  const cookies = await nextCookies();
+  cookies.set('_medusa_cache_id', crypto.randomUUID(), {
+    maxAge: 60 * 60 * 24,
+    sameSite: 'lax',
+    path: '/',
   });
 };
 

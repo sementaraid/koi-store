@@ -16,7 +16,6 @@ import type { HeaderAccount, HeaderCart } from '@/types/header';
 import { AccountFrame } from './AccountFrame';
 import { profileSchema, type ProfileData } from './schema';
 
-/** Props for {@link Settings}. */
 export type SettingsProps = {
   customer: HttpTypes.StoreCustomer;
   openOrders: number;
@@ -24,26 +23,6 @@ export type SettingsProps = {
   cart?: HeaderCart;
 };
 
-/**
- * The two things a customer can change about the account itself: who the
- * house addresses, and the password that opens it.
- *
- * @remarks
- * The email is shown but not editable. Medusa treats it as the account's
- * identity — changing it is a re-authentication flow, not a profile field —
- * and a text input that silently refuses is worse than printed text. It is set
- * as text with a lock pill rather than as a disabled input for the same
- * reason: a greyed field reads as one the page failed to load.
- *
- * The password is not changed here either: the house sends the same reset
- * link it sends from the sign-in page, so one flow verifies the mailbox and
- * one page (`/atur-sandi`) sets the password.
- *
- * The two blocks sit flat on the frame's panel with a rule between them, not in
- * cards: both are the page's own body — there is nothing else on the page for a
- * panel to separate them from — and a card around a single form is an edge that
- * says nothing.
- */
 export function Settings({ customer, openOrders, account, cart }: SettingsProps) {
   const [sendingReset, setSendingReset] = useState(false);
 
@@ -64,8 +43,6 @@ export function Settings({ customer, openOrders, account, cart }: SettingsProps)
     [customer.first_name, customer.last_name].filter(Boolean).join(' ') || customer.email;
 
   async function saveProfile(data: ProfileData) {
-    /* `updateCustomer` throws rather than returning a result object — the
-       address actions are the ones that return `{ success }`. */
     try {
       await updateCustomer({
         first_name: data.firstName,
@@ -82,8 +59,6 @@ export function Settings({ customer, openOrders, account, cart }: SettingsProps)
     setSendingReset(true);
     await sendResetPasswordEmail(customer.email);
     setSendingReset(false);
-    /* Always the same line, sent or not: whether an address has an account is
-       not something an unauthenticated form should confirm. */
     toast.success(`Tautan ganti sandi dikirim ke ${customer.email}.`);
   }
 
@@ -142,8 +117,6 @@ export function Settings({ customer, openOrders, account, cart }: SettingsProps)
             {...register('phone')}
           />
 
-          {/* Not a `FormField`: there is no input here to label, so the triple
-              (label → input → describedby) has nothing to wire. */}
           <div className="grid gap-1.5">
             <span className="flex items-center gap-2 text-sm font-medium">Email</span>
             <div className="flex flex-wrap items-center gap-2.5">
