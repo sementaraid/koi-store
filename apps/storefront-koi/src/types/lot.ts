@@ -2,7 +2,6 @@ import type { ComponentProps } from "react"
 
 import type { MediaItem } from "@/components/cells/MediaGallery/MediaGallery"
 import type { JoinControl } from "@/lib/helpers/join-auction"
-import type { BidControl } from "@/lib/helpers/place-bid"
 import type {
   AuctionProduct,
   AuctionStatus,
@@ -21,7 +20,6 @@ export type LotPageProps = ComponentProps<"div"> &
     media: MediaItem[]
     backHref?: string
     join?: JoinControl
-    bid?: BidControl
     wonLot?: {
       id: string
       status: string

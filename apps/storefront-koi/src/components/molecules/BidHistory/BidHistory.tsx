@@ -14,6 +14,8 @@ export type BidHistoryProps = {
   currency?: string
   now?: number
   variant?: "drawer" | "inline"
+  order?: "recent" | "amount"
+  limit?: number
   className?: string
 }
 
@@ -22,6 +24,8 @@ export function BidHistory({
   currency,
   now,
   variant = "drawer",
+  order = "recent",
+  limit,
   className,
 }: BidHistoryProps) {
   const [clock, setClock] = useState<number>()
@@ -32,8 +36,11 @@ export function BidHistory({
   }, [])
   const shownNow = now ?? clock
   const sorted = [...(bids ?? [])].sort(
-    (a, b) => toEpochMs(b.at) - toEpochMs(a.at)
+    order === "amount"
+      ? (a, b) => b.amount - a.amount || toEpochMs(a.at) - toEpochMs(b.at)
+      : (a, b) => toEpochMs(b.at) - toEpochMs(a.at)
   )
+  const shown = limit === undefined ? sorted : sorted.slice(0, limit)
   const drawer = variant === "drawer"
 
   if (!sorted.length) {
@@ -55,7 +62,7 @@ export function BidHistory({
       data-slot="bid-history"
       className={cn("flex flex-col text-xs", drawer && "px-4", className)}
     >
-      {sorted.map((bid, i) => (
+      {shown.map((bid, i) => (
         <li
           key={`${bid.bidder}-${bid.amount}-${i}`}
           className={cn(

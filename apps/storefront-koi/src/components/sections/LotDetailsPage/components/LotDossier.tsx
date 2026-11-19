@@ -3,7 +3,6 @@
 import { DEFAULT_AUCTION_FILTER } from '@/const/auctions';
 import { LotPage } from '@/components/sections/LotDetailsPage/components/LotPage';
 import type { JoinControl } from '@/lib/helpers/join-auction';
-import type { BidControl } from '@/lib/helpers/place-bid';
 import type { HeaderAccount, HeaderCart } from '@/types/header';
 import type { MediaItem } from '@/types/lot';
 import type { AuctionProduct, AuctionStatus } from '@/types/product';
@@ -16,7 +15,6 @@ export function LotDossier({
   account,
   cart,
   join,
-  bid,
   wonLot
 }: {
   lot: AuctionProduct;
@@ -25,7 +23,6 @@ export function LotDossier({
   account?: HeaderAccount;
   cart?: HeaderCart;
   join?: JoinControl;
-  bid?: BidControl;
   wonLot?: {
     id: string;
     status: string;
@@ -46,7 +43,6 @@ export function LotDossier({
       account={account}
       cart={cart}
       join={join}
-      bid={bid}
       wonLot={wonLot}
       {...state}
     />

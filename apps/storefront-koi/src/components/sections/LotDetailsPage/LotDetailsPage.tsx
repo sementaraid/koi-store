@@ -26,7 +26,7 @@ export async function LotDetailsPage({ id }: { id: string }) {
   const lots = toAuctionProducts(open.lots);
   const media: MediaItem[] = storeLot.photos.map((src) => ({ src, kind: 'image' }));
 
-  const { join, bid } = await getLotControls(storeLot, id);
+  const { join } = await getLotControls(storeLot, id);
 
   const mine = storeLot.sold ? await getWonLot(id) : null;
   const wonLot = mine
@@ -48,7 +48,6 @@ export async function LotDetailsPage({ id }: { id: string }) {
       account={account}
       cart={cart}
       join={join}
-      bid={bid}
       wonLot={wonLot}
     />
   );

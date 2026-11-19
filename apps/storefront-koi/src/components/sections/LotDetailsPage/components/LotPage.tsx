@@ -1,7 +1,5 @@
 import { cn } from "cn"
 import { Gavel } from "lucide-react"
-import { useState } from "react"
-
 import { Button, Card, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
 import { DEFAULT_AUCTION_FILTER } from "@/const/auctions"
@@ -20,7 +18,6 @@ import { LotTrustList } from "@/components/molecules/LotTrust/LotTrust"
 import { PageShell } from "@/components/organisms/PageShell/PageShell"
 import { ProductCard } from "@/components/organisms/ProductCard/ProductCard"
 import { JoinAuction } from "@/components/sections/LotDetailsPage/components/JoinAuction"
-import { PlaceBid } from "@/components/sections/LotDetailsPage/components/PlaceBid"
 import { WonLotPanel } from "@/components/sections/LotDetailsPage/components/WonLotPanel"
 import type { LotPageProps } from "@/types/lot"
 import { toAuctionProduct } from "@/lib/adapters/lot"
@@ -44,7 +41,6 @@ export function LotPage({
   lots,
   media,
   join,
-  bid,
   wonLot,
   backHref = ROUTES.auctions,
   activeHref = ROUTES.auctions,
@@ -74,8 +70,7 @@ export function LotPage({
   const cancelled = status === "cancelled"
   const closed = sold !== undefined
 
-  const [bidEndTime, setBidEndTime] = useState<string>()
-  const shownEnd = bidEndTime ?? live?.endsAt ?? auction.endsAt
+  const shownEnd = live?.endsAt ?? auction.endsAt
   const remaining = useCountdown(shownEnd)
   const closing = isClosing(remaining)
 
@@ -235,6 +230,8 @@ export function LotPage({
                             <BidHistory
                               variant="inline"
                               bids={rows}
+                              order="amount"
+                              limit={3}
                               currency={currency}
                             />
                           </section>
@@ -268,16 +265,6 @@ export function LotPage({
 
                       <RenderIf when={join}>
                         {(control) => <JoinAuction {...control} />}
-                      </RenderIf>
-
-                      <RenderIf when={bid && !closed ? bid : null}>
-                        {(control) => (
-                          <PlaceBid
-                            {...control}
-                            currentPrice={currentBid}
-                            onEndTime={setBidEndTime}
-                          />
-                        )}
                       </RenderIf>
                     </>
                   )}

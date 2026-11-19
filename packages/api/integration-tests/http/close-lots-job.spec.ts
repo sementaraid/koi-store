@@ -265,6 +265,26 @@ medusaIntegrationTestRunner({
         expect(result.closed).toBe(false)
       })
 
+      it("closes a due lot left open under a closed auction (bug A)", async () => {
+        // The reported dev state: a close-auction tick set the auction `closed`
+        // while this lot was momentarily not `open`; it came back `open` with
+        // its end_time in the past and, before the fix, never closed again.
+        const a = await seedAuction("closed")
+        const id = await seedLot(a, -60_000)
+        await bid(id, "cus_A", 1_200_000)
+
+        const res = await closeLotWorkflow(getContainer()).run({ input: { lot_id: id } })
+
+        expect(res.result).toEqual({ closed: true, status: "won" })
+        const after = await lot(id)
+        expect(after.status).toBe("won")
+        expect(after.winner_customer_id).toBe("cus_A")
+        expect(after.final_price).toBe(1_200_000)
+        expect(after.closed_at).not.toBeNull()
+        // A closed auction is not reopened by the lot's close.
+        expect(await auctionStatus(a)).toBe("closed")
+      })
+
       it("leaves scheduled, closed and cancelled auctions alone", async () => {
         const statuses: AuctionStatus[] = ["scheduled", "closed", "cancelled"]
         const seeded = await Promise.all(statuses.map((s) => seedAuction(s)))

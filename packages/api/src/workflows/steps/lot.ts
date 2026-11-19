@@ -51,10 +51,11 @@ export const setLotFieldsStep = createStep(
 export type ClosableLot = { close: boolean; update: LotFields }
 
 // US-050 T-050.1 (AC2, AC3, D-035, D-036). Read-only guard, run under the
-// `lot:<id>` lock: close only an `open` lot of a `live` auction whose
-// end_time has passed on the server clock (US-043 moves end_time, so an
-// extended lot is not due yet). A cancelled lot, a lot of a scheduled or
-// cancelled auction, or one already closed is skipped, not an error.
+// `lot:<id>` lock: close only an `open` lot of a `live` auction (or a `closed`
+// one, bug A: a lot stranded `open` under a closed auction) whose end_time has
+// passed on the server clock (US-043 moves end_time, so an extended lot is not
+// due yet). A cancelled lot, a lot of a scheduled or cancelled auction, or one
+// already closed is skipped, not an error.
 // Winner = highest bid; of equal amounts the first recorded (plan "Bidding").
 // US-072 (AC2): a removed bid never wins, so the read skips it; every bid
 // removed makes the lot `unsold`.
@@ -70,9 +71,15 @@ export const getClosableLotStep = createStep(
       fields: ["id", "status", "end_time", "auction.status"],
       filters: { id: input.lot_id },
     })
+    // `closed` is included: bug A. A close-auction tick that saw every lot
+    // closed/cancelled sets the auction `closed`; a lot still `open` under it
+    // (cancelled-lot tick race, a manual cancel) could then never close and
+    // stayed "live" on the store pages forever. `scheduled`/`cancelled`/
+    // `draft` are still skipped — those lots have not run.
     const due =
       lot?.status === "open" &&
-      lot.auction?.status === "live" &&
+      (lot.auction?.status === "live" ||
+        lot.auction?.status === "closed") &&
       new Date(lot.end_time as string).getTime() <= now.getTime()
     if (!due) {
       return new StepResponse<ClosableLot>({ close: false, update: {} })
