@@ -12,6 +12,7 @@
       "Bash(docker compose logs:*)",
       "Bash(docker compose exec app bun run:*)",
       "Bash(git status:*)",
+      "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",
@@ -19,9 +20,7 @@
       "Bash(grep:*)"
     ],
     "ask": [
-      "Bash(bun add:*)",
       "Bash(bun remove:*)",
-      "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(docker compose down:*)"
     ],
