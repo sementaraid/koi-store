@@ -17,11 +17,21 @@ from the `koi-delivery` skill.
 | 6 | product-owner | qa PASS | 10 min | `done`, tasks ticked |
 | 7 | Owner or orchestrator | Accepted | 1 min | Commit |
 
+Every step is budgeted at 100 turns or 45 minutes. An agent that hits the cap
+stops and reports what is blocked; the task is split, not extended. Keep
+commits small and immediate (step 0 and 7) so a long approval wait never parks
+the whole cycle.
+
 ## Parallel rules
 
 - One backend agent at a time in `packages/api`. A second needs
   `isolation: "worktree"`.
 - One frontend agent per app: storefront-koi and admin-koi can run side by side.
+- Start product-owner (step 1) and the qa re-check of the previous story in
+  parallel with backend/frontend work. Idle orchestration is the biggest cost.
+- **Start a fresh session when a story is accepted.** A session that spans
+  stories re-sends every earlier turn on every call; context above ~200k tokens
+  roughly doubles per-turn latency.
 - qa starts only when no other Jest run is active (`EADDRINUSE 127.0.0.1:5432`).
 - Step 3 never starts before step 2 has delivered its API contract, unless every
   route in the frontend brief's endpoint inventory already exists.
@@ -56,6 +66,7 @@ Report: the briefs, plus any new task or question.
 ```
 Use the koi-delivery skill and docs/process/task-brief.md.
 Story: US-xxx (T-xxx.n)   Release: <slug>   Agent: backend   Expected: ≤45 min
+Budget: 100 turns or 45 min; at the cap stop and report what is blocked.
 ACs: <quoted verbatim>
 Decisions: <D-xxx, one line each>
 Build: <route / workflow / job, in one paragraph>
@@ -74,6 +85,7 @@ Report: standard header + API contract (method, path, body, response, errors). D
 ```
 Use the koi-delivery skill and docs/process/task-brief.md.
 Story: US-xxx (T-xxx.n)   Release: <slug>   Agent: frontend   Expected: ≤45 min
+Budget: 100 turns or 45 min; at the cap stop and report what is blocked.
 ACs: <quoted verbatim>
 Endpoint inventory:
   | Method | Path | Exists? | Shape |
@@ -91,9 +103,10 @@ Report: standard header + render check result + screenshot path. Don't commit.
 ```
 Use the koi-delivery skill.
 Story: US-xxx   Release: <slug>   Agent: qa   Expected: ≤30 min
+Budget: 100 turns or 45 min; at the cap stop and report what is blocked.
 Verify every AC in stories.md. Decisions: <D-xxx>.
 Code under test: <paths>
-Commands (alone, nothing else on Jest): <spec list>; bun run check in each touched app.
+Commands (alone, nothing else on Jest): <spec list, one invocation>; bun run check in each touched app.
 Browser: render check (render-check skill) on <routes> as <accounts>, walking each AC's flow.
 Watch for: <recurring risk for this story>.
 Don't change app code. Report PASS/FAIL per AC with file:line and command output;

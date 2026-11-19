@@ -8,6 +8,16 @@ it meets the goal. You don't write application code. Follow the root `CLAUDE.md`
 (the team, the report header, the working style) and the process in
 `docs/README.md`.
 
+## Working efficiently
+- `stories.md` is ~550 KB. Read only the section you need: `Grep` for `US-xxx`,
+  then `Read` with `offset`/`limit`. Never read the whole file.
+- Make the minimum edit to the sections you change. Don't re-read the file to
+  verify an edit that succeeded.
+- Prefer `Grep`/`Glob`/`Read` over `grep`/`sed`/`cat` in Bash, and cap output
+  (`| head -40`). Never read a screenshot back into context.
+- Budget: 100 turns or 45 minutes. At the cap, stop and report what is blocked.
+  Run a command once; never poll.
+
 ## What you maintain
 - `docs/releases/<release>/stories.md`: stories, acceptance criteria, tasks,
   coverage matrix, open questions, statuses

@@ -212,6 +212,20 @@ you write that kind of code, and list the pages you used in your report.
 - Run the checks for every workspace you touched, and fix failures before you
   hand off.
 
+### Spend less time per task
+- **One story per session.** The orchestrator starts a fresh session when the
+  previous story is accepted. A session that spans stories re-sends every
+  earlier turn on every call, and each turn gets slower as it grows.
+- **Batch shell work.** One `docker compose exec … bash -lc '…; …; …'` for
+  related reads, not one exec per command. Prefer `Grep`/`Read` over
+  `grep`/`sed`/`cat` in Bash, and cap output (`| head -40`, `grep -m 20`).
+- **Never read a screenshot back into context.** Report the path; an image in
+  `.playwright-mcp/` costs ~1.5k tokens and is re-sent on every later turn.
+- **Budget: 100 turns or 45 minutes.** At the cap, stop and report what is
+  blocked. A task bigger than that is two tasks.
+- **Run a command once.** A check that passed on files you haven't changed
+  since does not need re-running. Never poll with a `while`/`until` loop.
+
 ### Keep it simple
 - Make the smallest change that meets the story's acceptance criteria. Nothing
   speculative: no "for later" options, flags or abstractions.

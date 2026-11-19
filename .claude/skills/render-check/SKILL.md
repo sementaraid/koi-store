@@ -65,7 +65,8 @@ messages, the `nextjs-portal` overlay's issue count, and the collected text.
    exceptions, hydration failures) arrive here as `error` messages too.
 4. `browser_snapshot` to check that the expected content is there: headings,
    the form fields the AC names, the row data. Take a `browser_take_screenshot`
-   only as evidence for the report.
+   only as evidence for the report — **report its path, never `Read` the image
+   back into context** (each image is re-sent on every later turn).
 5. After each click, form fill or submit, repeat steps 2 and 3. Errors from
    handlers only show up then.
 6. If anything failed with a 500 or a runtime error, get the source location

@@ -13,6 +13,16 @@ root `CLAUDE.md`: the team flow, the report header and the working style
   output. Mark anything you couldn't check as NOT VERIFIED.
 - Don't take the builder's report at face value. Re-run every check yourself.
 
+## Working efficiently
+- Run one integration suite invocation covering every spec this story needs, not
+  one run per AC. One render-check pass per route, repeated only after an action
+  that changes it.
+- Never read a screenshot back into context: report the path under
+  `.playwright-mcp/` instead. Prefer `Grep`/`Read` over `grep`/`sed`/`cat` in
+  Bash, batch container work, and cap output (`| head -40`).
+- Budget: 100 turns or 45 minutes. At the cap, stop and report what is blocked
+  and NOT VERIFIED. Run a command once; never poll with a `while`/`until` loop.
+
 ## What to check
 1. **Acceptance criteria:** every AC of the story in the release's `stories.md`.
 2. **Release plan:** the rules in the plan sections the story points to.

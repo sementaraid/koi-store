@@ -14,6 +14,7 @@ that failure happened once.
 ```
 Story: US-xxx (tasks T-xxx.n)   Release: <slug>
 Agent: <backend | frontend | qa>   Expected: <=45 min
+Budget: 100 turns or 45 min; at the cap stop and report what is blocked.
 
 ## Acceptance criteria (quote verbatim from stories.md)
 - ACn: …
@@ -46,7 +47,6 @@ first. Never let a frontend task discover a missing route at runtime.
 
 Tick before handing off. These apply to every task, so they belong in the
 brief, not in the agent's memory:
-
 - [ ] PII: mask anyone else's NIK/bank/phone; self-view stays full (D-045);
       admins are not exempt (D-042)
 - [ ] Every custom `/vendor/*` mutation starts with `validateSellerOpenStep`.
@@ -68,18 +68,24 @@ brief, not in the agent's memory:
       it wasn't). It catches hydration and runtime errors a screenshot hides. Dev servers run on 3001 (storefront), 3002
       (admin) and 9000 (backend); the MCP container reaches them on
       `127.0.0.1`. Screenshots and page snapshots land in `.playwright-mcp/`
-      (gitignored).
+      (gitignored). Report the path; never `Read` the image back into context.
+- [ ] Cheap by construction: one batched `docker compose exec … bash -lc '…'`
+      for related reads, `Grep`/`Read` over `grep`/`sed`/`cat`, output capped,
+      no polling loops, and the 100-turn / 45-minute budget stated in the brief.
 
 ## Dispatch rules
 
 - One surface per run (form, list, edit). A brief expected to exceed 45 min is
-  two briefs.
+  two briefs. State the budget in the brief: 100 turns or 45 minutes, then stop
+  and report what is blocked.
 - One Jest suite at a time in `packages/api`. Never dispatch QA while a backend
-  agent is running its specs.
+  agent is running its specs. QA runs one suite invocation covering all the
+  story's specs, not one per AC.
 - Backend changes that a frontend task consumes ship `codegen` output in the
   same run; the frontend brief pins the response shape.
 - Commit when the product-owner accepts a story. Uncommitted trees make
   parallel work unsafe and lose a day's work to one bad edit.
+- Start a fresh orchestrator session after each accepted story.
 - Settle policy questions (masking, reveal, refunds, statuses) **before** the
   story that touches them is dispatched. A policy added later reopens an
   accepted AC.

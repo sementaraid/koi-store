@@ -25,6 +25,17 @@ style (section 10).
 - After you add or change a route, run `bun run codegen`.
 - Build only what the story's acceptance criteria need.
 
+## Working efficiently
+- Start from the brief, this file and the existing code the brief names. Search
+  (`Grep`, `Glob`) only for what they don't answer.
+- Batch container work: one `docker compose exec -T app bash -lc '…; …; …'` for
+  related reads, not one exec per command. Cap output (`| head -40`).
+- Write a new file in one go once you know what it needs. Don't build it up
+  through many small edits.
+- Run the hand-off checks once, when the work is finished — not after every edit.
+- Budget: 100 turns or 45 minutes. At the cap, stop and report what is blocked.
+  Run a command once; never poll.
+
 ## Before you hand off
 From `packages/api`, run `bun run build`, `bun run test:unit`, plus
 `test:integration:http` or `test:integration:modules` for what you changed, and
