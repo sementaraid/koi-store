@@ -6,7 +6,7 @@ import { Button, Card, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
 import { DEFAULT_AUCTION_FILTER } from "@/const/auctions"
 import { CONTAINER, SECTION_LABEL } from "@/const/layout"
-import { ROUTES, lotHref } from "@/const/routes"
+import { ROUTES, liveHref, lotHref } from "@/const/routes"
 import { EmptyFeed } from "@/components/cells/EmptyFeed/EmptyFeed"
 import { FeedGrid } from "@/components/atoms/FeedGrid/FeedGrid"
 import { FeedPagination } from "@/components/cells/FeedPagination/FeedPagination"
@@ -253,6 +253,17 @@ export function LotPage({
                           />
                         )}
                       </RenderIf>
+
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        render={<Link href={liveHref(lot.id)} />}
+                        nativeButton={false}
+                        className="w-full text-xs font-bold"
+                      >
+                        <Gavel aria-hidden />
+                        Masuk ruang bidding live
+                      </Button>
 
 
                       <RenderIf when={join}>

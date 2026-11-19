@@ -87,6 +87,9 @@ services:
       SMTP_FROM: "Koi Store <no-reply@koi.dev>"
       # Base of the reset link (storefront-koi /atur-sandi). Host browser URL.
       STOREFRONT_URL: http://localhost:3001
+      # Cache revalidation target: the storefront's route, not its root.
+      STOREFRONT_REVALIDATE_URL: http://localhost:3001/api/revalidate
+      STOREFRONT_REVALIDATE_SECRET: supersecret
     volumes:
       - .:/workspace
       # Overlay volumes: bun's workspace install hoists to the root, but each

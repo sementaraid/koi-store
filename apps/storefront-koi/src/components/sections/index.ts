@@ -26,6 +26,7 @@ export { CategoryPage, getCategory } from './CategoryPage/CategoryPage';
 export { HomePage } from './HomePage/HomePage';
 export { InfoPage, getInfoDoc } from './InfoPage/InfoPage';
 export { LotDetailsPage } from './LotDetailsPage/LotDetailsPage';
+export { LiveRoomPage } from './LiveRoomPage/LiveRoomPage';
 export { ProductDetailsPage, getProduct } from './ProductDetailsPage/ProductDetailsPage';
 export { MarketplacePage } from './MarketplacePage/MarketplacePage';
 export { PartnerPage, getPartner } from './PartnerPage/PartnerPage';

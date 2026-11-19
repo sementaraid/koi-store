@@ -54,7 +54,7 @@ export async function LotDetailsPage({ id }: { id: string }) {
   );
 }
 
-async function getLotControls(
+export async function getLotControls(
   storeLot: NonNullable<Awaited<ReturnType<typeof getLot>>>,
   lotId: string
 ): Promise<{ join?: JoinControl; bid?: BidControl }> {

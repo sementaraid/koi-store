@@ -36,7 +36,9 @@
         "SMTP_USER",
         "SMTP_PASS",
         "SMTP_FROM",
-        "STOREFRONT_URL"
+        "STOREFRONT_URL",
+        "STOREFRONT_REVALIDATE_URL",
+        "STOREFRONT_REVALIDATE_SECRET"
       ]
     }
   }

@@ -33,6 +33,8 @@ export const ROUTES = {
 
 export const lotHref = (id: string) => `${ROUTES.auctions}/${id}`
 
+export const liveHref = (id: string) => `${ROUTES.auctions}/${id}/live`
+
 export const partnerHref = (handle: string) => `${ROUTES.partners}/${handle}`
 
 export const categoryHref = (handle: string) => `${ROUTES.categories}/${handle}`
