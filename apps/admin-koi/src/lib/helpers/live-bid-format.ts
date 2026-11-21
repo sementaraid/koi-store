@@ -83,3 +83,30 @@ export function canRemoveBid(bid: { removed_at: string | null }, lotStatus: stri
   return lotStatus === 'open' && bid.removed_at === null;
 }
 
+export type CancelFailureInput = {
+  status?: number;
+  code?: string;
+  message?: string;
+};
+
+// D-055: Medusa rewrites a 409 body, so its message is never shown; the app
+// writes its own copy. A 400/404 body is the backend's Indonesian text.
+export function cancelFailureInfo({ status, code, message }: CancelFailureInput): BidFailure {
+  if (status === 409 || code?.endsWith('_not_cancellable')) {
+    return { message: 'Data tidak bisa dibatalkan sekarang. Halaman diperbarui.', refresh: true };
+  }
+  const cleaned = (message ?? '').replace(/^Invalid request:\s*/, '').trim();
+  if (status === 404) {
+    return { message: cleaned || 'Data tidak ditemukan. Halaman diperbarui.', refresh: true };
+  }
+  if (status === 400) {
+    return { message: cleaned || 'Alasan pembatalan wajib diisi.', refresh: false };
+  }
+  return { message: cleaned || 'Gagal membatalkan. Coba lagi.', refresh: false };
+}
+
+// The refund figures come from the server; this only formats them (no money maths).
+export function cancelAuctionToast(refund: { participants: number; total: number }, format: (amount: number) => string): string {
+  return `Lelang dibatalkan. Biaya ikut lelang ${refund.participants} peserta dikembalikan, total ${format(refund.total)}.`;
+}
+

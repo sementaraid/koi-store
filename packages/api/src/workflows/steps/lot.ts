@@ -1,4 +1,7 @@
-import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import {
+  ContainerRegistrationKeys,
+  MedusaError,
+} from "@medusajs/framework/utils"
 import { createStep, StepResponse } from "@medusajs/framework/workflows-sdk"
 import { AUCTION_MODULE } from "../../modules/auction"
 import type AuctionModuleService from "../../modules/auction/service"
@@ -17,6 +20,7 @@ export type LotFields = Partial<
     | "tracking_number"
     | "shipped_at"
     | "delivered_at"
+    | "cancel_reason"
   >
 >
 
@@ -104,5 +108,43 @@ export const getClosableLotStep = createStep(
         }
       : { status: "unsold", closed_at: now }
     return new StepResponse<ClosableLot>({ close: true, update })
+  }
+)
+
+export type CancellableLot = { id: string; auction_id: string; status: string }
+
+// US-091 T-091.1a (AC1, D-035). Read-only guard, run under the `lot:<id>` lock:
+// only an `open` lot is cancellable, whatever its auction's state. Every other
+// status is a 409 `lot_not_cancellable`; an unknown id is a 404. No bid or
+// winner is read or written — a cancelled lot never takes a bid (D-024).
+export const getCancellableLotStep = createStep(
+  "get-cancellable-lot",
+  async (input: { lot_id: string }, { container }) => {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const {
+      data: [lot],
+    } = await query.graph({
+      entity: "lot",
+      fields: ["id", "status", "auction_id"],
+      filters: { id: input.lot_id },
+    })
+    if (!lot) {
+      throw new MedusaError(MedusaError.Types.NOT_FOUND, "Lot tidak ditemukan.")
+    }
+    if (lot.status !== "open") {
+      // 409: Medusa's handler replaces the message, so the Koi apps key on the
+      // status; the code is kept for internal callers.
+      throw new MedusaError(
+        MedusaError.Types.CONFLICT,
+        "Hanya lot yang masih terbuka yang bisa dibatalkan.",
+        "lot_not_cancellable"
+      )
+    }
+
+    return new StepResponse<CancellableLot>({
+      id: lot.id as string,
+      auction_id: lot.auction_id as string,
+      status: lot.status as string,
+    })
   }
 )

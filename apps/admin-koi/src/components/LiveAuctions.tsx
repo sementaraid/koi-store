@@ -1,6 +1,10 @@
+'use client';
+
 import Link from 'next/link';
+import { useState } from 'react';
 
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@koi/ui';
+import { CancelAction } from '@/components/CancelAction';
 import type { AdminLiveAuction, AdminLiveLot } from '@/lib/data/live-auctions';
 import { ROUTES } from '@/const/routes';
 import { formatAuctionDate } from '@/lib/helpers/auction-format';
@@ -18,6 +22,10 @@ export function lotPanelHref(lotId: string): string {
 }
 
 export function LiveAuctions({ auctions, total, now }: LiveAuctionsProps) {
+  // After a cancel the list no longer returns the auction (it is no longer
+  // `live`), so keep a local "Dibatalkan" card until the next navigation.
+  const [cancelled, setCancelled] = useState<AdminLiveAuction[]>([]);
+
   return (
     <Card>
       <CardHeader>
@@ -33,26 +41,56 @@ export function LiveAuctions({ auctions, total, now }: LiveAuctionsProps) {
             Menampilkan {auctions.length} dari {total} lelang berjalan.
           </p>
         ) : null}
-        {auctions.length === 0 ? (
+        {auctions.length === 0 && cancelled.length === 0 ? (
           <p className="text-sm text-muted-foreground">Tidak ada lelang yang sedang berjalan.</p>
         ) : (
           auctions.map((auction) => (
-            <AuctionCard key={auction.id} auction={auction} now={now} />
+            <AuctionCard
+              key={auction.id}
+              auction={auction}
+              now={now}
+              onCancelled={() => setCancelled((prev) => [...prev, auction])}
+            />
           ))
         )}
+        {cancelled.map((auction) => (
+          <div key={auction.id} className="grid gap-1 rounded-md border border-border p-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-base font-medium">{auction.seller?.name ?? '—'}</p>
+              <Badge variant="muted">Dibatalkan</Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {formatAuctionDate(auction.start_at)} – {formatAuctionDate(auction.end_at)}
+            </p>
+            <p className="text-sm text-muted-foreground">Semua lot ikut dibatalkan.</p>
+          </div>
+        ))}
       </CardContent>
     </Card>
   );
 }
 
-function AuctionCard({ auction, now }: { auction: AdminLiveAuction; now: string }) {
+function AuctionCard({
+  auction,
+  now,
+  onCancelled
+}: {
+  auction: AdminLiveAuction;
+  now: string;
+  onCancelled: () => void;
+}) {
   return (
     <div className="grid gap-2 rounded-md border border-border p-3">
-      <div className="grid gap-1">
-        <p className="text-base font-medium">{auction.seller?.name ?? '—'}</p>
-        <p className="text-sm text-muted-foreground">
-          {formatAuctionDate(auction.start_at)} – {formatAuctionDate(auction.end_at)}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="grid gap-1">
+          <p className="text-base font-medium">{auction.seller?.name ?? '—'}</p>
+          <p className="text-sm text-muted-foreground">
+            {formatAuctionDate(auction.start_at)} – {formatAuctionDate(auction.end_at)}
+          </p>
+        </div>
+        {auction.status === 'live' ? (
+          <CancelAction kind="auction" id={auction.id} onCancelled={onCancelled} />
+        ) : null}
       </div>
       <div className="grid gap-2">
         {auction.lots.length === 0 ? (
@@ -96,13 +134,14 @@ function LotRow({ lot, now }: { lot: AdminLiveLot; now: string }) {
         {lot.cancel_reason ? (
           <p className="text-muted-foreground">Alasan batal: {lot.cancel_reason}</p>
         ) : null}
-        <div>
+        <div className="flex flex-wrap items-center gap-2">
           <Link
             href={lotPanelHref(lot.id)}
             className="text-sm text-accent-ink underline underline-offset-4"
           >
             Lihat bid
           </Link>
+          {lot.status === 'open' ? <CancelAction kind="lot" id={lot.id} /> : null}
         </div>
       </div>
     </div>

@@ -469,6 +469,7 @@ export type AuctionFields = Partial<
     | "fee_override_join_fee"
     | "fee_override_reason"
     | "rejection_reason"
+    | "cancel_reason"
     | "live_stream_url"
   >
 >

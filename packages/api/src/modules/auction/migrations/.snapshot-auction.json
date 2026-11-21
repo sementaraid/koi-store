@@ -256,6 +256,22 @@
           "enumItems": [],
           "mappedType": "text"
         },
+        "cancel_reason": {
+          "name": "cancel_reason",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
         "live_stream_url": {
           "name": "live_stream_url",
           "type": "text",

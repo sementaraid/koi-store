@@ -5,6 +5,7 @@ import { useId, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge, Button, Label } from '@koi/ui';
+import { CancelAction } from '@/components/CancelAction';
 import { removeBid, type AdminLiveLotBid, type AdminLiveLotDetail } from '@/lib/data/live-auctions';
 import { formatAuctionDate } from '@/lib/helpers/auction-format';
 import {
@@ -47,6 +48,7 @@ export function LiveLotPanel({ detail, now }: LiveLotPanelProps) {
         {lot.cancel_reason ? (
           <p className="text-sm text-muted-foreground">Alasan batal: {lot.cancel_reason}</p>
         ) : null}
+        {open ? <CancelAction kind="lot" id={lot.id} /> : null}
       </div>
 
       {open ? null : (
@@ -119,7 +121,9 @@ function BidRow({ bid, lotStatus }: { bid: AdminLiveLotBid; lotStatus: string })
       </p>
       {removed ? (
         <p className="text-xs text-muted-foreground">
-          Alasan penghapusan: {bid.removed_reason || '—'}
+          Dihapus {bid.removed_at ? formatAuctionDate(bid.removed_at) : '—'} oleh{' '}
+          {bid.removed_by_name || 'admin (nama tidak tersedia)'} · Alasan:{' '}
+          {bid.removed_reason || '—'}
         </p>
       ) : null}
 

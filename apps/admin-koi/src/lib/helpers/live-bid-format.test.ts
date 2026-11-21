@@ -4,6 +4,8 @@ import { test } from 'node:test';
 import {
   bidFailureInfo,
   bidReasonError,
+  cancelAuctionToast,
+  cancelFailureInfo,
   canRemoveBid,
   lotStatusLabel,
   lotStatusTone,
@@ -25,6 +27,36 @@ test('refuses a blank removal reason (AC1)', () => {
   assert.equal(bidReasonError(''), 'Masukkan alasan penghapusan');
   assert.equal(bidReasonError('   '), 'Masukkan alasan penghapusan');
   assert.equal(bidReasonError('salah input'), null);
+});
+
+test('maps cancel refusals to Indonesian copy by status (AC1, D-055)', () => {
+  assert.deepEqual(cancelFailureInfo({ status: 400, message: 'Invalid request: Alasan pembatalan wajib diisi.' }), {
+    message: 'Alasan pembatalan wajib diisi.',
+    refresh: false
+  });
+  assert.deepEqual(cancelFailureInfo({ status: 404, message: 'Lot tidak ditemukan.' }), {
+    message: 'Lot tidak ditemukan.',
+    refresh: true
+  });
+  // Medusa rewrites a 409 body: never show that message (D-055).
+  assert.deepEqual(cancelFailureInfo({ status: 409, message: 'generic' }), {
+    message: 'Data tidak bisa dibatalkan sekarang. Halaman diperbarui.',
+    refresh: true
+  });
+  assert.equal(cancelFailureInfo({ status: 409, code: 'invalid_state_error' }).refresh, true);
+  assert.equal(cancelFailureInfo({ code: 'lot_not_cancellable' }).refresh, true);
+  assert.deepEqual(cancelFailureInfo({ status: 404, code: 'auction_not_found' }), {
+    message: 'Data tidak ditemukan. Halaman diperbarui.',
+    refresh: true
+  });
+  assert.match(cancelFailureInfo({}).message, /Gagal membatalkan/);
+});
+
+test('formats the auction refund toast from the server figures', () => {
+  assert.equal(
+    cancelAuctionToast({ participants: 3, total: 300000 }, (n) => `Rp${n}`),
+    'Lelang dibatalkan. Biaya ikut lelang 3 peserta dikembalikan, total Rp300000.'
+  );
 });
 
 test('keys the refusal on status, not the message (D-055)', () => {

@@ -4,7 +4,7 @@ import { ClientError } from '@mercurjs/client';
 import { revalidatePath } from 'next/cache';
 
 import { ROUTES } from '@/const/routes';
-import { bidFailureInfo } from '@/lib/helpers/live-bid-format';
+import { bidFailureInfo, cancelFailureInfo } from '@/lib/helpers/live-bid-format';
 import { requireAdmin } from '@/lib/guard';
 
 import { sdk } from '../client';
@@ -74,6 +74,8 @@ export type AdminLiveLotBid = {
   source: string;
   removed_at: string | null;
   removed_reason: string | null;
+  removed_by: string | null;
+  removed_by_name: string | null;
   bidder: { customer_id: string; name: string };
 };
 
@@ -131,6 +133,77 @@ export async function removeBid(id: string, reason: string): Promise<RemoveBidRe
       status,
       err instanceof ClientError ? err.message : 'Gagal menghapus bid. Coba lagi.'
     );
+    return { success: false, error: info.message, status, refresh: info.refresh };
+  }
+}
+
+export type CancelLotResult =
+  | {
+      success: true;
+      lot: { id: string; status: string; cancel_reason: string | null; auction_id: string };
+    }
+  | { success: false; error: string; status?: number; refresh: boolean };
+
+export async function cancelLot(id: string, reason: string): Promise<CancelLotResult> {
+  await requireAdmin(ROUTES.liveAuctions);
+
+  const trimmed = reason.trim();
+  if (!trimmed) {
+    return { success: false, error: 'Alasan pembatalan wajib diisi.', refresh: false };
+  }
+
+  try {
+    const result = await sdk.admin.lots.$id.cancel.mutate({
+      $id: id,
+      reason: trimmed,
+      fetchOptions: { headers: { ...(await getAuthHeaders()) } }
+    });
+
+    revalidatePath(ROUTES.liveAuctions);
+    return { success: true, lot: result.lot };
+  } catch (err: unknown) {
+    const status = err instanceof ClientError ? err.status : undefined;
+    const info = cancelFailureInfo({
+      status,
+      code: err instanceof ClientError ? err.code : undefined,
+      message: err instanceof ClientError ? err.message : undefined
+    });
+    return { success: false, error: info.message, status, refresh: info.refresh };
+  }
+}
+
+export type CancelAuctionResult =
+  | {
+      success: true;
+      auction: { id: string; status: string; cancel_reason: string | null };
+      refund: { participants: number; total: number };
+    }
+  | { success: false; error: string; status?: number; refresh: boolean };
+
+export async function cancelAuction(id: string, reason: string): Promise<CancelAuctionResult> {
+  await requireAdmin(ROUTES.liveAuctions);
+
+  const trimmed = reason.trim();
+  if (!trimmed) {
+    return { success: false, error: 'Alasan pembatalan wajib diisi.', refresh: false };
+  }
+
+  try {
+    const result = await sdk.admin.auctions.$id.cancel.mutate({
+      $id: id,
+      reason: trimmed,
+      fetchOptions: { headers: { ...(await getAuthHeaders()) } }
+    });
+
+    revalidatePath(ROUTES.liveAuctions);
+    return { success: true, auction: result.auction, refund: result.refund };
+  } catch (err: unknown) {
+    const status = err instanceof ClientError ? err.status : undefined;
+    const info = cancelFailureInfo({
+      status,
+      code: err instanceof ClientError ? err.code : undefined,
+      message: err instanceof ClientError ? err.message : undefined
+    });
     return { success: false, error: info.message, status, refresh: info.refresh };
   }
 }
