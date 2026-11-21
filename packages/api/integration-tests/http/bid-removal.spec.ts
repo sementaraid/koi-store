@@ -248,7 +248,13 @@ medusaIntegrationTestRunner({
       const container = getContainer()
       const [user] = await container
         .resolve(Modules.USER)
-        .createUsers([{ email: `rmbid-admin-${Date.now()}@test.dev` }])
+        .createUsers([
+          {
+            email: `rmbid-admin-${Date.now()}@test.dev`,
+            first_name: "Admin",
+            last_name: "Koi",
+          },
+        ])
       adminId = user.id
       admin = { authorization: `Bearer ${jwt(container, user.id, "user")}` }
       const [key] = await container
@@ -295,6 +301,31 @@ medusaIntegrationTestRunner({
       expect(res.status).toEqual(200)
       expect(res.data.lot?.current_price).toEqual(200_000)
       expect(await currentPrice(seeded.id)).toEqual(200_000)
+    })
+
+    it("keeps the extend a removed bid caused; the end time never shortens (AC4, D-024)", async () => {
+      const bidder = await customer()
+      // Inside the auction's 5-minute extend window, so the bid pushes end_time.
+      const event = await auction()
+      const seeded = await lot(event.id, { endsIn: 60_000 })
+      await auctions().createAuctionParticipants([
+        { auction_id: event.id, customer_id: bidder },
+      ])
+      const before = await endTime(seeded.id)
+
+      const { result } = await placeBidWorkflow(getContainer()).run({
+        input: { lot_id: seeded.id, customer_id: bidder, amount: OB },
+      })
+      const extended = await endTime(seeded.id)
+      expect(extended).toBeGreaterThan(before)
+      expect(extended).toEqual(
+        new Date(new Date(result.bid.created_at).getTime() + 5 * 60_000).getTime()
+      )
+
+      expect((await remove(result.bid.id)).status).toEqual(200)
+      expect(await currentPrice(seeded.id)).toEqual(OB)
+      // AC4: the extend stays — removal never moves the end time back.
+      expect(await endTime(seeded.id)).toEqual(extended)
     })
 
     it("falls back to OB when every bid is removed, and OB is accepted again (AC3, AC5, D-036)", async () => {
@@ -374,7 +405,15 @@ medusaIntegrationTestRunner({
     })
 
     it("refuses a removal once the lot is not open (AC5)", async () => {
-      for (const status of ["won", "paid", "unsold", "cancelled"] as const) {
+      for (const status of [
+        "won",
+        "paid",
+        "shipped",
+        "delivered",
+        "claimed",
+        "unsold",
+        "cancelled",
+      ] as const) {
         const [first] = await Promise.all([customer()])
         const event = await auction()
         const seeded = await lot(event.id, { status, current_price: 100_000 })
@@ -409,6 +448,22 @@ medusaIntegrationTestRunner({
         expect(res.status).toEqual(400)
       }
       expect((await bidById(bids[2].id)).removed_at).toBeNull()
+    })
+
+    it("400s a reason over 500 characters and accepts exactly 500 (mvp-Q52)", async () => {
+      const { lot: seeded, bids } = await ready()
+
+      const tooLong = await failure(remove(bids[2].id, { reason: "a".repeat(501) }))
+      expect(tooLong.status).toEqual(400)
+      const untouched = await bidById(bids[2].id)
+      expect(untouched.removed_at).toBeNull()
+      expect(untouched.removed_by).toBeNull()
+      expect(untouched.removed_reason).toBeNull()
+      expect(await currentPrice(seeded.id)).toEqual(200_000)
+
+      const res = await remove(bids[2].id, { reason: "a".repeat(500) })
+      expect(res.status).toEqual(200)
+      expect(res.data.bid?.removed_reason).toEqual("a".repeat(500))
     })
 
     it("401s an anonymous caller and a customer token (D-002)", async () => {
@@ -454,18 +509,31 @@ medusaIntegrationTestRunner({
 
       const res = await api.get("/admin/live-auctions", { headers: admin })
       expect(res.status).toEqual(200)
-      const ids = res.data.auctions.map((row: { id: string }) => row.id)
-      expect(ids).toEqual([event.id])
+      // Other suites in the same Jest process may leave live auctions behind.
+      const rows = res.data.auctions as {
+        id: string
+        status: string
+        lots: {
+          id: string
+          bid_count: number
+          ob: number
+          kb: number
+          status: string
+        }[]
+      }[]
+      const ids = rows.map((row) => row.id)
+      expect(ids).toContain(event.id)
       expect(ids).not.toContain(scheduled.id)
       expect(ids).not.toContain(closed.id)
-      expect(res.data.count).toEqual(1)
+      expect(rows.every((row) => row.status === "live")).toBe(true)
+      expect(res.data.count).toBeGreaterThanOrEqual(1)
       expect(res.data.limit).toEqual(20)
       expect(res.data.offset).toEqual(0)
 
-      const listed = res.data.auctions[0].lots.find(
-        (row: { id: string }) => row.id === seeded.id
-      )
-      expect(listed.bid_count).toEqual(2)
+      const listed = rows
+        .find((row) => row.id === event.id)
+        ?.lots.find((row) => row.id === seeded.id)
+      expect(listed?.bid_count).toEqual(2)
       expect(listed).toMatchObject({ ob: OB, kb: KB, status: "open" })
     })
 
@@ -530,6 +598,38 @@ medusaIntegrationTestRunner({
       expect(
         (await failure(liveLot("lot_missing", customerHeader))).status
       ).toEqual(401)
+    })
+
+    it("T-072.4: the lot panel names the removing admin; the public feed never does", async () => {
+      const { lot: seeded, bids } = await ready()
+      expect((await remove(bids[2].id)).status).toEqual(200)
+
+      const res = await liveLot(seeded.id)
+      expect(res.status).toEqual(200)
+
+      const removed = res.data.bids.find(
+        (row: { id: string }) => row.id === bids[2].id
+      )
+      expect(removed.removed_by).toEqual(adminId)
+      expect(removed.removed_by_name).toEqual("Admin Koi")
+
+      const normal = res.data.bids.find(
+        (row: { id: string }) => row.id === bids[0].id
+      )
+      expect(normal.removed_by).toBeNull()
+      expect(normal.removed_by_name).toBeNull()
+
+      // The public payload carries neither key.
+      const one = await api.get(`/store/lots/${seeded.id}`, {
+        headers: storeHeaders,
+      })
+      expect(one.status).toEqual(200)
+      expect(
+        one.data.lot.bids.every(
+          (row: Record<string, unknown>) => !("removed_by" in row)
+        )
+      ).toBe(true)
+      expect(JSON.stringify(one.data)).not.toMatch(/removed_by/)
     })
 
     it("T-072.1c: the public feed and history exclude removed bids", async () => {

@@ -20,6 +20,8 @@ export type AdminLiveLotBid = {
   source: string
   removed_at: string | null
   removed_reason: string | null
+  removed_by: string | null
+  removed_by_name: string | null
   bidder: { customer_id: string; name: string }
 }
 
@@ -55,6 +57,7 @@ type LotRow = {
     source: string
     removed_at: Date | string | null
     removed_reason: string | null
+    removed_by: string | null
     customer_id: string
   }[]
 }
@@ -87,6 +90,7 @@ export const GET = async (
       "bids.source",
       "bids.removed_at",
       "bids.removed_reason",
+      "bids.removed_by",
       "bids.customer_id",
     ],
     filters: { id: req.params.id },
@@ -105,6 +109,27 @@ export const GET = async (
   const names = await winnersById(req.scope, [
     ...new Set(bids.map((bid) => bid.customer_id)),
   ])
+  // Same rule for the admins who removed bids. A deleted user keeps the id and
+  // gets no name.
+  const removerIds = [...new Set(bids.map((bid) => bid.removed_by).filter(Boolean))] as string[]
+  const removerNames = new Map<string, string>()
+  if (removerIds.length) {
+    const { data: users } = await query.graph({
+      entity: "user",
+      fields: ["id", "first_name", "last_name"],
+      filters: { id: removerIds },
+    })
+    for (const user of users as {
+      id: string
+      first_name?: string | null
+      last_name?: string | null
+    }[]) {
+      removerNames.set(
+        user.id,
+        [user.first_name, user.last_name].filter(Boolean).join(" ")
+      )
+    }
+  }
 
   res.json({
     lot: {
@@ -124,6 +149,10 @@ export const GET = async (
       source: bid.source,
       removed_at: bid.removed_at ? new Date(bid.removed_at).toISOString() : null,
       removed_reason: bid.removed_reason,
+      removed_by: bid.removed_by,
+      removed_by_name: bid.removed_by
+        ? removerNames.get(bid.removed_by) || null
+        : null,
       bidder: {
         customer_id: bid.customer_id,
         name: names.get(bid.customer_id)?.name ?? "",
