@@ -78,7 +78,7 @@ export const NAV: NavGroup[] = [
         href: ROUTES.users,
         label: 'Pengguna',
         hint: 'Strike, banned, dan riwayat satu akun.',
-        ready: false
+        ready: true
       }
     ]
   }

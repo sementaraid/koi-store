@@ -14,3 +14,5 @@ export const ROUTES = {
   claims: '/klaim',
   reports: '/laporan'
 } as const;
+
+export const userHref = (id: string) => `${ROUTES.users}/${id}`;
