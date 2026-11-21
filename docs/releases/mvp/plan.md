@@ -1,6 +1,6 @@
 # Koi Store — MVP Plan
 
-Nov 13, 2026 · @Herlina Sunaryanto · updated 2026-11-15 with the owner's answers (D-020 – D-044) · 2026-11-16: D-056, D-057, D-044 on hold
+Nov 13, 2026 · @Herlina Sunaryanto · updated 2026-11-15 with the owner's answers (D-020 – D-044) · 2026-11-16: D-056, D-057, D-044 on hold · 2026-11-20: D-044 hold re-confirmed, D-063 (bid-removal reason cap), US-093 in MVP scope, bot hold stays (web-only MVP)
 
 ## Summary
 
@@ -8,7 +8,7 @@ The MVP is a koi auction platform where farmers run auctions and registered cust
 
 - **Customers** top up store credit by transfer to the admin, spend it on auction join fees, then bid.
 - **Farmers** start as customers, register a farm, top up, and spend credit on listing fees to create auctions.
-- **Winners** pay the farmer; how is open: the owner is recalculating the payment model (D-044 on hold, 2026-11-16), and the winner sees no farmer contact for now. No phone either way (D-052). The farmer handles shipping, to the winner's saved address (D-056).
+- **Winners** pay the farmer; how is open: the owner is recalculating the payment model (D-044 on hold, re-confirmed 2026-11-20), and the winner sees no farmer contact at all. No phone either way (D-052). The farmer handles shipping, to the winner's saved address (D-056).
 - **Built on Mercur** (the existing `koi-store` repo), used as the backend only. Every screen (storefront, Farmer area, admin app) is custom-built on one shared design system; auction and wallet are custom modules.
 
 **Out of scope for the MVP:** online payment gateway, refunds (except when a farmer or an admin cancels an auction, D-034), fixed-price marketplace and cart, payment held by the platform, proxy bidding, buy-it-now, live video.
@@ -32,9 +32,9 @@ Added 2026-11-15 by the owner (D-039, D-040).
 - Every customer's personal data is **encrypted at rest**: KTP/NIK, bank account details, phone numbers and similar PII.
 - API results and the frontend show only a **small part** of each value (masked), never the full value, except the owner's own full values on their own record (D-045). This covers the farm registration (US-020), the admin farm queue (US-021), the wallet and top-up tables (US-010 – US-012), contact details (US-051), ratings (US-057), admin screens generally (US-070, US-091) and the new story US-092.
 - KTP photos and transfer screenshots stay private files (D-017, D-018). One exception to "no key on a store route": the KTP upload may return its private file **key** to the customer who uploaded it, for their own registration only. Never a URL, never another user (D-040; exception to `packages/api/CLAUDE.md`).
-- **Settled:** admins see masked PII everywhere and the full value only through a logged reveal (D-042); encryption is column-level on top of disk encryption and includes the wallet/top-up tables (D-043); the winner sees the full bank account for their own won lot through the same logged reveal (D-044, **on hold 2026-11-16**); the farmer reveals the winner's full saved address the same way (D-056).
+- **Settled:** admins see masked PII everywhere and the full value only through a logged reveal (D-042); encryption is column-level on top of disk encryption and includes the wallet/top-up tables (D-043); the winner sees the full bank account for their own won lot through the same logged reveal (D-044, **on hold; re-confirmed by the owner 2026-11-20**); the farmer reveals the winner's full saved address the same way (D-056).
 - **Self-view (D-045):** a person sees their **own** full phone and own bank details on their **own** record — the storefront account screen (`/store/customers/me`) and the farmer's own `/vendor/sellers*` record. Every other caller gets the mask, admins included; PII about anyone else on those screens stays masked.
-- **Contact between winner and farmer (D-052, supersedes the D-044 confirmation of 2026-11-15):** no phone either way. No `wa.me` link. The farmer gets the winner's name and the winner's default shipping address: masked (city + province only) on the sold lot, full only through a logged reveal (D-056). The winner gets **no farmer contact for now**: the bank-account reveal (D-044) is on hold while the owner recalculates (2026-11-16); if it returns, it covers number and holder name (D-057).
+- **Contact between winner and farmer (D-052, supersedes the D-044 confirmation of 2026-11-15):** no phone either way. No `wa.me` link. The farmer gets the winner's name and the winner's default shipping address: masked (city + province only) on the sold lot, full only through a logged reveal (D-056). The winner gets **no farmer contact at all**: the bank-account reveal (D-044) is on hold, re-confirmed by the owner 2026-11-20; if it returns, it covers number and holder name (D-057).
 - **Open, not lost:** `/admin/sellers*` still returns unmasked `payout_account.data`, whose free-form JSON can hold a bank number or phone — masked by US-092 T-092.9. `professional_details` (`corporate_name`, `registration_number`, `tax_id`) stays unmasked deliberately, out of scope unless the owner says otherwise. Column-level encryption (US-092 AC1/AC2, T-092.1, T-092.6) is **not built**; masking lands while encryption remains open, so US-092 isn't complete until then.
 
 ## Store credit wallet
@@ -141,7 +141,7 @@ An admin can cancel an open lot (`open → cancelled`, reason saved, no winner, 
 
 - When a lot's end time passes, the system closes it. Highest bid wins; a lot with no bids closes as unsold.
 - Winner, final price and close time are saved on the lot.
-- The winner sees no farmer contact for now (D-044 on hold, owner reconsidering, 2026-11-16). The farmer sees the winner's name and masked address, full address through a logged reveal (D-056). No phone or WhatsApp number either way, and no `wa.me` link (D-052).
+- The winner sees no farmer contact at all (D-044 on hold, re-confirmed by the owner 2026-11-20). The farmer sees the winner's name and masked address, full address through a logged reveal (D-056). No phone or WhatsApp number either way, and no `wa.me` link (D-052).
 - The winner must pay the farmer within **1×24 hours**. The farmer marks the lot paid, then shipped. *(Payment model under review, 2026-11-16: with D-044 on hold the winner has no in-app way to get payment details; the owner's planned direction is Xendit escrow, not yet a decision. See `stories.md` status.)*
 
 **Winner doesn't pay**
@@ -205,7 +205,7 @@ One bot number serves every auction; each message names the lot, so there's no n
 - **Provider: Qontak (Mekari), an official Indonesian WhatsApp provider.** It gives the admin team a shared WhatsApp inbox for transfer proofs and customer chats, local support and IDR invoicing, on a monthly plan. Price is not settled: Qontak's official page shows Service Suite Plus at Rp2.000.000/month with a 5-user minimum, otherwise a quote. The owner stays with Qontak and gets a written quote; the bot waits for it (D-029, `mvp-Q12`). The bot connects through Qontak's API. Unofficial libraries are not used; they risk a ban mid-auction.
 - More than 24 hours after the user's last message, the bot can only send pre-approved template messages, charged per message. Outbid, win and join messages need utility templates. From 2026-10-01 Qontak charges per message (non-Lite): Service Rp356,65, Utility Rp366,65, Marketing Rp627,33; VAT not verified. Service messages, including bot replies inside the 24-hour window, are now charged too, with 1,000 free per number per month. Whether utility messages inside an open window are charged is unclear (Meta says yes, Qontak says no) ([Qontak rates](https://help-center.qontak.com/hc/en-us/articles/48430892733465), [Indonesia rate breakdown](https://chatmaxima.com/whatsapp-api-pricing/indonesia/)).
 - Needs a dedicated business phone number not used on the normal WhatsApp app, and a verified Meta Business account. Business verification takes up to 14 business days and template review up to 24 hours, so start early. Until verified, Meta allows 250 unique users per 24 hours outside the window (then 2,000), and at most 1 message per user every 6 seconds.
-- The website works without WhatsApp, so the bot can launch slightly after the web if approval is slow.
+- The website works without WhatsApp, so the bot can launch slightly after the web if approval is slow. **Owner, 2026-11-20: the bot is on a deliberate hold (`mvp-Q12`), so the MVP ships web-only unless the owner reverses this.**
 
 ## Technical approach on Mercur
 
@@ -291,8 +291,9 @@ Build in this order; each milestone ends with something usable. There is no fixe
 
 **Personal data (D-039):** US-092 lands with Milestone 2, because farm
 registration is the first place KTP/NIK/bank/phone are stored. No PII screen goes
-live before it. It is unblocked (`mvp-Q25`, `mvp-Q26` answered by D-042, D-043). US-093 (orphan KTP cleanup)
-is low priority and sits outside this order.
+live before it. It is unblocked (`mvp-Q25`, `mvp-Q26` answered by D-042, D-043). **US-093 (orphan KTP cleanup) is in MVP scope
+by the owner's 2026-11-20 call** — it is real milestone work, not an optional
+follow-up; in the owner's latest order it comes before the pilot.
 
 ## Open questions
 
@@ -340,7 +341,7 @@ Full text and options: `stories.md`, Open questions.
 - [x] Encrypted at rest; API results and the frontend show masked values only (D-039).
 - [x] Column-level encryption for NIK, bank account and phone, on top of disk encryption; the wallet and top-up tables are included in US-092; plain values are migrated in place (D-043, `mvp-Q26`).
 - [x] Admins see masked PII everywhere, admin-only routes and UI included; the full value only through an explicit reveal action logged with who, when, record and field (D-042, `mvp-Q25`).
-- [x] Winner pays into the farmer's full bank account: visible only for the lot they won, through the same logged reveal (D-044, `mvp-Q27`). **On hold 2026-11-16** (owner reconsidering; the winner sees no farmer contact for now).
+- [x] Winner pays into the farmer's full bank account: visible only for the lot they won, through the same logged reveal (D-044, `mvp-Q27`). **On hold; owner re-confirmed the hold 2026-11-20** (the winner sees no farmer contact at all; US-051's built reveal stays shipped).
 - [x] A person sees their own full phone and own bank details on their own record (`/store/customers/me`, own `/vendor/sellers*`); every other caller, admins included, gets the mask (D-045).
 - [x] No phone between winner and farmer: the farmer gets the winner's name and masked address, full address through a logged reveal (D-056); the winner's bank-account reveal (D-044) is on hold 2026-11-16; no `wa.me` link. Supersedes the 2026-11-15 "farmer reveals the winner's phone" confirmation (D-052, `mvp-Q34`).
 - [x] The farmer ships to the winner's default shipping address: masked (city + province) on the sold lot, full through a logged reveal; no address → "Alamat belum diisi" and a prompt for the winner (D-056, `mvp-Q37`).

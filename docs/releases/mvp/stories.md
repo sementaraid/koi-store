@@ -14,11 +14,35 @@ are defined in `docs/product/overview.md`.
 
 ---
 
-## Status as of 2026-11-18
+## Status as of 2026-11-21
 
-**Last accepted story:** US-061 (Epic 5), qa PASS on AC1, no fix rounds,
-accepted 2026-11-18. It is the last M5 story: **Milestone 5 is complete, 12 of
-12 stories `done`.** M5 stops there. Before it: US-057 and US-060 (Epic 5), qa PASS on every
+**Owner decisions 2026-11-20:** **D-062** — the phone in Medusa's address
+snapshots (`cart_address`, `order_address`, `fulfillment_address`,
+`stock_location_address`) is encrypted too; US-092 gains T-092.10 – T-092.14.
+**D-063** — a bid-removal reason caps at 500 characters, the same as US-059's
+strike reason (`mvp-Q52` answered). **D-044 is on hold again** — the owner
+re-confirmed the hold on 2026-11-20, so the winner sees no farmer contact at all;
+US-051 stays `done` and nothing is rebuilt. **`mvp-Q12` stays parked** — Epic 7
+(US-080 – US-085) and US-090 remain `blocked`, and **the MVP ships web-only
+unless the owner reverses this**.
+
+**Last accepted story: US-093 (orphan KTP cleanup), qa PASS, accepted
+2026-11-21.** Both tasks `[x]`; 2 suites / 15 tests pass. The owner pulled it
+into the MVP on 2026-11-20. **No build story is `in progress`; US-090 the pilot
+is `blocked (mvp-Q12)`.** Before it: US-092 (the PII shipping gate), qa PASS,
+accepted 2026-11-20, 14 of 14 tasks; its D-062 snapshot-phone gap is closed by
+`pii-address-snapshots.spec.ts` 6/6, plus `pii-encryption` 4/4 and `pii-leaks`
+7/7. Before it: US-071 and
+US-091 (Epic 6), qa PASS, 0 bugs, accepted
+2026-11-20, closing Milestone 6. Before them: US-070 and US-072 (Epic 6), qa
+PASS, accepted 2026-11-20. US-070 had one fix round (Indonesian not-found card,
+Laporan count label); US-072 had no fix round, with two follow-ups recorded as
+T-072.4/T-072.5. **Milestone 5 is complete, 12 of 12 stories `done`.** **M6 is
+complete: 6 of 6 stories `done` (US-070, US-071, US-072, US-091, US-092,
+US-093); 37 of 37 tasks done.**
+
+Before it: US-061 (Epic 5), qa PASS on AC1, no fix rounds,
+accepted 2026-11-18. It is the last M5 story. Before it: US-057 and US-060 (Epic 5), qa PASS on every
 AC after one fix round, accepted 2026-11-18. Before them: US-056 and US-059 (Epic 5), qa PASS on every
 AC, no fix rounds, accepted 2026-11-18. Before them: US-046 (Epic 4) and US-058
 (Epic 5), qa PASS on every AC, one fix round each, accepted 2026-11-18. Before them: US-051 and US-052 (Epic 5), qa PASS on every AC,
@@ -34,24 +58,25 @@ US-043, US-050, then US-040, US-041, US-042 (Epic 4). T-030.8, T-032.6, T-032.7
 and T-020.10 (seed fix) were accepted earlier. The `bid` model and the bid/join
 code are committed (`d67d3c8`).
 
-**Counts** (computed from this file, 2026-11-18; D-058/D-059/D-060/D-061 in force):
+**Counts** (computed from this file, 2026-11-21; D-058, D-060, D-061 and D-063 in force; D-059 superseded; D-062 drafted pending approval):
 
 | Epic | Stories done | In progress | Todo | Parked | Blocked | Tasks done | Tasks open | Tasks parked |
 |---|---|---|---|---|---|---|---|---|
 | 0 Foundations | 3 | 0 | 0 | 0 | 0 | 9 | 0 | 0 |
 | 1 Wallet | 6 | 0 | 0 | 0 | 0 | 22 | 0 | 0 |
-| 2 Becoming a farmer | 2 | 0 | 0 | 0 | 0 | 11 | 5 | 0 |
+| 2 Becoming a farmer | 2 | 0 | 0 | 0 | 0 | 12 | 4 | 0 |
 | 3 Auctions for farmers | 4 | 0 | 0 | 0 | 0 | 23 | 0 | 0 |
 | 4 Joining and bidding | 7 | 0 | 0 | 0 | 0 | 27 | 0 | 0 |
-| 5 Closing and after-sale | 12 | 0 | 0 | 0 | 0 | 58 | 2 | 0 |
-| 6 Admin operations | 0 | 0 | 6 | 0 | 0 | 0 | 30 | 0 |
+| 5 Closing and after-sale | 12 | 0 | 0 | 0 | 0 | 59 | 1 | 0 |
+| 6 Admin operations | 6 | 0 | 0 | 0 | 0 | 37 | 0 | 0 |
 | 7 WhatsApp bot | 0 | 0 | 0 | 0 | 6 | 0 | 12 | 0 |
-| 8 Pilot | 0 | 0 | 1 | 0 | 0 | 0 | 5 | 0 |
+| 8 Pilot | 0 | 0 | 0 | 0 | 1 | 0 | 6 | 0 |
 | Unplanned | 1 | 0 | 0 | 0 | 0 | 1 | 0 | 0 |
-| **Total** | **35** | **0** | **7** | **0** | **6** | **151** | **54** | **0** |
+| **Total** | **41** | **0** | **0** | **0** | **7** | **190** | **23** | **0** |
 
-Stories: 35 done of 48 (73%), 7 todo, 6 blocked, none parked.
-Tasks: 151 done of 205 active (74%), 54 open, none parked.
+Stories: 41 done of 48 (85%), none in progress,
+7 blocked (Epic 7 ×6, US-090 by `mvp-Q12`), none todo, none parked.
+Tasks: 190 done of 213 (89%), 23 open, none parked.
 
 **Payment model decided (2026-11-17, D-058).** The MVP pays off-platform: the
 winner pays the farmer directly within 1×24 h, the farmer marks the lot paid
@@ -76,7 +101,39 @@ response carries at most a mask (last 4), never the full number", with a
 correction note. No rule changed: the mask on the row and the logged reveal
 were already what the story required.
 
-**Blocked by a question: none new.** US-080 – US-085 stay blocked (mvp-Q12).
+**Blocked by a question: none new. mvp-Q12 is PARKED by a deliberate owner hold,
+not an unanswered question (owner re-confirmed 2026-11-20).** US-080 – US-085 and
+US-090 stay `blocked (mvp-Q12)`; no task under Epic 7
+(T-080.* – T-085.*) may start until the owner lifts the hold. Treat Epic 7 as
+absent from the milestone plan, not as a queued next step. **The MVP ships
+web-only unless the owner reverses this.**
+
+**Owner calls (recorded 2026-11-20):**
+1. `mvp-Q12` — WhatsApp bot, **deliberately held** 2026-11-20 ("hold for now");
+   this is an owner hold, not an open question waiting on research. Blocks
+   US-080 – US-085 **and US-090** (the pilot needs the bot decision). No agent
+   may start Epic 7 or the pilot until lifted. **The MVP ships web-only under
+   this hold**; only an owner reversal changes that.
+2. `mvp-Q52` — **answered 2026-11-20 (D-063):** bid-removal reason caps at 500
+   characters, matching US-059's strike reason. In progress by backend in
+   `packages/api/src/api/admin/bids/validators.ts` (500-char `refine` + spec case).
+3. **D-062 wording approval** — still pending. D-062 is built (US-092 done) and
+   marked drafted/pending in `docs/product/decisions.md`; the owner's final
+   wording sign-off is not recorded. Only the owner edits an approved decision.
+4. **D-044 / D-057 (winner bank reveal) — on hold again, re-confirmed by the
+   owner on 2026-11-20.** The winner sees no farmer contact at all. US-051's
+   built reveal stays shipped (status unchanged) and nothing is rebuilt; D-059's
+   2026-11-17 return is superseded. D-044/D-057 carry the hold.
+5. **`docs/releases/mvp/plan.md:38,350-351`** still say encryption and
+   `payout_account.data` masking are not built. Both shipped in US-092, but the
+   plan is owner-approved, so ticking those boxes waits on the owner.
+6. **`docs/releases/README.md`** — D-062, D-063 and US-093's scope change are not
+   listed there; add when the owner approves the D-062 wording.
+
+**Stands between the MVP and shipping:** the owner's `mvp-Q12` hold, then
+US-090 (pilot) and its six ops tasks. Every functional story in Milestones 1–6
+is `done`, US-092 and US-093 included, and **the MVP ships web-only unless the
+owner reverses the bot hold**. No build story is `in progress`.
 
 **Docs out of date (owner edit needed, not edited here):**
 - `apps/storefront-koi/CLAUDE.md:97-98` still says the farmer's WhatsApp and
@@ -88,19 +145,38 @@ were already what the story required.
 - `docs/releases/README.md:32` still calls escrow the planned direction for the
   MVP stories; D-058 keeps it for beta only.
 
-**Owner scope change (2026-11-18): work paused at the M5 boundary.** M5 delivery
-time is being compared against a fresh M6 estimate, so no agent starts M6 work
-(US-070, US-071, US-072, US-091) until the owner says so. **Milestone 5 is
-complete: 12 of 12 stories `done`**, US-061 included after qa PASS on 2026-11-18.
-US-072 and every other M6 story stay `todo` and untouched. (Earlier figures of
-10 and 11 of 12 are superseded: US-057 and US-060 were accepted in this round,
-then US-061.)
+**Owner scope change (2026-11-18, lifted 2026-11-19): work paused at the M5
+boundary; the owner lifted the pause on 2026-11-19.** M6 work (US-070, US-071,
+US-072, US-091) may start. **Milestone 5 is complete: 12 of 12 stories `done`**,
+US-061 included after qa PASS on 2026-11-18. **M6 is complete: 4 of 4 stories
+`done`** — US-070 and US-072 accepted, then US-071 and US-091 on qa PASS with
+0 bugs, all 2026-11-20. (Earlier figures of 10 and 11 of 12 are superseded:
+US-057 and US-060 were accepted in that round, then US-061.)
 
 **Next in milestone order:**
-1. **Nothing until the owner lifts the M5 boundary pause.** M5 has no story
-   left; M6 is not started.
-2. After the pause: US-070 – US-072 and US-091 in milestone order (M6). US-055
-   T-055.5 (D-060) remains a small backend swap that can run any time.
+1. **US-093 (orphan KTP cleanup) — `done` (accepted 2026-11-21).** T-093.1 and
+   T-093.2 are `[x]`; 2 suites / 15 tests pass. Nothing buildable is next:
+   US-090 stays `blocked (mvp-Q12)`.
+2. **D-063 bid-removal cap — answered 2026-11-20 (500 chars).** Backend is
+   landing the `refine` + spec case in
+   `packages/api/src/api/admin/bids/validators.ts` now; when it reports, qa
+   verifies the 501/500 boundary and US-072's AC1 cap is complete.
+3. US-072's remaining follow-ups **T-072.4 and T-072.5 are `done` (2026-11-20)**;
+   nothing else is open from US-072. (History: T-072.4 returns `removed_by`, T-072.5
+   shows the admin beside the reason and time; the reason cap is now D-063.)
+4. **US-092 is `done` (accepted 2026-11-20).** The gate between M6 and shipping
+   is cleared: no PII screen ships before it, and encryption + masking are both
+   in tree and verified. D-062's snapshot-phone gap (T-092.10–T-092.14) closed
+   by `pii-address-snapshots.spec.ts` 6/6.
+5. Epic 7 (WhatsApp bot, US-080–US-085) is **PARKED by a deliberate owner hold on
+   2026-11-20 (`mvp-Q12` "hold for now")** — it is neither next nor schedulable.
+   US-090 the pilot is `blocked (mvp-Q12)` too; do not start it on the assumption
+   the bot ships. **The MVP ships web-only unless the owner reverses this.**
+6. **Known CI limitation (no story; not blocking):** the full
+   `test:integration:http` run OOMs in a single process at ~37/49 suites. Every
+   suite passes individually or in small groups, which is how qa evidence is
+   collected. Tracked as non-blocking T-090.6.
+7. US-055 T-055.5 (D-060) remains a small backend swap that can run any time.
 US-046, US-051, US-052, US-053, US-054, US-055, US-056, US-058, US-059 and US-061 remain `done`. T-020.10 can run any
 time; qa's admin browser checks need it.
 
@@ -255,10 +331,10 @@ at auction. *(Plan: Becoming a farmer)*
 - [x] T-020.3 [storefront] Farm registration form + status page in the Farmer area
 - [x] T-020.4 [qa] KTP photo, NIK and bank data never appear on public pages or any `/store/*` response; a mismatched `member_email` is rejected
 - [x] T-020.9 [backend] *(Seed fix, not an AC. Found during the T-033.2 render check.)* Seed one dual-actor demo farmer: a customer row, its wallet and balance (D-011), the member login and an `open` seller under the same email, so the Farmer area (`/akun/kebun*`) and top-up work for that account. Today `sakura.koi.farm@koi.dev` exists only as member + seller: no customer row, no wallet, so no seeded farmer can use the Farmer area, while US-020 assumes a farmer is a customer. Extend `src/scripts/seed-koi.ts`; keep the existing logins. The `docs/process/flow.md` credential line for the Farmer area is only accurate once this lands. — commit `1dc43de`, `packages/api/src/scripts/seed-koi.ts:701-710,911-981` (customer + wallet Rp500.000 + member + `open` seller; idempotent re-run); Farmer area signed in as that login in the US-033 render check
-- [ ] T-020.10 [backend] *(Seed fix, not an AC. Found during the 2026-11-16 acceptance.)* The seed creates **no admin user**. Add a seeded admin to `src/scripts/seed-koi.ts` so `apps/admin-koi` (`/masuk`) and the `[qa]` browser checks have a login. Read `ADMIN_EMAIL` and `ADMIN_PASSWORD` from env, defaulting to `admin@koi.dev` / `supersecret`; add both to `packages/api/.env.template` with the safe placeholder (never commit a real password). Idempotent re-run: an existing identity is reused, not duplicated. Document the pair in `docs/process/flow.md`'s accounts table (Admin row currently says "Seeded admin user" with no address). — not started
+- [x] T-020.10 [backend] *(Seed fix, not an AC. Found during the 2026-11-16 acceptance. Built in `4f35799`.)* The seed creates **no admin user**. Add a seeded admin to `src/scripts/seed-koi.ts` so `apps/admin-koi` (`/masuk`) and the `[qa]` browser checks have a login. Read `ADMIN_EMAIL` and `ADMIN_PASSWORD` from env, defaulting to `admin@koi.dev` / `supersecret`; add both to `packages/api/.env.template` with the safe placeholder (never commit a real password). Idempotent re-run: an existing identity is reused, not duplicated. Document the pair in `docs/process/flow.md`'s accounts table (Admin row currently says "Seeded admin user" with no address). — not started
 
 ### US-021 Admin approves or rejects a farm · `done (evidence: packages/api/src/api/admin/farms/route.ts:120-128,194-219; packages/api/src/workflows/reveal-farm-pii.ts:19-27; packages/api/src/workflows/steps/pii-reveal.ts:15-71; packages/api/src/modules/pii-audit/service.ts:6-24; packages/api/src/workflows/steps/validate-seller-open.ts:28-33; packages/api/src/api/middlewares.ts:176-215; apps/admin-koi/src/components/FarmQueue.tsx:120-183,205-321,357-421; apps/storefront-koi/src/components/sections/AccountPage/FarmHomePage.tsx:34-44; packages/api/integration-tests/http/admin-farms.spec.ts:139-335; packages/api/integration-tests/http/pii-reveal.spec.ts:126-208; packages/api/integration-tests/http/farmer-auctions.spec.ts:283-315,604-630; qa PASS)`
-**Depends on:** US-092 (masking and the logged reveal delivered here; column encryption stays open in US-092).
+**Depends on:** US-092 (masking and the logged reveal delivered here; column encryption also shipped in US-092, 2026-11-20).
 As an **admin**, I want to review farm registrations so that only real farmers
 can create auctions. *(Plan: Becoming a farmer)*
 **PII (D-039, D-042):** the queue shows masked NIK, bank account and phone, plus a reveal action to compare the KTP/NIK, bank account and phone with the applicant; every reveal is logged (D-042). US-092 delivers it.
@@ -268,10 +344,10 @@ can create auctions. *(Plan: Becoming a farmer)*
 - AC4: Farmer actions require `seller.status === open`. Mercur's `/vendor/*` doesn't check status, so our routes and workflows must.
 - [x] T-021.1 [backend] `/admin` routes that use Mercur's seller approval workflow and, for rejection, the suspend workflow with a reason (D-015). Don't write new ones — `src/api/admin/farms/route.ts`, `src/api/middlewares.ts:176-215`; `admin-farms.spec.ts:201-335`
 - [x] T-021.5 [backend] Shared check that a farmer's seller is `open`, used by every custom `/vendor/*` route and workflow (AC4; also US-030) — `src/workflows/steps/validate-seller-open.ts:16-34`; `farmer-auctions.spec.ts:283-315,604-630`
-- [ ] T-021.6 [backend] Rejected-registration guard misses the pre-registration member token (empty `actor_id`), so `POST /vendor/sellers` hits Medusa's duplicate-metadata 500 instead of the guard's 400. Finality holds (nothing written), only the error shape is wrong. Fix so the guard runs for that token too — `src/workflows/hooks/seller-registration.ts:120-125`; spec exists at `integration-tests/http/admin-farms-rejection-stale-token.spec.ts` (reports `[low]`).
-- [ ] T-021.2 [admin] `/kebun` queue screen
-- [ ] T-021.3 [storefront] Farmer area appears once the seller is `open`. The member token comes from the re-login right after registration (D-030); whether approval needs yet another login is not verified, so check it at runtime
-- [ ] T-021.4 [qa] An unapproved or rejected (suspended) seller can't reach farmer actions; the rejection reason shows to the farmer; no unsuspend in admin-koi
+- [x] T-021.6 [backend] *(fixed 2026-11-20: when `input.member_id` is empty the guard now resolves the member by the same verified emailpass email before `assertNoRejectedRegistration`; `src/workflows/hooks/seller-registration.ts:116-136`. Rejected resubmit with a pre-registration token → 400 with the Indonesian message (was Mercur's 500) and 0 seller rows; genuine first registration with the same token shape still 201 → `pending_approval`. Spec 2/2, `admin-farms` 6/6, unit 44/44.)* Rejected-registration guard misses the pre-registration member token (empty `actor_id`), so `POST /vendor/sellers` hits Medusa's duplicate-metadata 500 instead of the guard's 400. Finality holds (nothing written), only the error shape is wrong. Fix so the guard runs for that token too — `src/workflows/hooks/seller-registration.ts:120-125`; spec exists at `integration-tests/http/admin-farms-rejection-stale-token.spec.ts` (reports `[low]`).
+- [x] T-021.2 [admin] `/kebun` queue screen *(verified 2026-11-20: render check as `admin@koi.dev`, pending queue "Menunggu (1)", masked `*********003` / `3273**********01` / `******0099` / `S*** R*****`, reveal → full NIK + exactly 1 `pii_reveal_audit` row, approve → `open` + `approved_at`, reject with empty reason refused then `suspended` + `status_reason` + `rejected_at`; `apps/admin-koi/src/app/(app)/kebun/page.tsx:14-31`, `components/FarmQueue.tsx`, `lib/data/farms.ts:74-190`; snapshot `.playwright-mcp/qa-t0212-kebun-queue.png`)*
+- [x] T-021.3 [storefront] Farmer area appears once the seller is `open` *(verified 2026-11-20 at runtime: pending → "Menunggu persetujuan admin" closed state on `/akun/kebun/beranda`, `/lelang/baru` and `/lelang/<id>`; approved via the admin queue → Farmer home + create form after a plain reload with **no re-login**, answering the open question; rejected → "Pendaftaran kebun ditolak" with the exact reason. `apps/storefront-koi/src/lib/helpers/farm-status.ts:29-79`, `FarmHomePage.tsx:65,74-104`, `CreateAuctionPage.tsx:31`; API corroboration `admin-farms.spec.ts:201-215`; snapshot `.playwright-mcp/qa-t0214-rejected-closed.png`)*
+- [x] T-021.4 [qa] An unapproved or rejected (suspended) seller can't reach farmer actions *(verified 2026-11-20: 2 new cases in `farmer-auctions.spec.ts` — rejected (`suspended` + `approved_at` null) on create and submit → 403 with 0 rows written and the draft unchanged; terminated likewise; 13/13 pass. Reason renders on `/akun/kebun/beranda` (documented render check). No unsuspend: `grep -rli unsuspend apps/admin-koi/src` → 0, backend `admin-farms.spec.ts:239-240` rejected unsuspend → 400, `:305-335` post-approval unsuspend → `open`)*
 
 ---
 
@@ -4917,7 +4993,7 @@ admin can act. *(Plan: Winner doesn't pay; D-026, D-058)*
 - [x] T-058.2 [storefront] "Laporkan belum dibayar" on a `won` sold lot once the deadline passes
 - [x] T-058.3 [backend] `GET /admin/reports` (queue by status, per-winner by `winner_id`), names only
 - [x] T-058.4 [admin] `/laporan` queue (read-only; the strike is US-059 T-059.2)
-- [ ] T-058.4b [admin] `/pengguna` "Laporan belum dibayar" tab — not built; the brief made it optional, and the queue covers AC1's admin half. Build it with `/pengguna` (US-070)
+- [x] T-058.4b [admin] `/pengguna` "Laporan belum dibayar" tab — built as US-070 T-070.2c's Laporan tab (`apps/admin-koi/src/components/AccountTabs.tsx:24,37-47`, `lib/data/accounts.ts:139` `listUserReports`); label shows `count` and the "Menampilkan N dari M" cap *(ticked 2026-11-20 at US-070 acceptance)*
 - [x] T-058.5 [qa] The deadline gates the report; a second report is refused; the lot never changes; nothing about a second bidder is stored or shown
 
 **Accepted 2026-11-18 (qa PASS, fix round 1).** AC2 checked against the DB:
@@ -6126,19 +6202,19 @@ T-061.1 (deletion and retention), T-061.2. Plan "Dead-on-arrival claims" item 7
 
 ## Epic 6: Admin operations (Milestone 6)
 
-### US-070 Admin manages users · `todo`
+### US-070 Admin manages users · `done (evidence: packages/api/integration-tests/http/admin-accounts.spec.ts 7/7 (:136 mask + ledger sum + derived ban + farm, :186 search/paging, :262 detail 404 Indonesian, :273 one audit row per reveal); packages/api/src/api/admin/accounts/route.ts:148 `maskPhone`, :151-152 derived `active_strikes`/`banned`, :163-185 `q`/`limit`/`offset`, :58-102 batched wallet + seller reads (4 queries, no N+1); packages/api/src/workflows/reveal-customer-pii.ts:19-33 (read + audit in one workflow); packages/api/src/api/admin/customers/[id]/reveal/route.ts:15-31 (POST, identity from auth_context, `/admin` auth only); apps/admin-koi/src/app/(app)/pengguna/page.tsx:61 search, :71 cap notice, :90 masked phone, :104-105 ban badge; pengguna/[id]/page.tsx:52 Indonesian not-found, :119 reveal, :150 wallet, :185 tabs; components/AccountTabs.tsx:29 StrikePanel reused, :47 "Menampilkan N dari M laporan."; admin-koi `bun run check` 62/62, lint + tsc clean both Koi apps; qa PASS fix round 1. Not verified: no pager on the users list (search + cap notice instead); wallet/report error states; browser verification is qa's, not re-run here. T-058.4b delivered by the Laporan tab)`
 **Depends on:** US-092 (masking of phone and NIK; the full value only through the logged reveal, D-042).
 As an **admin**, I want to see users with their strikes and bans so that I can
 act on bad actors. *(Plan: Users and roles, Strikes)*
 **PII (D-039, D-042):** phone and NIK on these screens are masked, as on every admin route; the full value only through the logged reveal. US-092 applies.
-- [ ] T-070.1a [backend] `/admin/accounts` list and detail (wallet, strikes, ban, farm), masked
-- [ ] T-070.1b [backend] `POST /admin/customers/:id/reveal` for the phone, one audit row
-- [ ] T-070.2a [admin] `/pengguna` list with search
-- [ ] T-070.2b [admin] `/pengguna/[id]` profile, masked phone + reveal, wallet
-- [ ] T-070.2c [admin] Strike and Laporan tabs on the user page
-- [ ] T-070.3 [qa] Masked everywhere, reveal logs one row, ban state derived, no N+1
+- [x] T-070.1a [backend] `/admin/accounts` list and detail (wallet, strikes, ban, farm), masked
+- [x] T-070.1b [backend] `POST /admin/customers/:id/reveal` for the phone, one audit row
+- [x] T-070.2a [admin] `/pengguna` list with search
+- [x] T-070.2b [admin] `/pengguna/[id]` profile, masked phone + reveal, wallet
+- [x] T-070.2c [admin] Strike and Laporan tabs on the user page
+- [x] T-070.3 [qa] Masked everywhere, reveal logs one row, ban state derived, no N+1
 
-**Readiness 2026-11-18: ready (`todo`). Nothing blocks it.** The masking half of
+**Accepted 2026-11-20** (was ready 2026-11-18). The masking half of
 US-092 is in the tree (`utils/mask.ts:15-50`, the global `/admin` response mask at
 `api/middlewares.ts:306-308`, the farm queue's masked fields at
 `api/admin/farms/route.ts:194-218`, the logged reveal at
@@ -6530,16 +6606,16 @@ users) and "Strikes" (ban state visible) → T-070.1a, .1b, .2a–.2c, .3. Plan
 .2b, .3. The ban action itself is US-059's; `mvp-Q49` covers whether it stays
 derived.
 
-### US-071 Admin spots shill bidding · `todo`
+### US-071 Admin spots shill bidding · `done (evidence: packages/api/integration-tests/http/admin-farm-bidders.spec.ts 8/8 (:351-382 before/after snapshots of `strike`, `lot_report`, `customer`, `seller` unchanged); packages/api/src/utils/shill.ts:6 `isShillShare` (`farmBids * 2 >= totalBids`, `farmBids > 0`), :11 `isShillUnpaid` (`>= 2`); packages/api/src/utils/__tests__/shill.unit.spec.ts 3/3; packages/api/src/api/admin/farms/[id]/bidders/route.ts:85-100 farm bid read, :93-95 `removed_at == null` filter, :140-143 total-bid read with the same filter (removed bids out of numerator and denominator), route is `query.graph` + `res.json` only; apps/admin-koi/src/components/FarmBidders.tsx:58-75 flagged row + `Perlu ditinjau` badge, :60-75 both flag badges; mounted at apps/admin-koi/src/app/(app)/pengguna/[id]/page.tsx:87,136 (farmers only); qa PASS, 0 bugs; thresholds checked both ways 5/10 flagged, 5/11 not, 6/11 flagged, 1 unpaid not, 2 unpaid flagged; qa recomputed all four columns by SQL and matched rendered values (Siti 19/4/2/0, Budi 11/4/1/0, Agus 1/1/0/0). Observation, not a bug: route.ts:8 imports the plain `winnersById` query helper from `api/vendor/claims/route.ts` — a cross-route helper import, not a cross-module service call)`
 As an **admin**, I want to see bid patterns per bidder and farmer so that I can
 spot shill bidding. *(Plan: Fair play; D-028, D-037)*
 **Depends on:** US-058 (non-payment reports).
 - AC1: For each farmer, a bidder table shows bidder, bid count, lots bid on, wins and unpaid wins. An unpaid win is a non-payment report from that farmer on that bidder (US-058). Every count covers all time (D-037).
 - AC2: A bidder is flagged when at least 50% of their bids are on that farmer's lots, or when they have at least 2 unpaid wins from that farmer.
 - AC3: Flags take no automatic action. The admin bans by hand (US-059, US-070).
-- [ ] T-071.1 [backend] `/admin` read route: per-farmer bidder table with the two flags (read only, `query.graph`)
-- [ ] T-071.2 [admin] Bidder table on the user page, flagged rows marked
-- [ ] T-071.3 [qa] Flag thresholds at exactly 50% and exactly 2 unpaid wins; a flag changes no account
+- [x] T-071.1 [backend] `/admin` read route: per-farmer bidder table with the two flags (read only, `query.graph`) *(ticked 2026-11-20 at US-071 acceptance)*
+- [x] T-071.2 [admin] Bidder table on the user page, flagged rows marked *(ticked 2026-11-20 at US-071 acceptance)*
+- [x] T-071.3 [qa] Flag thresholds at exactly 50% and exactly 2 unpaid wins; a flag changes no account *(ticked 2026-11-20 at US-071 acceptance)*
 
 **Readiness 2026-11-18: ready (`todo`). Nothing blocks it.** The report table
 this story counts exists in the working tree (`modules/moderation/models/lot-report.ts`,
@@ -6748,28 +6824,28 @@ action) → T-071.1, .2, .3; D-037's unpaid-win definition → T-071.1 (spec);
 D-028's hand-made ban → T-071.2 (link to the Strike tab) and US-059.
 Plan "Users and roles" (moderate users) is US-070's.
 
-### US-072 Admin monitors live auctions and removes wrong bids · `todo`
+### US-072 Admin monitors live auctions and removes wrong bids · `done (evidence: packages/api/integration-tests/http/bid-removal.spec.ts 16/16 (:262 mark + price drop, :300 extend kept/end_time never shortened, :325 OB fallback + OB accepted again, :401 refusal after close, :437 blank reason 400 no write, :460 compensation, :505 lot panel drops nothing incl. removed rows); packages/api/src/api/admin/bids/[id]/remove/route.ts:38-60 (POST, admin only, calls the workflow); packages/api/src/api/admin/bids/validators.ts:8-22 reason required, non-blank, max 500 chars (D-063, mvp-Q52); packages/api/src/workflows/steps/bid.ts:268-300 (removed_at guard, `lot_not_open` when not open), :331 removed_at saved, :343 compensation clears the three columns, never deletes; packages/api/src/workflows/remove-bid.ts:16-28 (`lot:<id>` lock, same as place-bid/close-lot); packages/api/src/modules/auction/models/bid.ts:19-21 (removed_at/removed_by/removed_reason columns) + Migration20261118093221:6; packages/api/src/workflows/steps/lot.ts:98 price/winner read filters `removed_at: null`; packages/api/src/api/store/lots/route.ts:76,123,147,221-225 + [id]/route.ts:49 public feed and history exclude removed; packages/api/src/api/admin/live-auctions/route.ts:8-76 (live + cancelled lists, removed counts); apps/admin-koi/src/components/LiveLotPanel.tsx:81-94 reason + confirm + remove, :116 `Dihapus` badge, :124-125 removed time + reason, LiveAuctions.tsx:91-144 live + cancelled lists; qa PASS; AC1–AC5 verified in browser + DB; 999 999 → 400 `bid_too_low`, 1 000 000 → 201 with OB. Not verified: `removed_by` displayed in the panel — persisted (`steps/bid.ts:332`) but `GET /admin/live-lots/:id` does not return it, so the AC2 marking shows reason + time only (T-072.4/T-072.5). qa low bug: reason has no max length (now fixed by D-063, mvp-Q52, 500 chars))`
 As an **admin**, I want to watch live auctions and remove obviously wrong bids
 so that auctions stay fair. *(Plan: Bidding, Milestone 6; D-024, D-036)*
-- AC1: Removing a bid is allowed only for an obvious error, and needs a reason.
+- AC1: Removing a bid is allowed only for an obvious error, and needs a reason (required, non-blank, at most 500 characters — D-063, `mvp-Q52`).
 - AC2: A removed bid is marked removed (with reason, admin and time), never deleted. Removed bids don't count for the current price, the winner or the bid history shown to customers.
 - AC3: The lot's current price goes back to the highest remaining bid, or OB if none is left (D-024).
 - AC4: Any extend the removed bid caused stays. The lot's end time is never shortened (D-024).
 - AC5: A bid can be removed only while its lot is `open`. After close, removal is refused; the fix is a lot cancel (US-091). Once every bid is removed, the next bid may equal OB again (D-036, D-023).
-- [ ] T-072.1a [backend] Bid removal fields, remove-bid workflow + `/admin` route, and the two server-side bid reads
-- [ ] T-072.1b [backend] `/admin` live-auction and live-lot read routes
-- [ ] T-072.1c [backend] Exclude removed bids from the public lot feed and lot page
-- [ ] T-072.2a [admin] `/lelang/langsung` monitoring list
-- [ ] T-072.2b [admin] Lot bid panel with remove-bid and a required reason
-- [ ] T-072.3 [qa] After removal: bid row still exists and is marked removed; price = highest remaining bid or OB; end time unchanged; removal on a closed lot refused; after removing every bid, a bid = OB is accepted
+- [x] T-072.1a [backend] Bid removal fields, remove-bid workflow + `/admin` route, and the two server-side bid reads
+- [x] T-072.1b [backend] `/admin` live-auction and live-lot read routes
+- [x] T-072.1c [backend] Exclude removed bids from the public lot feed and lot page
+- [x] T-072.2a [admin] `/lelang/langsung` monitoring list
+- [x] T-072.2b [admin] Lot bid panel with remove-bid and a required reason
+- [x] T-072.3 [qa] After removal: bid row still exists and is marked removed; price = highest remaining bid or OB; end time unchanged; removal on a closed lot refused; after removing every bid, a bid = OB is accepted
+- [x] T-072.4 [backend] *(done 2026-11-20: `removed_by` + `removed_by_name` in `GET /admin/live-lots/:id`, one batched user read; `bid-removal.spec.ts` 17/17.)* Return `removed_by` from `GET /admin/live-lots/:id` (admin id plus name, batched like the bidder names). AC2's record-level marking is complete — `removed_at`/`removed_by`/`removed_reason` are all written (`packages/api/src/workflows/steps/bid.ts:331-332`) — this only surfaces the admin on screen. *(new 2026-11-20 at US-072 acceptance; a task, not an open question: nothing is undecided, the value is already stored and the route field is a plain addition)*
+- [x] T-072.5 [admin] *(done 2026-11-20: `LiveLotPanel.tsx:124-126` renders `Dihapus <time> oleh <name>` with an honest fallback; storefront-verified.)* Show the removing admin in the live-lot bid panel beside the removed time and reason, so AC2's "with reason, admin and time" is visible on screen *(new 2026-11-20; depends on T-072.4)*
 
-**Readiness 2026-11-18: ready (`todo`). Nothing blocks it.** The bid column is
-**not built**: `modules/auction/models/bid.ts` has `id, customer_id, amount,
-source, lot` only (`bid.ts:1-27`), and four comments name this story as where
-removal lands (`bid.ts:4-7`, `steps/bid.ts:27`, `steps/lot.ts:79`,
-`api/store/lots/[id]/route.ts:40`). The `ponytail:` at
-`api/store/lots/route.ts:206` is unrelated (it caps bid-history size, not
-removal). D-024/D-036 decide every rule AC1–AC5 restate; no new question.
+**Accepted 2026-11-20** (was ready 2026-11-18). The three removed columns landed
+at `modules/auction/models/bid.ts:19-21` with `Migration20261118093221.ts:6`, so
+the readiness note's "bid column not built" no longer holds. D-024/D-036 decide
+every rule AC1–AC5 restate. Two follow-ups carried: T-072.4/.5 (`removed_by` in
+the panel) and mvp-Q52 (reason length cap, **answered 2026-11-20, D-063: 500 characters**).
 
 **Answers pinned:**
 
@@ -7159,7 +7235,7 @@ open-only), .1b (monitoring reads), .1c (customer history), .2b (reason), .3.
 Plan "Fair play"'s "admin can see bid patterns" is US-071; "moderate bids" in
 "Users and roles" → T-072.2a/.2b. D-024/D-036 are quoted in every AC's task.
 
-### US-091 Admin cancels lots and live auctions · `todo`
+### US-091 Admin cancels lots and live auctions · `done (evidence: packages/api/src/api/admin/lots/[id]/cancel/route.ts + packages/api/src/workflows/cancel-lot.ts + `getCancellableLotStep` in packages/api/src/workflows/steps/lot.ts, spec packages/api/integration-tests/http/admin-cancel-lot.spec.ts 8/8; packages/api/src/api/admin/auctions/[id]/cancel/route.ts + packages/api/src/workflows/cancel-live-auction.ts + packages/api/src/workflows/steps/auction-cancel.ts, `auction.cancel_reason` + packages/api/src/modules/auction/migrations/Migration20261119204605.ts, spec admin-cancel-auction.spec.ts 9/9; apps/admin-koi/src/components/CancelAction.tsx, cancel actions in LiveAuctions.tsx / LiveLotPanel.tsx, `cancelLot`/`cancelAuction` in lib/data/live-auctions.ts, `cancelFailureInfo`/`cancelAuctionToast` in lib/helpers/live-bid-format.ts (+ tests), admin-koi `bun run check` 62/62, lint clean; qa PASS, 0 bugs. Auth probes: anonymous 401, customer 401, farmer member 401, admin 200; farmer `POST /vendor/auctions/:id/cancel` on own live auction 409, no lot-cancel path in the farmer area. Refunds: 150k + 250k joins → refund rows 150k + 250k = Rp 400.000, listing fee stays −50k, no adjustment/payout, Rp0 join → no row, one batch, second cancel 409. Close job: forced-due cancelled lot → tick `lots found 1, won 0, unsold 0, skipped 1`, lot stayed `cancelled`. D-050: cancelled lot inside a live auction still on `/store/lots`, lot page 200 "Lot dibatalkan", no price, no bids. D-046: cancelled auction and its lots leave the public pages (feed `[]`, detail 404); a `won` lot keeps winner + 305000 final price. `mvp-Q50` and `mvp-Q51` build defaults hold. Not verified by qa: a cancelled lot inside a *closed* auction rendering (fixtures deleted first); US-040's own PASS covers that render)`
 **Depends on:** US-092 (masking of bidder details; the full value only through the logged reveal, D-042).
 As an **admin**, I want to cancel a lot that has bids, or a live auction, so that
 a broken listing can be stopped. *(Plan: Cancellations, Lot lifecycle; D-022, D-034, D-035)*
@@ -7168,10 +7244,10 @@ a broken listing can be stopped. *(Plan: Cancellations, Lot lifecycle; D-022, D-
 - AC3: An admin cancel of an auction refunds every participant's join fee as a `refund` (+), the same as a farmer cancel. The listing fee is not refunded (D-034).
 **Answered `mvp-Q32` (D-050):** a cancelled lot inside a public auction stays on `/store/lots` and its lot page, labelled "Dibatalkan", with no price, final price, sold label, winner or bids. US-040 T-040.1/2a/2b already return and render it; this story only produces the cancelled lots (no change needed on the public pages).
 **PII (D-039, D-042):** bidder and participant details shown on the cancel and monitoring screens are masked, as on every admin route; the full value only through the logged reveal. US-092 delivers it.
-- [ ] T-091.1a [backend] Cancel-lot workflow + `/admin/lots/:id/cancel` (`cancel_reason` is already on the lot model)
-- [ ] T-091.1b [backend] `auction.cancel_reason` column + cancel-live-auction workflow + `/admin/auctions/:id/cancel` with join-fee refunds
-- [ ] T-091.2 [admin] Cancel actions with a required reason on the live monitoring screen
-- [ ] T-091.3 [qa] A farmer can't reach either cancel; a cancelled lot has no winner and is skipped by the close job; refunds total exactly the join fees collected; no `listing_fee` refund; statuses follow the plan's enums only; after the cancel, the lot is still on `/lelang` and its lot page is 200 with "Dibatalkan" and no price (D-050, US-040 already renders it)
+- [x] T-091.1a [backend] Cancel-lot workflow + `/admin/lots/:id/cancel` (`cancel_reason` is already on the lot model) *(ticked 2026-11-20 at US-091 acceptance)*
+- [x] T-091.1b [backend] `auction.cancel_reason` column + cancel-live-auction workflow + `/admin/auctions/:id/cancel` with join-fee refunds *(ticked 2026-11-20 at US-091 acceptance)*
+- [x] T-091.2 [admin] Cancel actions with a required reason on the live monitoring screen *(ticked 2026-11-20 at US-091 acceptance)*
+- [x] T-091.3 [qa] A farmer can't reach either cancel; a cancelled lot has no winner and is skipped by the close job; refunds total exactly the join fees collected; no `listing_fee` refund; statuses follow the plan's enums only; after the cancel, the lot is still on `/lelang` and its lot page is 200 with "Dibatalkan" and no price (D-050, US-040 already renders it) *(ticked 2026-11-20 at US-091 acceptance)*
 
 **Readiness 2026-11-18: ready (`todo`), with two ordering dependencies, not
 policy blockers.**
@@ -7469,43 +7545,153 @@ in the MVP" (admin cancel refunds join fees, never the listing fee) → T-091.1b
 .3; D-050's public rendering is US-040's and is re-asserted here. `mvp-Q50` and
 `mvp-Q51` are the two open, non-blocking shape questions raised by this section.
 
-### US-092 Personal data is encrypted and masked · `todo`
+### US-092 Personal data is encrypted and masked · `done (evidence: packages/api/integration-tests/http/pii-address-snapshots.spec.ts 6/6 (:160 cart phone ciphertext + plaintext to owner, :182 cart→order verbatim ciphertext copy, :226 stock location ciphertext + admin mask, :247 stock-location update stays encrypted, :267 order completes with NULL cart-address phone, :305 legacy plaintext row readable unchanged); pii-encryption.spec.ts 4/4; pii-leaks.spec.ts 7/7; vendor-seller-scope.spec.ts 3/3 (Mercur scopes `/vendor/sellers*` by `x-seller-id` → 404/400, path-based self-view skip safe); packages/api/src/utils/pii-crypto.ts (AES-256-GCM, `enc:v1:` envelope) + src/api/utils/pii-encryption.ts + 12+ write matchers in src/api/middlewares.ts (snapshots at :383-400); src/scripts/encrypt-pii.ts:43-46 (four D-062 snapshot tables) via `bun run encrypt:pii`, dry-run "0 plaintext value(s) in scope"; src/api/utils/mask-response.ts:150-151 `payout_account.data` free-form mask, `professional_details` unmasked (T-092.9, AC7); src/workflows/reveal-farm-ktp.ts:66-79 KTP photo reveal writes one `pii_reveal_audit` row (`record_type: "seller"`, `field: "ktp_photo"`); src/modules/smtp-notification/service.ts:20-23 guard comment (T-092.13); apps/storefront-koi/src/components/sections/AccountPage/components/Farm.tsx:170-199 own bank self-view + lib/data/farm.ts masked others; apps/admin-koi/src/components/AccountPhone.tsx:17-22 masked + reveal; `/akun/alamat` already correct (T-092.12, no code change); DB direct read cart_address 1 ciphertext / 0 plaintext, order_address 1/0, stock_location_address 3/0; `bun x tsc --noEmit -p .` clean; admin-koi `bun run check` 62/62 + lint clean, storefront-koi 234/234; AC6 `.env.template:30` `PII_ENCRYPTION_KEY=` placeholder, key only in `.env.test`; qa PASS 2026-11-20 on AC2–AC7 and T-092.7/.8, D-062 gap closed 2026-11-20 by the spec above. Not verified: `fulfillment_address.phone` has no spec case of its own — covered by encrypt-pii.ts:45 and the `/admin/fulfillments` matcher, but no direct DB read was taken)`
+
+**Accepted 2026-11-20.** AC1–AC7 checked line by line against qa's 2026-11-20
+run plus the D-062 spec run. AC1: ciphertext on disk for the Koi PII columns and
+the four snapshot tables (direct DB read + `encrypt:pii` dry-run clean). AC2: the
+one-off script covers wallet and top-up tables and leaves no plaintext. AC3/AC4:
+masked everywhere including `/admin`, self-view only (KTP reveal logged, address
+phone decrypted then masked). AC5: reveal required and logged, one audit row. AC6:
+key from env, placeholder committed, real key only in `.env.test`. AC7:
+`payout_account.data` masked, `professional_details` untouched. The 2026-11-15
+"not built" status note is superseded by this acceptance.
 As a **customer**, I want my personal data encrypted at rest and hidden behind
 masks everywhere it is shown, so that a leak or a stolen screenshot exposes
 little of it. *(Plan: Personal data protection; D-039, D-040, D-042, D-043, D-045)*
-- AC1: NIK, bank account number and account-holder name, and phone are encrypted at **column level**, on top of the database's disk encryption; a direct database read shows ciphertext, not the value (D-043). **Not built yet.**
-- AC2: The existing wallet and top-up tables are covered in the same story; their plain values are migrated by a one-off script that encrypts in place, verifies, and leaves no plaintext copy (D-043). **Not built yet.**
-- AC3: No API result returns a full PII value to any client except the owner's own record; `/admin/*` included, admins get the mask. Each returns a masked form (a short prefix/suffix or last-4, the rest hidden) or nothing. The KTP photo is only ever a private file, never a URL. Self-view is the only unmasked path and is limited to the owner's own phone and own bank details on `/store/customers/me` and the farmer's own `/vendor/sellers*` record (D-045).
+- AC1: NIK, bank account number and account-holder name, and phone are encrypted at **column level**, on top of the database's disk encryption; a direct database read shows ciphertext, not the value (D-043). The phone in Medusa's address snapshots (`cart_address`, `order_address`, `fulfillment_address`, `stock_location_address`) is included (D-062, added 2026-11-20).
+- AC2: The existing wallet and top-up tables are covered in the same story; their plain values are migrated by a one-off script that encrypts in place, verifies, and leaves no plaintext copy (D-043).
+- AC3: No API result returns a full PII value to any client except the owner's own record; `/admin/*` included, admins get the mask. Each returns a masked form (a short prefix/suffix or last-4, the rest hidden) or nothing. The KTP photo is only ever a private file, never a URL. Self-view is the only unmasked path and is limited to the owner's own phone and own bank details on `/store/customers/me` and the farmer's own `/vendor/sellers*` record (D-045). A phone read from an address snapshot is decrypted and then masked unless it belongs to the caller (D-062).
 - AC4: Every screen in `apps/storefront-koi` and `apps/admin-koi` renders the masked value only, except the owner's own full value on their own account and farm-registration screens (D-045); no page source or client payload holds another person's full value. Admins are not exempt (D-042).
 - AC5: A full value of someone else's PII is reachable only through an explicit reveal route. It is **required**, not optional, and records who, when, which record and which field in an append-only audit table (D-042). Its only callers are an admin reveal and a winner's reveal of their own won lot's bank account (D-044, US-051). *(Changed 2026-11-16: the farmer's reveal of the winner's phone is dropped, D-052.)*
 - AC6: Encryption keys come from the environment, not the database or the repo; `.env.template` gets a placeholder (root `CLAUDE.md` §11).
 - AC7: `/admin/sellers*` responses do not return unmasked `payout_account.data`, because that free-form JSON can hold a bank number or a phone; it is masked like the other PII fields. `professional_details` (`corporate_name`, `registration_number`, `tax_id`) stays unmasked deliberately — out of scope unless the owner says otherwise.
-**Status note:** masking is the part that lands here; column-level encryption (AC1, AC2; T-092.1, T-092.6) is **still not built**. Don't read this story as complete while encryption is missing. Still open as of US-021 acceptance (2026-11-15): T-092.1/T-092.6 column encryption, and T-092.9 `/admin/sellers*` `payout_account.data` masking.
-- [ ] T-092.1 [backend] Column-level encryption for the PII fields — NIK, bank account number and account-holder name, phone — on the seller/custom-field, wallet and top-up tables; encrypt on write, decrypt only inside the server (D-043) — **open**
-- [ ] T-092.2 [backend] Masking in every API result that carries PII: `/store/*`, `/vendor/*`, `/admin/*`; admins get the mask too (D-042); owner's own record is the only unmasked result (D-045)
-- [ ] T-092.3 [admin] Masked rendering on every admin-koi screen that shows PII (`/kebun`, `/pengguna`, `/saldo/*`, live monitoring, cancel), plus the reveal button wired to the audit-logged route
-- [ ] T-092.4 [storefront] Account screen (`/store/customers/me`) and farm-registration screen show the owner's own full phone and own bank details (self-view, D-045); any PII about someone else shown on storefront screens stays masked, e.g. the won-lot screens in US-051
-- [ ] T-092.5 [backend] Reveal route (`/admin/*` and the farmer's own-lot address reveal, D-056) writing an append-only audit entry (who, when, record, field) (D-042; the winner's bank reveal, D-044, is on hold)
-- [ ] T-092.6 [backend] One-off migration script that encrypts the existing plain PII values in the wallet and top-up tables in place, verifies, and leaves no plaintext copy (D-043) — **open**
-- [ ] T-092.7 [qa] A direct DB read shows ciphertext; every PII-bearing API response shows only the mask, admin routes included, except the owner's own record; the key is not committed; the KTP photo is still only a private file key (D-040)
-- [ ] T-092.8 [qa] Every admin-koi and storefront screen that shows PII renders only the mask, except the owner's own full value on their own account and farm-registration screens; a reveal writes exactly one audit row with who, when, record and field; the migration leaves no plaintext
-- [ ] T-092.9 [backend] Mask `payout_account.data` on every `/admin/sellers*` response (free-form JSON can hold a bank number or phone); leave `professional_details` unmasked (AC7)
+**Status note (2026-11-20): accepted, all three gaps closed.** Masking, column
+encryption (T-092.1/T-092.6) and `payout_account.data` masking (T-092.9) are all
+built and verified; D-062's snapshot phone (T-092.10–T-092.14) closes the last
+one. Evidence line above.
+- [x] T-092.1 [backend] Column-level encryption for the PII fields — NIK, bank account number and account-holder name, phone — on the seller/custom-field, wallet and top-up tables; encrypt on write, decrypt only inside the server (D-043) — `src/utils/pii-crypto.ts`, `src/api/utils/pii-encryption.ts`, matchers `middlewares.ts`
+- [x] T-092.2 [backend] Masking in every API result that carries PII: `/store/*`, `/vendor/*`, `/admin/*`; admins get the mask too (D-042); owner's own record is the only unmasked result (D-045) — `src/api/utils/mask-response.ts`, `pii-leaks.spec.ts` 7/7
+- [x] T-092.3 [admin] Masked rendering on every admin-koi screen that shows PII (`/kebun`, `/pengguna`, `/saldo/*`, live monitoring, cancel), plus the reveal button wired to the audit-logged route — `AccountPhone.tsx:17-22`, admin-koi `check` 62/62
+- [x] T-092.4 [storefront] Account screen (`/store/customers/me`) and farm-registration screen show the owner's own full phone and own bank details (self-view, D-045); any PII about someone else shown on storefront screens stays masked, e.g. the won-lot screens in US-051 — `Farm.tsx:170-199`, `lib/data/farm.ts`, `vendor-seller-scope.spec.ts` 3/3, storefront `check` 234/234
+- [x] T-092.5 [backend] Reveal route (`/admin/*` and the farmer's own-lot address reveal, D-056) writing an append-only audit entry (who, when, record, field) (D-042; the winner's bank reveal, D-044, is on hold) — `pii-reveal.spec.ts`, `reveal-farm-ktp.ts:66-79` (`field: "ktp_photo"`, one row per view)
+- [x] T-092.6 [backend] One-off migration script that encrypts the existing plain PII values in the wallet and top-up tables in place, verifies, and leaves no plaintext copy (D-043) — `src/scripts/encrypt-pii.ts:43-46`, `bun run encrypt:pii` dry-run "0 plaintext value(s) in scope"
+- [x] T-092.7 [qa] A direct DB read shows ciphertext; every PII-bearing API response shows only the mask, admin routes included, except the owner's own record; the key is not committed; the KTP photo is still only a private file key (D-040) — qa PASS 2026-11-20
+- [x] T-092.8 [qa] Every admin-koi and storefront screen that shows PII renders only the mask, except the owner's own full value on their own account and farm-registration screens; a reveal writes exactly one audit row with who, when, record and field; the migration leaves no plaintext — qa PASS 2026-11-20
+- [x] T-092.9 [backend] Mask `payout_account.data` on every `/admin/sellers*` response (free-form JSON can hold a bank number or phone); leave `professional_details` unmasked (AC7) — `mask-response.ts:150-151`
 
-### US-093 Orphan KTP uploads are cleaned up · `todo`
+**D-062 (2026-11-20): the phone in Medusa's address snapshots is encrypted too.**
+Answers the scope question raised during T-092.1. The snapshot tables are
+`cart_address`, `order_address`, `fulfillment_address` and
+`stock_location_address`; their `phone` column is written by Medusa's own cart,
+order, fulfillment and stock-location workflows, so `encryptPiiBody` on the Koi
+write routes never sees it. The write side is one middleware; the read side is
+real work, because once the column is ciphertext every reader that shows a phone
+shows the envelope until it decrypts.
+
+Read-path inventory (2026-11-20, `packages/api/src` and the two Koi apps):
+- `packages/api/src/workflows/steps/sold-lot.ts:86-101` — the farmer's logged
+  reveal of the winner's address. Selects no `phone` (D-052), so it is unaffected
+  today, but it is the one place a snapshot address is printed in full.
+- `packages/api/src/api/store/won-lots/route.ts:309-325` — reads
+  `addresses.is_default_shipping` only, never `phone`. Unaffected.
+- `apps/storefront-koi/src/lib/data/session.ts:39` — `*addresses` on
+  `/store/customers/me`; `addresses.phone` reaches the client through
+  `toShippingAddresses`.
+- `apps/storefront-koi/src/lib/adapters/shipping.ts:65-78` — maps each saved
+  address, `phone` included, to the `ShippingAddress` the address list and
+  `/pengiriman` render;
+  `apps/storefront-koi/src/components/sections/AccountPage/components/Addresses.tsx:35,117`
+  shows `address.phone` on `/akun/alamat`.
+- `apps/storefront-koi/src/lib/data/cart.ts:371-387` — `setAddresses` writes the
+  cart's own `shipping_address.phone` (and copies it to `billing_address`).
+- `apps/storefront-koi/src/lib/data/fulfillment.ts:27` — selects
+  `*service_zone.fulfillment_set.location.address` (the stock location's
+  address) for the shipping options on `/pengiriman`. Fetched but never mapped
+  or rendered (`adapters/shipping.ts` and `types/shipping.ts` carry no
+  `location`), so it is a payload exposure rather than a screen bug today.
+- `packages/api/src/api/middlewares.ts:362-382` — Koi's own encrypting matchers
+  cover `POST /store/customers/me/addresses[/:id]` and the admin customer
+  address routes, i.e. the `customer_address` table. The snapshots are not
+  covered by these.
+- Medusa's own order-placed email (`order.placed` → notification module): Koi
+  registers no `order.placed` subscriber and the SMTP provider
+  (`packages/api/src/modules/smtp-notification/service.ts:20`) takes ready
+  content, no template with an address. Only the password-reset subscriber sends
+  mail today, so the email path is *latent*: it becomes a read path the moment
+  someone adds an order email.
+- No Koi admin screen reads an order address: `apps/admin-koi` has no order
+  routes, and its only address is the farm's own
+  (`apps/admin-koi/src/lib/data/farms.ts:41`, rendered
+  `apps/admin-koi/src/components/FarmQueue.tsx:130-132`), which has no `phone`.
+
+So the read surface is smaller than feared: **one** storefront screen shows a
+snapshot phone (`/akun/alamat`), plus two payload exposures that are fetched but
+never rendered (the cart's `shipping_address`, the shipping options' location
+address). The write side is the cart, order and stock-location workflows.
+Medusa core does not render an address to a client anywhere Koi uses it, and no
+Koi admin screen reads one.
+
+**Not verified:** the address model and the cart/order workflows live in
+`node_modules/@medusajs*`, which is not installed in this working tree (the
+`node_modules` directory is empty), so this file cannot confirm which step or
+hook to use for the write side. That is T-092.10's first job.
+- [x] T-092.10 [backend] Encrypt `phone` on Medusa's address snapshots at write
+  time (D-062, AC1). Mercur's cart, order, fulfillment and stock-location
+  workflows write these rows, so a `req.body` middleware is not enough. Start by
+  reading the address model and the create-address step in
+  `node_modules/@medusajs/medusa` to find the write point, then run the existing
+  `encryptPii` there (an address-step override or a workflow hook). Covers
+  `POST /store/carts*` bodies from `cart.ts:371`, the order address copies Medusa
+  makes at completion, and the stock-location address. Idempotent, like
+  `encryptPii`. **If the only write point is Medusa-internal**, stop and ask the
+  owner: the fallback is a subscriber that rewrites the row, which is a write
+  outside a workflow and needs an exception (root `CLAUDE.md` §8).
+- [x] T-092.11 [backend] Decrypt snapshot `phone` on the response side (D-062,
+  AC3). Extend the existing `decryptPiiResponse` on `/store` to also decrypt
+  `phone` inside `shipping_address`/`billing_address`/`addresses` — the existing
+  `PII_FIELDS` walk (pii-crypto.ts:106-113) already matches a nested `phone`, so
+  this is mostly verifying it runs on cart and customer reads, plus the mask
+  still applying afterwards (the mask wrapper is the outer one).
+- [x] T-092.12 [storefront] `/akun/alamat` (list, edit form and the create/update
+  actions in `lib/data/customer.ts:156-234`) must show and submit a plain phone,
+  never the `enc:v1:` envelope, and fall back to a blank when the value is
+  missing (D-062, AC3). Small: `/store` responses are already decrypted by
+  T-092.11; check the round-trip re-encrypts on save through the existing
+  `POST /store/customers/me/addresses` matcher.
+- [x] T-092.13 [backend] Decide and cover the email path: today nothing sends an
+  address by email (verified above), so add a one-line guard/comment at the
+  notification caller site naming D-062, so the first order email added must
+  decrypt before it renders. No template work in the MVP. *(If the owner wants a
+  real order email in the MVP, this becomes a decrypt-and-template task.)*
+  (D-062, AC3.)
+- [x] T-092.14 [qa] A direct DB read of `cart_address.phone`, `order_address.phone`
+  and `stock_location_address.phone` shows ciphertext; the `/akun/alamat` and
+  `/pengiriman` screens show the plain number for the owner; a cart with no phone
+  still completes an order; no API response (store, admin, vendor) contains an
+  `enc:v1:` string. (D-062, AC1/AC3.)
+
+
+### US-093 Orphan KTP uploads are cleaned up · `done (evidence: packages/api/src/workflows/steps/orphan-ktp.ts:16,18-26 (30-day default, `ORPHAN_KTP_RETENTION_DAYS` override/fallback), :39,105 (delete step re-filters on `^private-\d+-ktp\.(jpg|jpeg|png|webp)$`); packages/api/src/jobs/delete-orphan-ktp.ts:35-38 (`schedule: "0 4 * * *"`, batched loop, stops on a 0-delete pass); packages/api/src/workflows/delete-orphan-ktp.ts (one batch per run, result `{ deleted }`); integration-tests/http/orphan-ktp-cleanup.spec.ts 6/6 (:139 AC1, :149 AC3, :159 AC3 public/other private, :172 AC1 fresh, :181 AC2 idempotent, :200 AC2 batch); integration-tests/http/qa-orphan-ktp-independent.spec.ts 9/9 (:119 AC1, :129 AC3 seller-referenced, :174 AC3 public farm photo, :182 AC3 claim video/top-up, :226 AC1 + idempotent, :248 AC2 batch loop with batch=2, :263 job registration, :276/:285 retention config); `bun run test:integration:http -- orphan-ktp` → 2 suites, 15/15 passed; `bun x tsc --noEmit -p .` exit 0; `bun run test:unit` exit 0; `bun run build` success; qa PASS 2026-11-21. Not verified: full HTTP shard suite not rerun, seller paging past 500 rows not exercised at runtime, live cron firing not observed, S3 providers out of scope (local provider only, stated at steps/orphan-ktp.ts:31-32))`
 As the **platform**, I want KTP photos never attached to a seller deleted after a
 while, so that stray uploads don't pile up forever. *(Plan: Personal data
-protection; owner follow-up 2026-11-15. Low priority, not in the current
-milestone order.)*
-**Note:** the `ponytail:` comment in `packages/api/src/api/store/farm-uploads/route.ts:33-35` stays until this story lands.
+protection; owner follow-up 2026-11-15. **In MVP scope by the owner's 2026-11-20
+call; accepted 2026-11-21.**)*
+**Note (satisfied):** the old `ponytail:` comment in `packages/api/src/api/store/farm-uploads/route.ts` is gone; the remaining `ponytail:` in `packages/api/src/workflows/steps/orphan-ktp.ts:31-32` is the intentional local-provider note.
 - AC1: A private `ktp` file with no seller reference and older than a set age is deleted; nothing that is referenced is touched.
 - AC2: The job runs on a schedule, is idempotent and batches large sets.
 - AC3: A KTP attached to a seller, or a public farm photo, is never deleted.
-- [ ] T-093.1 [backend] Scheduled cleanup job over `private-uploads/` KTP files with no seller reference (idempotent, batched)
-- [ ] T-093.2 [qa] An orphan older than the age is deleted; a referenced one and a public farm photo are not
+- [x] T-093.1 [backend] Scheduled cleanup job over `private-uploads/` KTP files with no seller reference (idempotent, batched) *(steps/orphan-ktp.ts:68-97,105; jobs/delete-orphan-ktp.ts:35-38; workflows/delete-orphan-ktp.ts; orphan-ktp-cleanup.spec.ts 6/6; `test:integration:http -- orphan-ktp` 15/15)*
+- [x] T-093.2 [qa] An orphan older than the age is deleted; a referenced one and a public farm photo are not *(qa-orphan-ktp-independent.spec.ts 9/9: :119, :129, :174, :182; qa PASS 2026-11-21)*
 
 ---
 
 ## Epic 7: WhatsApp bot (Milestone 7)
+
+> **PARKED by the owner on 2026-11-20 (`mvp-Q12`, "hold for now").** The stories
+> below stay `blocked (mvp-Q12)`. No agent starts any US-080 – US-085 or any
+> T-080.* – T-085.* task, including the ops ones (T-080.1/.2/.5), until the
+> owner lifts the hold. A parked epic is not a queue item.
 
 ### US-080 WhatsApp number linked to an account · `blocked (mvp-Q12)`
 As a **customer**, I want my WhatsApp number linked to my account so that I can
@@ -7561,13 +7747,18 @@ The website must work without WhatsApp. The bot can launch after the web.
 
 ## Epic 8: Pilot (Milestone 8)
 
-### US-090 Pilot with friendly farmers · `todo`
+### US-090 Pilot with friendly farmers · `blocked (mvp-Q12)`
+**Blocked 2026-11-20 by the owner's `mvp-Q12` hold.** Only AC1 (the pilot run)
+needs the bot decision. T-090.2 – T-090.6 (upgrade routine, file provider,
+locking provider, wallet check, CI harness) are bot-independent ops work the
+owner may lift on its own — say so if he wants them run before the pilot.
 - AC1: One or two farmers run real auctions end to end before public launch.
 - [ ] T-090.1 [ops] Pilot checklist: register, top up, farm approval, auction, bids, close, pay, ship, deliver
 - [ ] T-090.2 [ops] Upgrade routine from the plan: backup, rehearse on a copy, deploy with no live auction, compare wallet totals
 - [ ] T-090.3 [ops] Private-access file provider in production for KTP photos and top-up screenshots (D-017, D-018). The local dev provider has no real access control; choose the provider and configure it before launch
 - [ ] T-090.4 [ops] Shared locking provider (e.g. redis) in production if more than one backend instance runs. Today's lock is in-memory and only serialises within one process (top-up decisions US-012, wallet creation, settings)
 - [ ] T-090.5 [ops] Before launch, check for wallets whose balance went below Rp0 before D-019 (dev data only, if any). D-019 lets such a wallet receive only positive corrections, so fix or reset them before real money flows
+- [ ] T-090.6 [ops] **Non-blocking** test-harness fix: the full `test:integration:http` run OOMs in a single process at ~37/49 suites (every suite passes individually or in small groups). Raise the Jest heap and/or split the run into batches so CI can run the full suite unattended. Evidence: qa's 2026-11-20 run. No product rule depends on it; do not let it gate launch.
 
 ---
 
@@ -7604,7 +7795,7 @@ table complete.
 | Plan section | Stories |
 |---|---|
 | Users and roles | US-002, US-020, US-021, US-070 |
-| Personal data protection (column encryption on top of disk; masked everywhere incl. admin; logged reveal; self-view; no phone between winner and farmer; farmer gets the winner's saved address; D-039, D-042, D-043, D-044 (on hold), D-045, D-052, D-056, D-057) | US-092, US-020, US-021, US-010 – US-013, US-051, US-052, US-057, US-070, US-091 |
+| Personal data protection (column encryption on top of disk; masked everywhere incl. admin; logged reveal; self-view; no phone between winner and farmer; farmer gets the winner's saved address; D-039, D-042, D-043, D-044 (on hold, re-confirmed 2026-11-20), D-045, D-052, D-056, D-057, D-062 (Medusa address snapshots; drafted, pending approval)) | US-092 (T-092.1–T-092.14; D-062 adds T-092.10 – T-092.14), US-020, US-021, US-010 – US-013, US-051, US-052, US-057, US-070, US-091 |
 | Orphan upload cleanup (owner follow-up) | US-093 |
 | Becoming a farmer | US-020, US-021 |
 | Store credit wallet: how credit moves (4 join, 5 submit/approve, D-020, D-031–D-033) | US-010, US-011, US-012, US-015, US-031, US-032, US-041 |
@@ -7617,7 +7808,7 @@ table complete.
 | Claim statuses (D-027, D-038) | US-054, US-055, US-056, US-061 |
 | Structure (20 lots, 1–7 days, approval, rejection, approval refused after start D-049, join while scheduled or live D-048, public statuses D-046, cancelled lot public D-050) | US-015, US-030, US-032, US-040, US-041, US-091 |
 | Pricing per lot (OB, KB, first bid = OB, D-023) | US-030, US-042 |
-| Bidding (incl. bid removal, D-024, D-036; masked bidders and full history, D-051) | US-042, US-044, US-072 |
+| Bidding (incl. bid removal and its 500-char reason cap, D-024, D-036, D-063; masked bidders and full history, D-051) | US-042, US-044, US-072 |
 | Extend (anti-sniping) | US-043, US-015, US-030 |
 | Fair play (incl. shill-bidding table, D-028, D-037; ban check on join and bid lands with strikes, D-047) | US-041, US-042, US-059, US-071 |
 | Closing and winners (no phone either way, D-052; farmer gets the winner's saved address, D-056; winner's bank reveal on hold, D-044) | US-050, US-051 |
@@ -7662,7 +7853,7 @@ is built. Record the answer here, in `plan.md`, and as a decision in `docs/produ
 | mvp-Q9 | **Answered 2026-11-15 (D-022):** a farmer may cancel only before the start (`draft` or `scheduled`); once `live`, only the admin. Join-fee refunds on farmer cancel stay; listing fee not refunded. *(Was: can a farmer cancel after bidding has started?)* | none (was US-060) |
 | mvp-Q10 | **Answered 2026-11-15 (D-028):** per-farmer bidder table (bidder, bid count, lots bid on, wins, unpaid wins); flag at ≥50% of bids on one farmer or ≥2 unpaid wins from that farmer; no automatic action. *(Was: fields and thresholds?)* | none (was US-071; now blocked by mvp-Q22) |
 | mvp-Q11 | **Answered 2026-11-15 (D-024):** bid marked removed, never deleted; price back to highest remaining bid or OB; extend stays. *(Was: how is the price restored, does extend still apply?)* | none (was US-072; now blocked by mvp-Q21) |
-| mvp-Q12 | **Answered in part 2026-11-15 (D-029):** stays with Qontak (not Meta Cloud API direct). **Remaining:** the owner's written Qontak quote (price, Bot + User tokens, webhook access, webhook retry/signature, rate limits, utility charging inside the window, onboarding time), tracked as T-080.5. Owner also starts Meta Business verification now (T-080.2). *(Earlier: capability confirmed by T-080.1 research, 2026-11-14.)* | US-080 – US-085 |
+| mvp-Q12 | **On hold — deliberately parked by the owner on 2026-11-20 ("hold for now"), re-confirmed 2026-11-20.** This is an owner hold, not an unanswered question waiting on research: nothing under Epic 7 may start, and **the MVP ships web-only unless the owner reverses this**. Earlier: **answered in part 2026-11-15 (D-029)** — stays with Qontak (not Meta Cloud API direct). **Remaining if ever lifted:** the owner's written Qontak quote (price, Bot + User tokens, webhook access, webhook retry/signature, rate limits, utility charging inside the window, onboarding time), tracked as T-080.5. *(Earlier: capability confirmed by T-080.1 research, 2026-11-14.)* No agent may pick up US-080 – US-085, US-090 or T-080.* until the owner lifts the hold. | US-080 – US-085, US-090 |
 | mvp-Q13 | **Answered 2026-11-15 (D-021):** option (b); rejection returns the auction to `draft` with a written reason the farmer sees; no new status. *(Was: add `rejected`, back to `draft`, or `cancelled`?)* | none (was US-032, US-033; see mvp-Q17) |
 | mvp-Q14 | **Answered 2026-11-15 (D-027):** enum approved as proposed; closed = `confirmed` or `rejected`; new rule: auto-confirm 3 days after `resolved` by the existing scheduled job. *(Was: what are the claim statuses, and which count as closed?)* | none (was US-054, US-055, US-056, US-061) |
 | mvp-Q15 | **Answered 2026-11-14, verified at runtime in US-031** (`farmer-auctions.spec.ts:496`): option (a); the member token's `app_metadata` contains `customer_id`. *(Was: how does the listing-fee charge find the farmer's **customer** wallet? Wallets link to customers (`plan.md`, Custom modules), but farmer routes use a member token plus `x-seller-id` (D-003), and D-003 forbids a custom customer↔seller link. Options: (a) read `customer_id` from the shared auth identity's `app_metadata` (D-003 says it holds both ids; whether a member token exposes it is not verified); (b) the create-auction call also sends the farmer's customer token; (c) charge on a separate step from the storefront under the customer token.)* | none (was US-031) |
@@ -7702,4 +7893,7 @@ is built. Record the answer here, in `plan.md`, and as a decision in `docs/produ
 | mvp-Q49 | **Open (2026-11-18, non-blocking).** US-059 AC2 reads "2 active strikes = ban", i.e. automatic. Should a ban instead be an explicit admin action so a second strike never silently blocks an account? Shipped: automatic at the second active strike, using that strike's written reason, ban derived from `active_count` (no ban table). Note: `farmer_not_shipped` has no queue row in the MVP (no shipping deadline exists), so the route accepts it directly. Options: (a) automatic (built, recommended); (b) an explicit ban action (new table/route/UI). *(Was: is a ban automatic at the second strike or an explicit admin action?)* | US-059 T-059.1a |
 | mvp-Q50 | **Open (2026-11-18, non-blocking).** When an admin cancels a `live` auction, what happens to its lots? Shipped (a): the auction's `open` lots are cancelled with the same reason — they cannot stay open under a cancelled auction because the close step needs a `live` auction, so they would hang forever; lots already `won`/`unsold` keep their saved results. Options: (a) as built (recommended); (b) also hide already-closed lots / keep the auction page visible read-only. *(Was: what happens to the lots of an admin-cancelled live auction?)* | US-091 T-091.1b |
 | mvp-Q51 | **Open (2026-11-18, non-blocking).** May an admin cancel an auction before it is `live`? AC2 and the plan give the admin only the live case; `draft`/`pending_approval`/`scheduled` stay the farmer's (US-060). Options: (a) `live` only (built, recommended); (b) also the pre-start statuses (one guard line + one spec case). *(Was: can an admin cancel a not-yet-live auction?)* | US-091 T-091.1b |
+| mvp-Q52 | **Answered 2026-11-20 (D-063):** a bid-removal reason is required, non-blank and at most **500 characters**, the same cap as US-059's strike reason. Backend is landing it now in `packages/api/src/api/admin/bids/validators.ts` with a 501 → 400 / exactly 500 → accepted spec case (`bid-removal.spec.ts:453`); qa verifies the boundary. *(Was: what maximum length, if any, does a bid-removal reason have?)* | none (was US-072; qa's low bug) |
+| mvp-Q53 | **Owner action, non-blocking (2026-11-20).** D-062 is built and verified in US-092 but marked drafted/pending in `docs/product/decisions.md`; the owner has not signed off its wording, and D-062 is not yet listed in `docs/releases/README.md`. Only the owner edits an approved decision. Options: (a) approve as written and add the README line; (b) the owner rewords the section. No code changes either way. *(Was: does the owner approve D-062's wording as written?)* | none |
+| mvp-Q54 | **Answered 2026-11-20: D-044 goes on hold again, and stays on hold.** The owner re-confirmed the hold (D-044 text), so the winner sees no farmer contact at all. US-051's built reveal stays shipped and its status is unchanged; D-059's 2026-11-17 return is superseded. Nothing further is built on D-044/D-057 until the owner lifts the hold. *(Was: is D-044 in force or still on hold?)* | none |
 | — (payment model) | **Answered 2026-11-17 (D-058):** the MVP pays off-platform — the winner pays the farmer directly within 1×24 h, the farmer marks the lot paid (`won → paid`) then ships; the platform holds and pays out no money. Xendit escrow stays the planned beta direction, out of MVP scope. Un-parks US-056, US-058, US-059's payment strike and T-052.4; restores D-044/D-057 through D-059. *(Was: does the MVP pay in-app (Xendit escrow or wallet escrow), or off-platform?)* | none (was US-052 T-052.4, US-056, US-058, US-059) |

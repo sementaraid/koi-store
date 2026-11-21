@@ -51,7 +51,7 @@ The product-owner agent drafts entries. The owner approves them.
 | D-041 | 2026-11-15 | Every seller suspend and every ban needs a reason (extends D-015) | In force |
 | D-042 | 2026-11-15 | Admins see masked PII everywhere; a full value only through an explicit reveal, logged (answers `mvp-Q25`) | In force |
 | D-043 | 2026-11-15 | Column-level encryption for NIK, bank account and phone on top of disk encryption; the wallet and top-up tables are included in US-092 (answers `mvp-Q26`) | In force |
-| D-044 | 2026-11-15 | The winner of a lot sees the farmer's full bank account for that lot only, through the logged reveal (answers `mvp-Q27`) | On hold (owner reconsidering, 2026-11-16): the winner sees no farmer contact for now; the 2026-11-15 "farmer reveals the winner's phone" confirmation superseded by D-052 |
+| D-044 | 2026-11-15 | The winner of a lot sees the farmer's full bank account for that lot only, through the logged reveal (answers `mvp-Q27`) | On hold (owner re-confirmed the hold, 2026-11-20; first held 2026-11-16): the winner sees no farmer contact at all; D-059's 2026-11-17 return is superseded; US-051's built reveal stays shipped; the 2026-11-15 "farmer reveals the winner's phone" confirmation superseded by D-052 |
 | D-045 | 2026-11-15 | A person sees their own full PII on their own record; every other caller, admins included, gets the mask | In force |
 | D-046 | 2026-11-15 | Public pages show `scheduled`, `live` and `closed` auctions; a closed lot shows final price and sold/unsold, never the winner | In force; "masked name" clause superseded in part by D-051 |
 | D-047 | 2026-11-15 | Join ships before bans; the ban check lands with strikes (US-059) | In force |
@@ -64,11 +64,13 @@ The product-owner agent drafts entries. The owner approves them.
 | D-054 | 2026-11-16 | A farm suspended after approval may still mark its already-sold lots paid and shipped; it can't create auctions or lots; a terminated farm can't (answers `mvp-Q36`) | In force |
 | D-055 | 2026-11-16 | Error messages the Koi apps show verbatim are Indonesian, written on the backend, rupiah in `id-ID`; `@mercurjs/client` is not patched | In force |
 | D-056 | 2026-11-16 | The farmer gets the winner's default shipping address: masked (city + province) on the sold lot, full only through a logged reveal (answers `mvp-Q37`; relaxes D-052 for the address only, never the phone) | In force |
-| D-057 | 2026-11-16 | If the winner's bank reveal returns, it returns the account number and the account-holder name, both full, one audit row (answers `mvp-Q39`) | On hold with D-044: intended rule, not built |
+| D-057 | 2026-11-16 | If the winner's bank reveal returns, it returns the account number and the account-holder name, both full, one audit row (answers `mvp-Q39`) | On hold with D-044 (re-confirmed 2026-11-20): intended rule; the built US-051 reveal stays shipped |
 | D-058 | 2026-11-17 | The MVP pays off-platform: the winner pays the farmer directly within 1×24 h, the farmer marks the lot paid then ships; the platform holds and pays out no money (answers the payment-model question; un-parks US-056, US-058, US-059's strike and T-052.4) | In force |
-| D-059 | 2026-11-17 | D-044 returns: the winner reveals the farmer's full account number and holder name through the logged reveal on their own won lot; no phone, no `wa.me` (D-052 stands) | In force |
+| D-059 | 2026-11-17 | D-044 returns: the winner reveals the farmer's full account number and holder name through the logged reveal on their own won lot; no phone, no `wa.me` (D-052 stands) | Superseded by the owner's 2026-11-20 re-hold of D-044 (built code stays shipped; D-044 carries the current rule) |
 | D-060 | 2026-11-17 | A farm suspended after approval may also accept or dispute claims on its own sold lots (ownership + not `terminated`, not `validateSellerOpenStep`); extends D-054 (answers `mvp-Q45`, option b) | In force |
 | D-061 | 2026-11-17 | The farmer's live link is a nullable `auction.live_stream_url` column, written through `/vendor/auctions/:id/live-link` and admin-koi in any status but `closed`/`cancelled`, rendered as an outbound link (answers `mvp-Q43`) | In force |
+| D-062 | 2026-11-20 | The phone in Medusa's address snapshots (`cart_address`, `order_address`, `fulfillment_address`, `stock_location_address`) is encrypted too; D-039/D-043 cover it (answers the US-092/T-092.1 scope question) | Drafted 2026-11-20, pending owner approval (built and verified in US-092; `mvp-Q53`) |
+| D-063 | 2026-11-20 | A bid-removal reason (`POST /admin/bids/:id/remove`) is required, non-blank and at most 500 characters, the same cap as US-059's strike reason (answers `mvp-Q52`) | In force |
 
 ---
 
@@ -504,14 +506,16 @@ column encryption protects both.
 **Source:** Owner, answer to `mvp-Q26` (2026-11-15).
 
 ### D-044: Winner sees the farmer's full bank account for its own lot
-**Status: On hold (owner reconsidering, 2026-11-16).** Owner: "for now don't
-show farmer contact, that's all, I will recalculate it." Not superseded: the
-text below stays as the rule to restore if the owner brings it back. Until then
-the winner sees no farmer contact at all (no phone, D-052; no bank account or
-holder name). Context, not a decision: the owner is considering Xendit escrow
-(`docs/releases/README.md`, Ideas not yet planned), under which the winner never
-needs the farmer's bank account. If restored, the reveal also returns the
-holder name (D-057).
+**Status: On hold (owner re-confirmed the hold, 2026-11-20; first held
+2026-11-16).** Owner: "for now don't show farmer contact, that's all, I will
+recalculate it." The D-059 return of 2026-11-17 is **superseded by this
+re-hold**: the winner sees no farmer contact at all (no phone, D-052; no bank
+account or holder name). US-051's built reveal stays shipped and its status is
+unchanged, but nothing further is built on D-044/D-057. The text below stays as
+the rule to restore if the owner brings it back. Context, not a decision: the
+owner is considering Xendit escrow (`docs/releases/README.md`, Ideas not yet
+planned), under which the winner never needs the farmer's bank account. If
+restored, the reveal also returns the holder name (D-057).
 
 **Decision:** The winner of a lot sees the farmer's **full** bank account, but
 only for the lot they won, and only through the same logged reveal as D-042
@@ -800,3 +804,30 @@ stated YouTube/Instagram allow-list.
 no auction screen at all (verified: zero auction references in
 `@mercurjs/admin`), so a custom field would buy an API-level door, not a screen.
 **Source:** Owner, answer to `mvp-Q43` (2026-11-17).
+
+### D-062: Medusa's address snapshots are covered by phone encryption
+**Status: Drafted 2026-11-20, pending owner approval (`mvp-Q53`).** The rule is
+built and verified in US-092; only the owner's wording sign-off is outstanding.
+Answers the US-092/T-092.1 scope question; extends D-039 and D-043.
+**Decision:** the `phone` column of Medusa's address snapshots — `cart_address`,
+`order_address`, `fulfillment_address`, `stock_location_address` — is
+encrypted like every other phone column (D-043). D-039's "personal data is
+encrypted at rest" covers these tables; the exclusions in D-040, D-044 and D-045
+do not apply to them.
+**Reason:** the shipping address carries the phone, and it is written by
+Medusa's own cart and order workflows, not by a Koi route, so the
+`encryptPiiBody` middleware on Koi write routes never sees it. Leaving it plain
+would leave the most copied PII column in the database unencrypted while the
+customer record beside it is ciphertext.
+**Source:** Owner, decision on the US-092/T-092.1 scope question (2026-11-20).
+
+### D-063: A bid-removal reason caps at 500 characters
+**Status: In force (2026-11-20).**
+**Decision:** the removal reason an admin writes on `POST /admin/bids/:id/remove`
+is required, non-blank, and at most **500 characters** — the same cap as US-059's
+strike reason. A longer reason is rejected with an Indonesian message and no
+write (answers `mvp-Q52`).
+**Reason:** the cap matches the strike reason so the two admin reason fields
+behave the same, and a runaway paste cannot bloat the `bid.removed_reason`
+column or the admin panel row.
+**Source:** Owner, answer to `mvp-Q52` (2026-11-20).
