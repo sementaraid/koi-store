@@ -9,11 +9,11 @@ import { createSellerAccountWorkflow } from "@mercurjs/core/workflows"
 
 jest.setTimeout(120 * 1000)
 
-// US-021 AC3 edge: a rejected member resubmits with the member token minted
-// *before* the first registration (empty actor_id, the token the storefront
-// uses for POST /vendor/sellers). The workflow's `if (input.member_id)` guard
-// does not see a member, so AC3's finality must hold without it: no second
-// farm may be written, whatever the status code.
+// US-021 AC3 edge (T-021.6): a rejected member resubmits with the member token
+// minted *before* the first registration (empty actor_id, the token the
+// storefront uses for POST /vendor/sellers). The workflow's guard resolves the
+// member by the token's own email so AC3's finality holds for that token too:
+// 400 with the Indonesian message, and no second farm written.
 medusaIntegrationTestRunner({
   inApp: true,
   env: {},
@@ -93,19 +93,50 @@ medusaIntegrationTestRunner({
       )
 
       const newEmail = `baru-${email}`
-      const resubmit = await api
-        .post("/vendor/sellers", farmBody(newEmail, email), {
+      await expect(
+        api.post("/vendor/sellers", farmBody(newEmail, email), {
           headers: { authorization: `Bearer ${stale}` },
         })
-        .then((r) => r.status)
-        .catch((e: { response: { status: number } }) => e.response.status)
-
-      // AC3: rejection is final. Nothing new is written whatever the status.
-      expect(resubmit).not.toEqual(201)
+      ).rejects.toMatchObject({
+        response: {
+          // T-021.6: the guard's refusal, not Medusa's duplicate-metadata 500
+          // (NOT_ALLOWED maps to 400), in Indonesian (D-055).
+          status: 400,
+          data: {
+            message:
+              "Penolakan bersifat final. Pendaftaran tidak dapat diajukan ulang dengan akun ini.",
+          },
+        },
+      })
       const { data: sellers } = await container
         .resolve(ContainerRegistrationKeys.QUERY)
         .graph({ entity: "seller", fields: ["id", "status"], filters: { email: newEmail } })
       expect(sellers).toHaveLength(0)
+    })
+
+    it("still registers a first farm from a pre-registration token", async () => {
+      const container = getContainer()
+      const email = `fresh-${Date.now()}@test.dev`
+      const password = "Rahasia123!"
+      const auth = container.resolve(Modules.AUTH)
+      const { authIdentity } = await auth.register("emailpass", { body: { email, password } })
+      const [customer] = await container.resolve(Modules.CUSTOMER).createCustomers([
+        { email, first_name: "Budi", last_name: "Santoso", phone: "+6281234567890" },
+      ])
+      await auth.updateAuthIdentities({ id: authIdentity!.id, app_metadata: { customer_id: customer.id } })
+
+      const stale = (await api.post("/auth/member/emailpass", { email, password })).data
+        .token as string
+      const first = await api.post("/vendor/sellers", farmBody(email, email), {
+        headers: { authorization: `Bearer ${stale}` },
+      })
+      expect(first.status).toEqual(201)
+
+      const { data: sellers } = await container
+        .resolve(ContainerRegistrationKeys.QUERY)
+        .graph({ entity: "seller", fields: ["id", "status"], filters: { email } })
+      expect(sellers).toHaveLength(1)
+      expect(sellers[0].status).toEqual("pending_approval")
     })
   },
 })

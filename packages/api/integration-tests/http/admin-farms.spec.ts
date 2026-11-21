@@ -281,7 +281,8 @@ medusaIntegrationTestRunner({
           // NOT_ALLOWED maps to 400, like the unsuspend guard above.
           status: 400,
           data: {
-            message: "A rejected farm registration is final and cannot be resubmitted.",
+            message:
+              "Penolakan bersifat final. Pendaftaran tidak dapat diajukan ulang dengan akun ini.",
           },
         },
       })

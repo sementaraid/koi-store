@@ -46,7 +46,7 @@ const assertNoRejectedRegistration = async (
   if (rejected) {
     throw new MedusaError(
       MedusaError.Types.NOT_ALLOWED,
-      "A rejected farm registration is final and cannot be resubmitted."
+      "Penolakan bersifat final. Pendaftaran tidak dapat diajukan ulang dengan akun ini."
     )
   }
 }
@@ -80,11 +80,10 @@ const farmFieldsFrom = (
 // rejected registration writes nothing.
 createSellerAccountWorkflow.hooks.validate(
   async ({ input }, { container }) => {
+    const query = container.resolve<QueryGraph>(ContainerRegistrationKeys.QUERY)
     const memberEmail = input.member_email
+    let emailpassEmail: string | undefined
     if (memberEmail) {
-      const query = container.resolve<QueryGraph>(
-        ContainerRegistrationKeys.QUERY
-      )
       const {
         data: [identity],
       } = await query.graph({
@@ -99,7 +98,7 @@ createSellerAccountWorkflow.hooks.validate(
 
       const identities = (identity?.provider_identities ??
         []) as ProviderIdentity[]
-      const emailpassEmail = identities.find(
+      emailpassEmail = identities.find(
         (pi) => pi.provider === "emailpass"
       )?.entity_id
 
@@ -116,12 +115,24 @@ createSellerAccountWorkflow.hooks.validate(
 
     // US-021 AC3 (D-015): the same member cannot register a second farm after
     // a rejection, not even with a different seller email. `member_id` is the
-    // caller's own member; a first registration has none yet.
-    if (input.member_id) {
-      const query = container.resolve<QueryGraph>(
-        ContainerRegistrationKeys.QUERY
-      )
-      await assertNoRejectedRegistration(query, input.member_id)
+    // caller's own member, but a member token taken before the first
+    // registration has an empty `actor_id` (D-003/D-030) even though that
+    // registration already created the member, so fall back to the identity's
+    // own email — already proven to match `member_email` above.
+    let memberId = input.member_id as string | undefined
+    const lookupEmail = emailpassEmail ?? memberEmail
+    if (!memberId && lookupEmail) {
+      const {
+        data: [member],
+      } = await query.graph({
+        entity: "member",
+        fields: ["id"],
+        filters: { email: lookupEmail },
+      })
+      memberId = member?.id as string | undefined
+    }
+    if (memberId) {
+      await assertNoRejectedRegistration(query, memberId)
     }
 
     // Every route to this workflow that carries farm data is a farm

@@ -1,9 +1,11 @@
 import { medusaIntegrationTestRunner } from "@medusajs/test-utils"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
+import { MercurModules } from "@mercurjs/types"
 import type { MedusaContainer } from "@medusajs/framework/types"
 import {
   approveSellerWorkflow,
   createSellerAccountWorkflow,
+  suspendSellerWorkflow,
 } from "@mercurjs/core/workflows"
 import { createFeeCategoriesWorkflow } from "../../src/workflows/fee-categories"
 import { updatePlatformSettingsWorkflow } from "../../src/workflows/update-platform-settings"
@@ -718,6 +720,118 @@ medusaIntegrationTestRunner({
         .retrieveAuction(auction.id)
       expect(stored.status).toEqual("draft")
       expect(stored.payer_customer_id).toBeNull()
+    })
+
+    // US-021 T-021.4: a rejected (suspended + approved_at null) and a
+    // terminated seller are refused on both create and submit. Pending is
+    // covered above (`refuses a seller whose farm is not open`).
+    const directDraft = async (seller_id: string, fee_category_id: string) => {
+      const [auction] = await getContainer()
+        .resolve<AuctionModuleService>(AUCTION_MODULE)
+        .createAuctions([
+          {
+            seller_id,
+            fee_category_id,
+            start_at: new Date(Date.now() + DAY),
+            end_at: new Date(Date.now() + 3 * DAY),
+            delivery_method: "courier",
+            listing_fee: 50_000,
+            join_fee: 100_000,
+            extend_window_minutes: 5,
+          },
+        ])
+      return auction
+    }
+
+    const setSellerStatus = async (id: string, status: "suspended" | "terminated") => {
+      const container = getContainer()
+      await container.resolve<{
+        updateSellers(input: Record<string, unknown>): Promise<unknown>
+      }>(MercurModules.SELLER).updateSellers({ id, status })
+      const {
+        data: [seller],
+      } = await container
+        .resolve(ContainerRegistrationKeys.QUERY)
+        .graph({ entity: "seller", fields: ["id", "status"], filters: { id } })
+      return seller
+    }
+
+    it("refuses a rejected (suspended, approved_at null) seller on create and submit (US-021 AC3, AC4)", async () => {
+      const { seller, customer, vendor } = await registerFarm()
+      const category = await createCategory("rej")
+      await fundWallet(customer.id, 1_000_000)
+
+      // Rejection is Mercur's suspend on a never-approved farm (D-015).
+      await suspendSellerWorkflow(getContainer()).run({
+        input: { seller_id: seller.id, reason: "Foto KTP tidak jelas." },
+      })
+      const {
+        data: [rejected],
+      } = await getContainer()
+        .resolve(ContainerRegistrationKeys.QUERY)
+        .graph({
+          entity: "seller",
+          fields: ["id", "status", "approved_at", "rejected_at", "status_reason"],
+          filters: { id: seller.id },
+        })
+      expect(rejected).toMatchObject({
+        status: "suspended",
+        approved_at: null,
+        status_reason: "Foto KTP tidak jelas.",
+      })
+      expect(rejected.rejected_at).toBeTruthy()
+
+      // Create is refused and nothing is written.
+      expect(
+        await statusOf(
+          api.post("/vendor/auctions", auctionBody(category.id), { headers: vendor })
+        )
+      ).toEqual(403)
+      const { data: created } = await getContainer()
+        .resolve(ContainerRegistrationKeys.QUERY)
+        .graph({ entity: "auction", fields: ["id"], filters: { seller_id: seller.id } })
+      expect(created).toHaveLength(0)
+
+      // Submit of an existing draft is refused too, and the draft stays put.
+      const auction = await directDraft(seller.id, category.id)
+      expect(
+        await statusOf(api.post(`/vendor/auctions/${auction.id}/submit`, {}, { headers: vendor }))
+      ).toEqual(403)
+      const stored = await getContainer()
+        .resolve<AuctionModuleService>(AUCTION_MODULE)
+        .retrieveAuction(auction.id)
+      expect(stored).toMatchObject({ status: "draft", payer_customer_id: null })
+    })
+
+    it("refuses a terminated seller on create and submit (US-021 AC4)", async () => {
+      const { seller, customer, vendor } = await registerFarm({ approve: true })
+      const category = await createCategory("term")
+      await fundWallet(customer.id, 1_000_000)
+      expect(await setSellerStatus(seller.id, "terminated")).toMatchObject({
+        status: "terminated",
+      })
+
+      expect(
+        await statusOf(
+          api.post("/vendor/auctions", auctionBody(category.id), { headers: vendor })
+        )
+      ).toEqual(403)
+      const { data: created } = await getContainer()
+        .resolve(ContainerRegistrationKeys.QUERY)
+        .graph({ entity: "auction", fields: ["id"], filters: { seller_id: seller.id } })
+      expect(created).toHaveLength(0)
+
+      const auction = await directDraft(seller.id, category.id)
+      expect(
+        await statusOf(api.post(`/vendor/auctions/${auction.id}/submit`, {}, { headers: vendor }))
+      ).toEqual(403)
+      expect(
+        (
+          await getContainer()
+            .resolve<AuctionModuleService>(AUCTION_MODULE)
+            .retrieveAuction(auction.id)
+        ).status
+      ).toEqual("draft")
     })
   },
 })
