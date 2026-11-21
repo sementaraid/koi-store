@@ -1,9 +1,15 @@
 {
   "permissions": {
-    "defaultMode": "acceptEdits",
+    "defaultMode": "auto",
     "allow": [
       "mcp__mercur",
       "mcp__medusa",
+      "mcp__plugin_telegram_telegram__reply",
+      "mcp__plugin_telegram_telegram__react",
+      "mcp__plugin_telegram_telegram__edit_message",
+      "mcp__plugin_telegram_telegram__download_attachment",
+      "Bash(/home/sunar/apps/koi-stt/stt:*)",
+      "ToolSearch",
       "Bash(bun run:*)",
       "Bash(bunx tsc:*)",
       "Bash(bunx eslint:*)",
@@ -36,5 +42,10 @@
       "Bash(yarn:*)",
       "Bash(pnpm:*)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "mercur",
+    "medusa",
+    "playwright"
+  ]
 }

@@ -26,12 +26,14 @@
     "start": "medusa start",
     "dev": "medusa develop",
     "test:integration:http": "TEST_TYPE=integration:http NODE_OPTIONS=--experimental-vm-modules jest --silent=false --runInBand --forceExit",
+    "test:integration:http:shards": "node ./scripts/test-integration-shards.mjs",
     "test:integration:modules": "TEST_TYPE=integration:modules NODE_OPTIONS=--experimental-vm-modules jest --silent=false --runInBand --forceExit",
     "test:unit": "TEST_TYPE=unit NODE_OPTIONS=--experimental-vm-modules jest --silent --runInBand --forceExit --passWithNoTests",
     "codegen": "mercurjs codegen",
     "cloud:prebuild": "mercurjs codegen",
     "seed:lots": "medusa exec ./src/scripts/seed-lots.ts",
-    "seed:balances": "medusa exec ./src/scripts/seed-balances.ts"
+    "seed:balances": "medusa exec ./src/scripts/seed-balances.ts",
+    "encrypt:pii": "medusa exec ./src/scripts/encrypt-pii.ts"
   },
   "dependencies": {
     "@medusajs/admin-sdk": "2.21.2",

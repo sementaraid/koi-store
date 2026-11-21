@@ -90,6 +90,9 @@ services:
       # Cache revalidation target: the storefront's route, not its root.
       STOREFRONT_REVALIDATE_URL: http://localhost:3001/api/revalidate
       STOREFRONT_REVALIDATE_SECRET: supersecret
+      # US-092 T-092.1 (D-043): dev-only PII encryption key. Real deployments
+      # set their own; see packages/api/.env.template.
+      PII_ENCRYPTION_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
     volumes:
       - .:/workspace
       # Overlay volumes: bun's workspace install hoists to the root, but each

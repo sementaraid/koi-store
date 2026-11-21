@@ -4,15 +4,22 @@ const net = require("net")
 // "localhost" (medusa-test-runner-utils/config.js). The dev Postgres runs in
 // its own container with SSL off, so a non-localhost DB_HOST hangs the boot.
 // Forward localhost:<DB_PORT> to the real host so the runner sees "localhost".
+//
+// Two ports, on purpose: concurrent Jest shards each need their own listen port
+// on 127.0.0.1 (DB_PORT, set per shard by scripts/test-integration-shards.mjs)
+// while all of them connect to the one real Postgres port (DB_UPSTREAM_PORT).
+// With DB_UPSTREAM_PORT unset both are DB_PORT, i.e. the old single-run
+// behaviour is unchanged.
 module.exports = async () => {
   const host = process.env.DB_HOST
   if (!host || host === "localhost" || host === "127.0.0.1") {
     return
   }
   const port = Number(process.env.DB_PORT ?? 5432)
+  const upstreamPort = Number(process.env.DB_UPSTREAM_PORT ?? port)
 
   const server = net.createServer((client) => {
-    const upstream = net.connect(port, host)
+    const upstream = net.connect(upstreamPort, host)
     client.pipe(upstream).pipe(client)
     client.on("error", () => upstream.destroy())
     upstream.on("error", () => client.destroy())

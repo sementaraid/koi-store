@@ -1,4 +1,8 @@
 const { loadEnv } = require("@medusajs/framework/utils");
+// loadEnv never overrides an existing var, and compose.yaml exports the dev
+// PII_ENCRYPTION_KEY into the container, so .env.test's key would never apply
+// and tests would run against the dev key. Drop it so the test key wins.
+if (process.env.PII_ENCRYPTION_KEY) delete process.env.PII_ENCRYPTION_KEY;
 loadEnv("test", process.cwd());
 
 // Mercur patches @medusajs/core-flows in memory through a Node require hook on

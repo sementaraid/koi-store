@@ -86,9 +86,28 @@ this workspace.
 ```bash
 # iterate: the name filters files
 cd packages/api && bun run test:integration:http -- farm-registration
-# hand off: full suite, run ALONE (see below)
-cd packages/api && bun run test:integration:http
+# hand off: full suite, one command (sharded)
+cd packages/api && bun run test:integration:http:shards
 ```
+
+`test:integration:http:shards` runs the suite as N Jest processes
+(`--shard=i/N`) so no single process hits the heap limit, and runs them
+**concurrently** (2 at a time by default). Each shard gets its own loopback
+listen port (`DB_PORT = 5432 + i`) while all forward to the one real Postgres
+port (`DB_UPSTREAM_PORT`, default 5432) — see `global-setup.js`. Test databases
+are named `medusa-<ulid>-integration-<worker>`, and the ulid is fresh per Jest
+process, so concurrent shards never collide on a database or a template.
+Default N is 3; override with `TEST_SHARD_COUNT`. Override the wave size with
+`TEST_SHARD_CONCURRENCY` (1 = sequential). CI can split across machines
+with `TEST_SHARD_INDEX=i TEST_SHARD_COUNT=N`. Each shard writes its output to
+`$TMPDIR/koi-jest-shard-*/shard-i.log`; the summary prints each shard's path
+(before it exits), suite/test counts, wall time and peak RSS. The plain
+`test:integration:http` still runs everything in one process and OOMs at ~37
+suites; use the sharded command for a full run.
+
+**Memory cost.** One shard peaks at ~2.5-3 GB RSS; concurrent shards multiply
+that. The host (23 GB) also runs Postgres and two Next dev servers, so the
+default concurrency is 2 (~5-6 GB). Check `free -g` before raising it.
 
 - `test:integration:http` for changed route behavior.
 - `test:integration:modules` for module-level behavior. Run it after HTTP, never
@@ -103,9 +122,10 @@ cd packages/api && bun run test:integration:http
   has no `sslmode` and the CLI then hangs.
 - Lint cannot run: no ESLint config anywhere. Don't try.
 
-**Never run two Jest suites at once.** `integration-tests/global-setup.js`
-forwards `127.0.0.1:5432` to Postgres; a second run dies with `EADDRINUSE` or
-SIGTERM. If a test run is in progress, wait for it.
+**Two plain Jest runs still collide.** `integration-tests/global-setup.js`
+binds `DB_PORT` (default 5432), so two manual `bun run test:integration:http`
+runs at once still die with `EADDRINUSE`. Only the sharded script assigns
+distinct ports. Inside it, shards run concurrently safely.
 
 ## Known mechanics (verified — don't re-derive)
 
@@ -115,9 +135,10 @@ These were each researched in the code once. Re-reading them is wasted work.
   Jest (`MERCUR_DISABLED_PATCHES`) and applies the patches through
   `@mercurjs/core/patches/jest-transformer` instead. It also maps `htmlparser2`
   to the CJS copy in `node_modules/.bun` (test-only shim).
-- **Test DB.** `global-setup.js` listens on `127.0.0.1:5432` and pipes to
-  `$DB_HOST` because `@medusajs/test-utils` forces SSL for non-localhost hosts
-  and the dev container's Postgres has SSL off. `.env.test` holds the DB vars.
+- **Test DB.** `global-setup.js` listens on `127.0.0.1:$DB_PORT` and pipes to
+  `$DB_HOST:$DB_UPSTREAM_PORT` because `@medusajs/test-utils` forces SSL for
+  non-localhost hosts and the dev container's Postgres has SSL off. The split
+  ports are what let shards run concurrently. `.env.test` holds the DB vars.
 - **Custom Fields.** Configured in `medusa-config.ts` under
   `customFields.<Entity>` (e.g. `Seller`), module
   `@mercurjs/core/modules/custom-fields`. The `<entity>_custom_fields` side
