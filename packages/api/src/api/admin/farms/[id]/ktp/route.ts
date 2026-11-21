@@ -2,32 +2,28 @@ import type {
   AuthenticatedMedusaRequest,
   MedusaResponse,
 } from "@medusajs/framework/http"
-import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 import { sendPrivateImage } from "../../../../utils/private-image"
+import { revealFarmKtpWorkflow } from "../../../../../workflows/reveal-farm-ktp"
 
 // US-021 T-021.1 (AC1, D-017): the KTP photo, streamed to an admin token only.
-// The key never leaves the server; 404 when the farm has none.
+// US-092 T-092.5a (AC5, D-042): the view is a full-PII reveal, so the audit row
+// is written before any bytes leave; 404 when the farm has none, no row.
 export const GET = async (
   req: AuthenticatedMedusaRequest,
   res: MedusaResponse
 ) => {
-  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
-  const {
-    data: [seller],
-  } = await query.graph({
-    entity: "seller",
-    fields: ["id", "custom_fields.ktp_photo_key"],
-    filters: { id: req.params.id },
+  const { result: key } = await revealFarmKtpWorkflow(req.scope).run({
+    input: {
+      farm_id: req.params.id,
+      actor_type: req.auth_context.actor_type,
+      actor_id: req.auth_context.actor_id,
+    },
   })
 
-  const key = (seller as { custom_fields?: { ktp_photo_key?: string | null } | null } | undefined)
-    ?.custom_fields?.ktp_photo_key
-  if (!key) {
-    throw new MedusaError(
-      MedusaError.Types.NOT_FOUND,
-      `KTP photo for farm ${req.params.id} not found`
-    )
-  }
-
-  await sendPrivateImage(req, res, key, `KTP photo for farm ${req.params.id} not found`)
+  await sendPrivateImage(
+    req,
+    res,
+    key,
+    `KTP photo for farm ${req.params.id} not found`
+  )
 }

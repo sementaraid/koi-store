@@ -6,6 +6,7 @@ import type {
 import type { RemoteQueryFunction } from "@medusajs/framework/types"
 import type { LotStatus } from "../../../modules/auction/models/lot"
 import { maskAccountNumber, maskName } from "../../../utils/mask"
+import { decryptPii } from "../../../utils/pii-crypto"
 import { PAY_WINDOW_MS } from "../../../utils/pay-window"
 import { readClaimWindowHours } from "../../../workflows/steps/claim"
 import type { StoreGetWonLotsParamsType } from "./validators"
@@ -180,8 +181,8 @@ const maskBank = (
   details
     ? {
         bank_name: details.bank_name ?? null,
-        holder_name: maskName(details.holder_name) ?? null,
-        account_number: maskAccountNumber(details.account_number) ?? null,
+        holder_name: maskName(decryptPii(details.holder_name)) ?? null,
+        account_number: maskAccountNumber(decryptPii(details.account_number)) ?? null,
       }
     : null
 

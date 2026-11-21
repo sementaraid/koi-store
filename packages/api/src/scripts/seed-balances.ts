@@ -6,6 +6,7 @@ import {
 
 import { WALLET_MODULE } from "../modules/wallet"
 import type WalletModuleService from "../modules/wallet/service"
+import { encryptPii } from "../utils/pii-crypto"
 import { createCustomerWalletWorkflow } from "../workflows/create-customer-wallet"
 
 /*
@@ -44,9 +45,11 @@ export default async function seedBalances({ container }: ExecArgs) {
   })
 
   for (const customer of customers as Row[]) {
+    // The phone column is ciphertext (D-043): test for a stored value, not a
+    // readable one, and encrypt the fallback before writing it.
     if (!customer.phone?.trim()) {
       await customerService.updateCustomers(customer.id, {
-        phone: DEFAULT_PHONE,
+        phone: encryptPii(DEFAULT_PHONE),
       })
     }
 

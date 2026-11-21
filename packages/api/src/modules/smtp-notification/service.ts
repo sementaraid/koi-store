@@ -18,6 +18,9 @@ export type SmtpOptions = {
 // Notification provider for the `email` channel over SMTP (Mailpit in dev).
 // Follows docs.medusajs.com/resources/references/notification-provider-module.
 // Callers pass ready content ({ subject, html, text }); no template engine.
+// D-062 (T-092.13): address `phone` is encrypted at rest, so any address
+// rendered into an email must go through `decryptPii`
+// (packages/api/src/utils/pii-crypto.ts) first. No order email exists yet.
 class SmtpNotificationProviderService extends AbstractNotificationProviderService {
   static identifier = "smtp"
 

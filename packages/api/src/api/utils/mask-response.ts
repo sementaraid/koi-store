@@ -61,11 +61,68 @@ const maskPaymentDetails = (value: unknown): unknown => {
   return masked
 }
 
-// Deep copy with every `phone` string masked and every `payment_details` object
-// masked. Idempotent: an already-masked value keeps its shape. Non-plain values
-// (Date, Buffer) pass through so a response keeps what it serialized. Returns
-// the original object when nothing inside it needed a mask, so catalog responses
-// cost one traversal and no allocation.
+const digitCount = (value: string) => (value.match(/[0-9]/g) ?? []).length
+
+// US-092 T-092.9 (AC7): `payout_account.data` is free-form JSON (Mercur's payout
+// module), so a bank number or a phone can sit under any key. Any scalar with a
+// run of 6+ digits is treated as one; a 6+ digit label/dates get masked too,
+// deliberately conservative. Shorter values (a bank name, a branch code) stay.
+const maskFreeForm = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    let changed = false
+    const masked = value.map((child) => {
+      const next = maskFreeForm(child)
+      changed ||= next !== child
+      return next
+    })
+    return changed ? masked : value
+  }
+  if (!value || typeof value !== "object") {
+    const text = typeof value === "number" ? String(value) : value
+    if (typeof text !== "string" || text.includes("*") || digitCount(text) < 6) {
+      return value
+    }
+    const trimmed = text.trim()
+    return trimmed.startsWith("+62") || trimmed.startsWith("08")
+      ? maskPhone(text)
+      : maskAccountNumber(text)
+  }
+  if (!isPlainObject(value)) return value
+
+  let changed = false
+  const masked: Record<string, unknown> = {}
+  for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+    const next = maskFreeForm(child)
+    changed ||= next !== child
+    masked[key] = next
+  }
+  return changed ? masked : value
+}
+
+// Only `data` is masked; `professional_details` stays unmasked on purpose (AC7).
+const maskPayoutAccount = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    let changed = false
+    const masked = value.map((child) => {
+      const next = maskPayoutAccount(child)
+      changed ||= next !== child
+      return next
+    })
+    return changed ? masked : value
+  }
+  if (!value || typeof value !== "object" || !isPlainObject(value)) return value
+  const account = value as Record<string, unknown>
+  if (!("data" in account)) return value
+  const data = maskFreeForm(account.data)
+  return data === account.data ? value : { ...account, data }
+}
+
+// Deep copy with every `phone` string masked, every `payment_details` object
+// masked and every `payout_account.data` free-form string masked. Idempotent: an
+// already-masked value keeps its shape. Non-plain values (Date, Buffer) pass
+// through so a response keeps what it serialized. Returns the original object
+// when nothing inside it needed a mask, so catalog responses cost one traversal
+// and no allocation.
 const maskPii = (value: unknown): unknown => {
   if (Array.isArray(value)) {
     let changed = false
@@ -90,6 +147,10 @@ const maskPii = (value: unknown): unknown => {
       next = applyMask(maskNik, child)
     } else if (key === "payment_details") {
       next = maskPaymentDetails(child)
+    } else if (key === "payout_account") {
+      // Mercur's seller fields include `payout_account.data`. Mask that free-form
+      // JSON, then still walk the rest (an `onboarding.data` sibling) normally.
+      next = maskPii(maskPayoutAccount(child))
     } else {
       next = maskPii(child)
     }

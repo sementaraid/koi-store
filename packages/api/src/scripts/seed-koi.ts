@@ -20,6 +20,7 @@ import {
   createSellerAccountWorkflow,
   createSellerShippingOptionsWorkflow,
   createSellerStockLocationsWorkflow,
+  updateSellerPaymentDetailsWorkflow,
 } from "@mercurjs/core/workflows";
 import {
   createWorkflow,
@@ -41,11 +42,13 @@ import {
   linkSalesChannelsToStockLocationWorkflow,
   updateStoresStep,
   updateStoresWorkflow,
+  updateUsersWorkflow,
 } from "@medusajs/medusa/core-flows";
 import { seedFeeCategories } from "./seed-fee-categories";
 import { WALLET_MODULE } from "../modules/wallet";
 import type WalletModuleService from "../modules/wallet/service";
 import { createCustomerWalletWorkflow } from "../workflows/create-customer-wallet";
+import { encryptPii } from "../utils/pii-crypto";
 
 /*
  * Koi marketplace seed — the catalog the `storefront-koi` app renders.
@@ -80,6 +83,8 @@ const CURRENCY = "idr";
 const SEED_PASSWORD = "supersecret";
 /** Every seeded login lives on this domain, so test accounts are greppable. */
 const EMAIL_DOMAIN = "koi.dev";
+/** US-072 T-072.5 shows the removing admin by name in the bid panel. */
+const ADMIN_NAME = { first: "Admin", last: "Koi" };
 
 // ---------------------------------------------------------------------------
 // Attribute vocabularies
@@ -713,6 +718,16 @@ const DEMO_FARMER = {
   actors: ["customer", "member"] as const,
 };
 
+/* US-092 follow-up (QA found AC4's self-view empty). The Farmer area's own-bank
+   screen (`/akun/kebun`) reads `seller.payment_details`; a real registration
+   writes it via `POST /vendor/sellers/:id/payment-details`. Fake values only:
+   the number is a placeholder, never a real account. */
+const DEMO_FARMER_BANK = {
+  bank_name: "BCA",
+  holder_name: "Sakura Koi Farm",
+  account_number: "1234567890",
+};
+
 // ---------------------------------------------------------------------------
 // Self-check — the one runnable check on the data above.
 // Runs on every seed, so a bad edit fails before any write happens.
@@ -925,17 +940,36 @@ export async function seedAdminUser(container: MedusaContainer) {
 
   const { data: existingUsers } = await query.graph({
     entity: "user",
-    fields: ["id"],
+    fields: ["id", "first_name", "last_name"],
     filters: { email },
   });
   if (existingUsers[0]) {
-    logger.info(`Admin user ${email} already exists, skipping.`);
+    // US-072 T-072.5 shows the removing admin's name in the bid panel; a user
+    // seeded without one renders the fallback. Backfill once, idempotently.
+    const existing = existingUsers[0] as {
+      id: string
+      first_name?: string | null
+      last_name?: string | null
+    };
+    if (!existing.first_name?.trim() && !existing.last_name?.trim()) {
+      await updateUsersWorkflow(container).run({
+        input: {
+          updates: [{ id: existing.id, first_name: ADMIN_NAME.first, last_name: ADMIN_NAME.last }],
+        },
+      });
+      logger.info(`Backfilled the admin user's name.`);
+    } else {
+      logger.info(`Admin user ${email} already exists, skipping.`);
+    }
     return;
   }
 
   const authIdentityId = await authIdentityFor(container, email, password);
   await createUserAccountWorkflow(container).run({
-    input: { authIdentityId, userData: { email } },
+    input: {
+      authIdentityId,
+      userData: { email, first_name: ADMIN_NAME.first, last_name: ADMIN_NAME.last },
+    },
   });
   logger.info(`Finished seeding admin user ${email}.`);
 }
@@ -983,7 +1017,9 @@ export async function seedDemoFarmer(container: MedusaContainer) {
           email: DEMO_FARMER.email,
           first_name: DEMO_FARMER.first_name,
           last_name: DEMO_FARMER.last_name,
-          phone: DEMO_FARMER.phone,
+          // US-092 T-092.1 (D-043): the phone column holds ciphertext; seed
+          // scripts skip the HTTP write middleware.
+          phone: encryptPii(DEMO_FARMER.phone) as string,
         },
       },
     });
@@ -1020,6 +1056,37 @@ export async function seedDemoFarmer(container: MedusaContainer) {
         reference: "seed: demo farmer",
       },
     ]);
+  }
+
+  // US-092 follow-up. The seller row exists by now (the caller checked the
+  // member). Skip when a row is already there, so a re-run writes nothing.
+  const { data: demoSellers } = await query.graph({
+    entity: "seller",
+    fields: ["id", "payment_details.id"],
+    filters: { email: DEMO_FARMER.email },
+  });
+  const demoSeller = demoSellers[0];
+  if (demoSeller?.payment_details) {
+    logger.info(
+      `Demo farmer ${DEMO_FARMER.email} already has payment details, skipping.`
+    );
+  } else if (demoSeller) {
+    // The seed skips the HTTP middleware, so encrypt here: same ciphertext a
+    // real `POST /vendor/sellers/:id/payment-details` produces (T-092.1).
+    await updateSellerPaymentDetailsWorkflow(container).run({
+      input: {
+        seller_id: demoSeller.id,
+        data: {
+          country_code: "id",
+          bank_name: DEMO_FARMER_BANK.bank_name,
+          holder_name: encryptPii(DEMO_FARMER_BANK.holder_name) as string,
+          account_number: encryptPii(DEMO_FARMER_BANK.account_number) as string,
+        },
+      },
+    });
+    logger.info(
+      `Seeded payment details for demo farmer ${DEMO_FARMER.email} (${DEMO_FARMER_BANK.bank_name}).`
+    );
   }
 
   // D-003: both ids on this identity's app_metadata. Each account workflow set

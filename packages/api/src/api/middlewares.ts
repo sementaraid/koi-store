@@ -84,18 +84,27 @@ import {
   AdminGetClaimsParams,
 } from "./admin/claims/validators"
 import { AdminGetReportsParams } from "./admin/reports/validators"
+import { AdminGetAccountsParams } from "./admin/accounts/validators"
+import { AdminRevealCustomerPii } from "./admin/customers/[id]/reveal/validators"
 import {
   AdminGetStrikesParams,
   AdminGiveStrike,
   AdminRemoveStrike,
 } from "./admin/strikes/validators"
 import { AdminRemoveBid } from "./admin/bids/validators"
+import { AdminCancelReason } from "./admin/lots/validators"
 import { AdminGetLiveAuctionsParams } from "./admin/live-auctions/validators"
+import { AdminGetFarmBiddersParams } from "./admin/farms/[id]/bidders/validators"
 import {
   adminPiiMask,
   storePiiMask,
   vendorPiiMask,
 } from "./utils/mask-response"
+import {
+  decryptPiiResponse,
+  encryptPiiBody,
+  encryptFarmCustomFields,
+} from "./utils/pii-encryption"
 
 // Medusa's documented upload pattern (docs.medusajs.com/learn/fundamentals/
 // api-routes/parse-body#configure-file-uploads): multer in memory, then the
@@ -302,17 +311,22 @@ export default defineMiddlewares({
     // carts and orders; /vendor/sellers* — and the farm reveal keeps its
     // logged full value (T-092.5, D-042). Everyone else, admins included,
     // gets the mask.
+    // US-092 T-092.1 (D-043): column-level encryption. The PII columns are
+    // stored as ciphertext; the decrypt wrapper replaces `res.json` *after* the
+    // mask wrapper does, so it is the inner one and runs first: mask-response
+    // still masks the full value, and no ciphertext reaches a client. Blank
+    // values pass through, so a database without the key still boots.
     {
       matcher: "/store",
-      middlewares: [storePiiMask],
+      middlewares: [storePiiMask, decryptPiiResponse],
     },
     {
       matcher: "/admin",
-      middlewares: [adminPiiMask],
+      middlewares: [adminPiiMask, decryptPiiResponse],
     },
     {
       matcher: "/vendor",
-      middlewares: [vendorPiiMask],
+      middlewares: [vendorPiiMask, decryptPiiResponse],
     },
     // US-054 T-054.1b: Mercur owns GET /vendor/claims with a strict query
     // validator that 400s `status`; a method-less matcher (global) runs before
@@ -322,15 +336,80 @@ export default defineMiddlewares({
       middlewares: [captureVendorClaimStatus],
     },
     // ---------------------------------------------------------------------
+    // Encryption last: it runs on the normalised phone `requirePhone` has
+    // already put on the body, and before Medusa's own workflow stores it.
     {
       method: ["POST"],
       matcher: "/store/customers",
-      middlewares: [requirePhone(true)],
+      middlewares: [requirePhone(true), encryptPiiBody],
     },
     {
       method: ["POST"],
       matcher: "/store/customers/me",
-      middlewares: [requirePhone(false)],
+      middlewares: [requirePhone(false), encryptPiiBody],
+    },
+    // Medusa's admin customer create/update carries the phone too.
+    {
+      method: ["POST"],
+      matcher: "/admin/customers",
+      middlewares: [encryptPiiBody],
+    },
+    {
+      method: ["POST"],
+      matcher: "/admin/customers/:id",
+      middlewares: [encryptPiiBody],
+    },
+    // D-043 covers phone wherever it is stored; a saved address carries one.
+    {
+      method: ["POST"],
+      matcher: "/store/customers/me/addresses",
+      middlewares: [encryptPiiBody],
+    },
+    {
+      method: ["POST"],
+      matcher: "/store/customers/me/addresses/:addressId",
+      middlewares: [encryptPiiBody],
+    },
+    {
+      method: ["POST"],
+      matcher: "/admin/customers/:id/addresses",
+      middlewares: [encryptPiiBody],
+    },
+    {
+      method: ["POST"],
+      matcher: "/admin/customers/:id/addresses/:addressId",
+      middlewares: [encryptPiiBody],
+    },
+    // US-092 T-092.10 (D-062): Medusa's address snapshots. Their `phone` is
+    // written by Medusa's own cart, order, fulfillment and stock-location
+    // workflows, so the Koi write routes above never see it. Same storage
+    // transform as every other PII column.
+    //
+    // The cart→order copy needs nothing here: `completeCartWorkflow` spreads
+    // the cart's address row verbatim into `order_address` (no transform of
+    // `phone`), so the envelope travels with it.
+    { method: ["POST"], matcher: "/store/carts", middlewares: [encryptPiiBody] },
+    { method: ["POST"], matcher: "/store/carts/:id", middlewares: [encryptPiiBody] },
+    { method: ["POST"], matcher: "/admin/orders/:id", middlewares: [encryptPiiBody] },
+    { method: ["POST"], matcher: "/admin/draft-orders", middlewares: [encryptPiiBody] },
+    { method: ["POST"], matcher: "/admin/draft-orders/:id", middlewares: [encryptPiiBody] },
+    { method: ["POST"], matcher: "/admin/fulfillments", middlewares: [encryptPiiBody] },
+    {
+      method: ["POST"],
+      matcher: "/admin/orders/:id/fulfillments",
+      middlewares: [encryptPiiBody],
+    },
+    { method: ["POST"], matcher: "/admin/stock-locations", middlewares: [encryptPiiBody] },
+    {
+      method: ["POST"],
+      matcher: "/admin/stock-locations/:id",
+      middlewares: [encryptPiiBody],
+    },
+    { method: ["POST"], matcher: "/vendor/stock-locations", middlewares: [encryptPiiBody] },
+    {
+      method: ["POST"],
+      matcher: "/vendor/stock-locations/:id",
+      middlewares: [encryptPiiBody],
     },
     {
       method: ["GET"],
@@ -501,7 +580,46 @@ export default defineMiddlewares({
       method: ["POST"],
       matcher: "/vendor/sellers",
       additionalDataValidator: FarmRegistrationAdditionalData,
-      middlewares: [copyCustomerPhoneToSeller],
+      // D-043: `copyCustomerPhoneToSeller` writes the (already encrypted)
+      // customer phone and the bank details, then the Custom Fields are
+      // encrypted; Mercur's workflow stores all of it as ciphertext.
+      middlewares: [
+        copyCustomerPhoneToSeller,
+        encryptPiiBody,
+        encryptFarmCustomFields,
+      ],
+    },
+    // D-043: the seller's own later edits of the same fields (Mercur's update
+    // routes) store ciphertext too.
+    {
+      method: ["POST"],
+      matcher: "/vendor/sellers/:id",
+      middlewares: [encryptPiiBody],
+    },
+    {
+      method: ["POST"],
+      matcher: "/vendor/sellers/me",
+      middlewares: [encryptPiiBody],
+    },
+    {
+      method: ["POST"],
+      matcher: "/vendor/sellers/:id/payment-details",
+      middlewares: [encryptPiiBody],
+    },
+    {
+      method: ["POST"],
+      matcher: "/vendor/sellers/:id/address",
+      middlewares: [encryptPiiBody],
+    },
+    {
+      method: ["POST"],
+      matcher: "/admin/sellers/:id",
+      middlewares: [encryptPiiBody],
+    },
+    {
+      method: ["POST"],
+      matcher: "/admin/sellers/:id/payment-details",
+      middlewares: [encryptPiiBody],
     },
     {
       method: ["POST"],
@@ -652,6 +770,13 @@ export default defineMiddlewares({
       matcher: "/admin/bids/:id/remove",
       middlewares: [validateAndTransformBody(AdminRemoveBid)],
     },
+    // US-091 T-091.1a (AC1, D-035, D-055): the admin cancels one open lot with
+    // a written reason. Admin auth is Medusa's /admin default.
+    {
+      method: ["POST"],
+      matcher: "/admin/lots/:id/cancel",
+      middlewares: [validateAndTransformBody(AdminCancelReason)],
+    },
     // US-072 T-072.1b (D-002): the admin-koi live monitoring list; only paging.
     {
       method: ["GET"],
@@ -692,6 +817,13 @@ export default defineMiddlewares({
       matcher: "/admin/auctions/:id/live-link",
       middlewares: [validateAndTransformBody(SetAuctionLiveLink)],
     },
+    // US-091 T-091.1b (AC2, AC3, D-022, D-055): the admin cancels a live
+    // auction with a written reason; the same validator as the lot cancel.
+    {
+      method: ["POST"],
+      matcher: "/admin/auctions/:id/cancel",
+      middlewares: [validateAndTransformBody(AdminCancelReason)],
+    },
     // US-021 T-021.1. The farm queue reads; approve and reject are Mercur's
     // own POST /admin/sellers/:id/approve and /suspend.
     {
@@ -702,6 +834,18 @@ export default defineMiddlewares({
           defaults: [],
           isList: true,
           defaultLimit: 20,
+        }),
+      ],
+    },
+    // US-071 T-071.1 (D-002, D-037): one farm's bidder table; paging only.
+    {
+      method: ["GET"],
+      matcher: "/admin/farms/:id/bidders",
+      middlewares: [
+        validateAndTransformQuery(AdminGetFarmBiddersParams, {
+          defaults: [],
+          isList: true,
+          defaultLimit: 50,
         }),
       ],
     },
@@ -732,6 +876,25 @@ export default defineMiddlewares({
           defaultLimit: 20,
         }),
       ],
+    },
+    // US-070 T-070.1a (D-002, D-055): the admin-koi /pengguna list; `q` searches
+    // name or email, paging only otherwise.
+    {
+      method: ["GET"],
+      matcher: "/admin/accounts",
+      middlewares: [
+        validateAndTransformQuery(AdminGetAccountsParams, {
+          defaults: [],
+          isList: true,
+          defaultLimit: 20,
+        }),
+      ],
+    },
+    // US-070 T-070.1b (D-042, D-055): the logged reveal of a customer's phone.
+    {
+      method: ["POST"],
+      matcher: "/admin/customers/:id/reveal",
+      middlewares: [validateAndTransformBody(AdminRevealCustomerPii)],
     },
     {
       method: ["POST"],

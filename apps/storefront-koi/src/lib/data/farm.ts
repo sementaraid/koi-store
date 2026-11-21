@@ -13,6 +13,13 @@ import { getAuthHeaders, getMemberAuthHeaders, setMemberToken } from './cookies'
 import { retrieveCustomer } from './customer';
 import { memberSignIn } from './member';
 
+/** The farmer's own bank account (D-045 self-view; masked for everyone else). */
+export type FarmBankDetails = {
+  holder_name: string | null;
+  bank_name: string | null;
+  account_number: string | null;
+};
+
 export type FarmSeller = {
   id: string;
   name: string;
@@ -20,6 +27,7 @@ export type FarmSeller = {
   status_reason: string | null;
   rejected_at: string | null;
   approved_at: string | null;
+  payment_details: FarmBankDetails | null;
 };
 
 export type FarmUploads = {
@@ -40,8 +48,15 @@ export async function getMyFarm(): Promise<FarmSeller | null> {
   // An expired member token is signed out, not an outage.
   if (isTokenExpired(headers.authorization.slice('Bearer '.length))) return null;
 
+  // US-092 AC4 (D-045): the vendor self route returns the caller's own bank
+  // details unmasked, but the list's default fields stop at `seller.*`; ask for
+  // the relation explicitly. `+` keeps the defaults. `as never`: the client
+  // types a query route only by its validators, not by its query config.
   const page = await sdk.vendor.sellers
-    .query({ fetchOptions: { headers, cache: 'no-store' } })
+    .query({
+      fields: '+seller.payment_details.*',
+      fetchOptions: { headers, cache: 'no-store' }
+    } as never)
     .catch((err: unknown) => {
       if (err instanceof ClientError && err.status === 401) return null;
       throw err;
@@ -56,7 +71,15 @@ export async function getMyFarm(): Promise<FarmSeller | null> {
     status: seller.status,
     status_reason: seller.status_reason ?? null,
     rejected_at: seller.rejected_at ? new Date(seller.rejected_at).toISOString() : null,
-    approved_at: seller.approved_at ? new Date(seller.approved_at).toISOString() : null
+    approved_at: seller.approved_at ? new Date(seller.approved_at).toISOString() : null,
+    // D-045: the vendor self route skips masking; this is the caller's own record.
+    payment_details: seller.payment_details
+      ? {
+          holder_name: seller.payment_details.holder_name ?? null,
+          bank_name: seller.payment_details.bank_name ?? null,
+          account_number: seller.payment_details.account_number ?? null
+        }
+      : null
   };
 }
 

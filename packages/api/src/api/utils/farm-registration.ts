@@ -1,6 +1,7 @@
 import type { MedusaNextFunction, MedusaRequest } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 import { z } from "@medusajs/framework/zod"
+import { decryptPii } from "../../utils/pii-crypto"
 
 // US-020 (T-020.1/T-020.5/T-020.6/T-020.7/T-020.8). Shared by the route
 // middleware and the `createSellerAccountWorkflow` validate hook.
@@ -69,7 +70,10 @@ export const assertFarmRegistrationFields = (input: RegistrationBody) => {
 
   const farm = input.additional_data ?? {}
   if (!hasText(farm.ktp_photo_key)) missing.push("additional_data.ktp_photo_key")
-  if (!hasText(farm.ktp_nik) || !FARM_NIK_PATTERN.test(farm.ktp_nik)) {
+  // D-043: the NIK may arrive already encrypted (the write middleware runs
+  // before this workflow hook), so check its plaintext.
+  const nik = decryptPii(farm.ktp_nik as string | null | undefined)
+  if (!hasText(nik) || !FARM_NIK_PATTERN.test(nik)) {
     missing.push("additional_data.ktp_nik (16 digits)")
   }
   if (!Array.isArray(farm.farm_photo_urls) || farm.farm_photo_urls.length < 1) {
@@ -134,6 +138,8 @@ export const copyCustomerPhoneToSeller = async (
       )
     }
 
+    // D-043: the customer's phone column is ciphertext; the seller row wants
+    // the same envelope, so it is copied as-is (encryptPii leaves it alone).
     body.phone = customer.phone
     next()
   } catch (error) {

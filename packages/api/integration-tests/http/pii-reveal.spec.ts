@@ -8,6 +8,7 @@ import type { MedusaContainer } from "@medusajs/framework/types"
 import { createSellerAccountWorkflow } from "@mercurjs/core/workflows"
 import { PII_AUDIT_MODULE } from "../../src/modules/pii-audit"
 import type PiiAuditModuleService from "../../src/modules/pii-audit/service"
+import { uploadFarmFileWorkflow } from "../../src/workflows/upload-farm-file"
 
 jest.setTimeout(120 * 1000)
 
@@ -27,6 +28,12 @@ const NIK = "3273012345678901"
 const ACCOUNT = "1234567890"
 const SELLER_PHONE = "+6281111222333"
 const APPLICANT_PHONE = "+6281234567890"
+
+// 1x1 PNG for the KTP photo upload.
+const PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+  "base64"
+)
 
 // US-092 T-092.2 (masking) and T-092.5 (logged reveal), on the farm queue.
 medusaIntegrationTestRunner({
@@ -118,6 +125,29 @@ medusaIntegrationTestRunner({
         .resolve<PiiAuditModuleService>(PII_AUDIT_MODULE)
         .listPiiRevealAudits({ record_id: recordId })
 
+    // US-092 T-092.5a: a real private file, so the KTP route reaches the
+    // provider. Replaces the placeholder key registration wrote.
+    const attachKtpPhoto = async (sellerId: string) => {
+      const { result } = await uploadFarmFileWorkflow(getContainer()).run({
+        input: {
+          filename: "ktp.png",
+          mimeType: "image/png",
+          content: PNG.toString("base64"),
+          access: "private",
+        },
+      })
+      await getContainer()
+        .resolve(ContainerRegistrationKeys.PG_CONNECTION)
+        .raw(`UPDATE seller_custom_fields SET ktp_photo_key = ? WHERE seller_id = ?`, [
+          result[0].id,
+          sellerId,
+        ])
+      return result[0].id
+    }
+
+    const getKtp = (headers: Record<string, string>, id: string) =>
+      api.get(`/admin/farms/${id}/ktp`, { headers, responseType: "arraybuffer" })
+
     const farmIn = async (sellerId: string) => {
       const list = await api.get("/admin/farms?limit=100", { headers: admin })
       return { list, farm: list.data.farms.find((f: { id: string }) => f.id === sellerId) }
@@ -190,6 +220,54 @@ medusaIntegrationTestRunner({
 
       expect(await auditRows(seller.id)).toHaveLength(0)
       expect(await auditRows("sel_missing")).toHaveLength(0)
+    })
+
+    it("writes one seller/ktp_photo audit row per KTP photo view (T-092.5a)", async () => {
+      const { seller } = await registerFarm()
+      const key = await attachKtpPhoto(seller.id)
+
+      const first = await getKtp(admin, seller.id)
+      expect(first.status).toEqual(200)
+      expect(first.headers["content-type"]).toEqual("image/png")
+      expect(Buffer.from(first.data).equals(PNG)).toBe(true)
+
+      const rows = await auditRows(seller.id)
+      expect(rows).toHaveLength(1)
+      expect(rows[0]).toMatchObject({
+        actor_type: "user",
+        actor_id: adminId,
+        record_type: "seller",
+        record_id: seller.id,
+        field: "ktp_photo",
+      })
+      expect(rows[0].field).not.toContain(key)
+
+      // Append-only: one row per view.
+      await getKtp(admin, seller.id)
+      expect(await auditRows(seller.id)).toHaveLength(2)
+    })
+
+    it("writes no audit row when the farm has no KTP photo or the file is gone (T-092.5a)", async () => {
+      const { seller } = await registerFarm()
+      // Registration stores a placeholder key; the provider has no such file.
+      expect(await statusOf(getKtp(admin, seller.id))).toEqual(404)
+      expect(await auditRows(seller.id)).toHaveLength(0)
+
+      const missing = await registerFarm()
+      const key = await attachKtpPhoto(missing.seller.id)
+      await getContainer().resolve(Modules.FILE).deleteFiles([key])
+      expect(await statusOf(getKtp(admin, missing.seller.id))).toEqual(404)
+      expect(await auditRows(missing.seller.id)).toHaveLength(0)
+    })
+
+    it("refuses non-admin tokens for the KTP photo and logs nothing (T-092.5a)", async () => {
+      const { seller, member, vendor, customer } = await registerFarm()
+      await attachKtpPhoto(seller.id)
+
+      for (const headers of [customer, member, vendor, {}]) {
+        expect(await statusOf(getKtp(headers, seller.id))).toEqual(401)
+      }
+      expect(await auditRows(seller.id)).toHaveLength(0)
     })
 
     it("compares the full holder name with the applicant on the server (US-021 AC1)", async () => {

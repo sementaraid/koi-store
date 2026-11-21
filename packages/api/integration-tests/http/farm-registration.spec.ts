@@ -204,7 +204,8 @@ medusaIntegrationTestRunner({
       expect(submitted.ktp_photo_key).toMatch(/^private-/)
       expect(stored).toMatchObject({
         ktp_photo_key: submitted.ktp_photo_key,
-        ktp_nik: "3273012345678901",
+        // US-092 T-092.1 (D-043): the NIK column holds ciphertext.
+        ktp_nik: expect.stringMatching(/^enc:v1:/),
         farm_photo_urls: submitted.farm_photo_urls,
       })
 
@@ -391,7 +392,8 @@ medusaIntegrationTestRunner({
       }
 
       // The private key is not served either; the row exists but stays out of
-      // the public response.
+      // the public response. (Written straight through the service here, so
+      // this row skips the route's encryption middleware.)
       const [stored] = await container
         .resolve<CustomFieldsService>(MercurModules.CUSTOM_FIELDS)
         .list("seller", { seller_id: seller.id }, {})

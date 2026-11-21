@@ -7,6 +7,7 @@ import {
   WorkflowResponse,
 } from "@medusajs/framework/workflows-sdk"
 import { SOLD_LOT_STATUSES } from "../api/vendor/sold-lots/validators"
+import { decryptPii } from "../utils/pii-crypto"
 import { createPiiRevealAuditStep } from "./steps/pii-reveal"
 
 export type WonLotBank = {
@@ -77,8 +78,9 @@ export const readWonLotBankStep = createStep(
 
     return new StepResponse<WonLotBank>({
       bank_name: details.bank_name ?? null,
-      holder_name: details.holder_name,
-      account_number: details.account_number,
+      // D-043: the columns are ciphertext; the reveal returns plaintext.
+      holder_name: decryptPii(details.holder_name) as string,
+      account_number: decryptPii(details.account_number) as string,
     })
   }
 )

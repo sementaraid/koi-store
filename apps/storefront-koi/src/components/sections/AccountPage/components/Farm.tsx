@@ -146,6 +146,8 @@ function Status({ seller }: { seller: FarmSeller }) {
           )}
         </RenderIf>
 
+        <BankDetails details={seller.payment_details} />
+
         <RenderIf when={info.approved}>
           {() => (
             <div>
@@ -161,6 +163,43 @@ function Status({ seller }: { seller: FarmSeller }) {
         </RenderIf>
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * US-092 AC4 (D-045): the farmer's own bank details, in full. This is the
+ * caller's own record off the vendor self route; every other screen masks it.
+ */
+function BankDetails({ details }: { details: FarmSeller['payment_details'] }) {
+  const rows = details
+    ? [
+        ['Nama pemilik rekening', details.holder_name],
+        ['Nama bank', details.bank_name],
+        ['Nomor rekening', details.account_number]
+      ].filter((row): row is [string, string] => Boolean(row[1]))
+    : [];
+
+  return (
+    <div className="rounded-md border border-border px-3 py-2">
+      <p className="text-xs font-bold text-foreground">Rekening bank</p>
+      {rows.length ? (
+        <dl className="mt-1 grid gap-1 text-sm">
+          {rows.map(([label, value]) => (
+            <div
+              key={label}
+              className="flex flex-wrap justify-between gap-x-4"
+            >
+              <dt className="text-muted-foreground">{label}</dt>
+              <dd className="font-medium text-foreground">{value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : (
+        <p className="mt-1 text-sm text-muted-foreground">
+          Belum ada rekening bank tersimpan. Data rekening diisi saat pendaftaran kebun.
+        </p>
+      )}
+    </div>
   );
 }
 

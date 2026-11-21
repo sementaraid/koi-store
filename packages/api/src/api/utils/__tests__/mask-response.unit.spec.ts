@@ -88,3 +88,63 @@ describe("PII response masks (US-092 T-092.2)", () => {
     expect(run(storePiiMask as unknown as Handler, "/products", plain)).toEqual(plain)
   })
 })
+
+// US-092 T-092.9 (AC7). `/admin/sellers*` returns Mercur's
+// `payout_account.data` free-form JSON; `professional_details` must stay full.
+describe("payout_account.data mask (US-092 T-092.9)", () => {
+  const PAYOUT_ACCOUNT = {
+    id: "pacc_1",
+    status: "active",
+    data: {
+      bank_name: "BCA",
+      bank_account: "1234567890",
+      phone: "+6281234567890",
+      branch: "Kemang",
+      nested: { account_number: "9876543210", notes: "primary account" },
+      list: ["081234567890", "no digits here", 1234567],
+    },
+    onboarding: { id: "onb_1", data: { reference: "ref-42" } },
+  }
+
+  const PROFESSIONAL_DETAILS = {
+    corporate_name: "PT Koi Nusantara",
+    registration_number: "9120001234567",
+    tax_id: "01.234.567.8-901.000",
+  }
+
+  it("masks PII-looking values in payout_account.data, keeps the rest, leaves professional_details full", () => {
+    const masked = run(adminPiiMask as unknown as Handler, "/sellers/sel_1", {
+      sellers: [
+        {
+          id: "sel_1",
+          payout_account: PAYOUT_ACCOUNT,
+          professional_details: PROFESSIONAL_DETAILS,
+        },
+      ],
+    }) as { sellers: { payout_account: typeof PAYOUT_ACCOUNT; professional_details: unknown }[] }
+
+    expect(masked.sellers[0]!.payout_account.data).toEqual({
+      bank_name: "BCA",
+      bank_account: "******7890",
+      phone: "+62********890",
+      branch: "Kemang",
+      nested: { account_number: "******3210", notes: "primary account" },
+      list: ["*********890", "no digits here", "***4567"],
+    })
+    expect(masked.sellers[0]!.payout_account.onboarding).toEqual(PAYOUT_ACCOUNT.onboarding)
+    expect(masked.sellers[0]!.professional_details).toEqual(PROFESSIONAL_DETAILS)
+  })
+
+  it("is idempotent and leaves an untouched seller body by reference", () => {
+    const masked = run(adminPiiMask as unknown as Handler, "/sellers/sel_1", {
+      seller: { id: "sel_1", payout_account: PAYOUT_ACCOUNT },
+    }) as { seller: { payout_account: typeof PAYOUT_ACCOUNT } }
+
+    expect(
+      run(adminPiiMask as unknown as Handler, "/sellers/sel_1", masked)
+    ).toEqual(masked)
+
+    const plain = { sellers: [{ id: "sel_1", payout_account: { data: { bank_name: "BCA" } } }] }
+    expect(run(adminPiiMask as unknown as Handler, "/sellers", plain)).toBe(plain)
+  })
+})

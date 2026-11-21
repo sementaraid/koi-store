@@ -7,6 +7,7 @@ import type { MedusaContainer } from "@medusajs/framework/types"
 import type { SellerStatus } from "@mercurjs/types"
 import type { AdminGetFarmsParamsType } from "./validators"
 import { maskAccountNumber, maskName, maskNik, maskPhone } from "../../../utils/mask"
+import { decryptPii } from "../../../utils/pii-crypto"
 
 // US-021 T-021.1 (AC1). Admin only (D-002): Medusa's /admin auth refuses any
 // other actor before this runs. The private registration data (D-017) is read
@@ -170,7 +171,7 @@ export const applicantsByEmail = async (
         email: c.email ?? null,
         first_name: c.first_name ?? null,
         last_name: c.last_name ?? null,
-        phone: c.phone ?? null,
+        phone: decryptPii(c.phone),
       })
     }
   }
@@ -191,7 +192,8 @@ export const toAdminFarms = async (
       id: r.id,
       name: r.name,
       email: r.email,
-      phone: maskPhone(r.phone),
+      // D-043: the columns are ciphertext; mask the plaintext.
+      phone: maskPhone(decryptPii(r.phone)),
       description: r.description ?? null,
       status: r.status,
       status_reason: r.status_reason ?? null,
@@ -207,16 +209,25 @@ export const toAdminFarms = async (
         : null,
       payment_details: r.payment_details
         ? {
-            holder_name: maskName(r.payment_details.holder_name),
+            holder_name: maskName(decryptPii(r.payment_details.holder_name)),
             bank_name: r.payment_details.bank_name ?? null,
-            account_number: maskAccountNumber(r.payment_details.account_number),
+            account_number: maskAccountNumber(
+              decryptPii(r.payment_details.account_number)
+            ),
           }
         : null,
-      ktp_nik: maskNik(r.custom_fields?.ktp_nik),
+      ktp_nik: maskNik(decryptPii(r.custom_fields?.ktp_nik)),
       has_ktp_photo: !!r.custom_fields?.ktp_photo_key,
       farm_photo_urls: r.custom_fields?.farm_photo_urls ?? [],
-      applicant: applicant && { ...applicant, phone: maskPhone(applicant.phone) },
-      holder_matches_applicant: holderMatchesApplicant(r.payment_details?.holder_name, applicant),
+      applicant: applicant && {
+        ...applicant,
+        phone: maskPhone(applicant.phone),
+      },
+      // The holder-vs-applicant check is on full values, so decrypt the holder.
+      holder_matches_applicant: holderMatchesApplicant(
+        decryptPii(r.payment_details?.holder_name),
+        applicant
+      ),
     }
   })
 }

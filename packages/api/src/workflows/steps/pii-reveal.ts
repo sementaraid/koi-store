@@ -9,6 +9,7 @@ import {
 import type { FarmPiiField } from "../../api/admin/farms/validators"
 import { PII_AUDIT_MODULE } from "../../modules/pii-audit"
 import type PiiAuditModuleService from "../../modules/pii-audit/service"
+import { decryptPii } from "../../utils/pii-crypto"
 
 
 // Read only: the full value of one farm PII field. 404 when the farm is missing.
@@ -26,28 +27,50 @@ export const readFarmPiiStep = createStep(
       throw new MedusaError(MedusaError.Types.NOT_FOUND, `Farm ${input.farm_id} not found`)
     }
 
+    // D-043: the columns hold ciphertext; the reveal returns plaintext.
     let value: string | null
     switch (input.field) {
       case "ktp_nik":
-        value = row.custom_fields?.ktp_nik ?? null
+        value = decryptPii(row.custom_fields?.ktp_nik)
         break
       case "account_number":
-        value = row.payment_details?.account_number ?? null
+        value = decryptPii(row.payment_details?.account_number)
         break
       case "holder_name":
-        value = row.payment_details?.holder_name ?? null
+        value = decryptPii(row.payment_details?.holder_name)
         break
       case "phone":
-        value = row.phone ?? null
+        value = decryptPii(row.phone)
         break
       case "applicant_phone": {
         const email = memberEmailOf(row)
         const applicants = await applicantsByEmail(container, email ? [email] : [])
-        value = (email && applicants.get(email)?.phone) || null
+        value = decryptPii(email ? applicants.get(email)?.phone : null)
         break
       }
     }
     return new StepResponse(value)
+  }
+)
+
+// Read only: the full phone of one customer. 404 when the customer is missing.
+// US-070 T-070.1b: only `phone` is a customer field this screen reveals.
+export const readCustomerPhoneStep = createStep(
+  "read-customer-phone",
+  async (input: { customer_id: string }, { container }) => {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const {
+      data: [customer],
+    } = await query.graph({
+      entity: "customer",
+      fields: ["id", "phone"],
+      filters: { id: input.customer_id },
+    })
+    if (!customer) {
+      throw new MedusaError(MedusaError.Types.NOT_FOUND, "Akun tidak ditemukan.")
+    }
+    // D-043: the column holds ciphertext.
+    return new StepResponse(decryptPii(customer.phone as string | null | undefined))
   }
 )
 
