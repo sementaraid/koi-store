@@ -66,6 +66,7 @@ export type Routes = {
                     $addressId: typeof import("@medusajs/medusa/api/admin/customers/[id]/addresses/[address_id]/route");
                 };
                 customerGroups: typeof import("@medusajs/medusa/api/admin/customers/[id]/customer-groups/route");
+                reveal: typeof import("../src/api/admin/customers/[id]/reveal/route");
                 walletAdjustments: typeof import("../src/api/admin/customers/[id]/wallet-adjustments/route");
                 wallet: typeof import("../src/api/admin/customers/[id]/wallet/route");
             };
@@ -514,9 +515,13 @@ export type Routes = {
                 subscribe: typeof import("@medusajs/medusa/api/admin/workflows-executions/[workflow_id]/subscribe/route");
             };
         };
+        accounts: typeof import("../src/api/admin/accounts/route") & {
+            $id: typeof import("../src/api/admin/accounts/[id]/route");
+        };
         auctions: typeof import("../src/api/admin/auctions/route") & {
             $id: {
                 approve: typeof import("../src/api/admin/auctions/[id]/approve/route");
+                cancel: typeof import("../src/api/admin/auctions/[id]/cancel/route");
                 liveLink: typeof import("../src/api/admin/auctions/[id]/live-link/route");
                 reject: typeof import("../src/api/admin/auctions/[id]/reject/route");
             };
@@ -529,6 +534,7 @@ export type Routes = {
         custom: typeof import("../src/api/admin/custom/route");
         farms: typeof import("../src/api/admin/farms/route") & {
             $id: typeof import("../src/api/admin/farms/[id]/route") & {
+                bidders: typeof import("../src/api/admin/farms/[id]/bidders/route");
                 ktp: typeof import("../src/api/admin/farms/[id]/ktp/route");
                 reveal: typeof import("../src/api/admin/farms/[id]/reveal/route");
             };
@@ -539,6 +545,11 @@ export type Routes = {
         liveAuctions: typeof import("../src/api/admin/live-auctions/route");
         liveLots: {
             $id: typeof import("../src/api/admin/live-lots/[id]/route");
+        };
+        lots: {
+            $id: {
+                cancel: typeof import("../src/api/admin/lots/[id]/cancel/route");
+            };
         };
         reports: typeof import("../src/api/admin/reports/route");
         settings: typeof import("../src/api/admin/settings/route");

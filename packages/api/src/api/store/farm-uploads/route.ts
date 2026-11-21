@@ -30,9 +30,10 @@ export type StoreFarmUploadInput = FarmUploadBodyType & { file: Blob }
 
 // The customer prepares the registration: uploads the KTP photo and one farm
 // photo before POST /vendor/sellers, which is when the seller exists.
-// ponytail: a KTP uploaded but never attached to a seller stays in
-// private-uploads/ forever (no reference is kept). Fine for the MVP volume;
-// add a cleanup job once registration volume or storage cost matters.
+// A KTP uploaded but never attached to a seller stays in private-uploads/
+// until the `delete-orphan-ktp` job (US-093) removes it after the retention
+// window; the job only ever deletes `private-<ts>-ktp.*` with no seller
+// reference.
 export const POST = async (
   req: AuthenticatedMedusaRequest<FarmUploadBodyType> & {
     file?: UploadedFile
