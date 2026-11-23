@@ -46,6 +46,3 @@ yarn-error.log*
 .DS_Store
 *.pem
 .claude/settings.local.json
-
-# UI reference screenshots (scripts/capture-ui.sh)
-ui-reference
