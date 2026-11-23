@@ -1,0 +1,124 @@
+# Production stack: one image (Dockerfile.prod), three processes.
+# Nothing is published on the host. Caddy reaches each service over the shared
+# external `web` network; the API also joins the dev stack's project network
+# (`koi-store_default`) to reach Postgres and Mailpit by service name.
+#
+# Secrets come from .env.prod (gitignored; see .env.prod.template):
+#   docker compose --env-file .env.prod -f compose.prod.yaml up -d
+name: koi-prod
+
+x-build: &build
+  context: .
+  dockerfile: Dockerfile.prod
+  args:
+    NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: pk_3f084428a653984427777ff67a644ad6771b91dae55861593194f7c7d5030369
+    NEXT_PUBLIC_BASE_URL: https://koi.sunar.dev
+    NEXT_PUBLIC_DEFAULT_REGION: id
+    NEXT_PUBLIC_SITE_NAME: Koi Store
+    NEXT_PUBLIC_SITE_DESCRIPTION: Lelang koi dari breeder terverifikasi
+
+services:
+  api:
+    image: koi-store-prod:latest
+    build: *build
+    restart: unless-stopped
+    networks:
+      koi-store_default: {}
+      web:
+        aliases: [koi-api]
+    environment:
+      NODE_ENV: production
+      PORT: "9000"
+      DATABASE_URL: ${DATABASE_URL:?set in .env.prod}
+      FILE_BACKEND_URL: https://api.koi.sunar.dev/static
+      STORE_CORS: https://koi.sunar.dev
+      ADMIN_CORS: https://koi-backoffice.sunar.dev
+      VENDOR_CORS: https://koi.sunar.dev
+      AUTH_CORS: https://koi.sunar.dev,https://koi-backoffice.sunar.dev
+      # Must match the key the seed used.
+      PII_ENCRYPTION_KEY: ${PII_ENCRYPTION_KEY:?set in .env.prod}
+      JWT_SECRET: ${JWT_SECRET:?set in .env.prod}
+      COOKIE_SECRET: ${COOKIE_SECRET:?set in .env.prod}
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_SECURE: "false"
+      SMTP_USER: ""
+      SMTP_PASS: ""
+      SMTP_FROM: "Koi Store <no-reply@koi.dev>"
+      STOREFRONT_URL: https://koi.sunar.dev
+      STOREFRONT_REVALIDATE_URL: http://storefront:3001/api/revalidate
+      STOREFRONT_REVALIDATE_SECRET: ${REVALIDATE_SECRET:?set in .env.prod}
+    volumes:
+      - api_static:/app/packages/api/static
+      - api_private:/app/packages/api/private-uploads
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:9000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+  storefront:
+    image: koi-store-prod:latest
+    restart: unless-stopped
+    working_dir: /app/apps/storefront-koi
+    command: ["bun", "run", "start"]
+    networks:
+      web:
+        aliases: [koi-storefront]
+    environment:
+      NODE_ENV: production
+      MEDUSA_BACKEND_URL: http://api:9000
+      NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: pk_3f084428a653984427777ff67a644ad6771b91dae55861593194f7c7d5030369
+      NEXT_PUBLIC_BASE_URL: https://koi.sunar.dev
+      NEXT_PUBLIC_DEFAULT_REGION: id
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:?set in .env.prod}
+      NEXT_PUBLIC_SITE_NAME: Koi Store
+      NEXT_PUBLIC_SITE_DESCRIPTION: Lelang koi dari breeder terverifikasi
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3001/').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  admin:
+    image: koi-store-prod:latest
+    restart: unless-stopped
+    working_dir: /app/apps/admin-koi
+    command: ["bun", "run", "start"]
+    networks:
+      web:
+        aliases: [koi-admin]
+    environment:
+      NODE_ENV: production
+      MEDUSA_BACKEND_URL: http://api:9000
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3002/').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+networks:
+  # Created by the dev compose.yaml project; both stacks share Postgres here.
+  koi-store_default:
+    external: true
+  web:
+    external: true
+
+volumes:
+  api_static:
+  api_private:

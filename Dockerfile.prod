@@ -1,0 +1,74 @@
+# Production image: one image, three processes (API, storefront, admin).
+# compose.prod.yaml picks the start command per service.
+#
+# The dev Dockerfile installs at container start into named volumes; this one
+# bakes dependencies and builds into the image so the container starts without
+# writing to node_modules.
+
+FROM node:22-bookworm-slim AS build
+
+# Reuse the bun binary from the official image, same as the dev Dockerfile.
+COPY --from=oven/bun:1.4.3 /usr/local/bin/bun /usr/local/bin/bun
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends git ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY . .
+
+# Install before any NODE_ENV=production: Next needs typescript/eslint from
+# devDependencies to build. Fall back if bun.lock and the manifests disagree.
+RUN bun install --frozen-lockfile \
+ || (echo "[build] bun.lock out of sync; retrying with bun install" && bun install)
+
+# NEXT_PUBLIC_* is inlined into the client and server bundles at build time;
+# runtime environment alone is too late for these.
+ARG NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+ARG NEXT_PUBLIC_BASE_URL=https://koi.sunar.dev
+ARG NEXT_PUBLIC_DEFAULT_REGION=id
+ARG NEXT_PUBLIC_SITE_NAME="Koi Store"
+ARG NEXT_PUBLIC_SITE_DESCRIPTION="Lelang koi dari breeder terverifikasi"
+ENV NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=$NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY \
+    NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL \
+    NEXT_PUBLIC_DEFAULT_REGION=$NEXT_PUBLIC_DEFAULT_REGION \
+    NEXT_PUBLIC_SITE_NAME=$NEXT_PUBLIC_SITE_NAME \
+    NEXT_PUBLIC_SITE_DESCRIPTION=$NEXT_PUBLIC_SITE_DESCRIPTION \
+    NEXT_TELEMETRY_DISABLED=1
+
+# Keep the API build out of production mode. scripts/bundle-dashboards.mjs
+# exits non-zero when NODE_ENV=production and apps/admin|vendor have no dist;
+# those Mercur panels are unused (D-002, D-004), so it should warn and skip.
+RUN cd packages/api && bun run build
+
+RUN cd apps/storefront-koi && NODE_ENV=production bun run build
+RUN cd apps/admin-koi && NODE_ENV=production bun run build
+
+
+FROM node:22-bookworm-slim AS runtime
+
+COPY --from=oven/bun:1.4.3 /usr/local/bin/bun /usr/local/bin/bun
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates \
+ && rm -rf /var/lib/apt/lists/* \
+ && groupadd -g 1001 app \
+ && useradd -m -u 1001 -g 1001 -s /bin/bash app
+
+ENV NODE_ENV=production \
+    HOME=/home/app \
+    NEXT_TELEMETRY_DISABLED=1
+
+COPY --from=build --chown=1001:1001 /app /app
+
+# Medusa's express loader serves baseDir/static at /static, and the local file
+# provider writes private files to baseDir/private-uploads (medusa-config.ts).
+# Both are named volumes in compose; Docker seeds a fresh volume from these dirs.
+RUN mkdir -p /app/packages/api/static /app/packages/api/private-uploads \
+ && chown -R 1001:1001 /app/packages/api/static /app/packages/api/private-uploads
+
+USER app
+WORKDIR /app/packages/api
+
+EXPOSE 9000
+CMD ["bun", "run", "start"]
