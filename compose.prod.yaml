@@ -1,7 +1,6 @@
-# Production stack: one image (Dockerfile.prod), three processes.
-# Nothing is published on the host. Caddy reaches each service over the shared
-# external `web` network; the API also joins the dev stack's project network
-# (`koi-store_default`) to reach Postgres and Mailpit by service name.
+# Production stack: one image (Dockerfile.prod), three processes, plus
+# Postgres and Mailpit. Nothing is published on the host. Caddy reaches each
+# service over the shared external `web` network.
 #
 # Secrets come from .env.prod (gitignored; see .env.prod.template):
 #   docker compose --env-file .env.prod -f compose.prod.yaml up -d
@@ -18,12 +17,41 @@ x-build: &build
     NEXT_PUBLIC_SITE_DESCRIPTION: Lelang koi dari breeder terverifikasi
 
 services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: koi-store
+      # Not published on the host, so trust auth stays inside the project
+      # network. The existing cluster was initialised this way; enabling
+      # password auth now would lock the API out of it.
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d koi-store"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  mailpit:
+    image: axllent/mailpit:v1.27.0
+    restart: unless-stopped
+
   api:
     image: koi-store-prod:latest
     build: *build
     restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
     networks:
-      koi-store_default: {}
+      default: {}
       web:
         aliases: [koi-api]
     environment:
@@ -113,12 +141,14 @@ services:
       start_period: 30s
 
 networks:
-  # Created by the dev compose.yaml project; both stacks share Postgres here.
-  koi-store_default:
-    external: true
   web:
     external: true
 
 volumes:
   api_static:
   api_private:
+  # Carried over from the old dev stack. Named explicitly so compose reuses
+  # the existing cluster instead of initialising an empty one.
+  pg_data:
+    external: true
+    name: koi-store_pg_data
