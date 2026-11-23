@@ -1,6 +1,6 @@
 # Production stack: one image (Dockerfile.prod), three processes, plus
-# Postgres and Mailpit. Nothing is published on the host. Caddy reaches each
-# service over the shared external `web` network.
+# Postgres and Mailpit. Caddy reaches the apps over the shared external `web`
+# network. Only Postgres and Mailpit publish ports, on loopback, for host dev.
 #
 # Secrets come from .env.prod (gitignored; see .env.prod.template):
 #   docker compose --env-file .env.prod -f compose.prod.yaml up -d
@@ -28,6 +28,10 @@ services:
       # password auth now would lock the API out of it.
       POSTGRES_HOST_AUTH_METHOD: trust
       POSTGRES_PASSWORD: postgres
+    # Loopback only, for host-side `bun run dev` and tests (CLAUDE.md §5).
+    # Dev and prod share this database.
+    ports:
+      - "127.0.0.1:5432:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
@@ -37,9 +41,14 @@ services:
       retries: 20
       start_period: 10s
 
+  # Catches all mail; there is no real SMTP yet. Loopback only: SMTP on 1025
+  # for host-side dev, inbox UI at http://127.0.0.1:8025.
   mailpit:
     image: axllent/mailpit:v1.27.0
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
 
   api:
     image: koi-store-prod:latest

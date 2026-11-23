@@ -69,7 +69,7 @@ brief, not in the agent's memory:
       (admin) and 9000 (backend); the MCP container reaches them on
       `127.0.0.1`. Screenshots and page snapshots land in `.playwright-mcp/`
       (gitignored). Report the path; never `Read` the image back into context.
-- [ ] Cheap by construction: one batched `docker compose exec … bash -lc '…'`
+- [ ] Cheap by construction: one batched Bash call (`…; …; …`)
       for related reads, `Grep`/`Read` over `grep`/`sed`/`cat`, output capped,
       no polling loops, and the 100-turn / 45-minute budget stated in the brief.
 

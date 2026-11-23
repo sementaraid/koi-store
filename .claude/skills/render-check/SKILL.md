@@ -37,10 +37,8 @@ overlay, and the visible text. Missing one of them misses a class of bug.
 
 ### If the MCP tools are not loaded
 
-They are only loaded after a session restart. Don't install Playwright in the
-app container: it has no root and no system libraries, and chromium fails with
-`libglib-2.0.so.0: cannot open shared object file`. Don't add a Playwright
-dependency either.
+They are only loaded after a session restart. Don't install Playwright on the
+host or add a Playwright dependency; use the Docker command below.
 
 Drive the same browser out of the MCP image instead, on the host network, so it
 reaches `127.0.0.1:3001`:
@@ -70,8 +68,8 @@ messages, the `nextjs-portal` overlay's issue count, and the collected text.
 5. After each click, form fill or submit, repeat steps 2 and 3. Errors from
    handlers only show up then.
 6. If anything failed with a 500 or a runtime error, get the source location
-   from the dev server log:
-   `docker compose logs --since 5m app 2>&1 | grep -A6 '⨯'`.
+   from the `bun run dev` output (lines starting with `⨯`). If you didn't
+   start the dev server, ask whoever did for that output.
    The browser stack shows only bundled chunk names.
 
 ```js

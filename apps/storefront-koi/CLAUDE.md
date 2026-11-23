@@ -133,8 +133,8 @@ server runs leaves `.next` half-built and every route returns 500.
   the dev server is running: don't build.
 - To look at a route, use the same `curl` with the route path. `200` or a `307`
   redirect (to sign-in) means it renders.
-- If `.next` got broken anyway, restart the container once with
-  `docker compose restart app`, then repeat the `curl` until it answers. Don't
+- If `.next` got broken anyway, restart the dev server once
+  (stop and rerun `bun run dev`), then repeat the `curl` until it answers. Don't
   hunt for processes or touch config files to force a reload.
 
 ## Verification

@@ -10,13 +10,17 @@ const net = require("net")
 // while all of them connect to the one real Postgres port (DB_UPSTREAM_PORT).
 // With DB_UPSTREAM_PORT unset both are DB_PORT, i.e. the old single-run
 // behaviour is unchanged.
+//
+// On the host (DB_HOST=localhost) a plain run connects directly; only shards,
+// whose DB_PORT differs from the real port, still need the forward.
 module.exports = async () => {
   const host = process.env.DB_HOST
-  if (!host || host === "localhost" || host === "127.0.0.1") {
-    return
-  }
   const port = Number(process.env.DB_PORT ?? 5432)
   const upstreamPort = Number(process.env.DB_UPSTREAM_PORT ?? port)
+  const local = host === "localhost" || host === "127.0.0.1"
+  if (!host || (local && port === upstreamPort)) {
+    return
+  }
 
   const server = net.createServer((client) => {
     const upstream = net.connect(upstreamPort, host)

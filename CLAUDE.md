@@ -90,24 +90,27 @@ Full text and reasons: `docs/product/decisions.md`.
 
 ## 5. Running the project
 
-Development runs in Docker (`compose.yaml`): Postgres plus one `app` container that
-runs `bun install && bun run dev`. Caddy, outside this repo, routes public
-subdomains to the container through the external `web` network. Host ports are
-bound to `127.0.0.1` only.
+Development runs **on the host** with bun. There is no dev container.
 
 ```bash
-docker compose up
+bun install
+bun run dev
 ```
 
-To run a command inside the container:
+Dev servers listen on `localhost` (ports in §4) and are not public.
 
-```bash
-docker compose exec app bash
-```
+Production runs in Docker (`compose.prod.yaml`, image from `Dockerfile.prod`):
+the API, storefront and admin, plus Postgres and Mailpit. Caddy, outside this
+repo, routes the public hostnames to it through the external `web` network.
 
-- `node_modules` live in named volumes, not on the host. Install packages **inside
-  the container**. After you add a new workspace, also add its `node_modules`
-  volume to both `compose.yaml` and the `Dockerfile`.
+- **Dev and prod share one Postgres** (`koi-store` database, published on
+  `127.0.0.1:5432`). Anything you write in dev, including seeds and migrations,
+  hits live data. Ask before you run a migration or seed, or delete rows.
+- Mail goes to Mailpit: SMTP on `127.0.0.1:1025`, inbox at `http://127.0.0.1:8025`.
+- Dev env lives in each workspace's `.env` (never read it, §11). Prod secrets
+  live in `.env.prod`, from `.env.prod.template`.
+- Deploy: `docker compose --env-file .env.prod -f compose.prod.yaml up -d --build`.
+  Only deploy when the owner asks.
 - When an env var must reach a dev server through turbo, add it to `passThroughEnv`
   in `turbo.json`. Otherwise turbo strips it.
 - When a dev server is reached through a new public hostname, add the hostname to
@@ -120,7 +123,7 @@ other lockfiles.
 
 | Task | Command (from the repo root unless noted) |
 |---|---|
-| Start everything | `bun run dev` (or `docker compose up`) |
+| Start everything | `bun run dev` |
 | Build everything | `bun run build` |
 | Lint everything | `bun run lint` |
 | Backend route types | `cd packages/api && bun run codegen` |
@@ -216,8 +219,8 @@ you write that kind of code, and list the pages you used in your report.
 - **One story per session.** The orchestrator starts a fresh session when the
   previous story is accepted. A session that spans stories re-sends every
   earlier turn on every call, and each turn gets slower as it grows.
-- **Batch shell work.** One `docker compose exec … bash -lc '…; …; …'` for
-  related reads, not one exec per command. Prefer `Grep`/`Read` over
+- **Batch shell work.** One Bash call chaining related reads (`…; …; …`),
+  not one call per command. Prefer `Grep`/`Read` over
   `grep`/`sed`/`cat` in Bash, and cap output (`| head -40`, `grep -m 20`).
 - **Never read a screenshot back into context.** Report the path; an image in
   `.playwright-mcp/` costs ~1.5k tokens and is re-sent on every later turn.

@@ -80,5 +80,5 @@ curl -s -o /dev/null -w '%{http_code}' --max-time 3 http://localhost:3002
 ```
 
 `000` means the dev server is down and building is safe. Anything else means it's
-up: don't build. If `.next` broke anyway, run `docker compose restart app` once
+up: don't build. If `.next` broke anyway, restart `bun run dev` once
 and repeat the `curl`.

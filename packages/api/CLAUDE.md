@@ -116,16 +116,9 @@ default concurrency is 2 (~5-6 GB). Check `free -g` before raising it.
   It is not evidence of anything.
 - `codegen` when generated types changed.
 - `bun x tsc --noEmit -p .` once per logical change, not after every edit.
-  `bunx` does not exist in the container.
-- Medusa CLI (`db:migrate`, `db:generate`) needs
-  `DATABASE_URL=...koi-store?sslmode=disable` inline; the container's env URL
-  has no `sslmode` and the CLI then hangs.
+- Medusa CLI (`db:migrate`, `db:generate`) runs against the **shared dev/prod
+  database** (root `CLAUDE.md` §5). Ask the owner before `db:migrate`.
 - Lint cannot run: no ESLint config anywhere. Don't try.
-
-**Two plain Jest runs still collide.** `integration-tests/global-setup.js`
-binds `DB_PORT` (default 5432), so two manual `bun run test:integration:http`
-runs at once still die with `EADDRINUSE`. Only the sharded script assigns
-distinct ports. Inside it, shards run concurrently safely.
 
 ## Known mechanics (verified — don't re-derive)
 
@@ -135,10 +128,11 @@ These were each researched in the code once. Re-reading them is wasted work.
   Jest (`MERCUR_DISABLED_PATCHES`) and applies the patches through
   `@mercurjs/core/patches/jest-transformer` instead. It also maps `htmlparser2`
   to the CJS copy in `node_modules/.bun` (test-only shim).
-- **Test DB.** `global-setup.js` listens on `127.0.0.1:$DB_PORT` and pipes to
-  `$DB_HOST:$DB_UPSTREAM_PORT` because `@medusajs/test-utils` forces SSL for
-  non-localhost hosts and the dev container's Postgres has SSL off. The split
-  ports are what let shards run concurrently. `.env.test` holds the DB vars.
+- **Test DB.** `.env.test` points at Postgres on `localhost:5432` (trust auth,
+  SSL off; `@medusajs/test-utils` forces SSL for non-localhost hosts). A plain
+  run connects directly. Shards listen on `127.0.0.1:$DB_PORT` (5432+i) and
+  `global-setup.js` pipes that to `$DB_UPSTREAM_PORT`, which is what lets them
+  run concurrently. Test databases are separate from `koi-store`.
 - **Custom Fields.** Configured in `medusa-config.ts` under
   `customFields.<Entity>` (e.g. `Seller`), module
   `@mercurjs/core/modules/custom-fields`. The `<entity>_custom_fields` side
@@ -173,7 +167,7 @@ These were each researched in the code once. Re-reading them is wasted work.
 - **Dev file watcher.** `private-uploads/` and `static/` sit inside the watched
   tree, so an upload restarts the dev server. Expect a `curl 000` right after
   writing a file, and retry.
-- **Koi app builds.** `next build` in the dev container only passes with
+- **Koi app builds.** `next build` only passes with
   `NODE_ENV=production`; with the default `NODE_ENV=development` the `/500` and
   `/404` prerender fails (`<Html>` outside `pages/_document`). Environment, not
   code.

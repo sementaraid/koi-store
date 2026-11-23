@@ -19,7 +19,7 @@ root `CLAUDE.md`: the team flow, the report header and the working style
   that changes it.
 - Never read a screenshot back into context: report the path under
   `.playwright-mcp/` instead. Prefer `Grep`/`Read` over `grep`/`sed`/`cat` in
-  Bash, batch container work, and cap output (`| head -40`).
+  Bash, batch shell work, and cap output (`| head -40`).
 - Budget: 100 turns or 45 minutes. At the cap, stop and report what is blocked
   and NOT VERIFIED. Run a command once; never poll with a `while`/`until` loop.
 

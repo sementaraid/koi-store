@@ -64,7 +64,7 @@ Never two Jest runs at once (`EADDRINUSE 127.0.0.1:5432`).
 - Gate on server state, never optimistically flip status.
 - Do not add anything to `apps/admin` or `apps/vendor` (D-004).
 
-**Check**: `cd apps/<app> && bun run check` inside `docker compose exec app`.
+**Check**: `cd apps/<app> && bun run check` (on the host).
 
 ## QA
 
