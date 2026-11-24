@@ -905,7 +905,7 @@ const updateStoreCurrencies = createWorkflow(
 );
 
 /** Registers an emailpass identity, tolerating one that already exists. */
-const authIdentityFor = async (
+export const authIdentityFor = async (
   container: MedusaContainer,
   email: string,
   password = SEED_PASSWORD

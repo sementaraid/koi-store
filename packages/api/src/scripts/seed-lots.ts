@@ -10,8 +10,8 @@ import { AUCTION_MODULE } from "../modules/auction"
 import type AuctionModuleService from "../modules/auction/service"
 
 /*
- * Auction + lot seed — the rows `/lelang`, `/lelang/<id>` and
- * `/lelang/<id>/live` need. `seed-koi.ts` deliberately seeds none (see its
+ * Auction + lot seed — the rows `/lelang` and `/lelang/<id>`
+ * need. `seed-koi.ts` deliberately seeds none (see its
  * header), so this runs after it and only needs what that seed leaves behind:
  * sellers, a fee category and the Indonesia region.
  *
@@ -233,8 +233,26 @@ export default async function seedLots({ container }: ExecArgs) {
   )
   if (bids.length) await auctionService.createBids(bids)
 
-  logger.info(
-    `Seeded auction ${auction.id} with ${LOTS.length} lots and ${bids.length} bids.`
+  // Bidding requires a paid participant (workflows/steps/bid.ts), so seed one
+  // per distinct bidder. Skip anyone already joined, so a re-run is safe.
+  const bidderIds = [...new Set(bids.map((bid) => bid.customer_id))]
+  const joined = new Set(
+    (
+      await auctionService.listAuctionParticipants({ auction_id: auction.id })
+    ).map((participant) => participant.customer_id)
   )
-  logger.info(`Open /lelang/${lots[0].id}/live to see the bidding room.`)
+  const newBidderIds = bidderIds.filter((id) => !joined.has(id))
+  if (newBidderIds.length) {
+    await auctionService.createAuctionParticipants(
+      newBidderIds.map((customer_id) => ({
+        auction_id: auction.id,
+        customer_id,
+      }))
+    )
+  }
+
+  logger.info(
+    `Seeded auction ${auction.id} with ${LOTS.length} lots, ${bids.length} bids and ${bidderIds.length} participants.`
+  )
+  logger.info(`Open /lelang/${lots[0].id} to bid on the lot page.`)
 }

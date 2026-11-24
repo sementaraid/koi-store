@@ -16,6 +16,9 @@ import { maskBidder } from "../../../utils/mask"
 
 export type StoreLot = {
   id: string
+  // US-096 AC1: 1-based position in its auction, see lotNumbers. The client
+  // renders it as `Lot #07`.
+  lot_number: number
   title: string | null
   description: string | null
   photos: string[]
@@ -39,6 +42,9 @@ export type StoreLot = {
     end_at: string
     // The final fee: the override when set (D-032).
     join_fee: number
+    // US-096 AC3 / US-015 AC2: the window copied from platform settings when
+    // the auction was created, the one place-bid extends by.
+    extend_window_minutes: number
     delivery_method: string
     category: { id: string; name: string } | null
     // D-039 / D-046: id, name and handle only. Never any other seller field.
@@ -86,6 +92,7 @@ export const STORE_LOT_FIELDS = [
   "auction.end_at",
   "auction.join_fee",
   "auction.fee_override_join_fee",
+  "auction.extend_window_minutes",
   "auction.delivery_method",
   "auction.fee_category_id",
   "auction.seller.id",
@@ -103,7 +110,8 @@ type StoreLotRow = Record<string, unknown>
 
 const toStoreLot = (
   row: StoreLotRow,
-  categories: Map<string, { id: string; name: string }>
+  categories: Map<string, { id: string; name: string }>,
+  lotNumbers: Map<string, number>
 ): StoreLot => {
   const auction = (row.auction ?? {}) as Record<string, unknown>
   const seller = auction.seller as
@@ -124,6 +132,7 @@ const toStoreLot = (
 
   return {
     id: row.id as string,
+    lot_number: lotNumbers.get(row.id as string) as number,
     title: product?.title ?? null,
     description: product?.description ?? null,
     photos: (product?.images ?? []).map((image) => image.url),
@@ -151,6 +160,7 @@ const toStoreLot = (
       start_at: new Date(auction.start_at as string).toISOString(),
       end_at: new Date(auction.end_at as string).toISOString(),
       join_fee: (auction.fee_override_join_fee as number | null) ?? Number(auction.join_fee),
+      extend_window_minutes: Number(auction.extend_window_minutes),
       delivery_method: auction.delivery_method as string,
       category: categories.get(auction.fee_category_id as string) ?? null,
       seller: seller
@@ -163,7 +173,7 @@ const toStoreLot = (
 
 // No link from auction to the fee table, so the categories are one batched
 // read, same idea as toAdminAuctions.
-const toStoreLots = async (
+export const toStoreLots = async (
   scope: MedusaContainer,
   rows: StoreLotRow[]
 ): Promise<StoreLot[]> => {
@@ -183,7 +193,47 @@ const toStoreLots = async (
       })
     : { data: [] }
   const byId = new Map(categories.map((c) => [c.id, { id: c.id, name: c.name }]))
-  return rows.map((row) => toStoreLot(row, byId))
+  const numbers = await lotNumbers(scope, rows)
+  return rows.map((row) => toStoreLot(row, byId, numbers))
+}
+
+// US-096 AC1: the lot number is the lot's 1-based position among ALL lots of
+// its auction (cancelled ones included), ordered by `created_at`, then `id`.
+// Derived on every read, no column. It must never change once public: lots are
+// added or removed only while the auction is `draft` (D-032) and only
+// scheduled/live/closed lots are public (D-046), so the set is fixed before
+// anyone sees a number. Don't change this rule or the ordering keys.
+const lotNumbers = async (
+  scope: MedusaContainer,
+  rows: StoreLotRow[]
+): Promise<Map<string, number>> => {
+  const auctionIds = [
+    ...new Set(
+      rows.map((row) => (row.auction as Record<string, unknown>)?.id as string)
+    ),
+  ]
+  if (!auctionIds.length) return new Map()
+  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
+  const { data } = await query.graph({
+    entity: "lot",
+    fields: ["id", "created_at", "auction.id"],
+    filters: { auction: { id: auctionIds } },
+  })
+  const siblings = (
+    data as { id: string; created_at: string | Date; auction: { id: string } }[]
+  ).sort(
+    (a, b) =>
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime() ||
+      (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+  )
+  const next = new Map<string, number>()
+  const numbers = new Map<string, number>()
+  for (const lot of siblings) {
+    const n = (next.get(lot.auction.id) ?? 0) + 1
+    next.set(lot.auction.id, n)
+    numbers.set(lot.id, n)
+  }
+  return numbers
 }
 
 export const getPublicLots = async (

@@ -101,6 +101,7 @@ medusaIntegrationTestRunner({
       category: { id: string }
       join_fee?: number
       fee_override_join_fee?: number | null
+      extend_window_minutes?: number
       lots: SeedLot[]
     }) => {
       const start = Date.now() - DAY
@@ -115,7 +116,7 @@ medusaIntegrationTestRunner({
           listing_fee: 50_000,
           join_fee: options.join_fee ?? 100_000,
           fee_override_join_fee: options.fee_override_join_fee ?? null,
-          extend_window_minutes: 5,
+          extend_window_minutes: options.extend_window_minutes ?? 5,
           payer_customer_id: "cus_payer_should_not_leak",
           fee_override_reason: "promo should not leak",
         },
@@ -653,6 +654,130 @@ medusaIntegrationTestRunner({
         expect(json).not.toContain(siti.id)
       }
       expect(saved.winner_customer_id).toEqual(siti.id)
+    })
+
+    // US-096 T-096.1 (AC1, AC3).
+    it("numbers lots 1..N per auction by created_at then id, stable across calls and pages, cancelled lot keeps its number (US-096 AC1)", async () => {
+      const seller = await createSeller()
+      const category = await createCategory("n")
+      const first = await seed({ status: "live", seller, category, lots: [{}] })
+      // One lot per call, a few ms apart, so created_at orders them.
+      const later: { id: string }[] = []
+      for (const status of ["cancelled", "open"] as LotStatus[]) {
+        await new Promise((resolve) => setTimeout(resolve, 5))
+        const [product] = await getContainer()
+          .resolve(Modules.PRODUCT)
+          .createProducts([{ title: `Showa ${status}`, status: "draft" as never }])
+        const [lot] = await auctions().createLots([
+          {
+            auction_id: first.auction.id,
+            product_id: product.id,
+            ob: 1_000_000,
+            kb: 100_000,
+            current_price: 1_000_000,
+            end_time: new Date(Date.now() + DAY),
+            status,
+          },
+        ])
+        later.push(lot)
+      }
+      // A second auction numbers from 1 again.
+      const other = await seed({
+        status: "live",
+        seller,
+        category,
+        lots: [{}, {}],
+      })
+
+      const saved = (await auctions().listLots(
+        { auction_id: first.auction.id },
+        { select: ["id", "created_at"] }
+      )) as { id: string; created_at: Date }[]
+      const expectedOrder = [...saved]
+        .sort(
+          (a, b) =>
+            a.created_at.getTime() - b.created_at.getTime() ||
+            (a.id < b.id ? -1 : 1)
+        )
+        .map((lot) => lot.id)
+      expect(expectedOrder).toEqual([
+        first.lots[0].id,
+        later[0].id,
+        later[1].id,
+      ])
+
+      const numbersOf = (lots: { id: string; lot_number: number }[]) =>
+        new Map(lots.map((lot) => [lot.id, lot.lot_number]))
+      const a = numbersOf((await api.get("/store/lots", { headers: storeHeaders })).data.lots)
+      const b = numbersOf((await api.get("/store/lots", { headers: storeHeaders })).data.lots)
+      expect(a.get(first.lots[0].id)).toEqual(1)
+      expect(a.get(later[0].id)).toEqual(2)
+      expect(a.get(later[1].id)).toEqual(3)
+      expect([...other.lots.map((lot) => a.get(lot.id))].sort()).toEqual([1, 2])
+      expect([...b.entries()]).toEqual([...a.entries()])
+
+      // One row per page: the number comes from the auction, not the page.
+      for (let offset = 0; offset < a.size; offset++) {
+        const page = await api.get(`/store/lots?limit=1&offset=${offset}`, {
+          headers: storeHeaders,
+        })
+        const [lot] = page.data.lots
+        expect(lot.lot_number).toEqual(a.get(lot.id))
+      }
+
+      // The cancelled lot (D-050) keeps its number on the detail route too.
+      for (const lot of [first.lots[0], ...later]) {
+        const one = await api.get(`/store/lots/${lot.id}`, {
+          headers: storeHeaders,
+        })
+        expect(one.data.lot.lot_number).toEqual(a.get(lot.id))
+      }
+      const cancelled = await api.get(`/store/lots/${later[0].id}`, {
+        headers: storeHeaders,
+      })
+      expect(cancelled.data.lot.cancelled).toEqual(true)
+      expect(cancelled.data.lot.lot_number).toEqual(2)
+    })
+
+    it("returns the auction's saved extend_window_minutes on both routes (US-096 AC3)", async () => {
+      const seller = await createSeller()
+      const category = await createCategory("w")
+      const seven = await seed({
+        status: "live",
+        seller,
+        category,
+        extend_window_minutes: 7,
+        lots: [{}],
+      })
+      const twelve = await seed({
+        status: "scheduled",
+        seller,
+        category,
+        extend_window_minutes: 12,
+        lots: [{}],
+      })
+
+      const list = await api.get("/store/lots", { headers: storeHeaders })
+      const windowOf = new Map(
+        list.data.lots.map(
+          (lot: { id: string; auction: { extend_window_minutes: number } }) => [
+            lot.id,
+            lot.auction.extend_window_minutes,
+          ]
+        )
+      )
+      expect(windowOf.get(seven.lots[0].id)).toEqual(7)
+      expect(windowOf.get(twelve.lots[0].id)).toEqual(12)
+
+      for (const [seeded, minutes] of [
+        [seven, 7],
+        [twelve, 12],
+      ] as const) {
+        const one = await api.get(`/store/lots/${seeded.lots[0].id}`, {
+          headers: storeHeaders,
+        })
+        expect(one.data.lot.auction.extend_window_minutes).toEqual(minutes)
+      }
     })
   },
 })

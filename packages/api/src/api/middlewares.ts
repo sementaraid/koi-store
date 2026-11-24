@@ -55,6 +55,7 @@ import {
 } from "./store/won-lots/validators"
 import { StoreRateLot } from "./store/won-lots/[id]/rating/validators"
 import { StorePlaceBid } from "./store/bids/validators"
+import { StoreGetMyBidsParams } from "./store/my-bids/validators"
 import {
   SCREENSHOT_MAX_BYTES,
   SCREENSHOT_MIME_TYPES,
@@ -443,6 +444,16 @@ export default defineMiddlewares({
         // Auth first, so an anonymous request never gets its body parsed.
         authenticate("customer", ["bearer", "session"]),
         validateAndTransformBody(StorePlaceBid),
+      ],
+    },
+    // US-096 T-096.2 (AC4): the caller's own bid position per lot, read only.
+    // Auth first, so an anonymous request is a 401 before the query is parsed.
+    {
+      method: ["GET"],
+      matcher: "/store/my-bids",
+      middlewares: [
+        authenticate("customer", ["bearer", "session"]),
+        validateAndTransformQuery(StoreGetMyBidsParams, { defaults: [] }),
       ],
     },
     // US-053 T-053.1: `shipped → delivered`, winner only. No body.

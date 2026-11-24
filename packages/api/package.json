@@ -33,6 +33,7 @@
     "cloud:prebuild": "mercurjs codegen",
     "seed:lots": "medusa exec ./src/scripts/seed-lots.ts",
     "seed:balances": "medusa exec ./src/scripts/seed-balances.ts",
+    "seed:test-auction": "medusa exec ./src/scripts/seed-test-auction.ts",
     "encrypt:pii": "medusa exec ./src/scripts/encrypt-pii.ts"
   },
   "dependencies": {

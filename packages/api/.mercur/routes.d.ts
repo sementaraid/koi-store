@@ -704,6 +704,7 @@ export type Routes = {
         lots: typeof import("../src/api/store/lots/route") & {
             $id: typeof import("../src/api/store/lots/[id]/route");
         };
+        myBids: typeof import("../src/api/store/my-bids/route");
         platformBankAccount: typeof import("../src/api/store/platform-bank-account/route");
         ratings: typeof import("../src/api/store/ratings/route");
         topupRequests: typeof import("../src/api/store/topup-requests/route");
