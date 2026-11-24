@@ -3,6 +3,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   Banknote,
+  Gavel,
   LayoutDashboard,
   LogOut,
   MapPin,
@@ -31,13 +32,14 @@ export type AccountNavProps = {
   items: AccountNavItem[];
   footer?: AccountNavItem[];
   className?: string;
+  /** Unique per rendered menu, because the sign-out form id must be unique. */
+  signOutFormId?: string;
 };
-
-const SIGN_OUT_FORM_ID = 'akun-nav-keluar';
 
 const ICONS: Record<string, LucideIcon> = {
   [ROUTES.account]: LayoutDashboard,
   [ROUTES.orders]: Package,
+  [ROUTES.myBids]: Gavel,
   [ROUTES.wonLots]: Trophy,
   [ROUTES.wallet]: Wallet,
   [ROUTES.topup]: Banknote,
@@ -49,7 +51,12 @@ const ICONS: Record<string, LucideIcon> = {
   [ROUTES.signout]: LogOut
 };
 
-export function AccountNav({ items, footer, className }: AccountNavProps) {
+export function AccountNav({
+  items,
+  footer,
+  className,
+  signOutFormId = 'akun-nav-keluar'
+}: AccountNavProps) {
   const pathname = usePathname();
 
   return (
@@ -63,6 +70,7 @@ export function AccountNav({ items, footer, className }: AccountNavProps) {
             key={item.href}
             item={item}
             pathname={pathname}
+            signOutFormId={signOutFormId}
           />
         ))}
       </ul>
@@ -76,11 +84,12 @@ export function AccountNav({ items, footer, className }: AccountNavProps) {
                   key={item.href}
                   item={item}
                   pathname={pathname}
+                  signOutFormId={signOutFormId}
                 />
               ))}
             </ul>
             <form
-              id={SIGN_OUT_FORM_ID}
+              id={signOutFormId}
               method="post"
               action={ROUTES.signout}
             />
@@ -91,7 +100,15 @@ export function AccountNav({ items, footer, className }: AccountNavProps) {
   );
 }
 
-function Row({ item, pathname }: { item: AccountNavItem; pathname: string }) {
+function Row({
+  item,
+  pathname,
+  signOutFormId
+}: {
+  item: AccountNavItem;
+  pathname: string;
+  signOutFormId: string;
+}) {
   const current =
     item.href === ROUTES.account
       ? pathname === item.href
@@ -101,7 +118,7 @@ function Row({ item, pathname }: { item: AccountNavItem; pathname: string }) {
   const Icon = ICONS[item.href];
 
   const className = cn(
-    'flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2.5 text-sm whitespace-nowrap transition-colors',
+    'flex min-h-11 w-full items-center gap-2.5 rounded-[10px] px-3 py-2.5 text-sm whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
     current
       ? cn(
           buttonVariants({ variant: 'outline', size: 'sm' }),
@@ -138,7 +155,7 @@ function Row({ item, pathname }: { item: AccountNavItem; pathname: string }) {
       <li>
         <button
           type="submit"
-          form={SIGN_OUT_FORM_ID}
+          form={signOutFormId}
           className={className}
         >
           {body}

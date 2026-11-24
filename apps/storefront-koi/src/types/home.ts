@@ -18,10 +18,13 @@ export type HomeClaim = {
 export type HomeProps = ComponentProps<"div"> & {
   featured?: AuctionProduct
   lots?: AuctionProduct[]
+  // The lot request failed: the hero shows a neutral fallback, not "no open lot".
+  lotsFailed?: boolean
   stats?: HomeStat[]
   claims?: HomeClaim[]
   partners?: PartnerFarm[]
   account?: HeaderAccount
   activeHref?: string
-  onSearch?: (query: string) => void
+  // The server's clock, shared by the hero and grid cards' relative time.
+  now?: number
 }

@@ -27,11 +27,18 @@ export type AccountFrameProps = {
   account?: HeaderAccount;
   cart?: HeaderCart;
   className?: string;
+  /**
+   * Show the account menu as a list below the content on mobile. Only the
+   * account home (`/akun`) does, so every other account page starts with its
+   * own content (US-103 AC4).
+   */
+  showMenuOnMobile?: boolean;
 };
 
 const NAV_ITEMS: Omit<AccountNavItem, 'count'>[] = [
   { label: 'Beranda akun', href: ROUTES.account },
   { label: 'Pesanan', href: ROUTES.orders },
+  { label: 'Bid Saya', href: ROUTES.myBids },
   { label: 'Lot dimenangkan', href: ROUTES.wonLots },
   { label: 'Saldo', href: ROUTES.wallet },
   { label: 'Top-up', href: ROUTES.topup },
@@ -57,11 +64,14 @@ export function AccountFrame({
   children,
   account,
   cart,
-  className
+  className,
+  showMenuOnMobile = false
 }: AccountFrameProps) {
   const items: AccountNavItem[] = NAV_ITEMS.map((item) =>
     item.href === ROUTES.orders ? { ...item, count: openOrders } : item
   );
+
+  const who = identity ?? (account ? { name: account.user.name, email: '' } : undefined);
 
   return (
     <PageShell
@@ -86,42 +96,75 @@ export function AccountFrame({
           </RenderIf>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4">
-          <RenderIf when={identity}>
-            {(who) => (
-              <div className="flex items-center gap-3">
-                <span
-                  aria-hidden
-                  className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary font-heading text-base font-extrabold tracking-wider text-primary-foreground"
-                >
-                  {initials(who.name)}
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-foreground">{who.name}</p>
-                  <p className="text-xs break-all text-muted-foreground">{who.email}</p>
-                </div>
-              </div>
-            )}
-          </RenderIf>
-          <RenderIf when={action}>{(node) => node}</RenderIf>
-        </div>
+        <RenderIf when={action}>
+          {(node) => <div className="flex flex-wrap items-center gap-4">{node}</div>}
+        </RenderIf>
       </div>
 
       <div className="border-t border-border bg-muted/40">
         <div
           className={cn(
             CONTAINER,
-            'flex flex-wrap items-start gap-10 py-8 sm:py-10',
+            'grid gap-8 py-8 sm:py-10 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start lg:gap-10',
             className
           )}
         >
-          <AccountNav
-            items={items}
-            footer={NAV_FOOTER}
-            className="min-w-[260px] flex-[1_1_280px] sm:max-w-[320px] lg:sticky lg:top-24"
-          />
+          <aside className="hidden lg:block">
+            <div className="sticky top-24 flex flex-col gap-4">
+              <RenderIf when={who}>
+                {(me) => (
+                  <div className="flex items-center gap-3 px-3">
+                    <span
+                      aria-hidden
+                      className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary font-heading text-sm font-extrabold tracking-wider text-primary-foreground"
+                    >
+                      {initials(me.name)}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-foreground">{me.name}</p>
+                      <RenderIf when={me.email}>
+                        {(email) => (
+                          <p className="truncate text-xs text-muted-foreground">{email}</p>
+                        )}
+                      </RenderIf>
+                    </div>
+                  </div>
+                )}
+              </RenderIf>
 
-          <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-10">{children}</div>
+              <AccountNav
+                items={items}
+                footer={NAV_FOOTER}
+                signOutFormId="akun-nav-keluar"
+              />
+            </div>
+          </aside>
+
+          <div className="flex min-w-0 flex-col gap-10">
+            {children}
+
+            <RenderIf when={showMenuOnMobile}>
+              {() => (
+                <section
+                  aria-labelledby="menu-akun-ponsel"
+                  className="flex flex-col gap-3 lg:hidden"
+                >
+                  <h2
+                    id="menu-akun-ponsel"
+                    className="px-3 font-heading text-base font-bold text-foreground"
+                  >
+                    Menu akun
+                  </h2>
+                  <AccountNav
+                    items={items}
+                    footer={NAV_FOOTER}
+                    signOutFormId="akun-nav-keluar-ponsel"
+                    className="rounded-xl border border-border bg-card p-2"
+                  />
+                </section>
+              )}
+            </RenderIf>
+          </div>
         </div>
       </div>
     </PageShell>

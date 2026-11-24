@@ -2,24 +2,31 @@ import type { ComponentProps, ReactNode } from "react"
 import { cn } from "cn"
 
 import { CONTAINER } from "@/const/layout"
+import { BottomNav } from "@/components/cells/BottomNav/BottomNav"
 import { Footer } from "@/components/organisms/Footer/Footer"
 import { Header } from "@/components/organisms/Header/Header"
 import { PageBreadcrumb, type Crumb } from "@/components/cells/PageBreadcrumb/PageBreadcrumb"
 import { RenderIf } from "@koi/ui"
+import type { HeaderBack } from "@/types/header"
 import type { FeedShell } from "@/types/product"
 
 export type PageShellProps = ComponentProps<"div"> &
   FeedShell & {
     bar?: ReactNode
+    back?: HeaderBack
+    /* A detail screen names itself in the mobile header (board 03) instead of
+       showing the brand row and a breadcrumb. */
+    mobileTitle?: string
     trail?: Crumb[]
   }
 
 export function PageShell({
   account,
   activeHref,
-  onSearch,
   cart,
   bar,
+  back,
+  mobileTitle,
   trail,
   className,
   children,
@@ -27,7 +34,12 @@ export function PageShell({
 }: PageShellProps) {
   return (
     <div
-      className={cn("flex min-h-svh flex-col bg-background", className)}
+      className={cn(
+        // The mobile tab bar is fixed; reserve its height so it never covers
+        // the footer. A page with another fixed bar overrides this.
+        "flex min-h-svh flex-col bg-background pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0",
+        className
+      )}
       {...props}
     >
       <a
@@ -39,9 +51,10 @@ export function PageShell({
 
       <Header
         activeHref={activeHref}
-        onSearch={onSearch}
         account={account}
         cart={cart}
+        back={back}
+        mobileTitle={mobileTitle}
       />
 
       <RenderIf when={bar}>{(node) => node}</RenderIf>
@@ -49,7 +62,7 @@ export function PageShell({
       <main id="konten" className="flex-1">
         <RenderIf when={trail?.length ? trail : undefined}>
           {(list) => (
-            <div className={`${CONTAINER} pt-5`}>
+            <div className={cn(CONTAINER, "pt-5", mobileTitle && "max-lg:hidden")}>
               <PageBreadcrumb trail={list} className="mb-0" />
             </div>
           )}
@@ -59,6 +72,8 @@ export function PageShell({
       </main>
 
       <Footer />
+
+      <BottomNav signedIn={Boolean(account)} />
     </div>
   )
 }

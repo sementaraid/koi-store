@@ -1,3 +1,4 @@
+import { wibClock, wibDayMonth, wibParts } from './wib.ts';
 
 export type FarmerClaimTone = 'neutral' | 'info' | 'urgent' | 'muted' | 'attention';
 
@@ -15,11 +16,8 @@ export function farmerClaimStatus(status: string): { label: string; tone: Farmer
 }
 
 export function formatClaimOpenedAt(iso: string): string {
-  return new Intl.DateTimeFormat('id-ID', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone: 'Asia/Jakarta'
-  }).format(new Date(iso));
+  const at = Date.parse(iso);
+  return `${wibDayMonth(at)} ${wibParts(at).year}, ${wibClock(at)}`;
 }
 
 export type ClaimDecisionFailure = {

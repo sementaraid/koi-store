@@ -4,10 +4,6 @@ export const TRUST_CLAIMS = {
     title: "Rekber aman.",
     body: "Dana ditahan sampai koi diterima.",
   },
-  escrowLive: {
-    title: "Rekber otomatis.",
-    body: "Dana pemenang ditahan di rekening bersama sampai koi diterima hidup, sehat, dan sesuai video kurasi lelang. D.O.A diganti 100% penuh.",
-  },
   liveGuarantee: {
     title: "Garansi hidup 24 jam.",
     body: "Berlaku dengan video unboxing.",

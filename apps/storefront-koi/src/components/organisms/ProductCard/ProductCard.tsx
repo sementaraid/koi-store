@@ -29,6 +29,8 @@ export type ProductCardOwnProps = {
   product: Product
   href?: string
   action?: ReactNode
+  // The server's clock for the lot card's relative time.
+  now?: number
 }
 
 export type ProductCardProps = ComponentProps<typeof Card> &
@@ -38,13 +40,21 @@ export function ProductCard({
   product,
   href,
   action,
+  now,
   ...card
 }: ProductCardProps) {
   const shared = { href, action, ...card }
 
   switch (product.kind) {
     case "auction":
-      return <AuctionProductCard product={product} {...shared} />
+      return (
+        <AuctionProductCard
+          product={product}
+          href={href}
+          now={now}
+          className={card.className}
+        />
+      )
     case "simple":
       return <SimpleProductCard product={product} {...shared} />
   }

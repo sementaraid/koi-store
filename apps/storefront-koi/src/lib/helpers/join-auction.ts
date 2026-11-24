@@ -1,7 +1,9 @@
 
 import { formatPrice } from './format-price.ts';
 
-export type JoinControlState = 'signed-out' | 'owner' | 'joined' | 'join';
+// 'unknown': a farmer session exists but the farm lookup failed, so ownership
+// can't be told. Never offer join or bid in that case (fail closed).
+export type JoinControlState = 'signed-out' | 'owner' | 'joined' | 'join' | 'unknown';
 
 export type JoinControl = {
   auctionId: string;
@@ -9,15 +11,65 @@ export type JoinControl = {
   returnPath: string;
   balance: number | null;
   mode: JoinControlState;
+  auctionEnd: string;
 };
+
+// T-099.1: what the lot page shows. "shortfall" only when the balance is known
+// and genuinely below the fee; an unknown balance (no wallet, failed read) stays
+// "ready" and the join workflow remains the judge.
+export type JoinPanelState =
+  | 'guest'
+  | 'owner'
+  | 'unknown'
+  | 'joined'
+  | 'ready'
+  | 'shortfall';
+
+export function joinPanelState(input: {
+  mode: JoinControlState;
+  fee: number;
+  balance: number | null;
+}): JoinPanelState {
+  if (input.mode === 'signed-out') return 'guest';
+  if (input.mode === 'owner') return 'owner';
+  if (input.mode === 'unknown') return 'unknown';
+  if (input.mode === 'joined') return 'joined';
+  return joinShortfall(input.fee, input.balance) > 0 ? 'shortfall' : 'ready';
+}
+
+export function joinShortfall(fee: number, balance: number | null): number {
+  if (balance === null) return 0;
+  return Math.max(fee - balance, 0);
+}
+
+export function joinBalanceAfter(fee: number, balance: number): number {
+  return Math.max(balance - fee, 0);
+}
+
+export function joinGuestCopy(fee: number): string {
+  return fee > 0
+    ? `Untuk bid, Anda perlu akun dan saldo untuk biaya ikut ${formatPrice(fee)} (sekali per lelang).`
+    : 'Untuk bid, Anda perlu akun dan saldo.';
+}
+
+// US-099 AC2: the line beside the join button. A Rp0 fee has no fee or balance
+// line at all, so the caller hides this one too.
+export const JOIN_FEE_NOTE =
+  'Dipotong dari saldo, sekali untuk semua lot di lelang ini. Tidak dikembalikan jika kalah.';
+
+export function joinConfirmLabel(fee: number): string {
+  return fee > 0 ? `Bayar ${formatPrice(fee)} & ikut` : 'Ikut lelang';
+}
 
 export function joinControlState(input: {
   signedIn: boolean;
   isOwner: boolean;
   joined: boolean;
+  farmUnknown?: boolean;
 }): JoinControlState {
   if (!input.signedIn) return 'signed-out';
   if (input.isOwner) return 'owner';
+  if (input.farmUnknown) return 'unknown';
   return input.joined ? 'joined' : 'join';
 }
 

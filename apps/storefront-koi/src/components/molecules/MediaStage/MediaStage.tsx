@@ -16,11 +16,15 @@ const MEDIA_TABS = [
 
 export type MediaStageProps = {
   items: MediaItem[]
+  title?: string
   overlay?: ReactNode
+  /* Board 03: the phone gallery runs full width and the desktop gallery stays
+     in its column. */
+  bleed?: boolean
   className?: string
 }
 
-export function MediaStage({ items, overlay, className }: MediaStageProps) {
+export function MediaStage({ items, title, overlay, bleed, className }: MediaStageProps) {
   const [index, setIndex] = useState(0)
   if (!items.length) return null
 
@@ -31,7 +35,13 @@ export function MediaStage({ items, overlay, className }: MediaStageProps) {
   )
 
   return (
-    <div className={cn("relative flex flex-col gap-2.5", className)}>
+    <div
+      className={cn(
+        "relative flex flex-col gap-2",
+        bleed && "-mx-4 lg:mx-0",
+        className
+      )}
+    >
       <div className="pointer-events-none absolute inset-x-3 top-3 z-10 flex items-center justify-between gap-3">
         <RenderIf when={kinds.length > 1}>
           {() => (
@@ -58,17 +68,15 @@ export function MediaStage({ items, overlay, className }: MediaStageProps) {
             </div>
           )}
         </RenderIf>
-
-        <span className="pointer-events-none ms-auto rounded-full bg-white/15 px-2.5 py-1 font-mono text-2xs text-white tabular-nums backdrop-blur-sm">
-          {at + 1} / {items.length}
-        </span>
       </div>
 
       <MediaGallery
         items={items}
         index={index}
         onSelect={setIndex}
+        title={title}
         overlay={overlay}
+        bleed={bleed}
       />
     </div>
   )

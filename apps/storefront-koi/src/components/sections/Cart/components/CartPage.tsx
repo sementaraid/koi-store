@@ -31,7 +31,6 @@ export function CartPage({
   account,
   cart,
   activeHref = ROUTES.cart,
-  onSearch,
   className,
   ...rest
 }: CartPageProps) {
@@ -45,7 +44,6 @@ export function CartPage({
       data-slot="cart-page"
       className={className}
       activeHref={activeHref}
-      onSearch={onSearch}
       account={account}
       cart={bar}
       trail={[{ label: "Beranda", href: ROUTES.home }, { label: "Keranjang" }]}

@@ -1,6 +1,7 @@
 
 export { AccountPage } from './AccountPage/AccountPage';
 export { AddressesPage } from './AccountPage/AddressesPage';
+export { BidSayaPage } from './AccountPage/BidSayaPage';
 export { CreateAuctionPage } from './AccountPage/CreateAuctionPage';
 export { EditAuctionPage } from './AccountPage/EditAuctionPage';
 export { FarmHomePage } from './AccountPage/FarmHomePage';
@@ -26,7 +27,6 @@ export { CategoryPage, getCategory } from './CategoryPage/CategoryPage';
 export { HomePage } from './HomePage/HomePage';
 export { InfoPage, getInfoDoc } from './InfoPage/InfoPage';
 export { LotDetailsPage } from './LotDetailsPage/LotDetailsPage';
-export { LiveRoomPage } from './LiveRoomPage/LiveRoomPage';
 export { ProductDetailsPage, getProduct } from './ProductDetailsPage/ProductDetailsPage';
 export { MarketplacePage } from './MarketplacePage/MarketplacePage';
 export { PartnerPage, getPartner } from './PartnerPage/PartnerPage';

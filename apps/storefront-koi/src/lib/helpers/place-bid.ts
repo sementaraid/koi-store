@@ -1,5 +1,4 @@
-
-import { formatPrice } from './format-price.ts';
+import { formatPrice, formatRupiahNumber } from './format-price.ts';
 
 export function minimumNextBid(input: {
   ob: number;
@@ -15,9 +14,6 @@ export type BidControlState = 'bid' | 'waiting';
 
 export type BidControl = {
   lotId: string;
-  ob: number;
-  kb: number;
-  currentPrice: number;
   mode: BidControlState;
 };
 
@@ -29,25 +25,72 @@ export function bidControlState(input: {
   return input.auctionStatus === 'live' ? 'bid' : 'waiting';
 }
 
-export type ParsedBidAmount =
-  | { ok: true; amount: number }
-  | { ok: false; error: string };
-
-export function parseBidAmount(raw: string): ParsedBidAmount {
-  const trimmed = raw.trim();
-
-  if (!/^[1-9]\d*$/.test(trimmed)) {
-    return { ok: false, error: 'Masukkan jumlah rupiah bulat tanpa titik atau koma.' };
-  }
-
-  const amount = Number(trimmed);
-
-  if (!Number.isSafeInteger(amount) || amount < 1) {
-    return { ok: false, error: 'Jumlah minimal Rp1.' };
-  }
-
-  return { ok: true, amount };
+// US-099 AC4: the three quick amounts are the next minimum plus one and two
+// steps. A zero or missing step leaves the single minimum as the only chip.
+export function bidAmountOptions(minimum: number, step: number): number[] {
+  const safeStep = Number.isFinite(step) && step > 0 ? Math.trunc(step) : 0;
+  return safeStep ? [minimum, minimum + safeStep, minimum + safeStep * 2] : [minimum];
 }
+
+// The chip shows a bare grouped number, the way the design does ("2.700.000");
+// the button and the dialog carry the "Rp" through formatPrice.
+export function formatBidAmount(amount: number): string {
+  return formatRupiahNumber(amount);
+}
+
+// Typing keeps thousand separators. Anything that is not a digit is dropped,
+// so a paste of "Rp 2.500.000" lands as "2.500.000" too.
+export function formatBidInput(raw: string): string {
+  const digits = raw.replace(/\D/g, '').replace(/^0+/, '');
+  if (!digits) return '';
+
+  const amount = Number(digits);
+  return Number.isSafeInteger(amount) ? formatBidAmount(amount) : '';
+}
+
+export type ParsedBidInput = number | null;
+
+// Only a positive whole rupiah amount is submittable. The minimum and the step
+// are the server's call (D-023), so an amount below or between steps still goes
+// through to be judged there.
+export function parseBidInput(raw: string): ParsedBidInput {
+  const digits = raw.replace(/\D/g, '');
+  if (!digits) return null;
+
+  const amount = Number(digits);
+  return Number.isSafeInteger(amount) && amount >= 1 ? amount : null;
+}
+
+// US-099 AC6: a double click must send one request. The first caller wins, and
+// the flag is released when the request settles.
+export function tryBeginSubmit(flag: { current: boolean }): boolean {
+  if (flag.current) return false;
+  flag.current = true;
+  return true;
+}
+
+export type GuardedRun<T> = { status: 'busy' } | { status: 'done'; value: T } | { status: 'threw' };
+
+// Runs one submit behind the gate. The gate always releases, so a rejected
+// request (offline, aborted server action) cannot leave the form stuck.
+export async function runGuarded<T>(
+  flag: { current: boolean },
+  run: () => Promise<T>
+): Promise<GuardedRun<T>> {
+  if (!tryBeginSubmit(flag)) return { status: 'busy' };
+  try {
+    return { status: 'done', value: await run() };
+  } catch {
+    return { status: 'threw' };
+  } finally {
+    flag.current = false;
+  }
+}
+
+export const BID_NETWORK_FAILURE: BidFailure = {
+  message: 'Bid belum terkirim. Periksa koneksi lalu coba lagi.',
+  refresh: false
+};
 
 export type BidFailure = {
   message: string;
@@ -59,9 +102,6 @@ export function bidFailureInfo(input: {
   status?: number;
   message: string;
 }): BidFailure {
-  if (input.code === 'invalid_amount') {
-    return { message: 'Masukkan jumlah rupiah bulat, minimal Rp1.', refresh: false };
-  }
   if (input.code === 'bid_too_low') {
     return { message: input.message, refresh: true };
   }
@@ -86,6 +126,18 @@ export function bidFailureInfo(input: {
   return { message: input.message || 'Gagal memasang bid. Coba lagi.', refresh: false };
 }
 
-export function minimumBidLabel(minimum: number): string {
-  return `Bid minimal ${formatPrice(minimum)}.`;
+export function bidInputLabel(minimum: number, currency?: string): string {
+  return `Atau ketik nominal (minimal ${formatPrice(minimum, currency)})`;
 }
+
+export function bidActionLabel(amount: number, currency?: string): string {
+  return `Pasang Bid ${formatPrice(amount, currency)}`;
+}
+
+// The result of a 201. The component renders the accepted state from it and
+// treats the viewer as highest until a later poll shows a higher price.
+export type AcceptedBid = {
+  amount: number;
+  currentPrice: number | null;
+  endTime: string | null;
+};

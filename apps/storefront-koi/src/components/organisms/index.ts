@@ -4,7 +4,6 @@ export { CartSummary } from './CartSummary/CartSummary';
 export { Footer } from './Footer/Footer';
 export { Header } from './Header/Header';
 export { LotDetailsSheet } from './LotDetailsSheet/LotDetailsSheet';
-export { LotLiveStage } from './LotLiveStage/LotLiveStage';
 export { PageShell } from './PageShell/PageShell';
 export { PartnerCard } from './PartnerCard/PartnerCard';
 export {

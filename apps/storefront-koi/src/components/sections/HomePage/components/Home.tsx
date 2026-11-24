@@ -3,7 +3,7 @@ import { BadgeCheck, Gavel } from "lucide-react"
 import { Badge, Button, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
 import { CONTAINER } from "@/const/layout"
-import { ROUTES, lotHref } from "@/const/routes"
+import { ROUTES, auctionsTabHref, lotHref } from "@/const/routes"
 import {
   DEFAULT_HOME_CLAIMS,
   DEFAULT_HOME_PARTNERS,
@@ -14,7 +14,7 @@ import { FeedGrid } from "@/components/atoms/FeedGrid/FeedGrid"
 import { PageShell } from "@/components/organisms/PageShell/PageShell"
 import { PartnerCard } from "@/components/organisms/PartnerCard/PartnerCard"
 import { PulseIcon } from "@/components/atoms/PulseIcon/PulseIcon"
-import { ProductCard } from "@/components/organisms/ProductCard/ProductCard"
+import { AuctionProductCard } from "@/components/organisms/ProductCard/AuctionProductCard"
 import type { HomeProps } from "@/types/home"
 
 export type { HomeClaim, HomeProps, HomeStat } from "@/types/home"
@@ -27,12 +27,13 @@ export type {
 export function Home({
   featured,
   lots = [],
+  lotsFailed = false,
   stats = DEFAULT_HOME_STATS,
   claims = DEFAULT_HOME_CLAIMS,
   partners = DEFAULT_HOME_PARTNERS,
   account,
   activeHref = ROUTES.home,
-  onSearch,
+  now,
   className,
   ...props
 }: HomeProps) {
@@ -41,7 +42,6 @@ export function Home({
       data-slot="home"
       className={className}
       activeHref={activeHref}
-      onSearch={onSearch}
       account={account}
       {...props}
     >
@@ -98,22 +98,36 @@ export function Home({
             </RenderIf>
           </div>
 
-          <RenderIf when={featured ?? null}>
-            {(lot) => (
-              <div className="w-full max-w-md justify-self-start lg:justify-self-end">
-                <ProductCard
-                  product={lot}
-                  href={lotHref(lot.id)}
-                  action={
-                    <Button size="md" className="flex-1">
-                      <Gavel aria-hidden />
-                      Pasang Bid
-                    </Button>
+          <div className="w-full max-w-md justify-self-start lg:justify-self-end">
+            {featured ? (
+              <AuctionProductCard product={featured} href={lotHref(featured.id)} now={now} />
+            ) : (
+              <div
+                data-slot="hero-fallback"
+                className="flex flex-col items-start gap-3 rounded-control border border-border bg-card p-5"
+              >
+                <h2 className="font-heading text-lg font-bold">
+                  {lotsFailed ? "Lot belum bisa dimuat" : "Belum ada lot yang dibuka"}
+                </h2>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {lotsFailed
+                    ? "Daftar lot sedang tidak bisa diambil. Buka halaman lelang untuk melihat lot terbaru."
+                    : "Lot muncul di sini begitu lelangnya live. Lihat lelang yang akan datang."}
+                </p>
+                <Button
+                  variant="outline"
+                  render={
+                    <Link
+                      href={lotsFailed ? ROUTES.auctions : auctionsTabHref("upcoming")}
+                    />
                   }
-                />
+                  nativeButton={false}
+                >
+                  {lotsFailed ? "Lihat semua lelang" : "Lihat lelang akan datang"}
+                </Button>
               </div>
             )}
-          </RenderIf>
+          </div>
         </div>
       </section>
 
@@ -138,20 +152,11 @@ export function Home({
 
               <FeedGrid>
                 {items.map((lot) => (
-                  <ProductCard
+                  <AuctionProductCard
                     key={lot.id}
                     product={lot}
                     href={lotHref(lot.id)}
-                    action={
-                      <Button
-                        render={<Link href={lotHref(lot.id)} />}
-                        size="sm"
-                        variant="outline"
-                        className="flex-1"
-                      >
-                        Lihat detail
-                      </Button>
-                    }
+                    now={now}
                   />
                 ))}
               </FeedGrid>
@@ -211,7 +216,7 @@ export function Home({
               {panels.map(({ icon: Icon, title, body }) => (
                 <li
                   key={title}
-                  className="flex flex-col gap-2 rounded-xl bg-card p-5 shadow-[inset_0_1px_0_oklch(1_0_0/25%),0_1px_2px_oklch(0_0_0/8%),0_8px_16px_-8px_oklch(0_0_0/16%)] inset-ring-1 inset-ring-black/10"
+                  className="flex flex-col gap-2 rounded-control border border-border bg-card p-5"
                 >
                   <span className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-accent-ink">
                     <Icon aria-hidden className="size-5" />

@@ -9,7 +9,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const lot = await getLot(id);
+  const lot = await getLot(id).catch(() => null);
 
   return { title: lot?.title ?? 'Lot lelang' };
 }

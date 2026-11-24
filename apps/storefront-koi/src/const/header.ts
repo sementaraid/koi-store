@@ -65,8 +65,6 @@ export const DEFAULT_ACCOUNT_LINKS: HeaderAccountLink[] = [
   },
 ]
 
-export const DEFAULT_SEARCH_PLACEHOLDER = "Cari varietas, sertifikat, breeder…"
-
 export const DEFAULT_BRAND_ICON = undefined
 
 export const GOLD_TEXT = "text-gold-ink"

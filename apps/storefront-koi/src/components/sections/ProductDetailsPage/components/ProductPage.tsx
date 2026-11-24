@@ -57,7 +57,6 @@ export function ProductPage({
   onFilterChange,
   onPageChange,
   account,
-  onSearch,
   className,
   ...rest
 }: ProductPageProps) {
@@ -99,7 +98,6 @@ export function ProductPage({
       data-slot="product-page"
       className={className}
       activeHref={activeHref}
-      onSearch={onSearch}
       account={account}
       trail={[
         { label: origin.label, href: back },

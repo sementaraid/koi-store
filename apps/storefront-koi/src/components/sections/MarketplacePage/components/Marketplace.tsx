@@ -42,7 +42,6 @@ export function Marketplace({
   onPageChange,
   account,
   activeHref = ROUTES.marketplace,
-  onSearch,
   attributes,
   selected = {},
   onAttributesChange,
@@ -80,7 +79,6 @@ export function Marketplace({
       data-slot="marketplace"
       className={className}
       activeHref={activeHref}
-      onSearch={onSearch}
       account={account}
       {...props}
     >

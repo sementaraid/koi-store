@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { wibInputValue } from './wib.ts';
+
 export const MAX_LOTS_PER_AUCTION = 20;
 
 export const AUCTION_MIN_DAYS = 1;
@@ -50,16 +52,7 @@ export type AuctionFormData = z.infer<typeof auctionSchema>;
 const JAKARTA_OFFSET = '+07:00';
 
 export function jakartaInputValue(iso: string): string {
-  const parts = new Intl.DateTimeFormat('sv-SE', {
-    timeZone: 'Asia/Jakarta',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  }).format(new Date(iso));
-  return parts.replace(' ', 'T');
+  return wibInputValue(new Date(iso).getTime());
 }
 
 export function jakartaIso(local: string): string {

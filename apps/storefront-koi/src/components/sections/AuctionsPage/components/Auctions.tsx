@@ -1,79 +1,153 @@
-import { Gavel } from "lucide-react"
+import type { ReactNode } from "react"
+import { CalendarClock, Gavel, TriangleAlert } from "lucide-react"
 
-import { Button, RenderIf } from "@koi/ui"
-import { Link } from "@/components/atoms/Link/Link"
-import { PAGE_SIZE } from "@/const"
-import { CONTAINER } from "@/const/layout"
-import { ROUTES, lotHref } from "@/const/routes"
-import {
-  DEFAULT_AUCTION_FILTER,
-  DEFAULT_AUCTION_SORTS,
-  DEFAULT_AUCTION_TABS,
-  STATUS_LABEL,
-} from "@/const/auctions"
-import { EmptyFeed } from "@/components/cells/EmptyFeed/EmptyFeed"
-import { FeedFilters } from "@/components/molecules/FeedFilters/FeedFilters"
+import { Button } from "@koi/ui"
 import { FeedGrid } from "@/components/atoms/FeedGrid/FeedGrid"
-import { FeedHero } from "@/components/cells/FeedHero/FeedHero"
-import { FeedPagination } from "@/components/cells/FeedPagination/FeedPagination"
-import { FeedSummary } from "@/components/cells/FeedSummary/FeedSummary"
-import { PageShell } from "@/components/organisms/PageShell/PageShell"
-import { ProductCard } from "@/components/organisms/ProductCard/ProductCard"
+import { Link } from "@/components/atoms/Link/Link"
 import { PulseIcon } from "@/components/atoms/PulseIcon/PulseIcon"
-import type { AuctionsProps } from "@/types/auctions"
+import { EmptyFeed } from "@/components/cells/EmptyFeed/EmptyFeed"
+import { FeedHero } from "@/components/cells/FeedHero/FeedHero"
+import { RetryButton } from "@/components/cells/RetryButton/RetryButton"
+import { AuctionProductCard } from "@/components/organisms/ProductCard/AuctionProductCard"
+import { UpcomingAuctionCard } from "@/components/organisms/ProductCard/UpcomingAuctionCard"
+import { PageShell } from "@/components/organisms/PageShell/PageShell"
+import { CONTAINER } from "@/const/layout"
+import { ROUTES, auctionsTabHref, lotHref } from "@/const/routes"
 import {
-  filterGoods,
-  lotDeadline,
-  lotPrice,
-  lotStatus,
-} from "@/lib/helpers/filter-goods"
+  groupLots,
+  type AuctionTab,
+  type UpcomingAuction,
+} from "@/lib/helpers/auction-list"
+import type { ViewerPosition } from "@/lib/helpers/lot-card"
+import type { HeaderAccount, HeaderCart } from "@/types/header"
+import type { AuctionProduct } from "@/types/product"
 
-export type {
-  AuctionFilter,
+import { AuctionTabs } from "./AuctionTabs"
+import { AuctionsSkeleton } from "./AuctionsSkeleton"
+import { GuideStrip } from "./GuideStrip"
+
+export type AuctionsProps = {
+  tab: AuctionTab
+  counts?: Partial<Record<AuctionTab, number>>
+  account?: HeaderAccount
+  cart?: HeaderCart
+  failed?: boolean
+  lots?: AuctionProduct[]
+  upcoming?: UpcomingAuction[]
+  positions?: Map<string, ViewerPosition>
+  // The server's clock, shared by every card's relative time.
+  now?: number
+}
+
+// Where an empty tab sends the reader: another tab that is more likely to have lots.
+const EMPTY: Record<AuctionTab, { title: string; body: string; to: AuctionTab; action: string }> = {
+  live: {
+    title: "Belum ada lelang live",
+    body: "Lot yang sedang dibuka muncul di sini. Lihat lelang yang akan datang untuk tahu kapan berikutnya mulai.",
+    to: "upcoming",
+    action: "Lihat lelang akan datang",
+  },
+  upcoming: {
+    title: "Belum ada lelang yang dijadwalkan",
+    body: "Lelang berikutnya muncul di sini begitu farm menjadwalkannya. Sementara itu, lihat lot yang sedang live.",
+    to: "live",
+    action: "Lihat lelang live",
+  },
+  ended: {
+    title: "Belum ada lelang yang selesai",
+    body: "Hasil lelang muncul di sini setelah lot ditutup. Lihat lot yang sedang live.",
+    to: "live",
+    action: "Lihat lelang live",
+  },
+}
+
+function Body({
+  tab,
+  failed,
+  lots = [],
+  upcoming = [],
+  positions,
+  now,
+}: Pick<
   AuctionsProps,
-  AuctionSort,
-  AuctionSortOption,
-  AuctionStatusTab,
-} from "@/types/auctions"
+  "tab" | "failed" | "lots" | "upcoming" | "positions" | "now"
+>) {
+  if (failed) {
+    return (
+      <div role="alert">
+        <EmptyFeed
+          icon={<TriangleAlert aria-hidden />}
+          narrowing={false}
+          noMatchTitle="Daftar lelang belum bisa dimuat"
+          noMatchBody="Ada gangguan saat mengambil lot. Data Anda aman. Muat ulang daftar ini."
+          action={<RetryButton />}
+        />
+      </div>
+    )
+  }
 
-export function Auctions({
-  lots,
-  filter = DEFAULT_AUCTION_FILTER,
-  page = 1,
-  pageSize = PAGE_SIZE,
-  onFilterChange,
-  onPageChange,
-  account,
-  activeHref = ROUTES.auctions,
-  onSearch,
-  className,
-  ...props
-}: AuctionsProps) {
-  const {
-    items,
-    total,
-    pageCount,
-    page: current,
-    categories,
-  } = filterGoods(
-    lots,
-    filter,
-    { statusOf: lotStatus, priceOf: lotPrice, deadlineOf: lotDeadline },
-    page,
-    pageSize
-  )
-  const live = lots.filter((lot) => lot.auction.status === "live").length
-  const narrowing = filter.status !== "all" || filter.category !== ""
+  const empty = tab === "upcoming" ? !upcoming.length : !lots.length
+  if (empty) {
+    const e = EMPTY[tab]
+    return (
+      <EmptyFeed
+        icon={tab === "upcoming" ? <CalendarClock aria-hidden /> : <Gavel aria-hidden />}
+        narrowing={false}
+        noMatchTitle={e.title}
+        noMatchBody={e.body}
+        action={
+          <Button render={<Link href={auctionsTabHref(e.to)} />} nativeButton={false}>
+            {e.action}
+          </Button>
+        }
+      />
+    )
+  }
+
+  if (tab === "upcoming") {
+    return (
+      <FeedGrid>
+        {upcoming.map((a) => (
+          <UpcomingAuctionCard key={a.auctionId} auction={a} href={lotHref(a.firstLotId)} />
+        ))}
+      </FeedGrid>
+    )
+  }
 
   return (
-    <PageShell
-      data-slot="auctions"
-      className={className}
-      activeHref={activeHref}
-      onSearch={onSearch}
-      account={account}
-      {...props}
-    >
+    <div className="flex flex-col gap-8">
+      {groupLots(tab, lots).map((group) => (
+        <section key={group.key} aria-labelledby={`grup-${group.key}`} className="flex flex-col gap-4">
+          <h2 id={`grup-${group.key}`} className="text-lg font-semibold">
+            {group.title}
+          </h2>
+          <FeedGrid>
+            {group.items.map((lot) => (
+              <AuctionProductCard
+                key={lot.id}
+                product={lot}
+                href={lotHref(lot.id)}
+                position={positions?.get(lot.id)}
+                now={now}
+              />
+            ))}
+          </FeedGrid>
+        </section>
+      ))}
+    </div>
+  )
+}
+
+// Shell and hero never wait on data, so header and navigation stay usable
+// while the list loads (US-097 AC8). Keeping them outside the Suspense boundary
+// also keeps their generated ids identical between server and client.
+export function AuctionsLayout({
+  account,
+  cart,
+  children
+}: Pick<AuctionsProps, "account" | "cart"> & { children: ReactNode }) {
+  return (
+    <PageShell data-slot="auctions" activeHref={ROUTES.auctions} account={account} cart={cart}>
       <FeedHero
         eyebrow={
           <>
@@ -81,94 +155,44 @@ export function Auctions({
             Katalog Lelang
           </>
         }
-        title="Lelang hari ini"
-        lede="Semua lot yang sedang dibuka, akan datang, dan sudah selesai. Setiap lot melewati karantina BBKP dan datang dengan sertifikat breeder."
+        title="Lelang"
+        lede="Lot yang sedang dibuka, akan datang, dan sudah selesai."
         stat={
           <>
             <PulseIcon />
-            {live} lot live
+            Lelang live
           </>
         }
       />
-
-      <FeedFilters
-        scope="auction"
-        filter={filter}
-        categories={categories}
-        onFilterChange={onFilterChange}
-        tabs={DEFAULT_AUCTION_TABS}
-        sorts={DEFAULT_AUCTION_SORTS}
-        categoryLabel="Varietas"
-        allCategoriesLabel="Semua varietas"
-      />
-
-      <div className={`${CONTAINER} py-8 lg:py-10`}>
-        <FeedSummary
-          total={total}
-          statusLabel={STATUS_LABEL[filter.status]}
-          category={filter.category}
-          page={current}
-          pageCount={pageCount}
-          onReset={
-            narrowing
-              ? () => onFilterChange?.(DEFAULT_AUCTION_FILTER)
-              : undefined
-          }
-        />
-
-        <RenderIf when={items.length ? items : null}>
-          {(list) => (
-            <FeedGrid>
-              {list.map((lot) => (
-                <ProductCard
-                  key={lot.id}
-                  product={lot}
-                  href={lotHref(lot.id)}
-                  action={
-                    <Button
-                      render={<Link href={lotHref(lot.id)} />}
-                      size="sm"
-                      variant="outline"
-                      className="flex-1"
-                    >
-                      Lihat detail
-                    </Button>
-                  }
-                />
-              ))}
-            </FeedGrid>
-          )}
-        </RenderIf>
-
-        <RenderIf when={!items.length}>
-          {() => (
-            <EmptyFeed
-              icon={<Gavel aria-hidden />}
-              narrowing={narrowing}
-              onReset={() => onFilterChange?.(DEFAULT_AUCTION_FILTER)}
-              noMatchTitle="Tidak ada lot yang cocok"
-              noMatchBody="Coba longgarkan filter, atau lihat semua lot yang sedang dibuka."
-              emptyTitle="Belum ada lot"
-              emptyBody="Lelang berikutnya dibuka setiap Selasa dan Jumat pukul 20.00 WIB."
-              action={
-                <Button
-                  render={<Link href={ROUTES.guide} />}
-                  nativeButton={false}
-                >
-                  Cara bidding
-                </Button>
-              }
-            />
-          )}
-        </RenderIf>
-
-        <FeedPagination
-          page={current}
-          pageCount={pageCount}
-          href={ROUTES.auctions}
-          onPageChange={onPageChange}
-        />
-      </div>
+      {children}
     </PageShell>
+  )
+}
+
+export function AuctionsLoading({ tab }: { tab: AuctionTab }) {
+  return (
+    <>
+      <AuctionTabs active={tab} />
+      <AuctionsSkeleton />
+    </>
+  )
+}
+
+export function Auctions({
+  tab,
+  counts,
+  ...state
+}: Pick<
+  AuctionsProps,
+  "tab" | "counts" | "failed" | "lots" | "upcoming" | "positions" | "now"
+>) {
+  return (
+    <>
+      <AuctionTabs active={tab} counts={counts} />
+      <div className={`${CONTAINER} flex flex-col gap-8 py-8 lg:py-10`}>
+        <Body tab={tab} {...state} />
+        <GuideStrip />
+      </div>
+    </>
   )
 }

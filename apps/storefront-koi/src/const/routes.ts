@@ -13,6 +13,7 @@ export const ROUTES = {
   account: "/akun",
   orders: "/akun/pesanan",
   wonLots: "/akun/menang",
+  myBids: "/akun/bid",
   addresses: "/akun/alamat",
   reviews: "/akun/ulasan",
   wallet: "/akun/saldo",
@@ -31,9 +32,25 @@ export const ROUTES = {
   contact: "/kontak",
 } as const
 
+/** Sign-in with a return path, for links a guest must pass through auth. */
+export const signInHref = (from: string) =>
+  `${ROUTES.login}?sessionRequired=true&redirect=${encodeURIComponent(from)}`
+
+/** Registration with a return path, for the guest join prompt. */
+export const signUpHref = (from: string) =>
+  `${ROUTES.signup}?redirect=${encodeURIComponent(from)}`
+
+/** Top-up, with the shortfall prefilled (US-099 AC3, US-102 AC2). */
+export const topupHref = (amount?: number) =>
+  amount && amount > 0 ? `${ROUTES.topup}?amount=${amount}` : ROUTES.topup
+
+export const auctionsTabHref = (tab: string) =>
+  tab === "live" ? ROUTES.auctions : `${ROUTES.auctions}?status=${tab}`
+
 export const lotHref = (id: string) => `${ROUTES.auctions}/${id}`
 
-export const liveHref = (id: string) => `${ROUTES.auctions}/${id}/live`
+export const myBidsTabHref = (tab: string) =>
+  tab === "aktif" ? ROUTES.myBids : `${ROUTES.myBids}?tab=${tab}`
 
 export const partnerHref = (handle: string) => `${ROUTES.partners}/${handle}`
 

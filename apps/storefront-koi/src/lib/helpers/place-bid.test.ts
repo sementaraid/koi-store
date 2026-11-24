@@ -2,11 +2,17 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import {
+  bidActionLabel,
+  bidAmountOptions,
   bidControlState,
   bidFailureInfo,
-  minimumBidLabel,
+  bidInputLabel,
+  formatBidAmount,
+  formatBidInput,
   minimumNextBid,
-  parseBidAmount
+  parseBidInput,
+  runGuarded,
+  tryBeginSubmit
 } from './place-bid.ts';
 import { formatPrice } from './format-price.ts';
 
@@ -26,23 +32,61 @@ test('only a joined customer gets a bid slot, and only a live lot takes one (AC1
   assert.equal(bidControlState({ joined: true, auctionStatus: 'closed' }), 'waiting');
 });
 
-test('accepts whole rupiah amounts', () => {
-  assert.deepEqual(parseBidAmount('1'), { ok: true, amount: 1 });
-  assert.deepEqual(parseBidAmount(' 1100000 '), { ok: true, amount: 1_100_000 });
+test('the chips are the next minimum, +1 KB and +2 KB (AC4)', () => {
+  assert.deepEqual(bidAmountOptions(2_500_000, 50_000), [2_500_000, 2_550_000, 2_600_000]);
+  assert.deepEqual(bidAmountOptions(1_000_000, 0), [1_000_000]);
+  assert.deepEqual(bidAmountOptions(1_000_000, -5), [1_000_000]);
+  assert.deepEqual(bidAmountOptions(1_000_000, Number.NaN), [1_000_000]);
 });
 
-test('refuses zero, fractions, separators and leading zeroes', () => {
-  assert.equal(parseBidAmount('0').ok, false);
-  assert.equal(parseBidAmount('').ok, false);
-  assert.equal(parseBidAmount('007').ok, false);
-  assert.equal(parseBidAmount('1.100.000').ok, false);
-  assert.equal(parseBidAmount('1,5').ok, false);
-  assert.equal(parseBidAmount('-5').ok, false);
-  assert.equal(parseBidAmount('abc').ok, false);
+test('a chip shows a grouped number, and the button carries the rupiah (AC4)', () => {
+  assert.equal(formatBidAmount(2_500_000), '2.500.000');
+  assert.equal(formatBidAmount(1_000), '1.000');
+  assert.equal(bidActionLabel(2_500_000), `Pasang Bid ${formatPrice(2_500_000)}`);
 });
 
-test('a below-minimum amount is not refused here: the server names the minimum', () => {
-  assert.deepEqual(parseBidAmount('500000'), { ok: true, amount: 500_000 });
+test('typing gets thousand separators and drops everything else (AC4)', () => {
+  assert.equal(formatBidInput('2'), '2');
+  assert.equal(formatBidInput('25'), '25');
+  assert.equal(formatBidInput('2500'), '2.500');
+  assert.equal(formatBidInput('2500000'), '2.500.000');
+  assert.equal(formatBidInput('Rp 2.500.000'), '2.500.000');
+  assert.equal(formatBidInput('2.500.000'), '2.500.000');
+  assert.equal(formatBidInput('007'), '7');
+  assert.equal(formatBidInput('abc'), '');
+  assert.equal(formatBidInput(''), '');
+});
+
+test('validation accepts a positive whole amount and leaves the step to the server', () => {
+  assert.equal(parseBidInput('1'), 1);
+  assert.equal(parseBidInput('2.500.000'), 2_500_000);
+  assert.equal(parseBidInput('Rp 2.500.000'), 2_500_000);
+  // Between steps and below the minimum still go through; D-023 makes the
+  // server the judge, not the browser.
+  assert.equal(parseBidInput('2.525.000'), 2_525_000);
+  assert.equal(parseBidInput('500.000'), 500_000);
+  assert.equal(parseBidInput('0'), null);
+  assert.equal(parseBidInput(''), null);
+  assert.equal(parseBidInput('abc'), null);
+  assert.equal(parseBidInput('9'.repeat(20)), null);
+});
+
+test('the input label names the server-provided minimum (AC4)', () => {
+  assert.equal(
+    bidInputLabel(2_500_000),
+    `Atau ketik nominal (minimal ${formatPrice(2_500_000)})`
+  );
+  assert.match(bidInputLabel(2_500_000), /^Atau ketik nominal \(minimal Rp/);
+});
+
+test('the submit gate lets one request through until it is released (AC6)', () => {
+  const flag = { current: false };
+  assert.equal(tryBeginSubmit(flag), true);
+  assert.equal(tryBeginSubmit(flag), false);
+  assert.equal(tryBeginSubmit(flag), false);
+
+  flag.current = false;
+  assert.equal(tryBeginSubmit(flag), true);
 });
 
 test('bid_too_low shows the server message and asks for a re-read', () => {
@@ -51,14 +95,10 @@ test('bid_too_low shows the server message and asks for a re-read', () => {
   assert.deepEqual(info, { message, refresh: true });
 });
 
-test('invalid_amount reads in Indonesian', () => {
-  const info = bidFailureInfo({
-    code: 'invalid_amount',
-    status: 400,
-    message: 'A bid must be a whole number of rupiah, at least 1.'
-  });
-  assert.match(info.message, /rupiah bulat/);
-  assert.equal(info.refresh, false);
+test('invalid_amount shows the backend message verbatim (D-055)', () => {
+  const message = 'Bid harus berupa rupiah bulat, minimal Rp1.';
+  const info = bidFailureInfo({ code: 'invalid_amount', status: 400, message });
+  assert.deepEqual(info, { message, refresh: false });
 });
 
 test('an owner refusal offers no re-read; not_participant re-reads', () => {
@@ -95,6 +135,24 @@ test('any other refusal falls back to the server message, then a generic one', (
   assert.equal(bidFailureInfo({ message: '' }).message, 'Gagal memasang bid. Coba lagi.');
 });
 
-test('the minimum label formats the figure in id-ID rupiah', () => {
-  assert.equal(minimumBidLabel(1_100_000), `Bid minimal ${formatPrice(1_100_000)}.`);
+test('the submit gate releases after a throw, so the next try can run', async () => {
+  const flag = { current: false };
+  const threw = await runGuarded(flag, async () => {
+    throw new Error('Failed to fetch');
+  });
+  assert.deepEqual(threw, { status: 'threw' });
+  assert.equal(flag.current, false);
+
+  const ok = await runGuarded(flag, async () => 'sent');
+  assert.deepEqual(ok, { status: 'done', value: 'sent' });
+  assert.equal(flag.current, false);
+});
+
+test('a second call while one is in flight is refused', async () => {
+  const flag = { current: false };
+  let release: () => void = () => {};
+  const first = runGuarded(flag, () => new Promise<void>((resolve) => (release = resolve)));
+  assert.deepEqual(await runGuarded(flag, async () => 1), { status: 'busy' });
+  release();
+  assert.equal((await first).status, 'done');
 });

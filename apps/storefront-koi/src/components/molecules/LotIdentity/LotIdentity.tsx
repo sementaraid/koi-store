@@ -1,7 +1,12 @@
+import { BadgeCheck, ChevronRight } from "lucide-react"
 import { cn } from "cn"
 
 import { Badge, RenderIf } from "@koi/ui"
+import { Link } from "@/components/atoms/Link/Link"
+import { LotChip } from "@/components/cells/LotChip/LotChip"
 import { BID_HIGHLIGHTS, TRUST_STAMPS, SELLER_KIND, type PillSpec } from "@/const/stamps"
+import { partnerHref } from "@/const/routes"
+import { formatLotNumber, type Chip } from "@/lib/helpers/lot-card"
 import type { AuctionProduct, ListingBase } from "@/types/product"
 
 function initials(name?: string) {
@@ -21,55 +26,129 @@ export type LotIdentityProps = {
     listing?: ListingBase
     highlights?: AuctionProduct["highlights"]
     stamps?: AuctionProduct["stamps"]
+    auction?: AuctionProduct["auction"]
   }
+  chip?: Chip
   className?: string
 }
 
-export function LotIdentity({ lot, className }: LotIdentityProps) {
-  const { title, listing, highlights, stamps } = lot
+export function LotIdentity({ lot, chip, className }: LotIdentityProps) {
+  const { title, listing, highlights, stamps, auction } = lot
   const badges = [...(highlights ?? []), ...(stamps ?? [])]
   const lookup = { ...BID_HIGHLIGHTS, ...TRUST_STAMPS }
   const { Icon: SellerIcon } = SELLER_KIND[listing?.sellerKind ?? "shop"]
+  const lotLabel =
+    auction?.lotNumber !== undefined
+      ? formatLotNumber(auction.lotNumber)
+      : listing?.ref
+  const sellerKind =
+    listing?.sellerKind === "farm" ? "Breeder terdaftar" : "Penjual terdaftar"
+
+  /* Board 03: the farm row is one tappable line — avatar, name with the
+     verified mark, and the seller kind. Board 10 drops the avatar and puts the
+     farm inline under the title; the store lot contract carries no farm
+     location, so the line ends at the verified mark. */
+  const sellerRow = (
+    <>
+      <span
+        aria-hidden
+        className="flex size-10 shrink-0 items-center justify-center rounded-full border border-divider bg-surface text-sm font-bold"
+      >
+        {initials(listing?.seller)}
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="flex items-center gap-1 text-base font-semibold">
+          <span className="truncate">{listing?.seller}</span>
+          <BadgeCheck
+            role="img"
+            aria-label="Terverifikasi"
+            className="size-4 shrink-0 text-success"
+          />
+        </span>
+        <span className="flex items-center gap-1 text-sm text-muted-foreground">
+          <SellerIcon aria-hidden className="size-4 shrink-0" />
+          {sellerKind}
+        </span>
+      </span>
+      <RenderIf when={listing?.sellerHandle}>
+        {() => (
+          <ChevronRight aria-hidden className="size-5 shrink-0 text-muted-foreground" />
+        )}
+      </RenderIf>
+    </>
+  )
+
+  const farmLine = (
+    <>
+      <span className="font-semibold">{listing?.seller}</span>
+      <BadgeCheck
+        role="img"
+        aria-label="Terverifikasi"
+        className="size-4 shrink-0 text-success"
+      />
+    </>
+  )
 
   return (
     <div className={cn("flex flex-col gap-4", className)}>
-      <div className="flex flex-wrap items-center gap-1.5">
-        <Badge variant="neutral" className="gap-1 font-mono">
-          {listing?.ref ?? `Lot ${lot.id}`}
-        </Badge>
+      <div className="flex flex-col gap-1 lg:gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <RenderIf when={chip}>{(status) => <LotChip chip={status} />}</RenderIf>
 
-        {badges.map((b) => {
-          const { label, variant, Icon }: PillSpec = lookup[b]
-          return (
-            <Badge key={b} variant={variant} className="gap-1">
-              <RenderIf when={Icon}>{(I) => <I aria-hidden />}</RenderIf>
-              {label}
-            </Badge>
+          {/* Board 10 puts the lot number as plain text beside the live chip. */}
+          <RenderIf when={lotLabel}>
+            {(label) => (
+              <span className="hidden text-sm text-muted-foreground tabular-nums lg:inline">
+                {label}
+              </span>
+            )}
+          </RenderIf>
+
+          {badges.map((b) => {
+            const { label, variant, Icon }: PillSpec = lookup[b]
+            return (
+              <Badge key={b} variant={variant} className="gap-1">
+                <RenderIf when={Icon}>{(I) => <I aria-hidden />}</RenderIf>
+                {label}
+              </Badge>
+            )
+          })}
+        </div>
+
+        <h1 className="font-heading text-xl leading-[34px] font-bold text-balance lg:text-2xl lg:leading-10 lg:font-semibold lg:tracking-[-0.01em]">
+          {title}
+        </h1>
+
+        <RenderIf when={listing?.seller}>
+          {() =>
+            listing?.sellerHandle ? (
+              <Link
+                href={partnerHref(listing.sellerHandle)}
+                className="hidden w-fit items-center gap-2 rounded-control text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring lg:inline-flex"
+              >
+                {farmLine}
+              </Link>
+            ) : (
+              <div className="hidden items-center gap-2 text-sm lg:flex">{farmLine}</div>
+            )
+          }
+        </RenderIf>
+      </div>
+
+      <RenderIf when={listing?.seller}>
+        {() =>
+          listing?.sellerHandle ? (
+            <Link
+              href={partnerHref(listing.sellerHandle)}
+              className="flex items-center gap-3 rounded-control py-2 outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
+            >
+              {sellerRow}
+            </Link>
+          ) : (
+            <div className="flex items-center gap-3 py-2 lg:hidden">{sellerRow}</div>
           )
-        })}
-      </div>
-
-      <h1 className="font-heading text-3xl leading-tight font-extrabold text-balance">
-        {title}
-      </h1>
-
-      <div className="flex items-center gap-2.5">
-        <span
-          aria-hidden
-          className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-extrabold"
-        >
-          {initials(listing?.seller)}
-        </span>
-        <span className="flex min-w-0 flex-col">
-          <span className="truncate text-xs font-bold">{listing?.seller}</span>
-          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            <SellerIcon aria-hidden className="size-3.5 shrink-0" />
-            {listing?.sellerKind === "farm"
-              ? "Breeder terdaftar"
-              : "Penjual terdaftar"}
-          </span>
-        </span>
-      </div>
+        }
+      </RenderIf>
     </div>
   )
 }

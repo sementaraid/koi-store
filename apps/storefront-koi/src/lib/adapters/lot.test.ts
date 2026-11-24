@@ -6,6 +6,7 @@ import type { StoreLot } from "../data/lots.ts"
 
 const lot = (over: Partial<StoreLot> = {}): StoreLot => ({
   id: "lot_1",
+  lot_number: 7,
   title: "Kohaku 62",
   description: "Nisai, pola bersih",
   photos: ["https://example.test/k.jpg"],
@@ -23,6 +24,7 @@ const lot = (over: Partial<StoreLot> = {}): StoreLot => ({
     start_at: "2026-11-15T00:00:00.000Z",
     end_at: "2026-11-20T10:00:00.000Z",
     join_fee: 50_000,
+    extend_window_minutes: 5,
     delivery_method: "courier",
     category: { id: "cat_1", name: "Kohaku" },
     seller: { id: "sel_1", name: "Sakura Farm", handle: "sakura" },
@@ -101,4 +103,22 @@ test("a cancelled lot has no price, no clock, cancelled true (D-050)", () => {
   assert.equal(out.auction.currentBid, 0)
   assert.equal(out.auction.endsAt, undefined)
   assert.equal(out.auction.sold, undefined)
+})
+
+test("the lot number reaches the card state, cancelled or not", () => {
+  assert.equal(toAuctionProduct(lot()).auction.lotNumber, 7)
+  assert.equal(toAuctionProduct(lot({ cancelled: true })).auction.lotNumber, 7)
+})
+
+test("delivery, extend window and farm handle reach the spec (T-098.2)", () => {
+  const out = toAuctionProduct(lot())
+  assert.equal(out.auction.deliveryMethod, "courier")
+  assert.equal(out.auction.extendWindowMinutes, 5)
+  assert.equal(out.auction.joinFee, 50_000)
+  assert.equal(out.listing?.sellerHandle, "sakura")
+
+  const cancelled = toAuctionProduct(lot({ cancelled: true }))
+  assert.equal(cancelled.auction.deliveryMethod, "courier")
+  assert.equal(cancelled.auction.extendWindowMinutes, 5)
+  assert.equal(cancelled.auction.joinFee, 50_000)
 })

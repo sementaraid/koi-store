@@ -14,6 +14,7 @@ export type StoreLotStatus = 'scheduled' | 'live' | 'closed';
 
 export type StoreLot = {
   id: string;
+  lot_number: number;
   title: string | null;
   description: string | null;
   photos: string[];
@@ -32,6 +33,8 @@ export type StoreLot = {
     start_at: string;
     end_at: string;
     join_fee: number;
+    // US-096 AC3: copied from platform settings when the auction was created.
+    extend_window_minutes: number;
     delivery_method: string;
     category: { id: string; name: string } | null;
     seller: { id: string; name: string; handle: string } | null;
@@ -44,6 +47,8 @@ export type StoreLotsPage = {
   count: number;
   limit: number;
   offset: number;
+  // Set when the request failed, so a screen can tell "no lots" from "no answer".
+  failed?: true;
 };
 
 export const listLots = async (
@@ -55,7 +60,42 @@ export const listLots = async (
       ...(status ? { status } : {}),
       fetchOptions: { cache: 'no-store' }
     } as never) as unknown as Promise<StoreLotsPage>
-  ).catch(() => ({ lots: [], count: 0, limit, offset: 0 }));
+  ).catch(() => ({ lots: [], count: 0, limit, offset: 0, failed: true as const }));
+};
+
+// The viewer's own standing per lot, from GET /store/my-bids (T-096.2). Guests
+// send no request; an error leaves the list without positions, never broken.
+export type StoreMyBid = {
+  lot_id: string;
+  position: 'highest' | 'outbid' | 'won' | 'lost' | 'cancelled';
+  // The raw lot status for the caller's own won lots; null when lost, because
+  // another customer's result stays private.
+  lot_status: string | null;
+  my_highest_bid: number;
+  // US-096 AC4: the caller's own non-removed bids, newest first, so the public
+  // history can label those rows "Anda".
+  my_bids: { amount: number; created_at: string }[];
+  // The same public lot shape as GET /store/lots, for Bid Saya.
+  lot: StoreLot;
+};
+
+// `failed` tells Bid Saya "no answer" from "nothing here"; the auctions and lot
+// pages only need `lots` and treat a failure as no positions.
+export type MyBidsResult = { lots: StoreMyBid[]; failed?: true };
+
+export const listMyBids = async (
+  { lotId }: { lotId?: string } = {}
+): Promise<MyBidsResult> => {
+  const headers = await getAuthHeaders();
+  if (!('authorization' in headers)) return { lots: [] };
+
+  return sdk.store.myBids
+    .query({
+      ...(lotId ? { lot_id: lotId } : {}),
+      fetchOptions: { headers, cache: 'no-store' }
+    })
+    .then((res) => ({ lots: res.lots }))
+    .catch(() => ({ lots: [], failed: true as const }));
 };
 
 export type JoinState = { joined: boolean; join_fee: number };

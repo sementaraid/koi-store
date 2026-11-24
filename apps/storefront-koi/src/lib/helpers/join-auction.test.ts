@@ -3,9 +3,14 @@ import { test } from 'node:test';
 
 import {
   joinAvailable,
+  joinBalanceAfter,
+  joinConfirmLabel,
   joinControlState,
   joinFailureInfo,
-  joinFeeLabel
+  joinFeeLabel,
+  joinGuestCopy,
+  joinPanelState,
+  joinShortfall
 } from './join-auction.ts';
 import { formatPrice } from './format-price.ts';
 
@@ -40,6 +45,48 @@ test('joinable only while scheduled or live and not cancelled or closed (D-048, 
 test('the label carries the fee, and Rp0 stays a real fee', () => {
   assert.equal(joinFeeLabel(50_000), `Ikut lelang · ${formatPrice(50_000)}`);
   assert.equal(joinFeeLabel(0), 'Ikut lelang');
+});
+
+test('the lot page picks the panel state from sign-in, ownership, join and balance (AC1–AC3, AC12)', () => {
+  assert.equal(
+    joinPanelState({ mode: 'signed-out', fee: 100_000, balance: null }),
+    'guest'
+  );
+  assert.equal(joinPanelState({ mode: 'owner', fee: 100_000, balance: null }), 'owner');
+  assert.equal(joinPanelState({ mode: 'joined', fee: 100_000, balance: 0 }), 'joined');
+  assert.equal(joinPanelState({ mode: 'join', fee: 100_000, balance: 100_000 }), 'ready');
+  assert.equal(joinPanelState({ mode: 'join', fee: 100_000, balance: 100_001 }), 'ready');
+  assert.equal(joinPanelState({ mode: 'join', fee: 100_000, balance: 99_999 }), 'shortfall');
+  assert.equal(joinPanelState({ mode: 'join', fee: 0, balance: 0 }), 'ready');
+});
+
+test('an unknown balance stays ready; the join workflow remains the judge', () => {
+  assert.equal(joinPanelState({ mode: 'join', fee: 100_000, balance: null }), 'ready');
+});
+
+test('the shortfall is the fee minus the balance, never negative', () => {
+  assert.equal(joinShortfall(100_000, 0), 100_000);
+  assert.equal(joinShortfall(100_000, 32_000), 68_000);
+  assert.equal(joinShortfall(100_000, 100_000), 0);
+  assert.equal(joinShortfall(100_000, 150_000), 0);
+  assert.equal(joinShortfall(0, 0), 0);
+  assert.equal(joinShortfall(100_000, null), 0);
+});
+
+test('the balance after joining never goes below zero', () => {
+  assert.equal(joinBalanceAfter(100_000, 320_000), 220_000);
+  assert.equal(joinBalanceAfter(100_000, 100_000), 0);
+  assert.equal(joinBalanceAfter(0, 5_000), 5_000);
+});
+
+test('guest and confirm copy name the real fee, and a Rp0 fee has no fee line', () => {
+  assert.equal(
+    joinGuestCopy(100_000),
+    `Untuk bid, Anda perlu akun dan saldo untuk biaya ikut ${formatPrice(100_000)} (sekali per lelang).`
+  );
+  assert.equal(joinGuestCopy(0), 'Untuk bid, Anda perlu akun dan saldo.');
+  assert.equal(joinConfirmLabel(100_000), `Bayar ${formatPrice(100_000)} & ikut`);
+  assert.equal(joinConfirmLabel(0), 'Ikut lelang');
 });
 
 test('a short balance offers the top-up prompt in Indonesian, naming the fee (AC2)', () => {
@@ -101,5 +148,18 @@ test('any other refusal falls back to the server message, then a generic one', (
   assert.equal(
     joinFailureInfo({ message: '', fee: 0 }).message,
     'Gagal ikut lelang. Coba lagi.'
+  );
+});
+
+test('a failed farm lookup for a farmer session fails closed, not open', () => {
+  assert.equal(
+    joinControlState({ signedIn: true, isOwner: false, joined: false, farmUnknown: true }),
+    'unknown'
+  );
+  assert.equal(joinPanelState({ mode: 'unknown', fee: 100_000, balance: 200_000 }), 'unknown');
+  // A real owner still reads as owner.
+  assert.equal(
+    joinControlState({ signedIn: true, isOwner: true, joined: false, farmUnknown: true }),
+    'owner'
   );
 });

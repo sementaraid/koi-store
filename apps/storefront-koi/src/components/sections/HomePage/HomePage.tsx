@@ -1,36 +1,33 @@
 import { SHELF_LIMIT } from '@/const';
-import { toAuctionProducts } from '@/lib/adapters/lot';
+import { toAuctionProduct, toAuctionProducts } from '@/lib/adapters/lot';
 import { listLots } from '@/lib/data/lots';
 import { toPartnerFarm } from '@/lib/adapters/seller';
 import { listSellers } from '@/lib/data/seller';
+import { pickHome } from '@/lib/helpers/home-hero';
 import { getShell } from '@/lib/shell';
 
 import { Landing } from './components/Landing';
 
 export async function HomePage() {
-  const [{ account }, { sellers }, { lots }] = await Promise.all([
+  const [{ account }, { sellers }, page] = await Promise.all([
     getShell(),
     listSellers(6),
-    listLots({ limit: SHELF_LIMIT })
+    listLots({ limit: SHELF_LIMIT, status: 'live' })
   ]);
 
-  const products = toAuctionProducts(lots);
-  const soonest = lots
-    .filter((lot) => !lot.cancelled)
-    .reduce<(typeof lots)[number] | undefined>(
-      (first, lot) => (!first || lot.end_time < first.end_time ? lot : first),
-      undefined
-    );
-  const featured = products.find((lot) => lot.id === soonest?.id);
-  const rest = products.filter((lot) => lot.id !== featured?.id);
-
+  // Only open lots reach the hero and the grid, so a closed lot never gets a bid action.
+  // The same clock feeds the cards' relative time through hydration.
+  const now = Date.now();
+  const { featured, rest, failed } = pickHome(page, now);
   const partners = sellers.length ? sellers.map(toPartnerFarm) : undefined;
 
   return (
     <Landing
       account={account}
-      {...(featured ? { featured } : {})}
-      lots={rest}
+      now={now}
+      {...(featured ? { featured: toAuctionProduct(featured) } : {})}
+      lots={toAuctionProducts(rest)}
+      lotsFailed={failed}
       {...(partners ? { partners } : {})}
     />
   );

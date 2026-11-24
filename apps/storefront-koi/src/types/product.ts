@@ -36,6 +36,7 @@ export type ListingInfo =
 export type ListingBase = {
   ref?: string
   seller?: string
+  sellerHandle?: string
   sellerKind?: SellerKind
   category?: string
   spec?: string
@@ -54,6 +55,7 @@ export type AuctionBid = {
 }
 
 export type AuctionState = {
+  lotNumber?: number
   status?: AuctionStatus
   currentBid: number
   currency?: string
@@ -65,6 +67,9 @@ export type AuctionState = {
   cancelled?: boolean
   sold?: boolean
   live_stream_url?: string | null
+  deliveryMethod?: string
+  extendWindowMinutes?: number
+  joinFee?: number
 }
 
 export type SaleState = {
@@ -124,7 +129,6 @@ export type FeedState<S extends string> = {
 export type FeedShell = {
   account?: HeaderAccount
   activeHref?: string
-  onSearch?: (query: string) => void
   cart?: HeaderCart
 }
 

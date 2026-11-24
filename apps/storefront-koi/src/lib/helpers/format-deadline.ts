@@ -1,13 +1,9 @@
 import { toEpochMs, type CountdownTarget } from "./format-ago.ts"
+import { wibClock, wibDayMonth } from "./wib.ts"
 
+// "13 Okt, 23.00": Jakarta time, whatever the reader's clock says.
 export function formatDeadline(target: CountdownTarget) {
-  const at = new Date(toEpochMs(target))
+  const at = toEpochMs(target)
 
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Asia/Jakarta",
-  }).format(at)
+  return `${wibDayMonth(at)}, ${wibClock(at)}`
 }

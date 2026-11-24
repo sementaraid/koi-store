@@ -2,7 +2,10 @@
 
 import { DEFAULT_AUCTION_FILTER } from '@/const/auctions';
 import { LotPage } from '@/components/sections/LotDetailsPage/components/LotPage';
+import type { OwnBid } from '@/lib/helpers/bid-history';
+import type { BidStanding } from '@/lib/helpers/bid-status';
 import type { JoinControl } from '@/lib/helpers/join-auction';
+import type { BidControl } from '@/lib/helpers/place-bid';
 import type { HeaderAccount, HeaderCart } from '@/types/header';
 import type { MediaItem } from '@/types/lot';
 import type { AuctionProduct, AuctionStatus } from '@/types/product';
@@ -15,7 +18,11 @@ export function LotDossier({
   account,
   cart,
   join,
-  wonLot
+  bid,
+  position,
+  wonLot,
+  ownBids,
+  referenceNow
 }: {
   lot: AuctionProduct;
   lots: AuctionProduct[];
@@ -23,6 +30,10 @@ export function LotDossier({
   account?: HeaderAccount;
   cart?: HeaderCart;
   join?: JoinControl;
+  bid?: BidControl;
+  position?: BidStanding;
+  ownBids?: OwnBid[];
+  referenceNow?: number;
   wonLot?: {
     id: string;
     status: string;
@@ -43,7 +54,11 @@ export function LotDossier({
       account={account}
       cart={cart}
       join={join}
+      bid={bid}
+      position={position}
       wonLot={wonLot}
+      ownBids={ownBids}
+      referenceNow={referenceNow}
       {...state}
     />
   );

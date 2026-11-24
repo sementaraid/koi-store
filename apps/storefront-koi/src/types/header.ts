@@ -5,11 +5,6 @@ export type HeaderBrand = {
   brandHref?: string
 }
 
-export type HeaderSearch = {
-  onSearch?: (query: string) => void
-  searchPlaceholder?: string
-}
-
 export type HeaderLink = {
   label: string
   href: string
@@ -41,7 +36,7 @@ export type HeaderAccount = {
     role?: string
     avatar?: string
   }
-  unread?: number
-  onNotificationsClick?: () => void
+  /* whole rupiah, shown as a chip that links to top-up */
+  balance?: number
   menu?: HeaderAccountLink[]
 }

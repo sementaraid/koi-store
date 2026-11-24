@@ -2,7 +2,6 @@ import type { AuctionStatus } from "@/types/product"
 import type {
   AuctionFilter,
   AuctionSortOption,
-  AuctionStatusTab,
 } from "@/types/auctions"
 
 export const DEFAULT_AUCTION_FILTER: AuctionFilter = {
@@ -10,13 +9,6 @@ export const DEFAULT_AUCTION_FILTER: AuctionFilter = {
   category: "",
   sort: "ending-soon",
 }
-
-export const DEFAULT_AUCTION_TABS: AuctionStatusTab[] = [
-  { value: "all", label: "Semua" },
-  { value: "live", label: "Live" },
-  { value: "upcoming", label: "Akan Datang" },
-  { value: "ended", label: "Selesai" },
-]
 
 export const DEFAULT_AUCTION_SORTS: AuctionSortOption[] = [
   { value: "ending-soon", label: "Berakhir terdekat" },

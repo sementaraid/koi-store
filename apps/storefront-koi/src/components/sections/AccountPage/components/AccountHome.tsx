@@ -50,6 +50,7 @@ export function AccountHome({ customer, groups, account, cart }: AccountHomeProp
       heading={`Selamat datang ${name}`}
       description="Akun Anda, pesanan yang sedang berjalan, dan alamat pengiriman — semuanya di satu halaman."
       identity={{ name, email: customer.email }}
+      showMenuOnMobile
     >
       <RenderIf when={unpaid.at(-1)}>
         {(group) => (

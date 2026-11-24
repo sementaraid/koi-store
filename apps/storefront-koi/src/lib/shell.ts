@@ -1,6 +1,7 @@
 import type { HeaderAccount, HeaderCart } from '@/types/header';
 import { retrieveCart } from '@/lib/data/cart';
 import { getSession } from '@/lib/data/session';
+import { getWallet } from '@/lib/data/wallet';
 
 export async function getShell(): Promise<{
   account?: HeaderAccount;
@@ -13,6 +14,14 @@ export async function getShell(): Promise<{
 
   const customer = session.status === 'authenticated' ? session.customer : null;
 
+  // The balance chip is part of the identity, so it is read once with the rest of
+  // the shell. A wallet read that fails only omits the chip; it never breaks a page.
+  const balance = customer
+    ? await getWallet(1, 0)
+        .then((wallet) => wallet.balance)
+        .catch(() => undefined)
+    : undefined;
+
   const account: HeaderAccount | undefined = customer
     ? {
         user: {
@@ -21,7 +30,8 @@ export async function getShell(): Promise<{
               .filter(Boolean)
               .join(' ') || customer.email,
           role: (customer.metadata?.tier as string | undefined) ?? undefined
-        }
+        },
+        balance
       }
     : undefined;
 

@@ -42,7 +42,7 @@ export const INFO_DOCS: Record<string, InfoDoc> = {
       {
         heading: "3. Ikut sesi lelang",
         body: [
-          "Sesi dibuka sesuai jadwal di halaman lelang. Masuk ke ruang siaran, dan tawaran Anda tercatat dengan waktu server — bukan waktu perangkat Anda. Selisih satu detik di layar bisa berarti tawaran Anda masuk setelah ketukan.",
+          "Sesi dibuka sesuai jadwal. Pasang tawaran langsung di halaman lot, dan tawaran Anda tercatat dengan waktu server — bukan waktu perangkat Anda. Selisih satu detik di layar bisa berarti tawaran Anda masuk setelah ketukan.",
           "Kenaikan tawaran mengikuti kelipatan yang tertera pada tiap lot. Tawaran di bawah kelipatan ditolak sistem, bukan ditawar ulang."
         ]
       },

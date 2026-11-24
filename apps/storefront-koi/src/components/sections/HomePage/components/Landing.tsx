@@ -8,15 +8,19 @@ export function Landing({
   account,
   featured,
   lots,
-  partners
+  lotsFailed,
+  partners,
+  now
 }: {
   account?: HeaderAccount;
-} & Pick<HomeProps, 'featured' | 'lots' | 'partners'>) {
+} & Pick<HomeProps, 'featured' | 'lots' | 'lotsFailed' | 'partners' | 'now'>) {
   return (
     <Home
       account={account}
+      now={now}
       {...(featured ? { featured } : {})}
       {...(lots ? { lots } : {})}
+      {...(lotsFailed ? { lotsFailed } : {})}
       {...(partners ? { partners } : {})}
     />
   );

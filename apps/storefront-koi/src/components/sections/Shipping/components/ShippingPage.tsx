@@ -60,7 +60,6 @@ export function ShippingPage({
   account,
   cart,
   activeHref = ROUTES.cart,
-  onSearch,
   className,
   ...rest
 }: ShippingPageProps) {
@@ -86,7 +85,6 @@ export function ShippingPage({
       data-slot="shipping-page"
       className={className}
       activeHref={activeHref}
-      onSearch={onSearch}
       account={account}
       cart={cart}
       trail={[

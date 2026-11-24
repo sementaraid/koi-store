@@ -42,7 +42,6 @@ export function Catalogs({
   onPageChange,
   account,
   activeHref = ROUTES.catalogs,
-  onSearch,
   searching = false,
   attributes,
   selected = {},
@@ -84,7 +83,6 @@ export function Catalogs({
       data-slot="catalogs"
       className={className}
       activeHref={activeHref}
-      onSearch={onSearch}
       account={account}
       trail={trail}
       {...props}

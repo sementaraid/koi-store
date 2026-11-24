@@ -29,3 +29,8 @@ test('rejects empty and bare-host values', () => {
   assert.equal(isLiveStreamUrl(''), false);
   assert.equal(isLiveStreamUrl('https://www.instagram.com/'), false);
 });
+
+test('rejects seed and QA markers that are not URLs', () => {
+  assert.equal(isLiveStreamUrl('Seed · Lelang Minggu Ini'), false);
+  assert.equal(isLiveStreamUrl('UJI QA · jangan dipakai'), false);
+});

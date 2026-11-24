@@ -1,19 +1,15 @@
+import { wibDayMonth, wibParts } from "./wib.ts"
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
 export function shippingDates(days: number, from = new Date()) {
   return Array.from({ length: days }, (_, i) => {
-    const at = new Date(from)
-    at.setDate(at.getDate() + i + 1)
+    const at = new Date(from.getTime() + (i + 1) * DAY_MS)
 
     return {
       id: at.toISOString().slice(0, 10),
-      day: new Intl.DateTimeFormat("id-ID", {
-        weekday: "long",
-        timeZone: "Asia/Jakarta",
-      }).format(at),
-      date: new Intl.DateTimeFormat("id-ID", {
-        day: "numeric",
-        month: "short",
-        timeZone: "Asia/Jakarta",
-      }).format(at),
+      day: wibParts(at.getTime()).weekdayLong,
+      date: wibDayMonth(at.getTime()),
     }
   })
 }

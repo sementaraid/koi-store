@@ -10,7 +10,7 @@ export function BrandMark({ brandIcon, brandHref }: HeaderBrand) {
     <Link
       href={brandHref}
       aria-label="Beranda"
-      className="shrink-0 rounded-full focus-visible:ring-[3px] focus-visible:ring-ring/50"
+      className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full focus-visible:ring-[3px] focus-visible:ring-ring/50"
     >
       <Avatar size="lg" className="bg-primary/10 text-accent-ink">
         <RenderIf when={brandIcon}>
