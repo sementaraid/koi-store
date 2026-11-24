@@ -1,5 +1,4 @@
 import type { ComponentProps } from "react"
-import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 
 import {
@@ -12,35 +11,14 @@ import {
   Card as CardPrimitive,
 } from "./primitives/card"
 
-import { RAISED, RING } from "./surface"
-
-/* koi card: the button's material spread over a panel — standoff shadow,
-   hairline top highlight, inset edge — so panels and controls read as one kit.
-   Structure (header/title/content/footer) is the shadcn card's, unchanged. */
-
-const cardVariants = cva("", {
-  variants: {
-    variant: {
-      /* `elevated` is the koi surface; `flat` is the plain shadcn card, for
-         panels that are already inside an elevated container. */
-      elevated: `${RAISED} ${RING}`,
-      flat: "",
-    },
-  },
-  defaultVariants: { variant: "elevated" },
-})
-
+/* koi card: flat, 1 px border, no shadow, no gloss. `variant` is kept so
+   existing callers still compile; both values render the same flat card. */
 function Card({
   className,
-  variant,
+  variant: _variant,
   ...props
-}: ComponentProps<typeof CardPrimitive> & VariantProps<typeof cardVariants>) {
-  return (
-    <CardPrimitive
-      className={cn(cardVariants({ variant }), className)}
-      {...props}
-    />
-  )
+}: ComponentProps<typeof CardPrimitive> & { variant?: "elevated" | "flat" }) {
+  return <CardPrimitive className={cn(className)} {...props} />
 }
 
 export {

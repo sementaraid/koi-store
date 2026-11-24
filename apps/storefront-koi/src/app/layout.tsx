@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Instrument_Sans } from 'next/font/google';
 
 import './globals.css';
 
@@ -8,6 +9,12 @@ import { retrieveCart } from '@/lib/data/cart';
 import { getSession } from '@/lib/data/session';
 
 import { Providers } from './providers';
+
+const instrumentSans = Instrument_Sans({
+  subsets: ['latin'],
+  variable: '--font-instrument-sans',
+  display: 'swap'
+});
 
 export const metadata: Metadata = {
   title: {
@@ -43,7 +50,10 @@ export default async function RootLayout({
       : undefined;
 
   return (
-    <html lang="id">
+    <html
+      lang="id"
+      className={instrumentSans.variable}
+    >
       <body className="antialiased">
         <Providers
           cart={cart}

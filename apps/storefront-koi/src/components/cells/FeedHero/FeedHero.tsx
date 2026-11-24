@@ -34,7 +34,7 @@ export function FeedHero({
             </p>
           </div>
 
-          <Badge variant="live" className="h-7 gap-1.5 px-3 text-[13px]">
+          <Badge variant="live" className="gap-1.5 px-3">
             {stat}
           </Badge>
         </div>

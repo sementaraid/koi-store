@@ -342,7 +342,7 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
               id="farm-description"
               rows={4}
               placeholder="Jenis koi, pengalaman, dan hal lain yang perlu pembeli tahu…"
-              className="w-full min-w-0 resize-y rounded-md border border-input bg-transparent px-2.5 py-2 text-base shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 md:text-sm dark:bg-input/30"
+              className="w-full min-w-0 resize-y rounded-control border border-input bg-transparent px-2.5 py-2 text-base outline-none placeholder:text-muted-foreground focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 md:text-sm dark:bg-input/30"
               {...register('description')}
             />
             <RenderIf when={errors.description?.message}>
@@ -382,7 +382,7 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
               value={phone ?? ''}
               aria-readonly
               aria-describedby="farm-phone-hint"
-              className="h-9 w-full min-w-0 rounded-md border border-input bg-muted px-2.5 py-1 text-base text-muted-foreground md:text-sm"
+              className="h-12 w-full min-w-0 rounded-control border border-input bg-muted px-2.5 py-1 text-base text-muted-foreground md:h-10 md:text-sm"
             />
             <div id="farm-phone-hint" className="text-xs text-muted-foreground">
               {phone ? (

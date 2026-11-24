@@ -1,6 +1,157 @@
-/* The kit's stylesheet: it tells Tailwind where the kit's own markup lives.
+/* The kit's stylesheet: it tells Tailwind where the kit's own markup lives, and
+   it holds the Koi Auction design tokens (US-095).
    Tailwind's auto source detection skips node_modules, and `@koi/ui` resolves
    through the workspace symlink there, so without this every class that only a
    kit component uses is missing from the app's stylesheet. `@source` resolves
-   against this file, so the path stays correct wherever the app sits. */
+   against this file, so the path stays correct wherever the app sits.
+
+   Theming mechanism: unchanged. Semantic CSS variables live on `:root`, the dark
+   values on `.dark`, and `@theme inline` turns them into utilities. An app's own
+   `globals.css` is imported after this file, so any variable it still defines
+   (the old `--primary`, `--border`, `--radius`, `--font-sans` ...) wins until
+   that app's theme is mapped onto these tokens (T-095.3, T-095.4). The names
+   introduced here (surface, divider, price-panel, signal, success, warning,
+   radius-badge/control/dialog/sheet) exist only here, so they apply at once. */
 @source ".";
+
+:root {
+  --background: #ffffff;
+  --foreground: #090909;
+  --card: #ffffff;
+  --card-foreground: #090909;
+  --popover: #ffffff;
+  --popover-foreground: #090909;
+
+  /* brand: action, link, selection */
+  --primary: #3730a3;
+  --primary-foreground: #ffffff;
+  --accent-ink: #3730a3;
+  /* accent tint: the selected state */
+  --accent: #eef2ff;
+  --accent-foreground: #3730a3;
+
+  /* neutral surfaces and lines */
+  --surface: #f5f5f5;
+  --secondary: #f5f5f5;
+  --secondary-foreground: #090909;
+  --muted: #f5f5f5;
+  --muted-foreground: #404040;
+  --divider: #e5e5e5;
+  --border: #d4d4d4; /* card and component edge, decorative */
+  --input: #8a8a8a; /* control edge, 3.4:1 on white */
+  --ring: #3730a3;
+
+  /* price panel: price and time sit on this */
+  --price-panel: #1e1b4b;
+  --price-panel-foreground: #ffffff;
+
+  /* status: live and outbid (signal), highest and won (success), needs action (warning) */
+  --signal: #d52d25;
+  --signal-foreground: #ffffff;
+  --success: #15803d;
+  --success-foreground: #ffffff;
+  --warning: #b45309;
+  --warning-foreground: #ffffff;
+  --destructive: var(--signal);
+  --destructive-ink: var(--signal);
+  --live-ink: var(--signal);
+
+  --radius: 0.5rem;
+}
+
+/* The design brief gives light values only. These dark values are derived:
+   indigo-400/300 for the brand, red-400, green-400 and amber-400 for status, so
+   each text pair stays above 4.5:1 and each control edge above 3:1. */
+.dark {
+  --background: #090909;
+  --foreground: #fafafa;
+  --card: #141414;
+  --card-foreground: #fafafa;
+  --popover: #141414;
+  --popover-foreground: #fafafa;
+
+  --primary: #818cf8;
+  --primary-foreground: #090909;
+  --accent-ink: #a5b4fc;
+  --accent: #1e1b4b;
+  --accent-foreground: #c7d2fe;
+
+  --surface: #1a1a1a;
+  --secondary: #1a1a1a;
+  --secondary-foreground: #fafafa;
+  --muted: #1a1a1a;
+  --muted-foreground: #a3a3a3;
+  --divider: #262626;
+  --border: #333333;
+  --input: #737373;
+  --ring: #a5b4fc;
+
+  --price-panel: #312e81;
+  --price-panel-foreground: #fafafa;
+
+  --signal: #f87171;
+  --signal-foreground: #090909;
+  --success: #4ade80;
+  --success-foreground: #090909;
+  --warning: #fbbf24;
+  --warning-foreground: #090909;
+}
+
+@theme inline {
+  /* `--font-instrument-sans` is set by `next/font/google` in each app's root
+     layout (`variable: "--font-instrument-sans"`). The fallbacks cover the
+     moment before the font loads. */
+  --font-sans: var(--font-instrument-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-surface: var(--surface);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-divider: var(--divider);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-price-panel: var(--price-panel);
+  --color-price-panel-foreground: var(--price-panel-foreground);
+  --color-signal: var(--signal);
+  --color-signal-foreground: var(--signal-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-ink: var(--destructive-ink);
+  --color-live-ink: var(--live-ink);
+
+  /* Radius by role. Fixed pixel values, so the scale never depends on an app's
+     `--radius`. Pills and avatars use `rounded-full`. */
+  --radius-badge: 4px;
+  --radius-control: 8px; /* button, input, card, box */
+  --radius-dialog: 12px;
+  --radius-sheet: 16px; /* mobile bottom sheet */
+}
+
+/* Type scale 12 / 14 / 16 / 18 / 20 / 24 / 30 / 36 is Tailwind's own
+   `text-xs` ... `text-4xl`; body is `text-base` (16/24), caption `text-sm`
+   (14/20). The label (12, uppercase) is the one step Tailwind lacks. Prices and
+   times take Tailwind's `tabular-nums`. */
+@utility text-label {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

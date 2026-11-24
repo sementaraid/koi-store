@@ -32,7 +32,7 @@ export function LiveLotPanel({ detail, now }: LiveLotPanelProps) {
   const open = lot.status === 'open';
 
   return (
-    <div className="grid gap-3 rounded-md border border-border p-3">
+    <div className="grid gap-3 rounded-control border border-border p-3">
       <div className="grid gap-1">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-base font-medium">Lot {lot.id}</h2>
@@ -52,7 +52,7 @@ export function LiveLotPanel({ detail, now }: LiveLotPanelProps) {
       </div>
 
       {open ? null : (
-        <p className="rounded-md border border-border bg-muted/40 p-2 text-xs text-muted-foreground">
+        <p className="rounded-control border border-border bg-muted/40 p-2 text-xs text-muted-foreground">
           Lot ini tidak sedang terbuka, jadi bid tidak bisa dihapus. Daftar bid tetap ditampilkan
           sebagai riwayat.
         </p>
@@ -108,7 +108,7 @@ function BidRow({ bid, lotStatus }: { bid: AdminLiveLotBid; lotStatus: string })
   }
 
   return (
-    <div className="grid gap-1 rounded-md border border-border p-2 text-sm">
+    <div className="grid gap-1 rounded-control border border-border p-2 text-sm">
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-medium">{bid.bidder.name || '—'}</span>
         <span className="text-muted-foreground">{bid.bidder.customer_id}</span>
@@ -141,7 +141,7 @@ function BidRow({ bid, lotStatus }: { bid: AdminLiveLotBid; lotStatus: string })
                 setReason(event.target.value);
                 if (error) setError(null);
               }}
-              className="w-full min-w-0 resize-y rounded-md border border-input bg-transparent px-2.5 py-2 text-base shadow-xs outline-none focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30"
+              className="w-full min-w-0 resize-y rounded-control border border-input bg-transparent px-2.5 py-2 text-base outline-none focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30"
             />
             {error ? (
               <p id={`${id}-error`} role="alert" className="text-xs text-destructive-ink">

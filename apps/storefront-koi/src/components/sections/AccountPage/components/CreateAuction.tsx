@@ -289,7 +289,7 @@ export function CreateAuction({ categories, openOrders, account, cart }: CreateA
                     <textarea
                       id={`lot-${index}-description`}
                       rows={3}
-                      className="w-full min-w-0 resize-y rounded-md border border-input bg-transparent px-2.5 py-2 text-base shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 md:text-sm dark:bg-input/30"
+                      className="w-full min-w-0 resize-y rounded-control border border-input bg-transparent px-2.5 py-2 text-base outline-none placeholder:text-muted-foreground focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 md:text-sm dark:bg-input/30"
                       {...register(`lots.${index}.description`)}
                     />
                   </div>

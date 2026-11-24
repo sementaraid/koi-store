@@ -1,6 +1,13 @@
 import type { Metadata } from 'next';
+import { Instrument_Sans } from 'next/font/google';
 import { Toaster } from 'sonner';
 import './globals.css';
+
+const instrumentSans = Instrument_Sans({
+  subsets: ['latin'],
+  variable: '--font-instrument-sans',
+  display: 'swap'
+});
 
 export const metadata: Metadata = {
   title: {
@@ -15,7 +22,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="id">
+    <html
+      lang="id"
+      className={instrumentSans.variable}
+    >
       <body className="antialiased">
         {children}
         <Toaster position="top-right" />

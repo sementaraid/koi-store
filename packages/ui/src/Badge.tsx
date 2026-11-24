@@ -1,64 +1,66 @@
-import type { ComponentProps } from "react"
+import type { ComponentProps, ReactNode } from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 
-/* koi badge: a flat fact chip, not a control. The button and the card carry the
-   kit's convex material (gloss, bevel, standoff); the badge deliberately carries
-   none of it — no shadow, no lift, no press — so at a glance it reads as a
-   statement about a lot rather than something to click, and never competes with
-   the deep indigo CTA sitting beside it.
+/* koi badge: a flat status chip, not a control. 24 px high, 12 px bold text,
+   14 px icon, 4 px radius, 1 px edge, no shadow. Status is never colour alone:
+   the label is required, and every variant takes an `icon`.
 
-   Six tones, one per fact class rather than one per label:
-   - `neutral`   default. Live states at rest (Upcoming) and catalogue facts
-                 (koi variety, listing attributes).
-   - `muted`     no longer actionable: Ended, Sold, Unsold.
-   - `live`      bidding is open — the one signal a bidder must not miss.
-   - `urgent`    closing soon.
-   - `info`      a fact the buyer should read, carrying no urgency and no
-                 praise: provenance paperwork, shipping origin, sex. Cool blue,
-                 deliberately between the `live` red and `attention` gold so it
-                 reads as "worth knowing", not "act now".
-   - `attention` earned distinction: house trust flags and bidding highlights.
-   Distinctions *inside* a tone (Verified breeder vs Top bid vs Popular) are
-   carried by the icon the call site passes, not by a colour of their own. */
+   - `signal`   live, outbid (solid red)
+   - `success`  highest bid, won, paid (solid green)
+   - `warning`  needs action (solid amber)
+   - `neutral`  everything else (grey surface)
+
+   The older names below stay so existing callers keep working. They are aliases
+   onto the four above (plus `muted` and `info`) and can be migrated screen by
+   screen. */
+
+const SIGNAL = "border-signal bg-signal text-signal-foreground"
+const SUCCESS = "border-success bg-success text-success-foreground"
+const WARNING = "border-warning bg-warning text-warning-foreground"
+const NEUTRAL = "border-border bg-surface text-foreground"
 
 const badgeVariants = cva(
-  /* The edge is a single inset hairline, so it lands on the fill's own edge —
-     there is no border for the fill to disagree with, and no second ring. */
-  "inline-flex h-5 w-fit shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap inset-ring-1 inset-ring-black/10 dark:inset-ring-white/15 [&>svg]:pointer-events-none [&>svg]:size-3",
+  "inline-flex h-6 w-fit shrink-0 items-center gap-1 rounded-badge border px-2 text-xs font-bold whitespace-nowrap [&_svg]:pointer-events-none [&_svg]:size-3.5 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        neutral: "bg-secondary text-secondary-foreground",
-        muted: "bg-muted text-muted-foreground",
-        /* Broadcast red rather than the green this tone used to carry: the pill
-           sits on a lot photo, where a pale tint lost the "bidding is open"
-           signal to whatever the koi was swimming against. */
-        live: "bg-[oklch(0.94_0.06_25)] text-live-ink dark:bg-[oklch(0.30_0.08_25)]",
-        info: "bg-[oklch(0.93_0.05_245)] text-[oklch(0.40_0.12_250)] dark:bg-[oklch(0.28_0.05_250)] dark:text-[oklch(0.85_0.10_245)]",
-        urgent: "bg-destructive/10 text-destructive-ink dark:bg-destructive/20",
-        /* the house's own colour, the same gold the Top Breeder pill has always
-           used — it reads on a photo where a neutral tint would not. */
-        attention:
-          "bg-[oklch(0.84_0.14_85)] text-[oklch(0.29_0.07_75)] dark:bg-[oklch(0.72_0.14_80)]",
+        signal: SIGNAL,
+        success: SUCCESS,
+        warning: WARNING,
+        neutral: NEUTRAL,
+        /* aliases */
+        live: SIGNAL,
+        urgent: SIGNAL,
+        attention: WARNING,
+        muted: "border-border bg-muted text-muted-foreground",
+        info: "border-accent bg-accent text-accent-foreground",
       },
     },
     defaultVariants: { variant: "neutral" },
   }
 )
 
-function Badge({
-  className,
-  variant,
-  ...props
-}: ComponentProps<"span"> & VariantProps<typeof badgeVariants>) {
+type BadgeProps = Omit<ComponentProps<"span">, "children"> &
+  VariantProps<typeof badgeVariants> & {
+    /* the text label: required, so status never rests on colour or icon alone */
+    children: ReactNode
+    /* optional leading icon, drawn at 14 px and hidden from screen readers */
+    icon?: ReactNode
+  }
+
+function Badge({ className, variant, icon, children, ...props }: BadgeProps) {
   return (
     <span
       data-slot="badge"
       className={cn(badgeVariants({ variant }), className)}
       {...props}
-    />
+    >
+      {icon ? <span aria-hidden className="contents">{icon}</span> : null}
+      {children}
+    </span>
   )
 }
 
 export { Badge, badgeVariants }
+export type { BadgeProps }

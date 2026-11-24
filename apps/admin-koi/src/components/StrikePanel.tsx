@@ -116,7 +116,7 @@ export function StrikePanel({ defaultReasonType, customerId, target }: StrikePan
               id={`${id}-type`}
               value={reasonType}
               onChange={(event) => setReasonType(event.target.value as StrikeReasonType)}
-              className="h-9 w-full max-w-sm rounded-md border border-input bg-transparent px-2.5 text-sm shadow-xs outline-none focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 dark:bg-input/30"
+              className="h-12 w-full max-w-sm rounded-control border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 md:h-10 dark:bg-input/30"
             >
               {REASON_TYPES.map((type) => (
                 <option key={type} value={type}>
@@ -139,7 +139,7 @@ export function StrikePanel({ defaultReasonType, customerId, target }: StrikePan
                 setReason(event.target.value);
                 if (error) setError(null);
               }}
-              className="w-full min-w-0 resize-y rounded-md border border-input bg-transparent px-2.5 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30"
+              className="w-full min-w-0 resize-y rounded-control border border-input bg-transparent px-2.5 py-2 text-base transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30"
             />
             {error ? (
               <p id={`${id}-error`} role="alert" className="text-xs text-destructive-ink">
@@ -258,7 +258,7 @@ function StrikeHistoryRow({
   }
 
   return (
-    <div className="grid gap-1 rounded-md border border-border p-2 text-xs">
+    <div className="grid gap-1 rounded-control border border-border p-2 text-xs">
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="neutral">{reasonTypeLabel(strike.reason_type)}</Badge>
         <Badge variant={active ? 'muted' : 'info'}>{active ? 'Aktif' : 'Dicabut'}</Badge>
@@ -283,7 +283,7 @@ function StrikeHistoryRow({
                 setReason(event.target.value);
                 if (error) setError(null);
               }}
-              className="w-full min-w-0 resize-y rounded-md border border-input bg-transparent px-2.5 py-2 text-base shadow-xs outline-none focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30"
+              className="w-full min-w-0 resize-y rounded-control border border-input bg-transparent px-2.5 py-2 text-base outline-none focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30"
             />
             {error ? (
               <p id={`${id}-error`} role="alert" className="text-destructive-ink">

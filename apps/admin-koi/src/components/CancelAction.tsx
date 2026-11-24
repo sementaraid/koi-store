@@ -108,7 +108,7 @@ export function CancelAction({ kind, id, onCancelled }: CancelActionProps) {
           setReason(event.target.value);
           if (error) setError(null);
         }}
-        className="w-full min-w-0 resize-y rounded-md border border-input bg-transparent px-2.5 py-2 text-base shadow-xs outline-none focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30"
+        className="w-full min-w-0 resize-y rounded-control border border-input bg-transparent px-2.5 py-2 text-base outline-none focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30"
       />
       {error ? (
         <p id={`${uid}-error`} role="alert" className="text-xs text-destructive-ink">
