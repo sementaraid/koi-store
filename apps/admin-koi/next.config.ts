@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   trailingSlash: false,
   reactStrictMode: true,
-  allowedDevOrigins: ['koi-backoffice.sunar.dev'],
+  allowedDevOrigins: ['koi-backoffice-dev.sunar.dev'],
   transpilePackages: ['@koi/ui'],
   logging: {
     fetches: {

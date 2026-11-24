@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   output: "standalone",
   trailingSlash: false,
   reactStrictMode: true,
+  allowedDevOrigins: ['koi-dev.sunar.dev'],
   logging: {
     fetches: {
       fullUrl: true
