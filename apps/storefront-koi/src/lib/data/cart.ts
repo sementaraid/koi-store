@@ -163,6 +163,9 @@ export async function addToCart({
         revalidateTag(cartCacheTag);
       });
   }
+
+  // US-107 AC7: reached only when the mutation succeeded (`medusaError` throws).
+  revalidatePath('/', 'layout');
 }
 
 export async function updateLineItem({ lineId, quantity }: { lineId: string; quantity: number }) {
@@ -189,6 +192,7 @@ export async function updateLineItem({ lineId, quantity }: { lineId: string; qua
 
   const cartCacheTag = await getCacheTag('carts');
   await revalidateTag(cartCacheTag);
+  revalidatePath('/', 'layout');
 
   return res;
 }
@@ -213,6 +217,7 @@ export async function deleteLineItem(lineId: string) {
     .then(async () => {
       const cartCacheTag = await getCacheTag('carts');
       await revalidateTag(cartCacheTag);
+      revalidatePath('/', 'layout');
     })
     .catch(medusaError);
 }

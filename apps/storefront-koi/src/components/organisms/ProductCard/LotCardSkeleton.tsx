@@ -1,11 +1,12 @@
 import { Skeleton } from "@koi/ui"
 
-// Same box as AuctionProductCard: photo, title and farm line, price, time.
+// Same box as AuctionProductCard: photo, title and farm line, price, time. The body is 210 px tall
+// in the loaded card at every width, so the skeleton keeps that minimum.
 export function LotCardSkeleton() {
   return (
     <div className="flex w-full flex-col overflow-hidden rounded-control border border-divider bg-background">
       <Skeleton className="aspect-4/3 w-full rounded-none" />
-      <div className="flex flex-1 flex-col gap-3 p-4">
+      <div className="flex min-h-[210px] flex-1 flex-col gap-3 p-4">
         <div className="flex flex-col gap-2">
           <Skeleton className="h-5 w-3/4" />
           <Skeleton className="h-4 w-1/2" />

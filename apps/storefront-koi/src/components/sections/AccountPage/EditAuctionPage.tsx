@@ -6,7 +6,7 @@ import { getFeeCategories, getMyAuction } from '@/lib/data/auctions';
 import { getMyFarm } from '@/lib/data/farm';
 import { requireCustomer } from '@/lib/guard';
 import { farmStatusInfo } from '@/lib/helpers/farm-status';
-import { getShell } from '@/lib/shell';
+import { getAccountIdentity } from '@/lib/shell';
 
 import { listOrderGroups } from './AccountPage';
 import { countOpen } from './components/Orders';
@@ -17,9 +17,9 @@ export type EditAuctionPageProps = {
 };
 
 export async function EditAuctionPage({ id }: EditAuctionPageProps) {
-  const [, { account, cart }, groups] = await Promise.all([
+  const [, identity, groups] = await Promise.all([
     requireCustomer(farmAuctionHref(id)),
-    getShell(),
+    getAccountIdentity(),
     listOrderGroups()
   ]);
 
@@ -48,8 +48,7 @@ export async function EditAuctionPage({ id }: EditAuctionPageProps) {
       auction={auction}
       categories={categories}
       openOrders={countOpen(groups)}
-      account={account}
-      cart={cart}
+      identity={identity}
     />
   );
 }

@@ -25,7 +25,8 @@ import { FeedPagination } from "@/components/cells/FeedPagination/FeedPagination
 import { BidHistory } from "@/components/molecules/BidHistory/BidHistory"
 import { LotIdentity } from "@/components/molecules/LotIdentity/LotIdentity"
 import { MediaStage } from "@/components/molecules/MediaStage/MediaStage"
-import { PageShell } from "@/components/organisms/PageShell/PageShell"
+import { BackButton } from "@/components/cells/BackButton/BackButton"
+import { PageTrail } from "@/components/cells/PageBreadcrumb/PageBreadcrumb"
 import { ProductCard } from "@/components/organisms/ProductCard/ProductCard"
 import { FarmAbout } from "@/components/sections/LotDetailsPage/components/FarmAbout"
 import { JoinAuction } from "@/components/sections/LotDetailsPage/components/JoinAuction"
@@ -188,13 +189,11 @@ export function LotPage({
   ownBids,
   referenceNow,
   backHref = ROUTES.auctions,
-  activeHref = ROUTES.auctions,
   filter = DEFAULT_AUCTION_FILTER,
   page = 1,
   pageSize = 8,
   onFilterChange,
   onPageChange,
-  account,
   className,
   ...rest
 }: LotPageProps) {
@@ -294,28 +293,34 @@ export function LotPage({
   )
 
   return (
-    <PageShell
-      data-slot="lot-page"
-      // Reserve the US-103 mobile tab bar and US-099's bid bar above it, so
-      // neither covers the page footer. Closed and cancelled lots draw no bar.
-      className={cn(
-        "lg:pb-0",
-        !cancelled && !closed && price
-          ? "pb-[calc(12.5rem+env(safe-area-inset-bottom))]"
-          : undefined,
-        className
-      )}
-      activeHref={activeHref}
-      account={account}
-      back={{ href: backHref, label: "Kembali ke Lelang" }}
-      mobileTitle={lotLabel}
-      trail={[
-        { label: "Lelang", href: backHref },
-        ...(listing?.seller ? [{ label: listing.seller }] : []),
-        { label: `${lotLabel} · ${title}` },
-      ]}
-      {...rest}
-    >
+    <div data-slot="lot-page" className={className} {...rest}>
+      {/* Markers the shell's `:has()` rules read (AppShell). This one swaps the
+          shell header for a back button and the lot number below `lg` (board
+          03); the spacer keeps the fixed bar from covering the page top. */}
+      <div data-shell="lot-header" className="h-14 lg:hidden">
+        <div className="fixed inset-x-0 top-0 z-50 border-b border-divider bg-card">
+          <div className={cn(CONTAINER, "flex h-14 items-center gap-1")}>
+            <BackButton
+              href={backHref}
+              label="Kembali ke Lelang"
+              className="[&_svg:not([class*='size-'])]:size-5"
+            />
+            <span className="min-w-0 flex-1 truncate text-[15px] leading-6 font-semibold">
+              {lotLabel}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <PageTrail
+        className="max-lg:hidden"
+        trail={[
+          { label: "Lelang", href: backHref },
+          ...(listing?.seller ? [{ label: listing.seller }] : []),
+          { label: `${lotLabel} · ${title}` },
+        ]}
+      />
+
       <div className={cn(CONTAINER, "max-lg:pt-0 lg:py-8")}>
         {/* Board 03 on a phone: gallery, title, price, actions, then the
             stacked sections. Board 10 on desktop: gallery and tabs left, the
@@ -586,15 +591,20 @@ export function LotPage({
 
       <RenderIf when={!cancelled && !closed ? price : null}>
         {(line) => (
-          <LotPriceBar
-            label={line.label}
-            amount={line.amount}
-            currency={currency}
-            remaining={remaining}
-            action={barAction}
-            signInHref={join ? signInHref(join.returnPath) : ROUTES.login}
-            onAction={onBarAction}
-          />
+          <>
+            {/* The shell reserves room for this bar above the tab bar. A
+                closed or cancelled lot draws neither the bar nor the marker. */}
+            <span data-shell="lot-bar" hidden />
+            <LotPriceBar
+              label={line.label}
+              amount={line.amount}
+              currency={currency}
+              remaining={remaining}
+              action={barAction}
+              signInHref={join ? signInHref(join.returnPath) : ROUTES.login}
+              onAction={onBarAction}
+            />
+          </>
         )}
       </RenderIf>
 
@@ -636,6 +646,6 @@ export function LotPage({
           />
         </div>
       </section>
-    </PageShell>
+    </div>
   )
 }

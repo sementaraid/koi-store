@@ -32,7 +32,7 @@ import {
   shippedTrackingLabel,
   soldLotAction
 } from '@/lib/helpers/sold-lot-actions';
-import { getShell } from '@/lib/shell';
+import { getAccountIdentity } from '@/lib/shell';
 
 import { listOrderGroups } from './AccountPage';
 import { countOpen } from './components/Orders';
@@ -52,9 +52,9 @@ export type SoldLotsPageProps = {
 };
 
 export async function SoldLotsPage({ page: raw }: SoldLotsPageProps) {
-  const [, { account, cart }, groups] = await Promise.all([
+  const [, identity, groups] = await Promise.all([
     requireCustomer(ROUTES.farmSold),
-    getShell(),
+    getAccountIdentity(),
     listOrderGroups()
   ]);
 
@@ -142,8 +142,7 @@ export async function SoldLotsPage({ page: raw }: SoldLotsPageProps) {
       }
       description="Lot Anda yang sudah terjual, lengkap dengan nama pemenang dan alamat kirimnya."
       openOrders={countOpen(groups)}
-      account={account}
-      cart={cart}
+      identity={identity}
     >
       {body}
     </AccountFrame>

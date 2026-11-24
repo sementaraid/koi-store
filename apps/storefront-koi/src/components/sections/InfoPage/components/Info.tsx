@@ -4,27 +4,17 @@ import type { InfoDoc } from '@/const/info';
 import { Button, RenderIf } from "@koi/ui";
 import { Link } from '@/components/atoms/Link/Link';
 import { Eyebrow } from '@/components/atoms/Eyebrow/Eyebrow';
-import { PageShell } from '@/components/organisms/PageShell/PageShell';
-import type { HeaderAccount, HeaderCart } from '@/types/header';
+import { PageTrail } from '@/components/cells/PageBreadcrumb/PageBreadcrumb';
 
 export type InfoProps = {
   doc: InfoDoc;
   slug: string;
-  account?: HeaderAccount;
-  cart?: HeaderCart;
 };
 
-export function Info({ doc, slug, account, cart }: InfoProps) {
+export function Info({ doc, slug }: InfoProps) {
   return (
-    <PageShell
-      data-slot="info-page"
-      account={account}
-      cart={cart}
-      trail={[
-        { label: 'Beranda', href: ROUTES.home },
-        { label: doc.title }
-      ]}
-    >
+    <div data-slot="info-page">
+      <PageTrail trail={[{ label: 'Beranda', href: ROUTES.home }, { label: doc.title }]} />
       <article className={`${CONTAINER} max-w-[760px] py-10 lg:py-14`}>
         <header className="flex flex-col gap-3">
           <Eyebrow>{doc.eyebrow}</Eyebrow>
@@ -81,6 +71,6 @@ export function Info({ doc, slug, account, cart }: InfoProps) {
           )}
         </RenderIf>
       </article>
-    </PageShell>
+    </div>
   );
 }

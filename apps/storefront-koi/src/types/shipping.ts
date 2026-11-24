@@ -1,6 +1,5 @@
 import type { ComponentProps } from "react"
 
-import type { FeedShell } from "@/types/product"
 import type { CartLine, CheckoutStep } from "@/types/cart"
 import type { Settlement } from "@/lib/helpers/cart-totals"
 
@@ -38,7 +37,7 @@ export type ShippingSelection = {
 }
 
 export type ShippingPageProps = ComponentProps<"div"> &
-  FeedShell & {
+  {
     parcels?: ShippingParcel[]
     addresses?: ShippingAddress[]
     addressId?: string

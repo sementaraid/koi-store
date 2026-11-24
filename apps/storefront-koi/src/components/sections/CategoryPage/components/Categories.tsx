@@ -3,10 +3,9 @@ import { LayoutGrid, Tag } from 'lucide-react';
 import { Eyebrow } from '@/components/atoms/Eyebrow/Eyebrow';
 import { Link } from '@/components/atoms/Link/Link';
 import { EmptyFeed } from '@/components/cells/EmptyFeed/EmptyFeed';
-import { PageShell } from '@/components/organisms/PageShell/PageShell';
+import { PageTrail } from '@/components/cells/PageBreadcrumb/PageBreadcrumb';
 import { CONTAINER } from '@/const/layout';
 import { ROUTES, categoryHref } from '@/const/routes';
-import type { HeaderAccount, HeaderCart } from '@/types/header';
 
 export type CategoryGroup = {
   id: string;
@@ -18,18 +17,12 @@ export type CategoryGroup = {
 
 export type CategoriesProps = {
   groups: CategoryGroup[];
-  account?: HeaderAccount;
-  cart?: HeaderCart;
 };
 
-export function Categories({ groups, account, cart }: CategoriesProps) {
+export function Categories({ groups }: CategoriesProps) {
   return (
-    <PageShell
-      activeHref={ROUTES.catalogs}
-      account={account}
-      cart={cart}
-      trail={[{ label: 'Beranda', href: ROUTES.home }, { label: 'Kategori' }]}
-    >
+    <>
+      <PageTrail trail={[{ label: 'Beranda', href: ROUTES.home }, { label: 'Kategori' }]} />
       <div className={`${CONTAINER} pb-16`}>
         <div className="mb-8 max-w-2xl">
           <Eyebrow>
@@ -99,6 +92,6 @@ export function Categories({ groups, account, cart }: CategoriesProps) {
           />
         )}
       </div>
-    </PageShell>
+    </>
   );
 }

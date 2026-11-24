@@ -15,7 +15,7 @@ import { ROUTES } from "@/const/routes"
 import { CartSteps } from "@/components/cells/CartSteps/CartSteps"
 import { CartSummary } from "@/components/organisms/CartSummary/CartSummary"
 import { ChoiceList } from "@/components/cells/ChoiceList/ChoiceList"
-import { PageShell } from "@/components/organisms/PageShell/PageShell"
+import { PageTrail } from "@/components/cells/PageBreadcrumb/PageBreadcrumb"
 import type {
   ShippingPageProps,
   ShippingParcel,
@@ -57,9 +57,6 @@ export function ShippingPage({
   onAddAddress,
   step = "shipping",
   completed,
-  account,
-  cart,
-  activeHref = ROUTES.cart,
   className,
   ...rest
 }: ShippingPageProps) {
@@ -81,18 +78,13 @@ export function ShippingPage({
     )
 
   return (
-    <PageShell
-      data-slot="shipping-page"
-      className={className}
-      activeHref={activeHref}
-      account={account}
-      cart={cart}
-      trail={[
-        { label: "Keranjang", href: ROUTES.cart },
-        { label: "Pengiriman" },
-      ]}
-      {...rest}
-    >
+    <div data-slot="shipping-page" className={className} {...rest}>
+      <PageTrail
+        trail={[
+          { label: "Keranjang", href: ROUTES.cart },
+          { label: "Pengiriman" },
+        ]}
+      />
       <div className={`${CONTAINER} pb-16`}>
         <div className="mb-7 flex flex-wrap items-end justify-between gap-6">
           <div>
@@ -320,7 +312,7 @@ export function ShippingPage({
           </aside>
         </div>
       </div>
-    </PageShell>
+    </div>
   )
 }
 

@@ -23,7 +23,7 @@ import {
 } from '@/lib/helpers/auction-schema';
 import { formatPrice } from '@/lib/helpers/format-price';
 import { ROUTES } from '@/const/routes';
-import type { HeaderAccount, HeaderCart } from '@/types/header';
+import type { AccountIdentity } from './AccountFrame';
 
 import { AccountFrame } from './AccountFrame';
 
@@ -34,11 +34,10 @@ const EMPTY_LOT = { title: '', description: '', ob: 0, kb: 0 };
 export type CreateAuctionProps = {
   categories: FeeCategory[] | null;
   openOrders: number;
-  account?: HeaderAccount;
-  cart?: HeaderCart;
+  identity?: AccountIdentity;
 };
 
-export function CreateAuction({ categories, openOrders, account, cart }: CreateAuctionProps) {
+export function CreateAuction({ categories, openOrders, identity }: CreateAuctionProps) {
   const router = useRouter();
   const [photos, setPhotos] = useState<LotPhotos[]>([{ urls: [], uploading: false }]);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -156,8 +155,7 @@ export function CreateAuction({ categories, openOrders, account, cart }: CreateA
       }
       description="Lelang tersimpan sebagai draf dan masih bisa diubah sebelum diajukan."
       openOrders={openOrders}
-      account={account}
-      cart={cart}
+      identity={identity}
     >
       <RenderIf when={!categories}>
         {() => (

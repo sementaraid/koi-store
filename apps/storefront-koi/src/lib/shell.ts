@@ -39,3 +39,21 @@ export async function getShell(): Promise<{
 
   return { account, cart: cart ? { count } : undefined };
 }
+
+/**
+ * The signed-in name an account page shows in its own sidebar. The header reads
+ * the full shell in the layout; a page reads only what its content needs.
+ */
+export async function getAccountIdentity(): Promise<
+  { name: string; email: string } | undefined
+> {
+  const session = await getSession().catch(() => null);
+  if (session?.status !== 'authenticated') return undefined;
+
+  const { customer } = session;
+
+  return {
+    name: [customer.first_name, customer.last_name].filter(Boolean).join(' ') || customer.email,
+    email: ''
+  };
+}

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
+import { CreateAuctionSkeleton } from '@/components/sections/LoadingPages/AccountLoadingPages';
+
 import { CreateAuctionPage } from '@/components/sections';
 
 export const metadata: Metadata = {
@@ -9,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <Suspense>
+    <Suspense fallback={<CreateAuctionSkeleton />}>
       <CreateAuctionPage />
     </Suspense>
   );

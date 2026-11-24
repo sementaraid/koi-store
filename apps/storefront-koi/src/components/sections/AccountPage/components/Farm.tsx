@@ -41,7 +41,7 @@ import {
 import { farmRegistrationSchema, type FarmRegistrationData } from '@/lib/helpers/farm-schema';
 import { farmStatusInfo } from '@/lib/helpers/farm-status';
 import { formatDeadline } from '@/lib/helpers/format-deadline';
-import type { HeaderAccount, HeaderCart } from '@/types/header';
+import type { AccountIdentity } from './AccountFrame';
 
 import { AccountFrame } from './AccountFrame';
 
@@ -50,8 +50,7 @@ export type FarmProps = {
   seller: FarmSeller | null;
   failed: boolean;
   openOrders: number;
-  account?: HeaderAccount;
-  cart?: HeaderCart;
+  identity?: AccountIdentity;
 };
 
 const STEP_COPY: Record<FarmStep, string> = {
@@ -64,7 +63,7 @@ const STEP_COPY: Record<FarmStep, string> = {
 
 const MB = MAX_FARM_FILE_BYTES / (1024 * 1024);
 
-export function Farm({ customer, seller, failed, openOrders, account, cart }: FarmProps) {
+export function Farm({ customer, seller, failed, openOrders, identity }: FarmProps) {
   const frame = (body: ReactNode) => (
     <AccountFrame
       title="Kebun"
@@ -76,8 +75,7 @@ export function Farm({ customer, seller, failed, openOrders, account, cart }: Fa
       }
       description="Daftarkan kebun Anda untuk bisa membuat lelang koi. Persetujuan dilakukan admin."
       openOrders={openOrders}
-      account={account}
-      cart={cart}
+      identity={identity}
     >
       {body}
     </AccountFrame>

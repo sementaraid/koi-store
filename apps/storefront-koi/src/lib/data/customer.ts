@@ -1,7 +1,7 @@
 'use server';
 
 import { HttpTypes } from '@medusajs/types';
-import { revalidateTag } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 import { sdk } from '../client';
@@ -94,6 +94,9 @@ export async function signup(formData: FormData) {
 
     await transferCart();
 
+    // US-107 AC7: re-render every layout so the header shows the new account.
+    revalidatePath('/', 'layout');
+
     return createdCustomer;
   } catch (error: any) {
     return error.toString();
@@ -117,6 +120,11 @@ export async function login(formData: FormData) {
     await memberSignIn(email, password).then(setMemberToken).catch(() => undefined);
 
     await rotateCacheId();
+
+    // Carry the guest cart over here, not in the form, so the one layout refresh
+    // below shows the final cart count (US-107 AC7).
+    await transferCart().catch(() => undefined);
+    revalidatePath('/', 'layout');
 
     return { success: true };
   } catch (error: unknown) {

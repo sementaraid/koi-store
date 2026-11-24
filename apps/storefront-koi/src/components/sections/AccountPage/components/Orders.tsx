@@ -8,7 +8,7 @@ import { OrderRow } from '@/components/cells/OrderRow/OrderRow';
 import { ROUTES } from '@/const/routes';
 import type { OrderGroup } from '@/lib/helpers/order-groups';
 import { orderStatus } from '@/lib/helpers/order-status';
-import type { HeaderAccount, HeaderCart } from '@/types/header';
+import type { AccountIdentity } from './AccountFrame';
 import type { AccountOrder } from '@/types/order';
 
 import { AccountFrame } from './AccountFrame';
@@ -18,8 +18,7 @@ export type OrdersProps = {
   pageCount: number;
   page: number;
   openOrders: number;
-  account?: HeaderAccount;
-  cart?: HeaderCart;
+  identity?: AccountIdentity;
 };
 
 export function Orders({
@@ -27,8 +26,7 @@ export function Orders({
   pageCount,
   page,
   openOrders,
-  account,
-  cart
+  identity
 }: OrdersProps) {
   return (
     <AccountFrame
@@ -44,8 +42,7 @@ export function Orders({
       }
       description="Satu baris untuk satu pembayaran. Kiriman dari tiap penjual dipisah di halaman pesanannya."
       openOrders={openOrders}
-      account={account}
-      cart={cart}
+      identity={identity}
     >
       <RenderIf when={groups.length ? groups : null}>
         {(list) => (

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
+import { FarmHomeSkeleton } from '@/components/sections/LoadingPages/AccountLoadingPages';
+
 import { FarmHomePage } from '@/components/sections';
 
 export const metadata: Metadata = {
@@ -13,7 +15,7 @@ export default function Page({
   searchParams: Promise<{ status?: string | string[]; page?: string | string[] }>;
 }) {
   return (
-    <Suspense>
+    <Suspense fallback={<FarmHomeSkeleton />}>
       <FarmHomePage searchParams={searchParams} />
     </Suspense>
   );

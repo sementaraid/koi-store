@@ -6,7 +6,6 @@ import type { OwnBid } from '@/lib/helpers/bid-history';
 import type { BidStanding } from '@/lib/helpers/bid-status';
 import type { JoinControl } from '@/lib/helpers/join-auction';
 import type { BidControl } from '@/lib/helpers/place-bid';
-import type { HeaderAccount, HeaderCart } from '@/types/header';
 import type { MediaItem } from '@/types/lot';
 import type { AuctionProduct, AuctionStatus } from '@/types/product';
 import { useFeedSearch } from '@/hooks/use-feed-search';
@@ -15,8 +14,6 @@ export function LotDossier({
   lot,
   lots,
   media,
-  account,
-  cart,
   join,
   bid,
   position,
@@ -27,8 +24,6 @@ export function LotDossier({
   lot: AuctionProduct;
   lots: AuctionProduct[];
   media: MediaItem[];
-  account?: HeaderAccount;
-  cart?: HeaderCart;
   join?: JoinControl;
   bid?: BidControl;
   position?: BidStanding;
@@ -51,8 +46,6 @@ export function LotDossier({
       lot={lot}
       lots={lots}
       media={media}
-      account={account}
-      cart={cart}
       join={join}
       bid={bid}
       position={position}

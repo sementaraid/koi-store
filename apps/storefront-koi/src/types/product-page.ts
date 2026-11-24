@@ -3,7 +3,6 @@ import type { ComponentProps } from "react"
 import type { MediaItem } from "@/components/cells/MediaGallery/MediaGallery"
 import type {
   Availability,
-  FeedShell,
   FeedState,
   SimpleProduct,
 } from "@/types/product"
@@ -14,7 +13,7 @@ export type { MediaItem } from "@/components/cells/MediaGallery/MediaGallery"
 
 export type ProductPageProps = ComponentProps<"div"> &
   FeedState<Availability> &
-  FeedShell & {
+  {
     product?: SimpleProduct
     shelf?: SimpleProduct[]
     pageSize?: number

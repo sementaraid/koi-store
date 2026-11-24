@@ -6,7 +6,6 @@ import { Link } from "@/components/atoms/Link/Link"
 import { CONTAINER } from "@/const/layout"
 import { ROUTES } from "@/const/routes"
 import { AccountMenu } from "@/components/cells/AccountMenu/AccountMenu"
-import { BackButton } from "@/components/cells/BackButton/BackButton"
 import { BrandMark } from "@/components/cells/BrandMark/BrandMark"
 import { CartLink } from "@/components/cells/CartLink/CartLink"
 import { ChatLink } from "@/components/cells/ChatLink/ChatLink"
@@ -15,7 +14,6 @@ import { NavLinks } from "@/components/cells/NavLinks/NavLinks"
 import { formatPrice, formatPriceCompact } from "@/lib/helpers/format-price"
 import type {
   HeaderAccount,
-  HeaderBack,
   HeaderBrand,
   HeaderCart,
   HeaderLink,
@@ -25,12 +23,9 @@ export type * from "@/types/header"
 
 export type HeaderProps = ComponentProps<"header"> &
   HeaderBrand & {
-    back?: HeaderBack
-    /* Board 03: a detail screen swaps the mobile brand row for
-       (back, title) while the desktop header keeps the brand and nav. */
-    mobileTitle?: string
     links?: HeaderLink[]
-    activeHref?: string
+    /* The current item comes from the pathname; the 404 card turns it off. */
+    markActive?: boolean
     account?: HeaderAccount
     cart?: HeaderCart
   }
@@ -43,10 +38,8 @@ export type HeaderProps = ComponentProps<"header"> &
 export function Header({
   brandIcon = DEFAULT_BRAND_ICON,
   brandHref = "/",
-  back,
-  mobileTitle,
   links = DEFAULT_LINKS,
-  activeHref,
+  markActive = true,
   account,
   cart,
   className,
@@ -57,6 +50,8 @@ export function Header({
       data-slot="header"
       className={cn(
         "sticky top-0 z-50 w-full border-b border-divider bg-card",
+        // The lot page draws its own mobile header (back and lot number).
+        "group-has-[[data-shell=lot-header]]/shell:max-lg:hidden",
         className
       )}
       {...props}
@@ -68,35 +63,13 @@ export function Header({
         )}
       >
         <div className="flex min-w-0 flex-1 items-center gap-1 lg:flex-none lg:gap-4">
-          <RenderIf when={back}>
-            {(value) => (
-              <BackButton
-                {...value}
-                className="lg:hidden [&_svg:not([class*='size-'])]:size-5"
-              />
-            )}
-          </RenderIf>
-          <span className={cn(mobileTitle && "max-lg:hidden")}>
-            <BrandMark brandIcon={brandIcon} brandHref={brandHref} />
-          </span>
-          <RenderIf when={mobileTitle}>
-            {(title) => (
-              <span className="min-w-0 flex-1 truncate text-[15px] leading-6 font-semibold lg:hidden">
-                {title}
-              </span>
-            )}
-          </RenderIf>
+          <BrandMark brandIcon={brandIcon} brandHref={brandHref} />
           <nav aria-label="Main" className="hidden lg:flex">
-            <NavLinks links={links} activeHref={activeHref} />
+            <NavLinks links={links} markActive={markActive} />
           </nav>
         </div>
 
-        <div
-          className={cn(
-            "ms-auto flex shrink-0 items-center gap-1.5 lg:gap-3",
-            mobileTitle && "max-lg:hidden"
-          )}
-        >
+        <div className="ms-auto flex shrink-0 items-center gap-1.5 lg:gap-3">
           <RenderIf when={account}>
             {(value) => <BalanceChip account={value} />}
           </RenderIf>

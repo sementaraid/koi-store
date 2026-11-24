@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
+import { SoldLotsSkeleton } from '@/components/sections/LoadingPages/AccountLoadingPages';
+
 import { SoldLotsPage } from '@/components/sections';
 
 export const metadata: Metadata = {
@@ -14,7 +16,7 @@ export default async function Page({
 }) {
   const { page } = await searchParams;
   return (
-    <Suspense>
+    <Suspense fallback={<SoldLotsSkeleton />}>
       <SoldLotsPage page={page} />
     </Suspense>
   );

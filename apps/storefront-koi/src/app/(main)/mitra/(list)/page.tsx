@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
 import { PartnersPage } from '@/components/sections';
+import { PartnersSkeleton } from '@/components/sections/LoadingPages/LoadingPages';
 
 export const metadata: Metadata = {
   title: 'Mitra Breeder',
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function PartnersRoute() {
   return (
-    <Suspense>
+    <Suspense fallback={<PartnersSkeleton />}>
       <PartnersPage />
     </Suspense>
   );

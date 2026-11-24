@@ -9,7 +9,7 @@ import { Stars } from '@/components/atoms/Stars/Stars';
 import { EmptyFeed } from '@/components/cells/EmptyFeed/EmptyFeed';
 import { deleteReview, type StoreReview } from '@/lib/data/reviews';
 import { formatAgo } from '@/lib/helpers/format-ago';
-import type { HeaderAccount, HeaderCart } from '@/types/header';
+import type { AccountIdentity } from './AccountFrame';
 
 import { AccountFrame } from './AccountFrame';
 
@@ -22,11 +22,10 @@ const STATUS_LABEL: Record<StoreReview['status'], string> = {
 export type ReviewsProps = {
   reviews: StoreReview[];
   openOrders: number;
-  account?: HeaderAccount;
-  cart?: HeaderCart;
+  identity?: AccountIdentity;
 };
 
-export function Reviews({ reviews, openOrders, account, cart }: ReviewsProps) {
+export function Reviews({ reviews, openOrders, identity }: ReviewsProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [removed, setRemoved] = useState<Set<string>>(new Set());
 
@@ -61,8 +60,7 @@ export function Reviews({ reviews, openOrders, account, cart }: ReviewsProps) {
       }
       description="Apa yang Anda tulis tentang farm dan koi yang sudah tiba."
       openOrders={openOrders}
-      account={account}
-      cart={cart}
+      identity={identity}
     >
       <RenderIf when={visible.length ? visible : null}>
         {(list) => (

@@ -1,16 +1,16 @@
 import { ROUTES } from '@/const/routes';
 import { listMyReviews } from '@/lib/data/reviews';
 import { requireCustomer } from '@/lib/guard';
-import { getShell } from '@/lib/shell';
+import { getAccountIdentity } from '@/lib/shell';
 
 import { listOrderGroups } from './AccountPage';
 import { countOpen } from './components/Orders';
 import { Reviews } from './components/Reviews';
 
 export async function ReviewsPage() {
-  const [, { account, cart }, reviews, groups] = await Promise.all([
+  const [, identity, reviews, groups] = await Promise.all([
     requireCustomer(ROUTES.reviews),
-    getShell(),
+    getAccountIdentity(),
     listMyReviews(),
     listOrderGroups()
   ]);
@@ -19,8 +19,7 @@ export async function ReviewsPage() {
     <Reviews
       reviews={reviews}
       openOrders={countOpen(groups)}
-      account={account}
-      cart={cart}
+      identity={identity}
     />
   );
 }

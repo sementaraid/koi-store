@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { ROUTES } from '@/const/routes';
 import { retrieveOrderGroup } from '@/lib/data/orders';
 import { requireCustomer } from '@/lib/guard';
-import { getShell } from '@/lib/shell';
+import { getAccountIdentity } from '@/lib/shell';
 
 import { OrderDetail, type OrderDetailGroup } from './components/OrderDetail';
 
@@ -12,9 +12,9 @@ export type OrderDetailPageProps = {
 };
 
 export async function OrderDetailPage({ id }: OrderDetailPageProps) {
-  const [, { account, cart }] = await Promise.all([
+  const [, identity] = await Promise.all([
     requireCustomer(`${ROUTES.orders}/${id}`),
-    getShell()
+    getAccountIdentity()
   ]);
 
   const group = await retrieveOrderGroup(id).catch(() => null);
@@ -23,8 +23,7 @@ export async function OrderDetailPage({ id }: OrderDetailPageProps) {
   return (
     <OrderDetail
       group={group as unknown as OrderDetailGroup}
-      account={account}
-      cart={cart}
+      identity={identity}
     />
   );
 }

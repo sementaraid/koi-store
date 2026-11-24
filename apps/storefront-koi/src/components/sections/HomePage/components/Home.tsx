@@ -11,7 +11,6 @@ import {
 } from "@/const/home"
 import { Eyebrow } from "@/components/atoms/Eyebrow/Eyebrow"
 import { FeedGrid } from "@/components/atoms/FeedGrid/FeedGrid"
-import { PageShell } from "@/components/organisms/PageShell/PageShell"
 import { PartnerCard } from "@/components/organisms/PartnerCard/PartnerCard"
 import { PulseIcon } from "@/components/atoms/PulseIcon/PulseIcon"
 import { AuctionProductCard } from "@/components/organisms/ProductCard/AuctionProductCard"
@@ -31,20 +30,12 @@ export function Home({
   stats = DEFAULT_HOME_STATS,
   claims = DEFAULT_HOME_CLAIMS,
   partners = DEFAULT_HOME_PARTNERS,
-  account,
-  activeHref = ROUTES.home,
   now,
   className,
   ...props
 }: HomeProps) {
   return (
-    <PageShell
-      data-slot="home"
-      className={className}
-      activeHref={activeHref}
-      account={account}
-      {...props}
-    >
+    <div data-slot="home" className={className} {...props}>
       <section className={`${CONTAINER} py-10 lg:py-16`}>
         <div className="grid items-center gap-10 lg:grid-cols-2">
           <div className="flex flex-col items-start gap-5">
@@ -262,6 +253,6 @@ export function Home({
           </div>
         </div>
       </section>
-    </PageShell>
+    </div>
   )
 }

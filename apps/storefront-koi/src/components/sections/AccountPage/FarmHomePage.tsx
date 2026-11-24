@@ -29,7 +29,7 @@ import {
 } from '@/lib/helpers/auction-status';
 import { formatDeadline } from '@/lib/helpers/format-deadline';
 import { farmStatusInfo } from '@/lib/helpers/farm-status';
-import { getShell } from '@/lib/shell';
+import { getAccountIdentity } from '@/lib/shell';
 
 import { listOrderGroups } from './AccountPage';
 import { countOpen } from './components/Orders';
@@ -43,9 +43,9 @@ export type FarmHomePageProps = {
 };
 
 export async function FarmHomePage({ searchParams }: FarmHomePageProps) {
-  const [, { account, cart }, groups, params] = await Promise.all([
+  const [, identity, groups, params] = await Promise.all([
     requireCustomer(ROUTES.farmHome),
-    getShell(),
+    getAccountIdentity(),
     listOrderGroups(),
     searchParams
   ]);
@@ -115,8 +115,7 @@ export async function FarmHomePage({ searchParams }: FarmHomePageProps) {
       }
       description="Tempat mengelola lelang dan lot Anda."
       openOrders={countOpen(groups)}
-      account={account}
-      cart={cart}
+      identity={identity}
     >
       {body}
     </AccountFrame>

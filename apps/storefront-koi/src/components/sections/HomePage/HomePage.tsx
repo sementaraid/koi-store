@@ -4,13 +4,11 @@ import { listLots } from '@/lib/data/lots';
 import { toPartnerFarm } from '@/lib/adapters/seller';
 import { listSellers } from '@/lib/data/seller';
 import { pickHome } from '@/lib/helpers/home-hero';
-import { getShell } from '@/lib/shell';
 
 import { Landing } from './components/Landing';
 
 export async function HomePage() {
-  const [{ account }, { sellers }, page] = await Promise.all([
-    getShell(),
+  const [{ sellers }, page] = await Promise.all([
     listSellers(6),
     listLots({ limit: SHELF_LIMIT, status: 'live' })
   ]);
@@ -23,7 +21,6 @@ export async function HomePage() {
 
   return (
     <Landing
-      account={account}
       now={now}
       {...(featured ? { featured: toAuctionProduct(featured) } : {})}
       lots={toAuctionProducts(rest)}

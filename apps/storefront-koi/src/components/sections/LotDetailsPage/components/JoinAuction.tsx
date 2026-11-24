@@ -24,6 +24,7 @@ import {
   SheetTrigger
 } from '@koi/ui/primitives/sheet';
 import { Link } from '@/components/atoms';
+import { useBalanceSync } from '@/components/organisms/AppShell/BalanceSync';
 import { signInHref, signUpHref, topupHref } from '@/const/routes';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { joinAuction } from '@/lib/data/lots';
@@ -89,6 +90,9 @@ export function JoinAuction({
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<JoinFailure | null>(null);
 
+  // AC8: "Saldo tersedia" and the header chip must show the same amount.
+  useBalanceSync(balance);
+
   const state = joinPanelState({ mode, fee, balance });
 
   function handleOpenChange(next: boolean) {
@@ -107,8 +111,8 @@ export function JoinAuction({
 
     if (result.success) {
       toast.success('Berhasil ikut lelang.');
+      // `joinAuction` already re-rendered the layout and page (US-107 AC7).
       handleOpenChange(false);
-      router.refresh();
       return;
     }
 

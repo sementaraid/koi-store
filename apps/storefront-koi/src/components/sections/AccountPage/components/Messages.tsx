@@ -5,17 +5,16 @@ import { MessageSquareText } from 'lucide-react';
 import { EmptyFeed } from '@/components/cells/EmptyFeed/EmptyFeed';
 import { ChatInbox } from '@/components/cells/ChatInbox/ChatInbox';
 import { useChatEnabled } from '@/lib/hooks/use-chat-enabled';
-import type { HeaderAccount, HeaderCart } from '@/types/header';
+import type { AccountIdentity } from './AccountFrame';
 
 import { AccountFrame } from './AccountFrame';
 
 export type MessagesProps = {
   openOrders: number;
-  account?: HeaderAccount;
-  cart?: HeaderCart;
+  identity?: AccountIdentity;
 };
 
-export function Messages({ openOrders, account, cart }: MessagesProps) {
+export function Messages({ openOrders, identity }: MessagesProps) {
   const chatEnabled = useChatEnabled();
 
   return (
@@ -32,8 +31,7 @@ export function Messages({ openOrders, account, cart }: MessagesProps) {
       }
       description="Percakapan Anda dengan para penjual."
       openOrders={openOrders}
-      account={account}
-      cart={cart}
+      identity={identity}
     >
       {chatEnabled ? (
         <ChatInbox />

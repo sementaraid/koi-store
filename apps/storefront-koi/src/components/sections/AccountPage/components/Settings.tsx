@@ -11,7 +11,6 @@ import { Badge, Button, FormField } from "@koi/ui";
 import { Eyebrow } from '@/components/atoms/Eyebrow/Eyebrow';
 import { Separator } from '@koi/ui/primitives/separator';
 import { sendResetPasswordEmail, updateCustomer } from '@/lib/data/customer';
-import type { HeaderAccount, HeaderCart } from '@/types/header';
 
 import { AccountFrame } from './AccountFrame';
 import { profileSchema, type ProfileData } from './schema';
@@ -19,11 +18,9 @@ import { profileSchema, type ProfileData } from './schema';
 export type SettingsProps = {
   customer: HttpTypes.StoreCustomer;
   openOrders: number;
-  account?: HeaderAccount;
-  cart?: HeaderCart;
 };
 
-export function Settings({ customer, openOrders, account, cart }: SettingsProps) {
+export function Settings({ customer, openOrders }: SettingsProps) {
   const [sendingReset, setSendingReset] = useState(false);
 
   const {
@@ -77,8 +74,6 @@ export function Settings({ customer, openOrders, account, cart }: SettingsProps)
       description="Nama yang tampil di pesanan Anda dan sandi untuk masuk."
       identity={{ name, email: customer.email }}
       openOrders={openOrders}
-      account={account}
-      cart={cart}
     >
       <section aria-labelledby="akun-profil">
         <Eyebrow>Data akun</Eyebrow>

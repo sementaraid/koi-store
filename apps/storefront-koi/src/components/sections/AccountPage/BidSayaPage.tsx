@@ -10,9 +10,10 @@ import {
 import { Suspense } from 'react';
 import { cn } from 'cn';
 
-import { Button, Card, Skeleton } from '@koi/ui';
+import { Button, Card } from '@koi/ui';
 import { Link } from '@/components/atoms';
 import { EmptyFeed } from '@/components/cells/EmptyFeed/EmptyFeed';
+import { BidSayaSkeleton } from '@/components/sections/LoadingPages/AccountLoadingPages';
 import { RetryButton } from '@/components/cells/RetryButton/RetryButton';
 import { ROUTES, lotHref, myBidsTabHref } from '@/const/routes';
 import { listLots, listMyBids, type StoreMyBid } from '@/lib/data/lots';
@@ -28,7 +29,7 @@ import {
   type BidTab,
   type WonStepState
 } from '@/lib/helpers/my-bids';
-import { getShell } from '@/lib/shell';
+import { getAccountIdentity } from '@/lib/shell';
 
 import { AccountFrame } from './components/AccountFrame';
 import { ActiveBidCard } from './components/ActiveBidCard';
@@ -41,9 +42,9 @@ export type BidSayaPageProps = {
 // are usable while only the data loads (US-101 AC6, board 15).
 export async function BidSayaPage({ tab: raw }: BidSayaPageProps) {
   const tab = parseBidTab(raw);
-  const [, { account, cart }] = await Promise.all([
+  const [, identity] = await Promise.all([
     requireCustomer(myBidsTabHref(tab)),
-    getShell()
+    getAccountIdentity()
   ]);
 
   return (
@@ -56,8 +57,7 @@ export async function BidSayaPage({ tab: raw }: BidSayaPageProps) {
         </>
       }
       description="Lot yang Anda ikuti, menangkan, dan lewatkan."
-      account={account}
-      cart={cart}
+      identity={identity}
     >
       <Suspense key={tab} fallback={<BidSayaSkeleton />}>
         <BidSayaContent tab={tab} />
@@ -375,34 +375,6 @@ function BidSayaError() {
         noMatchBody="Ada gangguan saat mengambil bid Anda. Data Anda aman. Muat ulang halaman ini."
         action={<RetryButton />}
       />
-    </div>
-  );
-}
-
-function BidSayaSkeleton() {
-  return (
-    <div role="status" aria-busy="true" className="flex flex-col gap-6">
-      <span className="sr-only">Memuat bid</span>
-      <div className="flex w-full gap-1 rounded-control bg-muted p-1 sm:w-fit">
-        {[0, 1, 2].map((key) => (
-          <Skeleton key={key} className="h-11 flex-1 rounded-control sm:w-24" />
-        ))}
-      </div>
-      <div className="flex flex-col gap-4">
-        {[0, 1, 2].map((key) => (
-          <div
-            key={key}
-            className="flex gap-3 rounded-control border border-divider bg-background p-4"
-          >
-            <Skeleton className="h-16 w-20 shrink-0 rounded-xl" />
-            <div className="flex flex-1 flex-col gap-2">
-              <Skeleton className="h-5 w-2/3" />
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-6 w-40" />
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

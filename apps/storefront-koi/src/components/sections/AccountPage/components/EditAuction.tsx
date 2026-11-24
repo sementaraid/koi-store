@@ -44,7 +44,7 @@ import {
 } from '@/lib/helpers/auction-schema';
 import { formatPrice } from '@/lib/helpers/format-price';
 import { ROUTES } from '@/const/routes';
-import type { HeaderAccount, HeaderCart } from '@/types/header';
+import type { AccountIdentity } from './AccountFrame';
 
 import { AccountFrame } from './AccountFrame';
 import { CancelAuctionButton } from './CancelAuctionButton';
@@ -55,11 +55,10 @@ export type EditAuctionProps = {
   auction: AuctionDetail;
   categories: FeeCategory[] | null;
   openOrders: number;
-  account?: HeaderAccount;
-  cart?: HeaderCart;
+  identity?: AccountIdentity;
 };
 
-export function EditAuction({ auction: initial, categories, openOrders, account, cart }: EditAuctionProps) {
+export function EditAuction({ auction: initial, categories, openOrders, identity }: EditAuctionProps) {
   const router = useRouter();
   const [auction, setAuction] = useState(initial);
   const editable = auction.status === 'draft';
@@ -216,8 +215,7 @@ export function EditAuction({ auction: initial, categories, openOrders, account,
         ) : undefined
       }
       openOrders={openOrders}
-      account={account}
-      cart={cart}
+      identity={identity}
     >
       <RenderIf when={editable ? rejection : null}>
         {(reason) => (

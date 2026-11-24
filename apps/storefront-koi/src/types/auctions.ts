@@ -3,7 +3,6 @@ import type { ComponentProps } from "react"
 import type {
   AuctionProduct,
   AuctionStatus,
-  FeedShell,
   FeedState,
   FilterTab,
   GoodsFilter,
@@ -21,6 +20,6 @@ export type AuctionFilter = GoodsFilter<AuctionStatus>
 
 export type AuctionsProps = ComponentProps<"div"> &
   FeedState<AuctionStatus> &
-  FeedShell & {
+  {
     lots: AuctionProduct[]
   }

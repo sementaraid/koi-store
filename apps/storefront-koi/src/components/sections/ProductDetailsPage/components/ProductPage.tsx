@@ -16,7 +16,7 @@ import { OfferComparison } from "@/components/cells/OfferComparison/OfferCompari
 import { SpecSheet } from "@/components/cells/SpecSheet/SpecSheet"
 import { LotLayout } from "@/components/atoms/LotLayout/LotLayout"
 import { LotTrustList } from "@/components/molecules/LotTrust/LotTrust"
-import { PageShell } from "@/components/organisms/PageShell/PageShell"
+import { PageTrail } from "@/components/cells/PageBreadcrumb/PageBreadcrumb"
 import { ProductCard } from "@/components/organisms/ProductCard/ProductCard"
 import { SaleTerminal } from "@/components/organisms/SaleTerminal/SaleTerminal"
 import { ChatButton } from "@/components/cells/ChatButton/ChatButton"
@@ -50,13 +50,11 @@ export function ProductPage({
   sellerHandle,
   chatPartner,
   postedAt,
-  activeHref = ROUTES.catalogs,
   filter = DEFAULT_CATALOG_FILTER,
   page = 1,
   pageSize = 8,
   onFilterChange,
   onPageChange,
-  account,
   className,
   ...rest
 }: ProductPageProps) {
@@ -94,18 +92,14 @@ export function ProductPage({
   )
 
   return (
-    <PageShell
-      data-slot="product-page"
-      className={className}
-      activeHref={activeHref}
-      account={account}
-      trail={[
-        { label: origin.label, href: back },
-        { label: sessionLabel(listing?.seller) },
-        { label: listing?.ref ?? `Stok ${product.id}` },
-      ]}
-      {...rest}
-    >
+    <div data-slot="product-page" className={className} {...rest}>
+      <PageTrail
+        trail={[
+          { label: origin.label, href: back },
+          { label: sessionLabel(listing?.seller) },
+          { label: listing?.ref ?? `Stok ${product.id}` },
+        ]}
+      />
       <LotLayout
         media={
           <>
@@ -308,6 +302,6 @@ export function ProductPage({
           />
         </div>
       </section>
-    </PageShell>
+    </div>
   )
 }

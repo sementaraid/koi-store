@@ -1,13 +1,9 @@
 import { listCategories } from '@/lib/data/categories';
-import { getShell } from '@/lib/shell';
 
 import { Categories } from './components/Categories';
 
 export async function CategoriesPage() {
-  const [{ account, cart }, { categories }] = await Promise.all([
-    getShell(),
-    listCategories()
-  ]);
+  const { categories } = await listCategories();
 
   return (
     <Categories
@@ -22,8 +18,6 @@ export async function CategoriesPage() {
           handle: child.handle
         }))
       }))}
-      account={account}
-      cart={cart}
     />
   );
 }

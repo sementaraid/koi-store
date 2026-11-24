@@ -1,5 +1,4 @@
 
-import type { HeaderAccount, HeaderCart } from "@/types/header"
 import type { CountdownTarget } from "@/hooks/use-countdown"
 
 export type ProductKind = "auction" | "simple"
@@ -124,12 +123,6 @@ export type FeedState<S extends string> = {
   pageSize?: number
   onFilterChange?: (filter: GoodsFilter<S>) => void
   onPageChange?: (page: number) => void
-}
-
-export type FeedShell = {
-  account?: HeaderAccount
-  activeHref?: string
-  cart?: HeaderCart
 }
 
 export type FilterTab<S extends string> = {

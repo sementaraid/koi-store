@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
 import { Cart } from '@/components/sections';
+import { CheckoutSkeleton } from '@/components/sections/LoadingPages/LoadingPages';
 
 export const metadata: Metadata = {
   title: 'Keranjang',
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function CartRoute() {
   return (
-    <Suspense>
+    <Suspense fallback={<CheckoutSkeleton label="Memuat keranjang…" trail />}>
       <Cart />
     </Suspense>
   );

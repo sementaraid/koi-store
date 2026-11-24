@@ -1,7 +1,6 @@
 import type { ComponentProps } from "react"
 
 import type {
-  FeedShell,
   Product,
   SimpleProduct,
 } from "@/types/product"
@@ -25,7 +24,7 @@ export type CartMoney = {
 export type CheckoutStep = "cart" | "shipping" | "payment"
 
 export type CartPageProps = ComponentProps<"div"> &
-  FeedShell & {
+  {
     lines?: CartLine[]
     money?: CartMoney
     step?: CheckoutStep

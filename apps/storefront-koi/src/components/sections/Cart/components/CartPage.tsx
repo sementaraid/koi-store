@@ -10,7 +10,7 @@ import { CartLine } from "@/components/molecules/CartLine/CartLine"
 import { CartSteps } from "@/components/cells/CartSteps/CartSteps"
 import { CartSummary } from "@/components/organisms/CartSummary/CartSummary"
 import { EmptyFeed } from "@/components/cells/EmptyFeed/EmptyFeed"
-import { PageShell } from "@/components/organisms/PageShell/PageShell"
+import { PageTrail } from "@/components/cells/PageBreadcrumb/PageBreadcrumb"
 import type {
   CartLine as CartLineData,
   CartPageProps,
@@ -28,27 +28,16 @@ export function CartPage({
   onQuantityChange,
   onRemove,
   onCheckout,
-  account,
-  cart,
-  activeHref = ROUTES.cart,
   className,
   ...rest
 }: CartPageProps) {
   const totals = cartTotals(lines)
   const won = lines.filter((line) => line.product.kind === "auction")
   const bought = lines.filter((line) => line.product.kind !== "auction")
-  const bar = cart ?? { count: totals.units }
 
   return (
-    <PageShell
-      data-slot="cart-page"
-      className={className}
-      activeHref={activeHref}
-      account={account}
-      cart={bar}
-      trail={[{ label: "Beranda", href: ROUTES.home }, { label: "Keranjang" }]}
-      {...rest}
-    >
+    <div data-slot="cart-page" className={className} {...rest}>
+      <PageTrail trail={[{ label: "Beranda", href: ROUTES.home }, { label: "Keranjang" }]} />
       <div className={`${CONTAINER} pb-16`}>
         <div className="mb-7 flex flex-wrap items-end justify-between gap-6">
           <div>
@@ -167,7 +156,7 @@ export function CartPage({
           )}
         </RenderIf>
       </div>
-    </PageShell>
+    </div>
   )
 }
 

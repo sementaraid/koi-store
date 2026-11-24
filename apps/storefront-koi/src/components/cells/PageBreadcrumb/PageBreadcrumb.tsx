@@ -11,6 +11,8 @@ import {
 import { cn } from "cn"
 import { RenderIf } from "@koi/ui"
 
+import { CONTAINER } from "@/const/layout"
+
 export type Crumb = {
   label: string
   href?: string
@@ -46,5 +48,20 @@ export function PageBreadcrumb({ trail, className }: PageBreadcrumbProps) {
         })}
       </BreadcrumbList>
     </Breadcrumb>
+  )
+}
+
+/**
+ * The breadcrumb at the top of a page's content, in the page container. Pages
+ * render it themselves now that the layout owns the shell (US-107).
+ */
+export function PageTrail({
+  trail,
+  className,
+}: PageBreadcrumbProps) {
+  return (
+    <div className={cn(CONTAINER, "pt-5", className)}>
+      <PageBreadcrumb trail={trail} className="mb-0" />
+    </div>
   )
 }

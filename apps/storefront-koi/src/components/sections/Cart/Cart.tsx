@@ -1,14 +1,10 @@
 import { toCartLines, toCartMoney, toLineIds } from '@/lib/adapters/cart';
 import { retrieveCart } from '@/lib/data/cart';
-import { getShell } from '@/lib/shell';
 
 import { CartLines } from './components/CartLines';
 
 export async function Cart() {
-  const [{ account, cart: bar }, cart] = await Promise.all([
-    getShell(),
-    retrieveCart()
-  ]);
+  const cart = await retrieveCart();
 
   const money = toCartMoney(cart);
 
@@ -17,8 +13,6 @@ export async function Cart() {
       lines={toCartLines(cart)}
       lineIds={toLineIds(cart)}
       {...(money ? { money } : {})}
-      account={account}
-      cart={bar}
     />
   );
 }

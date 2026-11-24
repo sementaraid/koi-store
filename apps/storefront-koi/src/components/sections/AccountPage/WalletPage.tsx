@@ -1,10 +1,11 @@
 import { ClientError } from '@mercurjs/client';
 import { redirect } from 'next/navigation';
 
+import { BalanceSync } from '@/components/organisms/AppShell/BalanceSync';
 import { ROUTES } from '@/const/routes';
 import { getWallet, type WalletPage as WalletPageData } from '@/lib/data/wallet';
 import { requireCustomer } from '@/lib/guard';
-import { getShell } from '@/lib/shell';
+import { getAccountIdentity } from '@/lib/shell';
 
 import { listOrderGroups } from './AccountPage';
 import { countOpen } from './components/Orders';
@@ -17,9 +18,9 @@ export type WalletPageProps = {
 };
 
 export async function WalletPage({ page: raw }: WalletPageProps) {
-  const [, { account, cart }, groups] = await Promise.all([
+  const [, identity, groups] = await Promise.all([
     requireCustomer(ROUTES.wallet),
-    getShell(),
+    getAccountIdentity(),
     listOrderGroups()
   ]);
 
@@ -53,14 +54,16 @@ export async function WalletPage({ page: raw }: WalletPageProps) {
   }
 
   return (
-    <Wallet
-      wallet={wallet}
-      failed={failed}
-      page={page}
-      pageCount={pageCount}
-      openOrders={countOpen(groups)}
-      account={account}
-      cart={cart}
-    />
+    <>
+      <BalanceSync balance={failed ? null : wallet.balance} />
+      <Wallet
+        wallet={wallet}
+        failed={failed}
+        page={page}
+        pageCount={pageCount}
+        openOrders={countOpen(groups)}
+        identity={identity}
+      />
+    </>
   );
 }

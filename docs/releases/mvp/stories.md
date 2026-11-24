@@ -30,6 +30,9 @@ new koi fields are open as `mvp-Q55`, `mvp-Q56` and `mvp-Q58`; live-room removal
 is answered by D-064 (`mvp-Q57`); watch list `mvp-Q59`; brand name, top-up
 estimate and the `/rekber` page copy are non-blocking `mvp-Q60` – `mvp-Q62`. **Next: T-096.1 and T-096.2 (backend),
 then US-097 and US-098.** The MVP no longer ships before Epic 9 is `done`.
+**Owner request 2026-11-24:** US-107 `todo` (header, footer and bottom nav move
+into the route-group layouts; a skeleton on every route), after US-099, US-103
+and US-106 are accepted; non-blocking questions `mvp-Q63` – `mvp-Q65`.
 
 **Owner decisions 2026-11-20:** **D-062** — the phone in Medusa's address
 snapshots (`cart_address`, `order_address`, `fulfillment_address`,
@@ -97,14 +100,14 @@ code are committed (`d67d3c8`).
 | 6 Admin operations | 6 | 0 | 0 | 0 | 0 | 37 | 0 | 0 |
 | 7 WhatsApp bot | 0 | 0 | 0 | 0 | 6 | 0 | 12 | 0 |
 | 8 Pilot | 0 | 0 | 0 | 0 | 1 | 0 | 6 | 0 |
-| 9 UI redesign phase 1 | 1 | 0 | 9 | 0 | 2 | 5 | 42 | 0 |
+| 9 UI redesign phase 1 | 1 | 0 | 10 | 0 | 2 | 5 | 50 | 0 |
 | Unplanned | 1 | 0 | 0 | 0 | 0 | 1 | 0 | 0 |
-| **Total** | **42** | **0** | **9** | **0** | **9** | **195** | **65** | **0** |
+| **Total** | **42** | **0** | **10** | **0** | **9** | **195** | **73** | **0** |
 
-Stories: 42 done of 60 (70%), none in progress, 9 todo (US-096 – US-103,
-US-106), 9 blocked (Epic 7 ×6 and US-090 by `mvp-Q12`; US-104 `mvp-Q59`, US-105
+Stories: 42 done of 61 (69%), none in progress, 10 todo (US-096 – US-103,
+US-106, US-107), 9 blocked (Epic 7 ×6 and US-090 by `mvp-Q12`; US-104 `mvp-Q59`, US-105
 `mvp-Q58`), none parked.
-Tasks: 195 done of 260 (75%), 65 open (Epic 9: 33 in todo stories, 2 US-095
+Tasks: 195 done of 268 (73%), 73 open (Epic 9: 41 in todo stories, 2 US-095
 follow-ups, 7 in blocked stories), none parked.
 
 **Payment model decided (2026-11-17, D-058).** The MVP pays off-platform: the
@@ -7845,7 +7848,8 @@ the coverage matrix). Rules that apply to every story here:
 **Order:** US-095 is done. T-096.1 and T-096.2 (backend) come next; they have no
 shared files and run in parallel. Then US-097 and US-098, then
 US-099, US-100, US-101. US-102 needs only US-095. US-103 last (it sweeps copy
-across the redesigned screens).
+across the redesigned screens). US-107 (shell in the layouts, loading skeletons)
+after US-099, US-103 and US-106 are accepted.
 
 ### US-095 Design tokens and primitives · `done (evidence: packages/ui/src/styles.css:17-60 defines every AC1 token (--primary #3730a3, --price-panel #1e1b4b, --accent #eef2ff, --foreground #090909, --muted-foreground #404040, --input #8a8a8a, --border #d4d4d4, --divider #e5e5e5, --surface #f5f5f5, --signal #d52d25, --success #15803d, --warning #b45309); :141-144 radius badge 4 / control 8 / dialog 12 / sheet 16; QA computed --primary #3730a3, --price-panel #1e1b4b, --signal #d52d25, --success #15803d and --warning #b45309 on both apps; Button.tsx:14,33-40 48 px mobile, 40 md, 32 sm, 48 lg, flat, with 44 px mobile hit areas on xs/sm/icon via after:; Badge.tsx:23-24,47,49 h-6, 12 px bold, 4 px radius, 14 px icon, required label, icon slot and signal/success/warning/neutral; Card primitives/card.tsx:14, Dialog primitives/dialog.tsx:59 and Sheet sheet.tsx:45,56 are 1 px edge, 8/12/16 px radius, no box-shadow (QA computed box-shadow: none on Card, the admin sign-in card, the storefront header and home panels); Accordion primitives/accordion.tsx:41,50 has min-h-12, a focus-visible ring, aria-expanded from Base UI and a 20 px icon; Alert primitives/alert.tsx:9-18 carries icon + title + text, 20 px icon, tone not colour-only and role passed by the caller; Dialog, Skeleton, Accordion and Alert exported at index.ts:6-7,20-27,33; Instrument Sans in storefront-koi/src/app/layout.tsx:2,13-15 and admin-koi/src/app/layout.tsx:2,6-8, Geist removed from both package.json; QA measured all text pairs >=4.5:1 in light and dark, buttons 48/40, badge 24 and bottom sheet 16; packages/ui tsc clean, storefront check 258/258, admin check 62/62, no new dependency. Not verified at runtime: Dialog/Accordion/Alert have no caller yet, so keyboard and focus behaviour is code-reviewed only (T-095.7); tabular-nums spot-checked on BidTerminal, LotPage, AuctionProductCard and Wallet, not every price/time site; icon sizes audited in badge/alert/accordion, not everywhere)`
 As a **customer, farmer or admin**, I want every Koi screen to share one calm,
@@ -8045,6 +8049,56 @@ removes it and redirects its old links.
 - [ ] T-106.1 [storefront] Redirect `/lelang/[id]/live` → `/lelang/[id]`, remove the room's page and components, remove the lot page's live-room entry link, move the farmer's live link (D-061) onto the lot page (AC1–AC3) (ordered after US-099)
 - [ ] T-106.2 [qa] Verify AC1–AC3: an old `/live` URL lands on the lot page, no live-room link remains on the lot page or `/lelang`, the live link renders; render-check
 
+### US-107 Header, footer and bottom nav in the layouts; loading skeletons on every route · `todo`
+As a **customer or farmer**, I want the header and tab bar to stay put while a
+page loads, and to see the shape of what is coming, so that the site feels fast
+and never goes blank. *(Owner request 2026-11-24. Engineering and UI only: no
+money, auction or data-model change, so it fits scope B. Not in `plan.md`; see
+the coverage matrix.)* Depends on US-099, US-103 and US-106 being accepted: they
+changed the same `PageShell`, `Header`, `BottomNav` and lot page, and building on
+code still in review means rework.
+
+Today (orchestrator's code read 2026-11-24, `apps/storefront-koi`): 15 page
+components wrap themselves in `PageShell`
+(`src/components/organisms/PageShell/PageShell.tsx`, which renders the skip link,
+`Header`, the optional `bar`, `<main id="konten">` with the breadcrumb `trail`,
+`Footer` and `BottomNav`), each calls `getShell()` (`src/lib/shell.ts`) and
+passes `activeHref`. Real skeletons exist only on `/lelang`, `/lelang/[id]`
+(`loading.tsx`, rendered with no header today) and `/akun/bid`; 15 pages use
+`<Suspense>` with no fallback, so their content area is blank while loading.
+
+**Mechanism for per-page variants (product-owner's call, 2026-11-24):** the page
+renders a marker element and the layout's shell styles itself with CSS `:has()`
+on that marker (Tailwind `has-[…]`). No client context, no parallel `@header`
+route, no prop from a page to its layout. Why: it is server-rendered, so the first
+paint already shows the right header (no flash, no hydration mismatch, no layout
+shift), and it avoids the parallel-route catch-all needed to reset the slot on
+client navigation. Rejected: a client context (the header renders before the page
+sets it, so it flashes on first paint) and `@header` (extra `default.tsx` and
+catch-all files for every route).
+
+- AC1: `app/(main)/layout.tsx` and `app/(account)/layout.tsx` render the skip link, header, `<main id="konten">`, footer and bottom nav once, with the mobile tab-bar bottom padding and `env(safe-area-inset-bottom)` as today. Root `app/layout.tsx` renders none of them. No page or section component renders `PageShell`, `Header`, `Footer` or `BottomNav`: a grep under `src/components/sections` and `src/app/**/page.tsx` returns no hit.
+- AC2: Shell data is read in the layout: `getShell()` is called from the layouts (and from `app/not-found.tsx`, AC3), never from a page for the header. A page may still read the session or wallet for its own content.
+- AC3: Auth pages and not-found keep today's chrome (header, breadcrumb `Beranda › {title}`, footer, bottom nav; `mvp-Q64` may change auth): `app/(auth)/layout.tsx` renders the shell for `/masuk`, `/daftar`, `/lupa-sandi` and `/atur-sandi`, and `app/not-found.tsx` renders it itself. An unmatched URL (`/tidak-ada`) and a missing record (`/lelang/<unknown id>`, `/produk/<unknown handle>`, `/mitra/<unknown handle>`) show the 404 card with exactly one header, one footer and one bottom nav.
+- AC4: The current nav item in the header and the bottom nav (`aria-current="page"` plus the non-colour marker, US-103 AC2) is derived from the pathname (`usePathname()`); no page passes `activeHref`. Every route marks the same item as before the change (checked against the T-107.1 baseline).
+- AC5: Lot page variants keep working through the `:has()` mechanism above: below 1024 px the lot page shows the back button `Kembali ke Lelang` and the `Lot #NN` title in place of the brand row and shows no breadcrumb (board 03); at 1440 px it shows the normal header and its breadcrumb. While the mobile bid bar shows, the page reserves its extra bottom space so neither the bar nor the tab bar covers the footer; a closed or cancelled lot reserves only the tab bar. The first server-rendered HTML already has the right header (no switch after hydration).
+- AC6: Every page that passed a `trail` renders the same breadcrumb itself at the top of its content: same text, links, position and spacing (compared with the T-107.1 baseline at 1440 px). The `bar`, `back`, `mobileTitle`, `trail`, `account`, `cart` and `activeHref` page-to-shell props are gone (`bar` has no caller today).
+- AC7: The header balance chip and cart count update without a full page reload (no `window.location` reload) after each of these mutations: sign in (`login`, `src/lib/data/customer.ts:103`) and register (`signup`, `:51`): the account menu and balance chip appear, the cart count carries over (`transferCart`, `:140`); sign out (`signout`, `:130`, via `/keluar`): the chip and account menu go, the count shows the guest cart; join an auction (`joinAuction`, `src/lib/data/lots.ts:123`): the chip drops by the join fee, no change for a Rp0 fee; add to cart (`addToCart`, `src/lib/data/cart.ts:108`), change a quantity and remove a line: the count equals the cart's quantity sum. A top-up request (`createTopupRequest`, `src/lib/data/topups.ts:58`) does not change the balance (credit is added when the admin approves, US-012), so the chip stays the same at submit. The update is made by revalidating the layout or refreshing the router after the mutation succeeds; a failed mutation changes nothing.
+- AC8: The chip never disagrees with the page: after a client navigation to `/akun/saldo`, `/akun/topup` or a lot page (`Saldo tersedia` in the join dialog), the header chip shows the same amount as the page. When the chip refreshes on other pages after a balance change the customer didn't make (admin approves a top-up, an admin adjustment, a cancel refund) is `mvp-Q63`.
+- AC9: Every route under `(main)`, `(account)` and `(auth)` shows a content-area skeleton while it loads after a client navigation, from its own `loading.tsx` or the nearest parent segment's. The header and bottom nav stay visible and don't move. The loading region has `aria-busy="true"` and an Indonesian screen-reader status (`Memuat…`).
+- AC10: Every `<Suspense>` in `apps/storefront-koi/src` has a skeleton `fallback`: a grep for `<Suspense` without `fallback=` returns no hit (today: home, katalog, toko, mitra, kategori, keranjang, akun/menang, the farm area under `akun/kebun`, masuk, daftar).
+- AC11: Skeleton shapes match the content: card grids show card skeletons in the loaded page's column count at 390 and 1440 px (lots reuse `LotCardSkeleton`), lists show row skeletons, forms show label and field blocks, detail pages show their main blocks (lot page: gallery and bid panel, as `lelang/[id]/loading.tsx` does). Skeletons use `Skeleton` from `@koi/ui`, whose pulse stops under `prefers-reduced-motion`; no new skeleton primitive. When content replaces a skeleton the header, bottom nav and footer don't move, and the page's cumulative layout shift is at most 0.1 (`mvp-Q65`).
+- AC12: Nothing else changes: every route looks and behaves as in the T-107.1 baseline at 390 and 1440 px, loading states aside. Each route has exactly one `header`, one `footer`, one bottom nav and one `main#konten`; the skip link reaches `#konten`; the browser console shows no hydration warning or error.
+- AC13: Storefront `bun run check` passes; no new dependency.
+- [ ] T-107.1 [qa] Baseline before any build: screenshot every route (the 33 pages under `app/`, plus `/tidak-ada` and a missing lot) at 390 and 1440 px, record each route's current nav item, breadcrumb and header/footer/nav count, and the lot page's mobile header and bottom space with and without the bid bar. Save the paths for T-107.8 (AC4, AC6, AC12)
+- [ ] T-107.2 [storefront] Layout shell: `(main)`, `(account)` and `(auth)` layouts render the shell once with `getShell()`; `app/not-found.tsx` renders it itself; nav item from `usePathname()`; the shell's `has-[…]` rules for the lot page's mobile header marker and bid-bar marker; drop the page props of AC6 (AC1–AC5). Run T-107.3 straight after: until then pages render the shell twice
+- [ ] T-107.3 [storefront] Remove `PageShell` from the 15 page callers (Info, Home, Partner, AccountFrame, Categories, CartPage, Auctions, Marketplace, LotPage, Partners, AuthFrame, Catalogs, ShippingPage, ProductPage; not-found is T-107.2); each page renders its breadcrumb; the lot page renders its mobile back/title header and bid-bar marker (AC1, AC5, AC6)
+- [ ] T-107.4 [storefront] Freshness: after each AC7 mutation succeeds, revalidate the layout or refresh the router; the balance pages of AC8 agree with the chip (AC7, AC8)
+- [ ] T-107.5 [storefront] Loading for `(main)`: `loading.tsx` with matching skeletons for home, `katalog`, `kategori`, `kategori/[category]`, `toko`, `mitra`, `mitra/[handle]`, `produk/[handle]`, `keranjang`, `pengiriman`, `[slug]` (`lelang` and `lelang/[id]` exist); fallbacks for those pages' `<Suspense>` (AC9–AC11)
+- [ ] T-107.6 [storefront] Loading for the customer account pages: `akun`, `alamat`, `menang`, `pengaturan`, `pesan`, `pesanan`, `pesanan/[id]`, `saldo`, `topup`, `ulasan` (`bid` exists); fallbacks for their `<Suspense>` (AC9–AC11)
+- [ ] T-107.7 [storefront] Loading for the farm area (`akun/kebun`, `beranda`, `lelang/[id]`, `lelang/baru`, `terjual`) and the auth pages (`masuk`, `daftar`, `lupa-sandi`, `atur-sandi`); fallbacks for their `<Suspense>` (AC9–AC11)
+- [ ] T-107.8 [qa] Verify AC1–AC13 at 390 and 1440 px: render-check every route and the 404s against the T-107.1 baseline; count header/footer/nav/main per route; throttled network to see each route's skeleton with the header and tab bar in place; the AC7 mutations without a reload; AC8 pages; reduced motion stops the pulse; layout shift measured with a `layout-shift` PerformanceObserver; no hydration message in the console; the greps of AC1 and AC10; `bun run check`
+
 ---
 
 ## Unplanned
@@ -8112,7 +8166,7 @@ table complete.
 | Key flows: live updates, bidding on the lot page (D-064; the separate live room is removed) | US-045, US-099, US-106 (US-046 built the removed room) |
 | Build milestones 1–8 | Epics 0–8 |
 | Design rules: user-facing error messages Indonesian, from the backend (D-055) | US-042 (follow-up), US-031, US-041; every new task via the task-brief checklist |
-| UI redesign phase 1 (owner 2026-11-24, in the MVP, scope B; **not yet in `plan.md`**, design review 01 + boards 02–15) | US-095 (done); US-096 – US-103 and US-106 (todo); held parts US-104 (`mvp-Q59`), US-105 (`mvp-Q58`); per-lot fee and 2-minute extend held as `mvp-Q55`, `mvp-Q56` with no story |
+| UI redesign phase 1 (owner 2026-11-24, in the MVP, scope B; **not yet in `plan.md`**, design review 01 + boards 02–15) | US-095 (done); US-096 – US-103, US-106 and US-107 (todo; US-107 is the owner's 2026-11-24 layout-shell and loading request); held parts US-104 (`mvp-Q59`), US-105 (`mvp-Q58`); per-lot fee and 2-minute extend held as `mvp-Q55`, `mvp-Q56` with no story |
 
 ## Out of scope for the MVP (from the plan)
 
@@ -8190,4 +8244,7 @@ is built. Record the answer here, in `plan.md`, and as a decision in `docs/produ
 | mvp-Q60 | **Open (2026-11-24, non-blocking).** Which brand name? The storefront defaults to "Indokoi" (`apps/storefront-koi/src/app/layout.tsx:14-15`), the design says "Koi Auction House", the docs say "Koi Store". US-103 AC6 reads `NEXT_PUBLIC_SITE_NAME` everywhere, so only the env value changes. Options: (a) Indokoi; (b) Koi Auction House; (c) another name. | none (US-103 ships with the env value) |
 | mvp-Q61 | **Open (2026-11-24, non-blocking).** The design promises "Top-up dicek admin, biasanya kurang dari 1 jam"; its own review lists this as an unconfirmed assumption, and no decision commits to a time. Phase 1 uses neutral wording (US-099 AC3, US-102 AC6). Options: (a) keep neutral wording; (b) the owner commits to a stated check time and hours, recorded as a decision, then the copy adds it. | none |
 | mvp-Q62 | **Open (2026-11-24, non-blocking).** The info page `/rekber` says "Uang pembeli ditahan rumah lelang sampai ikan diterima hidup" (`apps/storefront-koi/src/const/info.ts:72-75`), which contradicts D-058 (the platform holds no money). `/pembayaran`, `/garansi` and `/karantina` were not reviewed and may also state rules the plan doesn't have. Options: (a) unpublish `/rekber` until beta escrow, and the owner reviews the other three; (b) the owner supplies corrected copy. US-103 AC5 removes links to `/rekber` either way. | none (US-103 AC5 unlinks it) |
+| mvp-Q63 | **Open (2026-11-24, non-blocking).** Today every page re-reads the session, wallet and cart when it renders, so the header chip is as fresh as the page. A layout is not re-rendered on client navigation, so after US-107 the chip changes only when something refreshes it. US-107 AC7 covers the customer's own mutations and AC8 the pages that show the balance. Open: a balance change the customer didn't make (admin approves a top-up, US-012; admin adjustment, US-013; cancel refund, US-060/US-091) while they browse other pages. Options: (a) shown on the next full load, the next AC7 mutation or a visit to an AC8 page (US-107 builds this unless the owner picks b); (b) re-read the shell on every navigation, as today, which costs one session, wallet and cart read per navigation, the reads the layout move saves. | none (US-107 builds a; b adds one task) |
+| mvp-Q64 | **Open (2026-11-24, non-blocking).** What chrome do the auth pages show once the shell is in the layouts? US-107 AC3 keeps today's (full header, breadcrumb, footer, bottom nav). Options: (a) keep it; (b) a brand-only header with no footer and no bottom nav, so the form stands alone. Not-found keeps the full chrome either way. | none (US-107 AC3 builds a) |
+| mvp-Q65 | **Open (2026-11-24, non-blocking).** "No layout shift on load" is tested in US-107 AC11 as: header, bottom nav and footer don't move, and the page's cumulative layout shift is at most 0.1 (the Web Vitals "good" threshold). Options: (a) that; (b) strictly zero shift on every route, which may need fixed image and text heights the content doesn't have today. | none (US-107 AC11 tests a) |
 | — (payment model) | **Answered 2026-11-17 (D-058):** the MVP pays off-platform — the winner pays the farmer directly within 1×24 h, the farmer marks the lot paid (`won → paid`) then ships; the platform holds and pays out no money. Xendit escrow stays the planned beta direction, out of MVP scope. Un-parks US-056, US-058, US-059's payment strike and T-052.4; restores D-044/D-057 through D-059. *(Was: does the MVP pay in-app (Xendit escrow or wallet escrow), or off-platform?)* | none (was US-052 T-052.4, US-056, US-058, US-059) |

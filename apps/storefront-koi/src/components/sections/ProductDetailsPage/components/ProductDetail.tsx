@@ -8,7 +8,6 @@ import { DEFAULT_CATALOG_FILTER } from '@/const/catalog';
 import { ROUTES } from '@/const/routes';
 import { ProductPage } from '@/components/sections/ProductDetailsPage/components/ProductPage';
 import type { MediaItem, ProductPageProps } from '@/types/product-page';
-import type { HeaderAccount, HeaderCart } from '@/types/header';
 import type { Availability, SimpleProduct } from '@/types/product';
 import type { VariantChoice } from '@/lib/adapters/product';
 import { useFeedSearch } from '@/hooks/use-feed-search';
@@ -21,8 +20,6 @@ export function ProductDetail({
   media,
   offerId,
   variants,
-  account,
-  cart,
   ...page
 }: {
   product: SimpleProduct;
@@ -30,8 +27,6 @@ export function ProductDetail({
   media?: MediaItem[];
   offerId?: string;
   variants?: VariantChoice[];
-  account?: HeaderAccount;
-  cart?: HeaderCart;
 } & Pick<
   ProductPageProps,
   | 'description'
@@ -91,8 +86,6 @@ export function ProductDetail({
       {...(picks ? { onVariantChange: setVariantId } : {})}
       {...(picked ? { offerWinnerId: picked.offerId } : {})}
       onBuy={onBuy}
-      account={account}
-      cart={cart}
       {...state}
     />
   );

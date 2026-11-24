@@ -1,6 +1,6 @@
 import { ROUTES } from '@/const/routes';
 import { requireCustomer } from '@/lib/guard';
-import { getShell } from '@/lib/shell';
+import { getAccountIdentity } from '@/lib/shell';
 
 import { listOrderGroups } from './AccountPage';
 import { countOpen, Orders } from './components/Orders';
@@ -12,9 +12,9 @@ export type OrdersPageProps = {
 };
 
 export async function OrdersPage({ page: raw }: OrdersPageProps) {
-  const [, { account, cart }] = await Promise.all([
+  const [, identity] = await Promise.all([
     requireCustomer(ROUTES.orders),
-    getShell()
+    getAccountIdentity()
   ]);
   const groups = await listOrderGroups();
 
@@ -28,8 +28,7 @@ export async function OrdersPage({ page: raw }: OrdersPageProps) {
       page={page}
       pageCount={pageCount}
       openOrders={countOpen(groups)}
-      account={account}
-      cart={cart}
+      identity={identity}
     />
   );
 }

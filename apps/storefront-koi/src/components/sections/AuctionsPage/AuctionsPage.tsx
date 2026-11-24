@@ -3,7 +3,6 @@ import { toAuctionProducts } from '@/lib/adapters/lot';
 import { toPositionMap } from '@/lib/adapters/my-bids';
 import { listLots, listMyBids } from '@/lib/data/lots';
 import { groupUpcoming, tabCounts, type AuctionTab } from '@/lib/helpers/auction-list';
-import { getShell } from '@/lib/shell';
 
 import { Auctions, AuctionsLayout } from './components/Auctions';
 
@@ -41,11 +40,9 @@ async function AuctionsList({ tab }: { tab: AuctionTab }) {
   );
 }
 
-export async function AuctionsPage({ tab }: { tab: AuctionTab }) {
-  const { account, cart } = await getShell();
-
+export function AuctionsPage({ tab }: { tab: AuctionTab }) {
   return (
-    <AuctionsLayout account={account} cart={cart}>
+    <AuctionsLayout>
       <AuctionsList tab={tab} />
     </AuctionsLayout>
   );

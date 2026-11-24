@@ -9,15 +9,11 @@ import {
 import { retrieveCart } from '@/lib/data/cart';
 import { listCartShippingMethods } from '@/lib/data/fulfillment';
 import { requireCustomer } from '@/lib/guard';
-import { getShell } from '@/lib/shell';
 
 import { Checkout } from './components/Checkout';
 
 export async function Shipping() {
-  const [{ account, cart: bar }, cart] = await Promise.all([
-    getShell(),
-    retrieveCart()
-  ]);
+  const cart = await retrieveCart();
 
   if (!cart?.items?.length) redirect(ROUTES.cart);
 
@@ -35,8 +31,6 @@ export async function Shipping() {
       {...(addresses.length ? { addresses } : {})}
       {...(addresses.length ? { addressId: addresses[0]!.id } : {})}
       dates={shippingDates(4)}
-      account={account}
-      cart={bar}
     />
   );
 }

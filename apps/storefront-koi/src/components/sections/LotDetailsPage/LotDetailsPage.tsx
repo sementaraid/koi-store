@@ -9,14 +9,12 @@ import { getWallet } from '@/lib/data/wallet';
 import { standingForLot } from '@/lib/helpers/bid-status';
 import { joinAvailable, joinControlState, type JoinControl } from '@/lib/helpers/join-auction';
 import { bidControlState, type BidControl } from '@/lib/helpers/place-bid';
-import { getShell } from '@/lib/shell';
 import type { MediaItem } from '@/types/lot';
 
 import { LotDossier } from './components/LotDossier';
 
 export async function LotDetailsPage({ id }: { id: string }) {
-  const [{ account, cart }, storeLot, open, myBids] = await Promise.all([
-    getShell(),
+  const [storeLot, open, myBids] = await Promise.all([
     getLot(id),
     listLots({ limit: FEED_LIMIT }),
     // Empty for a guest (no request); its own rows read "Anda" in the history.
@@ -54,8 +52,6 @@ export async function LotDetailsPage({ id }: { id: string }) {
       lot={lot}
       lots={lots}
       media={media}
-      account={account}
-      cart={cart}
       join={join}
       bid={bid}
       position={standingForLot(myBids.lots, id)}

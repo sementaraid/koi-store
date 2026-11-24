@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
 import { CategoriesPage } from '@/components/sections';
+import { CategoriesSkeleton } from '@/components/sections/LoadingPages/LoadingPages';
 
 export const metadata: Metadata = {
   title: 'Kategori Koi',
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function CategoriesRoute() {
   return (
-    <Suspense>
+    <Suspense fallback={<CategoriesSkeleton />}>
       <CategoriesPage />
     </Suspense>
   );

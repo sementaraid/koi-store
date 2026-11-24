@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
 import { MarketplacePage } from '@/components/sections';
+import { FeedPageSkeleton } from '@/components/sections/LoadingPages/LoadingPages';
 
 export const metadata: Metadata = {
   title: 'Perlengkapan Kolam Koi',
@@ -16,7 +17,7 @@ export default async function MarketplaceRoute({
   const params = await searchParams;
 
   return (
-    <Suspense>
+    <Suspense fallback={<FeedPageSkeleton label="Memuat perlengkapan…" />}>
       <MarketplacePage params={params} />
     </Suspense>
   );

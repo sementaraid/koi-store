@@ -8,7 +8,7 @@ import type { WalletPage } from '@/lib/data/wallet';
 import { formatDeadline } from '@/lib/helpers/format-deadline';
 import { formatPrice } from '@/lib/helpers/format-price';
 import { walletTransactionLabel } from '@/lib/helpers/wallet-transaction-label';
-import type { HeaderAccount, HeaderCart } from '@/types/header';
+import type { AccountIdentity } from './AccountFrame';
 
 import { AccountFrame } from './AccountFrame';
 
@@ -18,11 +18,10 @@ export type WalletProps = {
   pageCount: number;
   page: number;
   openOrders: number;
-  account?: HeaderAccount;
-  cart?: HeaderCart;
+  identity?: AccountIdentity;
 };
 
-export function Wallet({ wallet, failed, pageCount, page, openOrders, account, cart }: WalletProps) {
+export function Wallet({ wallet, failed, pageCount, page, openOrders, identity }: WalletProps) {
   return (
     <AccountFrame
       title="Saldo"
@@ -37,8 +36,7 @@ export function Wallet({ wallet, failed, pageCount, page, openOrders, account, c
       }
       description="Saldo hanya untuk membayar biaya lelang — tidak bisa ditarik atau dipindahkan."
       openOrders={openOrders}
-      account={account}
-      cart={cart}
+      identity={identity}
     >
       <RenderIf when={failed}>
         {() => (

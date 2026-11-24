@@ -4,7 +4,6 @@ import type {
   AttributeFacet,
   AttributeSelection,
   Availability,
-  FeedShell,
   FeedState,
   FilterTab,
   GoodsFilter,
@@ -22,7 +21,7 @@ export type CatalogFilter = GoodsFilter<Availability>
 
 export type CatalogsProps = ComponentProps<"div"> &
   FeedState<Availability> &
-  FeedShell & {
+  {
     koi?: SimpleProduct[]
     heading?: {
       eyebrow: string

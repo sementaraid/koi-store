@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
 import { CatalogPage } from '@/components/sections';
+import { FeedPageSkeleton } from '@/components/sections/LoadingPages/LoadingPages';
 
 export const metadata: Metadata = {
   title: 'Katalog Koi',
@@ -17,7 +18,7 @@ export default async function CatalogsRoute({
   const q = Array.isArray(params.q) ? params.q[0] : params.q;
 
   return (
-    <Suspense>
+    <Suspense fallback={<FeedPageSkeleton label="Memuat katalog…" />}>
       <CatalogPage params={params} {...(q ? { q } : {})} />
     </Suspense>
   );

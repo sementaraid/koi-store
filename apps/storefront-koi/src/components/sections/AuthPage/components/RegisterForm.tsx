@@ -11,18 +11,11 @@ import { ROUTES } from '@/const/routes';
 import { signup } from '@/lib/data/customer';
 import { authErrorMessage } from '@/lib/helpers/auth-error';
 import { safeRedirect } from '@/lib/helpers/safe-redirect';
-import type { HeaderAccount, HeaderCart } from '@/types/header';
 
 import { AuthFrame } from './AuthFrame';
 import { PASSWORD_RULES, registerSchema, type RegisterData } from './schema';
 
-export function RegisterForm({
-  account,
-  cart
-}: {
-  account?: HeaderAccount;
-  cart?: HeaderCart;
-}) {
+export function RegisterForm() {
   const router = useRouter();
   const params = useSearchParams();
 
@@ -59,8 +52,8 @@ export function RegisterForm({
     }
 
     toast.success('Akun Anda sudah aktif. Selamat datang di Indokoi.');
+    // `signup` already re-rendered the layouts (US-107 AC7); no second refresh.
     router.push(safeRedirect(params.get('redirect'), ROUTES.home));
-    router.refresh();
   }
 
   return (
@@ -68,8 +61,6 @@ export function RegisterForm({
       eyebrow="Daftar"
       title="Buat akun Indokoi"
       lede="Satu akun untuk menawar di lelang, membeli koi, dan melacak pengiriman."
-      account={account}
-      cart={cart}
       aside={
         <>
           Sudah punya akun?{' '}

@@ -20,7 +20,7 @@ import { FeedGrid } from "@/components/atoms/FeedGrid/FeedGrid"
 import { FeedHero } from "@/components/cells/FeedHero/FeedHero"
 import { FeedPagination } from "@/components/cells/FeedPagination/FeedPagination"
 import { FeedSummary } from "@/components/cells/FeedSummary/FeedSummary"
-import { PageShell } from "@/components/organisms/PageShell/PageShell"
+import { PageTrail } from "@/components/cells/PageBreadcrumb/PageBreadcrumb"
 import { ProductCard } from "@/components/organisms/ProductCard/ProductCard"
 import type { CatalogsProps } from "@/types/catalog"
 import { filterGoods, koiStatus, salePrice } from "@/lib/helpers/filter-goods"
@@ -40,8 +40,6 @@ export function Catalogs({
   pageSize = PAGE_SIZE,
   onFilterChange,
   onPageChange,
-  account,
-  activeHref = ROUTES.catalogs,
   searching = false,
   attributes,
   selected = {},
@@ -79,14 +77,11 @@ export function Catalogs({
   }
 
   return (
-    <PageShell
-      data-slot="catalogs"
-      className={className}
-      activeHref={activeHref}
-      account={account}
-      trail={trail}
-      {...props}
-    >
+    <div data-slot="catalogs" className={className} {...props}>
+      <RenderIf when={trail?.length ? trail : undefined}>
+        {(list) => <PageTrail trail={list} />}
+      </RenderIf>
+
       <FeedHero
         eyebrow={
           <>
@@ -208,6 +203,6 @@ export function Catalogs({
           />
         </div>
       </div>
-    </PageShell>
+    </div>
   )
 }

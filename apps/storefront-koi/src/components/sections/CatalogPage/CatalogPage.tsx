@@ -9,7 +9,6 @@ import {
 } from '@/lib/data/products';
 import { readAttributeSelection } from '@/lib/helpers/attribute-facets';
 import { COUNTRY_CODE } from '@/lib/region';
-import { getShell } from '@/lib/shell';
 
 import { CatalogsFeed } from './components/CatalogsFeed';
 
@@ -27,20 +26,18 @@ export async function CatalogPage({
   const selected = readAttributeSelection(facets, params);
   const narrowed = Object.keys(selected).length > 0;
 
-  const [{ account, cart }, products] = await Promise.all([
-    getShell(),
+  const products =
     query || narrowed
-      ? searchProducts({
+      ? await searchProducts({
           ...(query ? { query } : {}),
           ...(narrowed ? { attributes: selected } : {}),
           countryCode: COUNTRY_CODE,
           limit: FEED_LIMIT
         }).then(({ products }) => products)
-      : listProducts({
+      : await listProducts({
           countryCode: COUNTRY_CODE,
           queryParams: { limit: FEED_LIMIT }
-        }).then(({ response }) => response.products)
-  ]);
+        }).then(({ response }) => response.products);
 
   const basePathQuery = new URLSearchParams();
   if (query) basePathQuery.set('q', query);
@@ -55,8 +52,6 @@ export async function CatalogPage({
   return (
     <CatalogsFeed
       koi={toSimpleProducts(products)}
-      account={account}
-      cart={cart}
       attributes={facets}
       {...(basePath ? { basePath } : {})}
       {...(query

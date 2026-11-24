@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { Badge, Button, Card, RenderIf } from "@koi/ui";
 import { EmptyFeed } from '@/components/cells/EmptyFeed/EmptyFeed';
 import { deleteCustomerAddress } from '@/lib/data/customer';
-import type { HeaderAccount, HeaderCart } from '@/types/header';
+import type { AccountIdentity } from './AccountFrame';
 
 import { AccountFrame } from './AccountFrame';
 import { AddressForm } from './AddressForm';
@@ -17,8 +17,7 @@ import type { AddressData } from './schema';
 export type AddressesProps = {
   addresses: HttpTypes.StoreCustomerAddress[];
   openOrders: number;
-  account?: HeaderAccount;
-  cart?: HeaderCart;
+  identity?: AccountIdentity;
 };
 
 function toFormData(address: HttpTypes.StoreCustomerAddress): AddressData & { addressId: string } {
@@ -36,7 +35,7 @@ function toFormData(address: HttpTypes.StoreCustomerAddress): AddressData & { ad
   };
 }
 
-export function Addresses({ addresses, openOrders, account, cart }: AddressesProps) {
+export function Addresses({ addresses, openOrders, identity }: AddressesProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editing, setEditing] = useState<(AddressData & { addressId: string }) | undefined>(
     undefined
@@ -87,8 +86,7 @@ export function Addresses({ addresses, openOrders, account, cart }: AddressesPro
         </Button>
       }
       openOrders={openOrders}
-      account={account}
-      cart={cart}
+      identity={identity}
     >
       <RenderIf when={addresses.length ? addresses : null}>
         {(list) => (

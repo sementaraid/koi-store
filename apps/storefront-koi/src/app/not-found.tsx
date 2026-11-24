@@ -1,12 +1,7 @@
 import type { Metadata } from 'next';
-import { FishOff } from 'lucide-react';
 
-import { Button } from "@koi/ui";
-import { Link } from '@/components/atoms/Link/Link';
-import { CONTAINER } from '@/const/layout';
-import { EmptyFeed } from '@/components/cells/EmptyFeed/EmptyFeed';
-import { PageShell } from '@/components/organisms/PageShell/PageShell';
-import { ROUTES } from '@/const/routes';
+import { AppShell } from '@/components/organisms/AppShell/AppShell';
+import { NotFoundPage } from '@/components/sections/NotFoundPage/NotFoundPage';
 import { getShell } from '@/lib/shell';
 
 export const metadata: Metadata = {
@@ -14,6 +9,8 @@ export const metadata: Metadata = {
   description: 'Alamat yang Anda buka tidak ada di portal ini.'
 };
 
+// Reached only for a URL no route group matches. A missing record inside a group
+// uses that group's own `not-found.tsx`, under the group's shell.
 export default async function NotFound() {
   const { account, cart } = await getShell().catch(() => ({
     account: undefined,
@@ -21,36 +18,12 @@ export default async function NotFound() {
   }));
 
   return (
-    <PageShell
+    <AppShell
       account={account}
       cart={cart}
-      trail={[{ label: 'Beranda', href: ROUTES.home }, { label: '404' }]}
+      markActive={false}
     >
-      <div className={`${CONTAINER} py-16`}>
-        <EmptyFeed
-          icon={<FishOff aria-hidden />}
-          narrowing={false}
-          noMatchTitle="Halaman tidak ditemukan"
-          noMatchBody="Alamat ini tidak ada, atau lot yang Anda cari sudah ditutup."
-          action={
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <Button
-                render={<Link href={ROUTES.auctions} />}
-                nativeButton={false}
-              >
-                Lihat lelang
-              </Button>
-              <Button
-                variant="outline"
-                render={<Link href={ROUTES.home} />}
-                nativeButton={false}
-              >
-                Kembali ke beranda
-              </Button>
-            </div>
-          }
-        />
-      </div>
-    </PageShell>
+      <NotFoundPage />
+    </AppShell>
   );
 }

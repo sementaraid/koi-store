@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
 
 import { SHELF_LIMIT } from '@/const';
 import { toOfferProducts } from '@/lib/adapters/product';
@@ -8,13 +9,11 @@ import { listSellerRatings } from '@/lib/data/ratings';
 import { getSellerByHandle } from '@/lib/data/seller';
 import { rankOffers } from '@/lib/helpers/buybox';
 import { COUNTRY_CODE } from '@/lib/region';
-import { getShell } from '@/lib/shell';
 
 import { Partner } from './components/Partner';
 
-export async function getPartner(handle: string) {
-  return getSellerByHandle(handle);
-}
+// cache(): the layout, generateMetadata and the page share one request.
+export const getPartner = cache((handle: string) => getSellerByHandle(handle));
 
 export async function PartnerPage({
   handle,
@@ -23,10 +22,7 @@ export async function PartnerPage({
   handle: string;
   page?: number;
 }) {
-  const [{ account, cart }, seller] = await Promise.all([
-    getShell(),
-    getPartner(handle)
-  ]);
+  const seller = await getPartner(handle);
 
   if (!seller) notFound();
 
@@ -56,8 +52,6 @@ export async function PartnerPage({
       page={current}
       pageCount={Math.max(Math.ceil(count / SHELF_LIMIT), 1)}
       handle={seller.handle}
-      account={account}
-      cart={cart}
     />
   );
 }

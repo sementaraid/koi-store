@@ -6,7 +6,7 @@ import { ROUTES } from '@/const/routes';
 import { formatAgo } from '@/lib/helpers/format-ago';
 import { formatPrice } from '@/lib/helpers/format-price';
 import { orderStatus } from '@/lib/helpers/order-status';
-import type { HeaderAccount, HeaderCart } from '@/types/header';
+import type { AccountIdentity } from './AccountFrame';
 import type { AccountOrder } from '@/types/order';
 
 import { AccountFrame } from './AccountFrame';
@@ -22,19 +22,17 @@ export type OrderDetailGroup = {
 
 export type OrderDetailProps = {
   group: OrderDetailGroup;
-  account?: HeaderAccount;
-  cart?: HeaderCart;
+  identity?: AccountIdentity;
 };
 
-export function OrderDetail({ group, account, cart }: OrderDetailProps) {
+export function OrderDetail({ group, identity }: OrderDetailProps) {
   const currency = group.orders[0]?.currency_code ?? 'IDR';
   const total = group.total ?? group.orders.reduce((sum, o) => sum + (o.total ?? 0), 0);
 
   return (
     <AccountFrame
       title={`Pesanan #${group.display_id ?? group.id}`}
-      account={account}
-      cart={cart}
+      identity={identity}
       eyebrow={
         <>
           <Package

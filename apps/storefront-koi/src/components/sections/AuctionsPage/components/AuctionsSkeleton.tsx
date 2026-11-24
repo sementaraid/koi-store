@@ -7,7 +7,7 @@ export function AuctionsSkeleton() {
     <div role="status" aria-busy="true" className={`${CONTAINER} py-8 lg:py-10`}>
       <span className="sr-only">Memuat lot</span>
       <FeedGrid>
-        {Array.from({ length: 4 }, (_, i) => (
+        {Array.from({ length: 8 }, (_, i) => (
           <LotCardSkeleton key={i} />
         ))}
       </FeedGrid>

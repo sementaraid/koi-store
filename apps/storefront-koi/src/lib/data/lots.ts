@@ -124,7 +124,12 @@ export const joinAuction = async (auctionId: string): Promise<JoinAuctionResult>
   const headers = await getAuthHeaders();
   return sdk.store.auctions.$id.join
     .mutate({ $id: auctionId, fetchOptions: { headers } })
-    .then((res) => ({ success: true as const, ...res }))
+    .then((res) => {
+      // US-107 AC7: the fee leaves the balance, so re-render the header chip and
+      // the lot page together. Only a successful join gets here.
+      revalidatePath('/', 'layout');
+      return { success: true as const, ...res };
+    })
     .catch((err: unknown) =>
       err instanceof ClientError
         ? {

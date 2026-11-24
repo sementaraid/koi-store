@@ -20,7 +20,6 @@ import { FeedGrid } from "@/components/atoms/FeedGrid/FeedGrid"
 import { FeedHero } from "@/components/cells/FeedHero/FeedHero"
 import { FeedPagination } from "@/components/cells/FeedPagination/FeedPagination"
 import { FeedSummary } from "@/components/cells/FeedSummary/FeedSummary"
-import { PageShell } from "@/components/organisms/PageShell/PageShell"
 import { ProductCard } from "@/components/organisms/ProductCard/ProductCard"
 import type { MarketplaceProps } from "@/types/marketplace"
 import { filterGoods, salePrice, saleStatus } from "@/lib/helpers/filter-goods"
@@ -40,8 +39,6 @@ export function Marketplace({
   pageSize = PAGE_SIZE,
   onFilterChange,
   onPageChange,
-  account,
-  activeHref = ROUTES.marketplace,
   attributes,
   selected = {},
   onAttributesChange,
@@ -75,13 +72,7 @@ export function Marketplace({
   }
 
   return (
-    <PageShell
-      data-slot="marketplace"
-      className={className}
-      activeHref={activeHref}
-      account={account}
-      {...props}
-    >
+    <div data-slot="marketplace" className={className} {...props}>
       <FeedHero
         eyebrow={
           <>
@@ -191,6 +182,6 @@ export function Marketplace({
           />
         </div>
       </div>
-    </PageShell>
+    </div>
   )
 }

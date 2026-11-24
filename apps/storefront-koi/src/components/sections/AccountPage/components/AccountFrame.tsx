@@ -5,10 +5,9 @@ import { AccountNav, type AccountNavItem } from '@/components/cells/AccountNav/A
 import { CONTAINER } from '@/const/layout';
 import { ROUTES } from '@/const/routes';
 import { Eyebrow } from '@/components/atoms/Eyebrow/Eyebrow';
-import { PageShell } from '@/components/organisms/PageShell/PageShell';
+import { PageTrail } from '@/components/cells/PageBreadcrumb/PageBreadcrumb';
 import { RenderIf } from "@koi/ui";
 import { initials } from '@/lib/helpers/header';
-import type { HeaderAccount, HeaderCart } from '@/types/header';
 
 export type AccountIdentity = {
   name: string;
@@ -24,8 +23,6 @@ export type AccountFrameProps = {
   identity?: AccountIdentity;
   action?: ReactNode;
   children: ReactNode;
-  account?: HeaderAccount;
-  cart?: HeaderCart;
   className?: string;
   /**
    * Show the account menu as a list below the content on mobile. Only the
@@ -62,8 +59,6 @@ export function AccountFrame({
   identity,
   action,
   children,
-  account,
-  cart,
   className,
   showMenuOnMobile = false
 }: AccountFrameProps) {
@@ -71,18 +66,15 @@ export function AccountFrame({
     item.href === ROUTES.orders ? { ...item, count: openOrders } : item
   );
 
-  const who = identity ?? (account ? { name: account.user.name, email: '' } : undefined);
-
   return (
-    <PageShell
-      account={account}
-      cart={cart}
-      trail={[
-        { label: 'Beranda', href: ROUTES.home },
-        { label: 'Akun', href: ROUTES.account },
-        { label: title }
-      ]}
-    >
+    <>
+      <PageTrail
+        trail={[
+          { label: 'Beranda', href: ROUTES.home },
+          { label: 'Akun', href: ROUTES.account },
+          { label: title }
+        ]}
+      />
       <div className={cn(CONTAINER, 'flex flex-wrap items-end justify-between gap-8 py-8')}>
         <div className="max-w-xl">
           <RenderIf when={eyebrow}>{(node) => <Eyebrow>{node}</Eyebrow>}</RenderIf>
@@ -111,7 +103,7 @@ export function AccountFrame({
         >
           <aside className="hidden lg:block">
             <div className="sticky top-24 flex flex-col gap-4">
-              <RenderIf when={who}>
+              <RenderIf when={identity}>
                 {(me) => (
                   <div className="flex items-center gap-3 px-3">
                     <span
@@ -167,6 +159,6 @@ export function AccountFrame({
           </div>
         </div>
       </div>
-    </PageShell>
+    </>
   );
 }

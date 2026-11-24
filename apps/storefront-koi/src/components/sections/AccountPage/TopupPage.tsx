@@ -1,6 +1,7 @@
 import { ClientError } from '@mercurjs/client';
 import { redirect } from 'next/navigation';
 
+import { BalanceSync } from '@/components/organisms/AppShell/BalanceSync';
 import { ROUTES } from '@/const/routes';
 import {
   getPlatformBankAccount,
@@ -8,8 +9,9 @@ import {
   type PlatformBankAccount,
   type TopupRequestsPage
 } from '@/lib/data/topups';
+import { getWallet } from '@/lib/data/wallet';
 import { requireCustomer } from '@/lib/guard';
-import { getShell } from '@/lib/shell';
+import { getAccountIdentity } from '@/lib/shell';
 
 import { listOrderGroups } from './AccountPage';
 import { countOpen } from './components/Orders';
@@ -18,9 +20,12 @@ import { Topup } from './components/Topup';
 const PER_PAGE = 20;
 
 export async function TopupPage() {
-  const [, { account, cart }] = await Promise.all([
+  // The page shows no balance, but the header chip must still be right here
+  // (US-107 AC8), so the wallet is read to compare with it.
+  const [, identity, wallet] = await Promise.all([
     requireCustomer(ROUTES.topup),
-    getShell()
+    getAccountIdentity(),
+    getWallet(1, 0).catch(() => null)
   ]);
   const groups = await listOrderGroups();
 
@@ -48,13 +53,15 @@ export async function TopupPage() {
   }
 
   return (
-    <Topup
-      requests={requests}
-      bankAccount={bankAccount}
-      failed={failed}
-      openOrders={countOpen(groups)}
-      account={account}
-      cart={cart}
-    />
+    <>
+      <BalanceSync balance={wallet?.balance} />
+      <Topup
+        requests={requests}
+        bankAccount={bankAccount}
+        failed={failed}
+        openOrders={countOpen(groups)}
+        identity={identity}
+      />
+    </>
   );
 }

@@ -16,7 +16,6 @@ import {
 } from '@/lib/data/products';
 import { readAttributeSelection } from '@/lib/helpers/attribute-facets';
 import { COUNTRY_CODE } from '@/lib/region';
-import { getShell } from '@/lib/shell';
 
 export async function getCategory(handle: string) {
   return getCategoryByHandle(handle);
@@ -29,8 +28,7 @@ export async function CategoryPage({
   handle: string;
   params?: Record<string, string | string[] | undefined>;
 }) {
-  const [{ account, cart }, category, facets] = await Promise.all([
-    getShell(),
+  const [category, facets] = await Promise.all([
     getCategory(handle),
     getAttributeFacets(CATALOG_ATTRIBUTE_HANDLES)
   ]);
@@ -78,9 +76,6 @@ export async function CategoryPage({
         { label: 'Kategori', href: ROUTES.categories },
         { label: category.name }
       ]}
-      activeHref={ROUTES.catalogs}
-      account={account}
-      cart={cart}
     />
   );
 }

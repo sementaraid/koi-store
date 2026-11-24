@@ -2,7 +2,6 @@ import type { ComponentProps, ComponentType } from "react"
 
 import type { PartnerFarm } from "@/components/organisms/PartnerCard/PartnerCard"
 import type { AuctionProduct } from "@/types/product"
-import type { HeaderAccount } from "@/types/header"
 
 export type HomeStat = {
   value: string
@@ -23,8 +22,6 @@ export type HomeProps = ComponentProps<"div"> & {
   stats?: HomeStat[]
   claims?: HomeClaim[]
   partners?: PartnerFarm[]
-  account?: HeaderAccount
-  activeHref?: string
   // The server's clock, shared by the hero and grid cards' relative time.
   now?: number
 }

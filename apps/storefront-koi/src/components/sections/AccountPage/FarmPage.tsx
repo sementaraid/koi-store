@@ -4,16 +4,16 @@ import { redirect } from 'next/navigation';
 import { ROUTES } from '@/const/routes';
 import { getMyFarm } from '@/lib/data/farm';
 import { requireCustomer } from '@/lib/guard';
-import { getShell } from '@/lib/shell';
+import { getAccountIdentity } from '@/lib/shell';
 
 import { listOrderGroups } from './AccountPage';
 import { countOpen } from './components/Orders';
 import { Farm } from './components/Farm';
 
 export async function FarmPage() {
-  const [customer, { account, cart }, groups] = await Promise.all([
+  const [customer, identity, groups] = await Promise.all([
     requireCustomer(ROUTES.farm),
-    getShell(),
+    getAccountIdentity(),
     listOrderGroups()
   ]);
 
@@ -35,8 +35,7 @@ export async function FarmPage() {
       seller={seller}
       failed={failed}
       openOrders={countOpen(groups)}
-      account={account}
-      cart={cart}
+      identity={identity}
     />
   );
 }

@@ -20,7 +20,7 @@ export { LotChip } from './LotChip/LotChip';
 export { MediaGallery } from './MediaGallery/MediaGallery';
 export { NavLinks } from './NavLinks/NavLinks';
 export { OrderRow } from './OrderRow/OrderRow';
-export { PageBreadcrumb } from './PageBreadcrumb/PageBreadcrumb';
+export { PageBreadcrumb, PageTrail } from './PageBreadcrumb/PageBreadcrumb';
 export { RetryButton } from './RetryButton/RetryButton';
 export { SpecCell, SpecSheet } from './SpecSheet/SpecSheet';
 export { StatCard } from './StatCard/StatCard';

@@ -10,16 +10,14 @@ import { FeedHero } from "@/components/cells/FeedHero/FeedHero"
 import { RetryButton } from "@/components/cells/RetryButton/RetryButton"
 import { AuctionProductCard } from "@/components/organisms/ProductCard/AuctionProductCard"
 import { UpcomingAuctionCard } from "@/components/organisms/ProductCard/UpcomingAuctionCard"
-import { PageShell } from "@/components/organisms/PageShell/PageShell"
 import { CONTAINER } from "@/const/layout"
-import { ROUTES, auctionsTabHref, lotHref } from "@/const/routes"
+import { auctionsTabHref, lotHref } from "@/const/routes"
 import {
   groupLots,
   type AuctionTab,
   type UpcomingAuction,
 } from "@/lib/helpers/auction-list"
 import type { ViewerPosition } from "@/lib/helpers/lot-card"
-import type { HeaderAccount, HeaderCart } from "@/types/header"
 import type { AuctionProduct } from "@/types/product"
 
 import { AuctionTabs } from "./AuctionTabs"
@@ -29,8 +27,6 @@ import { GuideStrip } from "./GuideStrip"
 export type AuctionsProps = {
   tab: AuctionTab
   counts?: Partial<Record<AuctionTab, number>>
-  account?: HeaderAccount
-  cart?: HeaderCart
   failed?: boolean
   lots?: AuctionProduct[]
   upcoming?: UpcomingAuction[]
@@ -141,13 +137,9 @@ function Body({
 // Shell and hero never wait on data, so header and navigation stay usable
 // while the list loads (US-097 AC8). Keeping them outside the Suspense boundary
 // also keeps their generated ids identical between server and client.
-export function AuctionsLayout({
-  account,
-  cart,
-  children
-}: Pick<AuctionsProps, "account" | "cart"> & { children: ReactNode }) {
+export function AuctionsLayout({ children }: { children: ReactNode }) {
   return (
-    <PageShell data-slot="auctions" activeHref={ROUTES.auctions} account={account} cart={cart}>
+    <div data-slot="auctions">
       <FeedHero
         eyebrow={
           <>
@@ -165,7 +157,7 @@ export function AuctionsLayout({
         }
       />
       {children}
-    </PageShell>
+    </div>
   )
 }
 

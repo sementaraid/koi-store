@@ -10,7 +10,6 @@ import { ROUTES, orderHref } from '@/const/routes';
 import type { OrderGroup } from '@/lib/helpers/order-groups';
 import { formatPrice } from '@/lib/helpers/format-price';
 import { orderStatus } from '@/lib/helpers/order-status';
-import type { HeaderAccount, HeaderCart } from '@/types/header';
 import type { AccountOrder } from '@/types/order';
 
 import { AccountFrame } from './AccountFrame';
@@ -21,11 +20,9 @@ const RECENT = 3;
 export type AccountHomeProps = {
   customer: HttpTypes.StoreCustomer;
   groups: OrderGroup<AccountOrder>[];
-  account?: HeaderAccount;
-  cart?: HeaderCart;
 };
 
-export function AccountHome({ customer, groups, account, cart }: AccountHomeProps) {
+export function AccountHome({ customer, groups }: AccountHomeProps) {
   const name = customer.first_name || customer.email;
   const unpaid = groups.filter((group) => group.orders.some((o) => orderStatus(o).unpaid));
   const recent = groups.slice(0, RECENT);
@@ -36,8 +33,6 @@ export function AccountHome({ customer, groups, account, cart }: AccountHomeProp
     <AccountFrame
       title="Beranda akun"
       openOrders={unpaid.length}
-      account={account}
-      cart={cart}
       eyebrow={
         <>
           <LayoutDashboard

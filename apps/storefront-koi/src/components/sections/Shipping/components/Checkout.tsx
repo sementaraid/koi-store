@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 
 import { ROUTES } from '@/const/routes';
 import { ShippingPage } from '@/components/sections/Shipping/components/ShippingPage';
-import type { HeaderAccount, HeaderCart } from '@/types/header';
 import type {
   ShippingAddress,
   ShippingDate,
@@ -19,17 +18,13 @@ export function Checkout({
   parcels,
   addresses,
   addressId,
-  dates,
-  account,
-  cart
+  dates
 }: {
   cartId: string;
   parcels: ShippingParcel[];
   addresses?: ShippingAddress[];
   addressId?: string;
   dates: ShippingDate[];
-  account?: HeaderAccount;
-  cart?: HeaderCart;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -41,8 +36,6 @@ export function Checkout({
       {...(addresses ? { addresses } : {})}
       {...(selectedAddress ? { addressId: selectedAddress } : {})}
       dates={dates}
-      account={account}
-      cart={cart}
       onAddressChange={(address) => setSelectedAddress(address.id)}
       onChoiceChange={({ optionId }) => {
         if (pending) return;

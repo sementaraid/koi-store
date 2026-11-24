@@ -8,14 +8,13 @@ import { FeedGrid } from '@/components/atoms/FeedGrid/FeedGrid';
 import { Stars } from '@/components/atoms/Stars/Stars';
 import { FeedPagination } from '@/components/cells/FeedPagination/FeedPagination';
 import { Link } from '@/components/atoms/Link/Link';
-import { PageShell } from '@/components/organisms/PageShell/PageShell';
+import { PageTrail } from '@/components/cells/PageBreadcrumb/PageBreadcrumb';
 import { ProductCard } from '@/components/organisms/ProductCard/ProductCard';
 import { CONTAINER, SECTION_LABEL } from '@/const/layout';
 import { ROUTES, koiHref, partnerHref } from '@/const/routes';
 import { formatAgo } from '@/lib/helpers/format-ago';
 import type { PartnerProfile } from '@/lib/adapters/seller';
 import type { SellerRatings } from '@/lib/data/ratings';
-import type { HeaderAccount, HeaderCart } from '@/types/header';
 import type { SimpleProduct } from '@/types/product';
 
 export type PartnerProps = {
@@ -26,8 +25,6 @@ export type PartnerProps = {
   page: number;
   pageCount: number;
   handle: string;
-  account?: HeaderAccount;
-  cart?: HeaderCart;
 };
 
 export function Partner({
@@ -37,24 +34,20 @@ export function Partner({
   total,
   page,
   pageCount,
-  handle,
-  account,
-  cart
+  handle
 }: PartnerProps) {
   const { name, description, logo, location, speciality, premium, joinedAt } =
     partner;
 
   return (
-    <PageShell
-      activeHref={ROUTES.partners}
-      account={account}
-      cart={cart}
-      trail={[
-        { label: 'Beranda', href: ROUTES.home },
-        { label: 'Mitra', href: ROUTES.partners },
-        { label: name }
-      ]}
-    >
+    <>
+      <PageTrail
+        trail={[
+          { label: 'Beranda', href: ROUTES.home },
+          { label: 'Mitra', href: ROUTES.partners },
+          { label: name }
+        ]}
+      />
       <section className="border-b border-border bg-muted/40">
         <div className={`${CONTAINER} py-8 lg:py-10`}>
           <div className="flex flex-wrap items-end justify-between gap-4">
@@ -242,6 +235,6 @@ export function Partner({
           />
         </div>
       </section>
-    </PageShell>
+    </>
   );
 }

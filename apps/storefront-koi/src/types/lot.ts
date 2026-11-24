@@ -8,7 +8,6 @@ import type { BidControl } from "@/lib/helpers/place-bid"
 import type {
   AuctionProduct,
   AuctionStatus,
-  FeedShell,
   FeedState,
 } from "@/types/product"
 
@@ -16,7 +15,7 @@ export type { MediaItem } from "@/components/cells/MediaGallery/MediaGallery"
 
 export type LotPageProps = ComponentProps<"div"> &
   FeedState<AuctionStatus> &
-  FeedShell & {
+  {
     lot: AuctionProduct
     lots: AuctionProduct[]
     pageSize?: number

@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
 
 import { SHELF_LIMIT } from '@/const';
 import type { MediaItem } from '@/types/product-page';
@@ -13,24 +14,21 @@ import { listOffers } from '@/lib/data/offers';
 import { listProducts } from '@/lib/data/products';
 import { getBuyboxWinner, rankOffers } from '@/lib/helpers/buybox';
 import { COUNTRY_CODE } from '@/lib/region';
-import { getShell } from '@/lib/shell';
 
 import { ProductDetail } from './components/ProductDetail';
 
-export async function getProduct(handle: string) {
+// cache(): the layout, generateMetadata and the page share one request.
+export const getProduct = cache(async (handle: string) => {
   const { response } = await listProducts({
     countryCode: COUNTRY_CODE,
     queryParams: { handle: [handle], limit: 1 }
   });
 
   return response.products[0] ?? null;
-}
+});
 
 export async function ProductDetailsPage({ handle }: { handle: string }) {
-  const [{ account, cart }, product] = await Promise.all([
-    getShell(),
-    getProduct(handle)
-  ]);
+  const product = await getProduct(handle);
 
   if (!product) notFound();
 
@@ -81,8 +79,6 @@ export async function ProductDetailsPage({ handle }: { handle: string }) {
       {...(product.created_at
         ? { postedAt: new Date(product.created_at).toISOString() }
         : {})}
-      account={account}
-      cart={cart}
     />
   );
 }

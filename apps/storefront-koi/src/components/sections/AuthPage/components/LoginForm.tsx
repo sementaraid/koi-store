@@ -8,10 +8,9 @@ import { toast } from 'sonner';
 import { Button, FormField, RenderIf } from '@koi/ui';
 import { Link } from '@/components/atoms';
 import { ROUTES } from '@/const/routes';
-import { login, transferCart } from '@/lib/data/customer';
+import { login } from '@/lib/data/customer';
 import { authErrorMessage } from '@/lib/helpers/auth-error';
 import { safeRedirect } from '@/lib/helpers/safe-redirect';
-import type { HeaderAccount, HeaderCart } from '@/types/header';
 
 import { AuthFrame } from './AuthFrame';
 import { loginSchema, type LoginData } from './schema';
@@ -23,13 +22,7 @@ const NOTICES: Record<string, string> = {
     'Kami tidak bisa memeriksa sesi Anda karena gangguan sementara. Coba masuk lagi.'
 };
 
-export function LoginForm({
-  account,
-  cart
-}: {
-  account?: HeaderAccount;
-  cart?: HeaderCart;
-}) {
+export function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
 
@@ -63,10 +56,8 @@ export function LoginForm({
       return;
     }
 
-    await transferCart().catch(() => undefined);
-
+    // `login` already re-rendered the layouts (US-107 AC7); no second refresh.
     router.push(safeRedirect(params.get('redirect'), ROUTES.home));
-    router.refresh();
   }
 
   return (
@@ -74,8 +65,6 @@ export function LoginForm({
       eyebrow="Masuk"
       title="Selamat datang kembali"
       lede="Masuk untuk menawar, menyimpan koi favorit, dan melihat tagihan Anda."
-      account={account}
-      cart={cart}
       aside={
         <>
           Belum punya akun?{' '}

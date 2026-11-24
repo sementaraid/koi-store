@@ -17,7 +17,7 @@ import { formatDeadline } from '@/lib/helpers/format-deadline';
 import { formatPrice } from '@/lib/helpers/format-price';
 import { canRateLot } from '@/lib/helpers/lot-rating';
 import { soldLotStatusLabel } from '@/lib/helpers/sold-lot';
-import { getShell } from '@/lib/shell';
+import { getAccountIdentity } from '@/lib/shell';
 
 import { listOrderGroups } from './AccountPage';
 import { countOpen } from './components/Orders';
@@ -33,9 +33,9 @@ export type WonLotsPageProps = {
 };
 
 export async function WonLotsPage({ page: raw }: WonLotsPageProps) {
-  const [, { account, cart }, groups] = await Promise.all([
+  const [, identity, groups] = await Promise.all([
     requireCustomer(ROUTES.wonLots),
-    getShell(),
+    getAccountIdentity(),
     listOrderGroups()
   ]);
 
@@ -57,8 +57,7 @@ export async function WonLotsPage({ page: raw }: WonLotsPageProps) {
       }
       description="Lot yang Anda menangkan, lengkap dengan status dan nama peternaknya."
       openOrders={countOpen(groups)}
-      account={account}
-      cart={cart}
+      identity={identity}
     >
       <WonLots
         lots={result.lots}

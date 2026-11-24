@@ -3,27 +3,20 @@ import { BadgeCheck, Users } from 'lucide-react';
 import { EmptyFeed } from '@/components/cells/EmptyFeed/EmptyFeed';
 import { Eyebrow } from '@/components/atoms/Eyebrow/Eyebrow';
 import { PartnerCard } from '@/components/organisms/PartnerCard/PartnerCard';
-import { PageShell } from '@/components/organisms/PageShell/PageShell';
+import { PageTrail } from '@/components/cells/PageBreadcrumb/PageBreadcrumb';
 import { CONTAINER } from '@/const/layout';
 import { ROUTES } from '@/const/routes';
 import type { PartnerFarm } from '@/components/organisms/PartnerCard/PartnerCard';
-import type { HeaderAccount, HeaderCart } from '@/types/header';
 
 export type PartnersProps = {
   farms: PartnerFarm[];
   total: number;
-  account?: HeaderAccount;
-  cart?: HeaderCart;
 };
 
-export function Partners({ farms, total, account, cart }: PartnersProps) {
+export function Partners({ farms, total }: PartnersProps) {
   return (
-    <PageShell
-      activeHref={ROUTES.partners}
-      account={account}
-      cart={cart}
-      trail={[{ label: 'Beranda', href: ROUTES.home }, { label: 'Mitra' }]}
-    >
+    <>
+      <PageTrail trail={[{ label: 'Beranda', href: ROUTES.home }, { label: 'Mitra' }]} />
       <div className={`${CONTAINER} pb-16`}>
         <div className="mb-8 max-w-2xl">
           <Eyebrow>
@@ -55,6 +48,6 @@ export function Partners({ farms, total, account, cart }: PartnersProps) {
           />
         )}
       </div>
-    </PageShell>
+    </>
   );
 }

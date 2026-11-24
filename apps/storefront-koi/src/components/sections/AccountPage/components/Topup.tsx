@@ -18,7 +18,7 @@ import {
   screenshotError
 } from '@/lib/helpers/topup-request';
 import { stripValidationPrefix } from '@/lib/helpers/validation-message';
-import type { HeaderAccount, HeaderCart } from '@/types/header';
+import type { AccountIdentity } from './AccountFrame';
 
 import { AccountFrame } from './AccountFrame';
 import { topupSchema, type TopupFormData } from './schema';
@@ -28,8 +28,7 @@ export type TopupProps = {
   bankAccount: PlatformBankAccount | null;
   failed: boolean;
   openOrders: number;
-  account?: HeaderAccount;
-  cart?: HeaderCart;
+  identity?: AccountIdentity;
 };
 
 const STATUS_LABEL: Record<TopupRequestsPage['requests'][number]['status'], string> = {
@@ -38,7 +37,7 @@ const STATUS_LABEL: Record<TopupRequestsPage['requests'][number]['status'], stri
   rejected: 'Ditolak'
 };
 
-export function Topup({ requests, bankAccount, failed, openOrders, account, cart }: TopupProps) {
+export function Topup({ requests, bankAccount, failed, openOrders, identity }: TopupProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const {
     register,
@@ -98,8 +97,7 @@ export function Topup({ requests, bankAccount, failed, openOrders, account, cart
       }
       description="Transfer ke rekening platform, unggah bukti, dan tunggu admin memeriksa mutasi bank. Saldo tidak langsung berubah."
       openOrders={openOrders}
-      account={account}
-      cart={cart}
+      identity={identity}
     >
       <Card className="px-5 py-4">
         <CardHeader className="px-0 pt-0">

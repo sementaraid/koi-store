@@ -10,20 +10,11 @@ import { Link } from '@/components/atoms';
 import { ROUTES } from '@/const/routes';
 import { updateCustomerPassword } from '@/lib/data/customer';
 import { authErrorMessage } from '@/lib/helpers/auth-error';
-import type { HeaderAccount, HeaderCart } from '@/types/header';
 
 import { AuthFrame } from './AuthFrame';
 import { PASSWORD_RULES, newPasswordSchema, type NewPasswordData } from './schema';
 
-export function NewPasswordForm({
-  token,
-  account,
-  cart
-}: {
-  token?: string;
-  account?: HeaderAccount;
-  cart?: HeaderCart;
-}) {
+export function NewPasswordForm({ token }: { token?: string }) {
   const router = useRouter();
 
   const {
@@ -61,8 +52,6 @@ export function NewPasswordForm({
         eyebrow="Atur Sandi"
         title="Tautan tidak lengkap"
         lede="Tautan atur ulang ini tidak membawa token. Minta tautan baru untuk melanjutkan."
-        account={account}
-        cart={cart}
         aside={
           <Link
             href={ROUTES.forgotPassword}
@@ -84,8 +73,6 @@ export function NewPasswordForm({
       eyebrow="Atur Sandi"
       title="Buat kata sandi baru"
       lede="Pilih kata sandi yang belum pernah Anda pakai di tempat lain."
-      account={account}
-      cart={cart}
     >
       <form onSubmit={handleSubmit(submit)} className="grid gap-4" noValidate>
         <FormField

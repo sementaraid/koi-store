@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
+import { RegisterSkeleton } from '@/components/sections/LoadingPages/AuthLoadingPages';
+
 import { RegisterPage } from '@/components/sections';
 import { ROUTES } from '@/const/routes';
 import { getSession } from '@/lib/data/session';
@@ -16,7 +18,7 @@ export default async function DaftarRoute() {
   if (session.status === 'authenticated') redirect(ROUTES.home);
 
   return (
-    <Suspense>
+    <Suspense fallback={<RegisterSkeleton />}>
       <RegisterPage />
     </Suspense>
   );

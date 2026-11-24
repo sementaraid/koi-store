@@ -3,7 +3,6 @@ import type { ComponentProps } from "react"
 import type {
   AttributeFacet,
   AttributeSelection,
-  FeedShell,
   FeedState,
   FilterTab,
   GoodsFilter,
@@ -23,7 +22,7 @@ export type MarketFilter = GoodsFilter<StockLevel>
 
 export type MarketplaceProps = ComponentProps<"div"> &
   FeedState<StockLevel> &
-  FeedShell & {
+  {
     goods?: SimpleProduct[]
     attributes?: AttributeFacet[]
     selected?: AttributeSelection

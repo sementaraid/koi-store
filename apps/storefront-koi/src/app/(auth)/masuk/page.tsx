@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
+import { LoginSkeleton } from '@/components/sections/LoadingPages/AuthLoadingPages';
+
 import { LoginPage } from '@/components/sections';
 import { ROUTES } from '@/const/routes';
 import { getSession } from '@/lib/data/session';
@@ -16,7 +18,7 @@ export default async function MasukRoute() {
   if (session.status === 'authenticated') redirect(ROUTES.home);
 
   return (
-    <Suspense>
+    <Suspense fallback={<LoginSkeleton />}>
       <LoginPage />
     </Suspense>
   );

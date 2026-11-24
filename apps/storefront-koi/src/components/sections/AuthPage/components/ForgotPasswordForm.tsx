@@ -8,7 +8,6 @@ import { Button, FormField, RenderIf } from '@koi/ui';
 import { Link } from '@/components/atoms';
 import { ROUTES } from '@/const/routes';
 import { sendResetPasswordEmail } from '@/lib/data/customer';
-import type { HeaderAccount, HeaderCart } from '@/types/header';
 
 import { AuthFrame } from './AuthFrame';
 import { forgotPasswordSchema, type ForgotPasswordData } from './schema';
@@ -16,13 +15,7 @@ import { forgotPasswordSchema, type ForgotPasswordData } from './schema';
 const NEUTRAL_MESSAGE =
   'Jika email ini terdaftar, kami telah mengirim tautan atur ulang kata sandi. Periksa kotak masuk dan folder spam Anda.';
 
-export function ForgotPasswordForm({
-  account,
-  cart
-}: {
-  account?: HeaderAccount;
-  cart?: HeaderCart;
-}) {
+export function ForgotPasswordForm() {
   const [sent, setSent] = useState(false);
 
   const {
@@ -44,8 +37,6 @@ export function ForgotPasswordForm({
       eyebrow="Lupa Sandi"
       title="Atur ulang kata sandi"
       lede="Masukkan email akun Anda, kami kirimkan tautan untuk membuat kata sandi baru."
-      account={account}
-      cart={cart}
       aside={
         <Link
           href={ROUTES.login}
