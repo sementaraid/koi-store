@@ -224,7 +224,7 @@ Stay on Mercur as the backend and build every screen ourselves: Mercur's dashboa
 | App | Who uses it | Notes |
 | --- | --- | --- |
 | `packages/ui` | All apps | Shared components (buttons, tables, forms, cards) moved out of the storefront, so every app looks the same |
-| `apps/storefront-koi` | Customers and farmers | Auctions, lots, live room, account and wallet. Includes the **Farmer area**: farm registration, auctions and lots, bids and winners, paid and shipped, claims, balance |
+| `apps/storefront-koi` | Customers and farmers | Auctions, lots, account and wallet. Includes the **Farmer area**: farm registration, auctions and lots, bids and winners, paid and shipped, claims, balance |
 | `apps/admin-koi` (new) | Admin team | Separate app on its own subdomain, so admin code never reaches customers' browsers. Calls Mercur's admin API and custom routes through `@mercurjs/client` |
 
 Mercur's vendor dashboard (`apps/vendor`) is not used in the MVP.
@@ -247,7 +247,7 @@ Mercur's vendor dashboard (`apps/vendor`) is not used in the MVP.
 - **Close lots:** a scheduled job every minute closes lots past their end time and saves winner and price.
 - **Outbid and win alerts:** event subscribers send WhatsApp messages.
 - **Live updates:** the lot page polls every few seconds in the MVP; server-sent events can replace it later.
-  - **Live room:** a live bidding screen showing one lot at a time with its photo, current price, countdown and bid feed. No video system is built; a farmer can add a YouTube or Instagram live link that is shown on the page.
+  - **Bidding on the lot page:** the lot page is the only bidding surface — one lot with its photo, current price, countdown, bid feed, and the join and bid actions (D-064). The separate live room (`/lelang/<lot>/live`, US-046) is removed; old links redirect to `/lelang/<lot>`. No video system is built; a farmer can add a YouTube or Instagram live link that is shown on the lot page.
   - **Claims:** unboxing videos are stored on the VPS (100 MB each, deleted 30 days after the claim closes); delivered and claim deadlines, including the 3-day auto-confirm (D-027), are checked by the same scheduled job.
 
 **Design rules for the MVP**
@@ -283,7 +283,7 @@ Build in this order; each milestone ends with something usable. There is no fixe
 1. **Foundations:** move storefront components into `packages/ui`; set up `apps/admin-koi` with admin login. The customer-to-farmer account link is settled (D-003).
 2. **Farmers and wallet:** farm registration in the Farmer area; wallet module; settings table (D-010), before top-ups because it holds the platform bank account; top-up requests with screenshot upload; admin screens for farm approval, top-up approval, adjustments, fee table and settings; balance and history page for users.
 3. **Auctions for farmers:** auction and lot module, categories, listing fee charge, create auctions in the Farmer area, admin approval queue.
-4. **Joining and bidding on the web:** join fee charge, bid rules with row locking, extend, storefront pages switched from demo data to the API, polling for live prices, live bidding screen.
+4. **Joining and bidding on the web:** join fee charge, bid rules with row locking, extend, storefront pages switched from demo data to the API, polling for live prices, bidding on the lot page (D-064).
 5. **Closing and after-sale:** close job, winner and farmer contact pages, paid and shipped marks, delivery method and delivered mark, dead-on-arrival claims, ratings, strikes and bans, farmer-cancel refunds.
 6. **Admin operations:** remaining admin screens for users and bans, strikes, claim disputes, and monitoring live auctions (remove bids, cancel lots).
 7. **WhatsApp bot:** Qontak setup and Meta approval, templates, bid commands, outbid and win alerts.

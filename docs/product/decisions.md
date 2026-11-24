@@ -71,6 +71,7 @@ The product-owner agent drafts entries. The owner approves them.
 | D-061 | 2026-11-17 | The farmer's live link is a nullable `auction.live_stream_url` column, written through `/vendor/auctions/:id/live-link` and admin-koi in any status but `closed`/`cancelled`, rendered as an outbound link (answers `mvp-Q43`) | In force |
 | D-062 | 2026-11-20 | The phone in Medusa's address snapshots (`cart_address`, `order_address`, `fulfillment_address`, `stock_location_address`) is encrypted too; D-039/D-043 cover it (answers the US-092/T-092.1 scope question) | Drafted 2026-11-20, pending owner approval (built and verified in US-092; `mvp-Q53`) |
 | D-063 | 2026-11-20 | A bid-removal reason (`POST /admin/bids/:id/remove`) is required, non-blank and at most 500 characters, the same cap as US-059's strike reason (answers `mvp-Q52`) | In force |
+| D-064 | 2026-11-24 | The lot page (`/lelang/<lot>`) is the only bidding surface; the separate live room (`/lelang/<lot>/live`, US-046) is removed and old links redirect to the lot page; bid rules (D-058, join fee, extend) unchanged (answers `mvp-Q57`, option b) | In force |
 
 ---
 
@@ -831,3 +832,29 @@ write (answers `mvp-Q52`).
 behave the same, and a runaway paste cannot bloat the `bid.removed_reason`
 column or the admin panel row.
 **Source:** Owner, answer to `mvp-Q52` (2026-11-20).
+
+### D-064: The lot page is the only bidding surface; the live room is removed
+**Status: In force (2026-11-24).** Answers `mvp-Q57`, option (b). Supersedes the
+separate live bidding room from US-046 and plan "Technical approach > Key flows >
+Live room".
+**Decision:** bidding happens on the lot page (`/lelang/<lot>`) only, as the
+redesign boards 04, 05, 13 and 14 show it. The separate live room
+(`/lelang/<lot>/live`, US-046) is removed as a screen; it is no longer a bidding
+page. Old links redirect to `/lelang/<lot>` (the owner would also accept a 404;
+we redirect because it is gentler on old bookmarks). The lot page carries the
+full bid surface: guest join prompt, join dialog, short-balance state, quick
+amount chips, confirmation sheet, the pending "Mengirim bid…" state, the
+highest/outbid/rejected/extended states, and the sticky mobile action bar. The
+farmer's live link (D-061) renders on the lot page instead of the room; D-061's
+column and routes are unchanged.
+**Superseded behaviour:** the live room from US-046 / plan "Key flows > Live
+room" — a separate screen showing one lot at a time with its own bid board.
+**Bid rules unchanged:** D-058 (the winner pays the farmer directly within 1×24 h
+and the platform holds no money), the join fee (the auction category's fee, once
+per auction, D-007 and D-034), the extend window (`extend_window_minutes`, one
+setting), and the rejected held-balance, auto-pay-from-wallet and escrow items
+all stay exactly as they are. This decision changes where bidding is shown, not
+how bidding works.
+**Reason:** the owner wants the design's single-page flow — a bidder never
+switches screens to bid.
+**Source:** Owner, answer to `mvp-Q57`, option (b) (2026-11-24).
