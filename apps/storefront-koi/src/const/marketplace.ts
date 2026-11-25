@@ -224,6 +224,10 @@ export const STOCK_LABEL: Record<StockLevel | "all", string> = {
   "out-of-stock": "produk habis",
 }
 
+// Top-level category the pond supplies sit under (seed-koi.ts CATEGORY_TREE);
+// /toko shows only its subtree.
+export const MARKET_CATEGORY_HANDLE = "perlengkapan"
+
 export const MARKET_ATTRIBUTE_HANDLES = [
   "berat",
   "varian",

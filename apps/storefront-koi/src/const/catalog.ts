@@ -199,6 +199,10 @@ export const AVAILABILITY_LABEL: Record<Availability | "all", string> = {
   sold: "koi terjual",
 }
 
+// Top-level category the koi listings sit under (seed-koi.ts CATEGORY_TREE);
+// /katalog shows only its subtree.
+export const CATALOG_CATEGORY_HANDLE = "koi"
+
 export const CATALOG_ATTRIBUTE_HANDLES = [
   "ukuran",
   "umur",

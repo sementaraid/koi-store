@@ -1,7 +1,14 @@
 import { FEED_LIMIT } from '@/const';
-import { CATALOG_ATTRIBUTE_HANDLES } from '@/const/catalog';
+import {
+  CATALOG_ATTRIBUTE_HANDLES,
+  CATALOG_CATEGORY_HANDLE
+} from '@/const/catalog';
 import { ROUTES } from '@/const/routes';
 import { toSimpleProducts } from '@/lib/adapters/product';
+import {
+  collectCategorySubtreeIds,
+  getCategoryByHandle
+} from '@/lib/data/categories';
 import {
   getAttributeFacets,
   listProducts,
@@ -21,7 +28,15 @@ export async function CatalogPage({
 }) {
   const query = q?.trim();
 
-  const facets = await getAttributeFacets(CATALOG_ATTRIBUTE_HANDLES);
+  const [facets, department] = await Promise.all([
+    getAttributeFacets(CATALOG_ATTRIBUTE_HANDLES),
+    getCategoryByHandle(CATALOG_CATEGORY_HANDLE)
+  ]);
+  // Koi only, never the pond supplies; without the category the feed stays
+  // unfiltered rather than empty.
+  const category_id = department
+    ? collectCategorySubtreeIds(department)
+    : undefined;
 
   const selected = readAttributeSelection(facets, params);
   const narrowed = Object.keys(selected).length > 0;
@@ -31,10 +46,12 @@ export async function CatalogPage({
       ? await searchProducts({
           ...(query ? { query } : {}),
           ...(narrowed ? { attributes: selected } : {}),
+          category_id,
           countryCode: COUNTRY_CODE,
           limit: FEED_LIMIT
         }).then(({ products }) => products)
       : await listProducts({
+          category_id,
           countryCode: COUNTRY_CODE,
           queryParams: { limit: FEED_LIMIT }
         }).then(({ response }) => response.products);
