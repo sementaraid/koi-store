@@ -111,22 +111,28 @@ export function FacetSidebar({
     <aside data-slot="facet-sidebar" className={cn("min-w-0", className)}>
       {/* Phone: the sort stays in view; every other filter moves into a
           bottom sheet so the results start above the fold. */}
-      <div className="flex items-end gap-3 lg:hidden">
-        <div className="min-w-0 flex-1">{sortField("phone")}</div>
+      {/* Sort and Filter are toolbar controls, so on a phone they sit at the
+          card button's height (h-8), never taller. The select keeps 16 px
+          text so iOS does not zoom the page when it opens. */}
+      <div className="flex items-end gap-2 lg:hidden">
+        <div className="min-w-0 flex-1 [&_select]:h-8! [&_select]:rounded-lg! [&_select]:ps-3! [&_select]:pe-8! [&_svg]:end-2.5!">
+          {sortField("phone")}
+        </div>
         <Button
           type="button"
           variant="soft"
+          size="sm"
           onClick={() => setSheetOpen(true)}
           aria-label={active ? `Filter, ${active} aktif` : "Filter"}
-          className="h-11 shrink-0 gap-2 rounded-field px-4 font-semibold"
+          className="shrink-0 gap-1.5 rounded-lg px-3 font-semibold"
         >
-          <SlidersHorizontal aria-hidden className="size-4" />
+          <SlidersHorizontal aria-hidden className="size-3.5" />
           Filter
           <RenderIf when={active > 0}>
             {() => (
               <span
                 aria-hidden
-                className="flex size-5 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground"
+                className="flex size-4.5 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground"
               >
                 {active}
               </span>
