@@ -109,7 +109,7 @@ export function Catalogs({
       />
 
       <div
-        className={`${CONTAINER} grid gap-8 py-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:py-10`}
+        className={`${CONTAINER} grid gap-8 py-8 max-sm:gap-4 max-sm:py-4 lg:grid-cols-[240px_minmax(0,1fr)] lg:py-10`}
       >
         <FacetSidebar
           scope="catalog"

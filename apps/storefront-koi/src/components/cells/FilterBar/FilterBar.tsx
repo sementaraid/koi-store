@@ -60,13 +60,13 @@ export type FilterBarProps = {
 // in the facet sidebar, as on the board.
 export function FilterBar({ scope, status, tabs, onStatusChange }: FilterBarProps) {
   return (
-    <div data-slot={`${scope}-filters`} className={cn(CONTAINER, "pt-6")}>
+    <div data-slot={`${scope}-filters`} className={cn(CONTAINER, "pt-6 max-sm:pt-4")}>
       <Tabs value={status} onValueChange={onStatusChange}>
         {/* A phone spreads the tabs across the width; they scroll only if the
             labels still do not fit. */}
-        <TabsList variant="segment" className="max-w-full overflow-x-auto max-sm:w-full">
+        <TabsList variant="segment" className="max-w-full overflow-x-auto max-sm:min-h-0! max-sm:w-full max-sm:p-1!">
           {tabs.map(({ value, label }) => (
-            <TabsTrigger key={value} value={value} className="max-sm:flex-1! max-sm:px-3!">
+            <TabsTrigger key={value} value={value} className="max-sm:h-8! max-sm:min-h-0! max-sm:flex-1! max-sm:px-3! max-sm:text-[13px]!">
               {label}
             </TabsTrigger>
           ))}

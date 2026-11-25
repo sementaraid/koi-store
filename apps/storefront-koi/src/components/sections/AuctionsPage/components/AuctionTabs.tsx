@@ -18,7 +18,7 @@ export function AuctionTabs({
   return (
     // The same segmented control as /katalog and /toko (FilterBar's
     // `segment` tabs), drawn with links so the tab stays a URL.
-    <div data-slot="auction-tabs" className={cn(CONTAINER, "pt-6")}>
+    <div data-slot="auction-tabs" className={cn(CONTAINER, "pt-6 max-sm:pt-4")}>
       <nav
         aria-label="Status lelang"
         className="flex max-w-full gap-1 overflow-x-auto rounded-field bg-track p-1 max-sm:w-full sm:inline-flex"
@@ -29,7 +29,7 @@ export function AuctionTabs({
             href={auctionsTabHref(tab)}
             aria-current={tab === active ? "page" : undefined}
             className={cn(
-              "inline-flex h-9 items-center justify-center rounded-lg px-3 text-sm font-medium whitespace-nowrap text-muted-foreground tabular-nums outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 max-sm:flex-1 sm:px-4",
+              "inline-flex h-9 items-center justify-center rounded-lg px-3 text-sm font-medium max-sm:h-8 max-sm:text-[13px] whitespace-nowrap text-muted-foreground tabular-nums outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 max-sm:flex-1 sm:px-4",
               tab === active && "bg-background font-semibold text-accent-ink shadow-segment"
             )}
           >

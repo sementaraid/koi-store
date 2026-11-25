@@ -112,10 +112,9 @@ export function FacetSidebar({
       {/* Phone: the sort stays in view; every other filter moves into a
           bottom sheet so the results start above the fold. */}
       {/* Sort and Filter are toolbar controls, so on a phone they sit at the
-          card button's height (h-8), never taller. The select keeps 16 px
-          text so iOS does not zoom the page when it opens. */}
+          card button's height (h-8), never taller, with compact text. */}
       <div className="flex items-end gap-2 lg:hidden">
-        <div className="min-w-0 flex-1 [&_select]:h-8! [&_select]:rounded-lg! [&_select]:ps-3! [&_select]:pe-8! [&_svg]:end-2.5!">
+        <div className="min-w-0 flex-1 [&_label]:text-[11px]! [&>div]:gap-1.5! [&_select]:h-8! [&_select]:rounded-lg! [&_select]:ps-3! [&_select]:pe-8! [&_select]:text-sm! [&_svg]:end-2.5!">
           {sortField("phone")}
         </div>
         <Button
@@ -124,7 +123,7 @@ export function FacetSidebar({
           size="sm"
           onClick={() => setSheetOpen(true)}
           aria-label={active ? `Filter, ${active} aktif` : "Filter"}
-          className="shrink-0 gap-1.5 rounded-lg px-3 font-semibold"
+          className="shrink-0 gap-1.5 rounded-lg px-3 text-[13px] font-semibold"
         >
           <SlidersHorizontal aria-hidden className="size-3.5" />
           Filter

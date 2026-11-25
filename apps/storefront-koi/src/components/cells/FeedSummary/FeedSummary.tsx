@@ -25,11 +25,11 @@ export function FeedSummary({
     <div
       aria-live="polite"
       className={cn(
-        "mb-6 flex flex-wrap items-center justify-between gap-3",
+        "mb-6 flex flex-wrap items-center justify-between gap-3 max-sm:mb-3",
         className
       )}
     >
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-muted-foreground max-sm:text-[13px]">
         <span className="font-medium text-foreground tabular-nums">
           {total}
         </span>{" "}

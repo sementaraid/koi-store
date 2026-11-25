@@ -181,7 +181,7 @@ export function Auctions({
   return (
     <>
       <AuctionTabs active={tab} counts={counts} />
-      <div className={`${CONTAINER} flex flex-col gap-8 py-8 lg:py-10`}>
+      <div className={`${CONTAINER} flex flex-col gap-8 py-8 max-sm:gap-6 max-sm:py-5 lg:py-10`}>
         <Body tab={tab} {...state} />
         <GuideStrip />
       </div>
