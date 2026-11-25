@@ -62,9 +62,11 @@ export function FilterBar({ scope, status, tabs, onStatusChange }: FilterBarProp
   return (
     <div data-slot={`${scope}-filters`} className={cn(CONTAINER, "pt-6")}>
       <Tabs value={status} onValueChange={onStatusChange}>
-        <TabsList variant="segment" className="max-w-full overflow-x-auto">
+        {/* A phone spreads the tabs across the width; they scroll only if the
+            labels still do not fit. */}
+        <TabsList variant="segment" className="max-w-full overflow-x-auto max-sm:w-full">
           {tabs.map(({ value, label }) => (
-            <TabsTrigger key={value} value={value}>
+            <TabsTrigger key={value} value={value} className="max-sm:flex-1! max-sm:px-3!">
               {label}
             </TabsTrigger>
           ))}

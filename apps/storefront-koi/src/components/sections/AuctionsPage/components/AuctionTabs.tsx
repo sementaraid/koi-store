@@ -16,16 +16,21 @@ export function AuctionTabs({
   counts?: Partial<Record<AuctionTab, number>>
 }) {
   return (
-    <div data-slot="auction-tabs" className="bg-primary/5">
-      <nav aria-label="Status lelang" className={cn(CONTAINER, "flex gap-1 overflow-x-auto py-2")}>
+    // The same segmented control as /katalog and /toko (FilterBar's
+    // `segment` tabs), drawn with links so the tab stays a URL.
+    <div data-slot="auction-tabs" className={cn(CONTAINER, "pt-6")}>
+      <nav
+        aria-label="Status lelang"
+        className="flex max-w-full gap-1 overflow-x-auto rounded-field bg-track p-1 max-sm:w-full sm:inline-flex"
+      >
         {AUCTION_TABS.map((tab) => (
           <Link
             key={tab}
             href={auctionsTabHref(tab)}
             aria-current={tab === active ? "page" : undefined}
             className={cn(
-              "inline-flex h-11 items-center rounded-control px-3 text-sm font-medium whitespace-nowrap text-accent-ink/70 tabular-nums hover:text-accent-ink focus-visible:ring-2 focus-visible:ring-ring",
-              tab === active && "bg-background font-semibold text-accent-ink shadow-xs"
+              "inline-flex h-9 items-center justify-center rounded-lg px-3 text-sm font-medium whitespace-nowrap text-muted-foreground tabular-nums outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 max-sm:flex-1 sm:px-4",
+              tab === active && "bg-background font-semibold text-accent-ink shadow-segment"
             )}
           >
             {tabLabel(tab, counts[tab])}
