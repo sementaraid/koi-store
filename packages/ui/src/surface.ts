@@ -1,8 +1,9 @@
-/* koi surfaces are flat: a 1 px border, no shadow, no gloss. Class strings
-   only. TILE and RING stay because storefront components import them. */
+/* Class strings only. TILE and RING stay because storefront components
+   import them. */
 
-/* grid tile edge (PartnerCard, ProductFrame) */
-export const TILE = "border border-border"
+/* grid tile edge (PartnerCard, ProductFrame): the card edge, so a tile built
+   on `Card` keeps the card's look */
+export const TILE = "border border-card-edge"
 
 /* hairline edge on small inset panels (LotDetailsSheet) */
 export const RING = "border border-border"

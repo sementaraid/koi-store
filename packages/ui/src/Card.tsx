@@ -11,8 +11,9 @@ import {
   Card as CardPrimitive,
 } from "./primitives/card"
 
-/* koi card: flat, 1 px border, no shadow, no gloss. `variant` is kept so
-   existing callers still compile; both values render the same flat card. */
+/* koi card (design `.card`): 20 px radius, a soft `#ececf2` edge and a light
+   lift. `variant` is kept so existing callers still compile; both values
+   render the same card. */
 function Card({
   className,
   variant: _variant,

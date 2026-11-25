@@ -25,10 +25,14 @@
   /* brand: action, link, selection */
   --primary: #3730a3;
   --primary-foreground: #ffffff;
+  /* top stop of the primary button's gradient (design `.btn-p`) */
+  --primary-top: #4338ca;
   --accent-ink: #3730a3;
   /* accent tint: the selected state */
   --accent: #eef2ff;
   --accent-foreground: #3730a3;
+  /* outline button edge (design `.btn-o`): softer than the input edge */
+  --outline-edge: #d9d9e0;
 
   /* neutral surfaces and lines */
   --surface: #f5f5f5;
@@ -37,7 +41,13 @@
   --muted: #f5f5f5;
   --muted-foreground: #404040;
   --divider: #e5e5e5;
-  --border: #d4d4d4; /* card and component edge, decorative */
+  --border: #d4d4d4; /* component edge, decorative */
+  --card-edge: #ececf2; /* card and panel edge (design `.card`) */
+  /* filled field (design `.sel` and the search box): fill and its chevron */
+  --field: #f4f4f8;
+  --field-icon: #6b6b7b;
+  /* segmented control track (design status tabs) */
+  --track: #ececf2;
   --input: #8a8a8a; /* control edge, 3.4:1 on white */
   --ring: #3730a3;
 
@@ -72,9 +82,11 @@
 
   --primary: #818cf8;
   --primary-foreground: #090909;
+  --primary-top: #a5b4fc;
   --accent-ink: #a5b4fc;
   --accent: #1e1b4b;
   --accent-foreground: #c7d2fe;
+  --outline-edge: #404040;
 
   --surface: #1a1a1a;
   --secondary: #1a1a1a;
@@ -83,6 +95,10 @@
   --muted-foreground: #a3a3a3;
   --divider: #262626;
   --border: #333333;
+  --card-edge: #262626;
+  --field: #1f1f23;
+  --field-icon: #a1a1aa;
+  --track: #1f1f23;
   --input: #737373;
   --ring: #a5b4fc;
 
@@ -112,6 +128,8 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-top: var(--primary-top);
+  --color-outline-edge: var(--outline-edge);
   --color-accent-ink: var(--accent-ink);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
@@ -122,6 +140,10 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-divider: var(--divider);
   --color-border: var(--border);
+  --color-card-edge: var(--card-edge);
+  --color-field: var(--field);
+  --color-field-icon: var(--field-icon);
+  --color-track: var(--track);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-price-panel: var(--price-panel);
@@ -139,9 +161,22 @@
   /* Radius by role. Fixed pixel values, so the scale never depends on an app's
      `--radius`. Pills and avatars use `rounded-full`. */
   --radius-badge: 4px;
-  --radius-control: 8px; /* button, input, card, box */
+  --radius-control: 8px; /* input, box, and the quieter button variants */
+  --radius-button: 12px; /* primary and outline buttons (design `.btn`) */
+  --radius-card: 20px; /* card and panel (design `.card`) */
+  --radius-field: 12px; /* filled select and segmented track (design `.sel`) */
   --radius-dialog: 12px;
   --radius-sheet: 16px; /* mobile bottom sheet */
+
+  /* Button lift from the design's `ds` block. The primary glow is mixed from
+     `--primary`, so it follows the dark theme with no second value. */
+  --shadow-button-primary: 0 1px 2px rgb(16 24 40 / 0.08),
+    0 6px 16px color-mix(in srgb, var(--primary) 24%, transparent);
+  --shadow-button-outline: 0 1px 2px rgb(16 24 40 / 0.05);
+  /* card lift, same `ds` block: a hairline plus a wide soft drop */
+  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.03), 0 8px 24px rgb(16 24 40 / 0.05);
+  /* the active tab lifting off the segmented track */
+  --shadow-segment: 0 1px 3px rgb(16 24 40 / 0.1);
 }
 
 /* Type scale 12 / 14 / 16 / 18 / 20 / 24 / 30 / 36 is Tailwind's own

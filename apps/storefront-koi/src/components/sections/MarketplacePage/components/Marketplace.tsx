@@ -1,5 +1,4 @@
 import { Boxes, PackageCheck } from "lucide-react"
-import { cn } from "cn"
 
 import { Button, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
@@ -93,27 +92,31 @@ export function Marketplace({
       <FeedFilters
         scope="market"
         filter={filter}
-        categories={categories}
         onFilterChange={onFilterChange}
         tabs={DEFAULT_MARKET_TABS}
-        sorts={DEFAULT_MARKET_SORTS}
-        categoryLabel="Kategori"
-        allCategoriesLabel="Semua kategori"
       />
 
-      <div className={`${CONTAINER} grid gap-8 py-8 lg:grid-cols-4 lg:py-10`}>
+      <div
+        className={`${CONTAINER} grid gap-8 py-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:py-10`}
+      >
         <FacetSidebar
+          scope="market"
+          sorts={DEFAULT_MARKET_SORTS}
+          sort={filter.sort}
+          onSortChange={(sort) =>
+            onFilterChange?.({ ...filter, sort: sort as typeof filter.sort })
+          }
+          categoryLabel="Kategori"
+          allCategoriesLabel="Semua kategori"
+          categories={categories}
+          category={filter.category}
+          onCategoryChange={(category) => onFilterChange?.({ ...filter, category })}
           attributes={attributes}
           selected={selected}
           {...(onAttributesChange ? { onAttributesChange } : {})}
         />
 
-        <div
-          className={cn(
-            "min-w-0",
-            attributes?.length ? "lg:col-span-3" : "lg:col-span-4"
-          )}
-        >
+        <div className="min-w-0">
           <FeedSummary
             total={total}
             statusLabel={STOCK_LABEL[filter.status]}

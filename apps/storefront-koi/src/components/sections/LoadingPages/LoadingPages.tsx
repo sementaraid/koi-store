@@ -64,14 +64,8 @@ function FeedHeroSkeleton() {
 // FilterBar: status tabs on the left, two selects (label above) on the right.
 function FilterBarSkeleton() {
   return (
-    <div className="bg-primary/5">
-      <div className={`${CONTAINER} flex flex-col gap-4 py-4 lg:flex-row lg:items-end lg:justify-between`}>
-        <Skeleton className="h-[54px] w-full sm:h-9 sm:w-72" />
-        <div className="flex items-end gap-3">
-          <Skeleton className="h-[68px] flex-1 sm:h-[52px] sm:w-44 sm:flex-none" />
-          <Skeleton className="h-[68px] flex-1 sm:h-[52px] sm:w-44 sm:flex-none" />
-        </div>
-      </div>
+    <div className={`${CONTAINER} pt-6`}>
+      <Skeleton className="h-14 w-72 max-w-full rounded-field md:h-11" />
     </div>
   );
 }
@@ -79,7 +73,7 @@ function FilterBarSkeleton() {
 // SimpleProductCard: photo, title and seller, facts, price and the action.
 export function ProductCardSkeleton() {
   return (
-    <div className="flex w-full flex-col overflow-hidden rounded-control border border-divider bg-background">
+    <div className="flex w-full flex-col overflow-hidden rounded-card border border-card-edge bg-background shadow-card">
       <Skeleton className="aspect-4/3 w-full rounded-none" />
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="flex flex-col gap-2">
@@ -186,14 +180,17 @@ export function FeedPageSkeleton({ label, trail = false }: { label: string; trai
       {trail ? <TrailSkeleton /> : null}
       <FeedHeroSkeleton />
       <FilterBarSkeleton />
-      <div className={`${CONTAINER} grid gap-8 py-8 lg:grid-cols-4 lg:py-10`}>
-        <aside className="grid grid-cols-2 content-start gap-3 lg:grid-cols-1">
-          <Skeleton className="col-span-2 h-4 w-16 lg:col-span-1" />
-          {Array.from({ length: 3 }, (_, i) => (
-            <Skeleton key={i} className="h-[52px] w-full" />
+      <div className={`${CONTAINER} grid gap-8 py-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:py-10`}>
+        {/* Label over a 44 px filled field, as FacetSidebar draws each filter. */}
+        <aside className="grid grid-cols-2 content-start gap-x-3 gap-y-4 lg:grid-cols-1 lg:gap-6">
+          {Array.from({ length: 4 }, (_, i) => (
+            <div key={i} className="flex flex-col gap-2">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-11 w-full rounded-field" />
+            </div>
           ))}
         </aside>
-        <div className="min-w-0 lg:col-span-3">
+        <div className="min-w-0">
           <Skeleton className="mb-6 h-5 w-40" />
           <FeedGrid cols={3}>
             {Array.from({ length: 6 }, (_, i) => (

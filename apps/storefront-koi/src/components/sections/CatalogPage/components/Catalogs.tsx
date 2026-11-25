@@ -1,5 +1,4 @@
 import { BadgeCheck, ShoppingBag } from "lucide-react"
-import { cn } from "cn"
 
 import { Button, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
@@ -105,29 +104,31 @@ export function Catalogs({
       <FeedFilters
         scope="catalog"
         filter={filter}
-        categories={categories}
         onFilterChange={onFilterChange}
         tabs={DEFAULT_CATALOG_TABS}
-        sorts={DEFAULT_CATALOG_SORTS}
-        categoryLabel="Varietas"
-        allCategoriesLabel="Semua varietas"
       />
 
       <div
-        className={`${CONTAINER} grid gap-8 py-8 lg:grid-cols-4 lg:py-10`}
+        className={`${CONTAINER} grid gap-8 py-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:py-10`}
       >
         <FacetSidebar
+          scope="catalog"
+          sorts={DEFAULT_CATALOG_SORTS}
+          sort={filter.sort}
+          onSortChange={(sort) =>
+            onFilterChange?.({ ...filter, sort: sort as typeof filter.sort })
+          }
+          categoryLabel="Varietas"
+          allCategoriesLabel="Semua varietas"
+          categories={categories}
+          category={filter.category}
+          onCategoryChange={(category) => onFilterChange?.({ ...filter, category })}
           attributes={attributes}
           selected={selected}
           {...(onAttributesChange ? { onAttributesChange } : {})}
         />
 
-        <div
-          className={cn(
-            "min-w-0",
-            attributes?.length ? "lg:col-span-3" : "lg:col-span-4"
-          )}
-        >
+        <div className="min-w-0">
           <FeedSummary
             total={total}
             statusLabel={AVAILABILITY_LABEL[filter.status]}

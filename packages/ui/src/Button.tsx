@@ -3,31 +3,37 @@ import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 
-/* koi button: flat, 1 px edge where it has one, no shadow. Heights follow the
-   design: 48 px on a phone; on desktop 40 default (`md`), 48 large (`lg`), 32
-   small (`sm`). Controls shorter than 44 px on a phone keep their look and grow
-   an invisible hit area to 44 px with `after:` (the button is `relative`). */
+/* koi button. Primary (`solid`) and `outline` follow the redesign: 12 px radius,
+   semibold, a soft lift, and a top-to-bottom gradient on primary. The other
+   variants stay flat at the 8 px control radius. The radius sits in each variant,
+   not the base, because `cn` does not see `rounded-control` and `rounded-button`
+   as a conflict and would keep both. Heights follow the design: 48 px on a
+   phone; on desktop 40 default (`md`), 48 large (`lg`), 32 small (`sm`).
+   Controls shorter than 44 px on a phone keep their look and grow an invisible
+   hit area to 44 px with `after:` (the button is `relative`). */
 
 /* link resets must be emitted after `size`, so they live in compoundVariants */
 const LINK = "h-auto bg-transparent px-0"
 
 const buttonVariants = cva(
-  "group/button relative isolate inline-flex shrink-0 items-center justify-center gap-2 rounded-control font-medium whitespace-nowrap select-none transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button relative isolate inline-flex shrink-0 items-center justify-center gap-2 font-medium whitespace-nowrap select-none transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       /* one axis: `variant` = tone + emphasis baked together.
          bare soft/outline/ghost = neutral tone; `solid` is the brand fill,
          `link` the brand text, `destructive` the signal red. */
       variant: {
-        solid: "bg-primary text-primary-foreground hover:bg-primary/90",
-        soft: "bg-secondary text-foreground hover:bg-divider",
+        /* hover flattens the gradient to the base indigo, a step darker */
+        solid:
+          "rounded-button bg-primary bg-linear-to-b/srgb from-primary-top to-primary font-semibold text-primary-foreground shadow-button-primary hover:from-primary",
+        soft: "rounded-control bg-secondary text-foreground hover:bg-divider",
         outline:
-          "border border-input bg-background text-foreground hover:bg-secondary",
-        ghost: "text-foreground hover:bg-secondary",
-        link: "text-accent-ink underline-offset-4 hover:underline",
-        neutral: "bg-foreground text-background hover:bg-foreground/90",
+          "rounded-button border border-outline-edge bg-background font-semibold text-foreground shadow-button-outline hover:bg-secondary",
+        ghost: "rounded-control text-foreground hover:bg-secondary",
+        link: "rounded-control text-accent-ink underline-offset-4 hover:underline",
+        neutral: "rounded-control bg-foreground text-background hover:bg-foreground/90",
         destructive:
-          "bg-destructive text-signal-foreground hover:bg-destructive/90",
+          "rounded-control bg-destructive text-signal-foreground hover:bg-destructive/90",
       },
       size: {
         xs: "h-6 gap-1 px-3 text-xs max-md:after:absolute max-md:after:top-1/2 max-md:after:left-1/2 max-md:after:h-11 max-md:after:w-full max-md:after:min-w-11 max-md:after:-translate-1/2 max-md:after:content-[''] [&_svg:not([class*='size-'])]:size-3",

@@ -13,7 +13,7 @@ export function UpcomingAuctionCard({ auction, href }: { auction: UpcomingAuctio
   return (
     <article
       data-slot="upcoming-auction-card"
-      className="relative flex w-full flex-col overflow-hidden rounded-control border border-dashed border-divider bg-background"
+      className="relative flex w-full flex-col overflow-hidden rounded-card border border-dashed border-card-edge bg-background shadow-card"
     >
       <div className="relative">
         {image ? (
@@ -36,7 +36,7 @@ export function UpcomingAuctionCard({ auction, href }: { auction: UpcomingAuctio
           <h3 className="line-clamp-2 text-base font-semibold">
             <Link
               href={href}
-              className="rounded-control after:absolute after:inset-0 after:rounded-control focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-offset-2"
+              className="rounded-control after:absolute after:inset-0 after:rounded-card focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-offset-2"
             >
               {farm ?? "Lelang"}
             </Link>
