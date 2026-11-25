@@ -14,20 +14,30 @@ are defined in `docs/product/overview.md`.
 
 ---
 
-## Status as of 2026-11-24
+## Status as of 2026-11-25
+
+**Owner decisions 2026-11-25:** the four held redesign questions are answered.
+**D-065** — the redesign keeps the join fee once per auction from the fee table,
+refunded on cancel (`mvp-Q55` (a)), and the one extend window
+`extend_window_minutes` (`mvp-Q56` (a)). **D-066** — no watch list in the MVP
+(`mvp-Q59` (a)); US-104 `parked`. **D-067** — no new koi fields in the MVP
+(`mvp-Q58`); US-105 `parked`. Epic 9 has no blocked story left; the design drops
+the heart, `Dipantau` tab, "Ingatkan saya", the koi spec rows and the
+variety/size/certificate filters.
 
 **Owner calls 2026-11-24: UI redesign phase 1 is in the MVP, scope B.** New
 [Epic 9](#epic-9-ui-redesign-phase-1-owner-call-2026-11-24-in-the-mvp-scope-b):
 US-095 `done` (tokens and primitives, qa PASS, accepted 2026-11-24); US-096 –
 US-103 `todo` (API fields, auction list, lot page, join and bid status,
 finished/disconnected states, Bid Saya, top-up, nav and copy); US-104 – US-105
-`blocked` by `mvp-Q59` and `mvp-Q58`; US-106 `todo` after D-064 (`mvp-Q57`
+`parked` (D-066, D-067, 2026-11-25; were blocked by `mvp-Q59` and `mvp-Q58`); US-106 `todo` after D-064 (`mvp-Q57`
 answered). The
 design's held bid amount and auto-pay from the wallet into escrow are
 **rejected** (D-058 and plan "Store credit wallet" stand; no decision changes);
 the design is being revised to drop them. Per-lot join fee, 2-minute extend and
-new koi fields are open as `mvp-Q55`, `mvp-Q56` and `mvp-Q58`; live-room removal
-is answered by D-064 (`mvp-Q57`); watch list `mvp-Q59`; brand name, top-up
+new koi fields (`mvp-Q55`, `mvp-Q56`, `mvp-Q58`) are answered by D-065 and D-067
+(current rules kept; no koi fields); live-room removal
+is answered by D-064 (`mvp-Q57`); watch list `mvp-Q59` answered by D-066 (not in the MVP); brand name, top-up
 estimate and the `/rekber` page copy are non-blocking `mvp-Q60` – `mvp-Q62`. **Next: T-096.1 and T-096.2 (backend),
 then US-097 and US-098.** The MVP no longer ships before Epic 9 is `done`.
 **Owner request 2026-11-24:** US-107 `todo` (header, footer and bottom nav move
@@ -87,7 +97,7 @@ US-043, US-050, then US-040, US-041, US-042 (Epic 4). T-030.8, T-032.6, T-032.7
 and T-020.10 (seed fix) were accepted earlier. The `bid` model and the bid/join
 code are committed (`d67d3c8`).
 
-**Counts** (computed from this file, 2026-11-24; D-058, D-060, D-061, D-063 and D-064 in force; D-059 superseded; D-062 drafted pending approval):
+**Counts** (computed from this file, 2026-11-25; D-058, D-060, D-061, D-063 – D-067 in force; D-059 superseded; D-062 drafted pending approval):
 
 | Epic | Stories done | In progress | Todo | Parked | Blocked | Tasks done | Tasks open | Tasks parked |
 |---|---|---|---|---|---|---|---|---|
@@ -100,9 +110,9 @@ code are committed (`d67d3c8`).
 | 6 Admin operations | 6 | 0 | 0 | 0 | 0 | 37 | 0 | 0 |
 | 7 WhatsApp bot | 0 | 0 | 0 | 0 | 6 | 0 | 12 | 0 |
 | 8 Pilot | 0 | 0 | 0 | 0 | 1 | 0 | 6 | 0 |
-| 9 UI redesign phase 1 | 1 | 0 | 10 | 0 | 2 | 5 | 50 | 0 |
+| 9 UI redesign phase 1 | 1 | 0 | 10 | 2 | 0 | 5 | 43 | 7 |
 | Unplanned | 1 | 0 | 0 | 0 | 0 | 1 | 0 | 0 |
-| **Total** | **42** | **0** | **10** | **0** | **9** | **195** | **73** | **0** |
+| **Total** | **42** | **0** | **10** | **2** | **7** | **195** | **66** | **7** |
 
 Stories: 42 done of 61 (69%), none in progress, 10 todo (US-096 – US-103,
 US-106, US-107), 9 blocked (Epic 7 ×6 and US-090 by `mvp-Q12`; US-104 `mvp-Q59`, US-105
@@ -8018,7 +8028,7 @@ boards 02, 06, 09, 11, 12; review findings "Halaman akun, ponsel", "Footer, pons
 - [ ] T-103.3 [storefront] Footer accordion and link audit, brand from `NEXT_PUBLIC_SITE_NAME`, English copy sweep (AC5–AC7)
 - [ ] T-103.4 [qa] Verify AC1–AC8 at 390 px and 1440 px across `/`, `/lelang`, a lot page, Bid Saya, top-up and `/akun`; keyboard-only pass; render-check every route
 
-### US-104 Watch a lot (heart, "Dipantau") · `blocked (mvp-Q59)`
+### US-104 Watch a lot (heart, "Dipantau") · `parked (not in the MVP, D-066, 2026-11-25)`
 As a **customer**, I want to watch a lot so that I can find it again. *(Design:
 review finding "Kartu lot" (heart with a label), boards 06, 09, 11 `Dipantau` tab,
 "Ingatkan saya".)* Not in the plan; needs a new table. Write the ACs when `mvp-Q59`
@@ -8027,7 +8037,7 @@ is answered.
 - [ ] T-104.2 [storefront] Labelled heart on cards and lot page, `Dipantau` tab in Bid Saya
 - [ ] T-104.3 [qa] Verify the ACs written after `mvp-Q59`
 
-### US-105 Koi details: variety, size, age, sex, certificate · `blocked (mvp-Q58)`
+### US-105 Koi details: variety, size, age, sex, certificate · `parked (not in the MVP, D-067, 2026-11-25)`
 As a **customer**, I want the koi's variety, size, age, sex and certificate so that
 I can compare lots. *(Design: review finding "Varietas di kartu & spesifikasi",
 boards 02, 03, 09, 10 spec rows and filters.)* Needs new data in the farm form and
@@ -8166,7 +8176,7 @@ table complete.
 | Key flows: live updates, bidding on the lot page (D-064; the separate live room is removed) | US-045, US-099, US-106 (US-046 built the removed room) |
 | Build milestones 1–8 | Epics 0–8 |
 | Design rules: user-facing error messages Indonesian, from the backend (D-055) | US-042 (follow-up), US-031, US-041; every new task via the task-brief checklist |
-| UI redesign phase 1 (owner 2026-11-24, in the MVP, scope B; **not yet in `plan.md`**, design review 01 + boards 02–15) | US-095 (done); US-096 – US-103, US-106 and US-107 (todo; US-107 is the owner's 2026-11-24 layout-shell and loading request); held parts US-104 (`mvp-Q59`), US-105 (`mvp-Q58`); per-lot fee and 2-minute extend held as `mvp-Q55`, `mvp-Q56` with no story |
+| UI redesign phase 1 (owner 2026-11-24, in the MVP, scope B; **not yet in `plan.md`**, design review 01 + boards 02–15) | US-095 (done); US-096 – US-103, US-106 and US-107 (todo; US-107 is the owner's 2026-11-24 layout-shell and loading request); US-104 and US-105 parked (not in the MVP, D-066, D-067); per-lot fee and 2-minute extend not adopted (D-065) |
 
 ## Out of scope for the MVP (from the plan)
 
@@ -8236,11 +8246,11 @@ is built. Record the answer here, in `plan.md`, and as a decision in `docs/produ
 | mvp-Q52 | **Answered 2026-11-20 (D-063):** a bid-removal reason is required, non-blank and at most **500 characters**, the same cap as US-059's strike reason. Backend is landing it now in `packages/api/src/api/admin/bids/validators.ts` with a 501 → 400 / exactly 500 → accepted spec case (`bid-removal.spec.ts:453`); qa verifies the boundary. *(Was: what maximum length, if any, does a bid-removal reason have?)* | none (was US-072; qa's low bug) |
 | mvp-Q53 | **Owner action, non-blocking (2026-11-20).** D-062 is built and verified in US-092 but marked drafted/pending in `docs/product/decisions.md`; the owner has not signed off its wording, and D-062 is not yet listed in `docs/releases/README.md`. Only the owner edits an approved decision. Options: (a) approve as written and add the README line; (b) the owner rewords the section. No code changes either way. *(Was: does the owner approve D-062's wording as written?)* | none |
 | mvp-Q54 | **Answered 2026-11-20: D-044 goes on hold again, and stays on hold.** The owner re-confirmed the hold (D-044 text), so the winner sees no farmer contact at all. US-051's built reveal stays shipped and its status is unchanged; D-059's 2026-11-17 return is superseded. Nothing further is built on D-044/D-057 until the owner lifts the hold. *(Was: is D-044 in force or still on hold?)* | none |
-| mvp-Q55 | **Open (2026-11-24), redesign held item 1.** The design charges a join fee of Rp100.000 **per lot**, never refunded. The plan ("Fees", "Structure") and D-007 charge the auction category's join fee **once per auction**, covering all its lots, and D-034 refunds every join fee when a farmer or admin cancels the auction. Owner must answer: (a) keep once per auction from the fee table, refunded on cancel (current rule; phase 1 copy states this); (b) per lot, which needs a new decision, a change to the join workflow and `auction_participant`, the fee table's meaning, per-lot refunds, and a wording that doesn't contradict D-034's refund on cancel. If (b), the product owner drafts the decision and a story. | none in phase 1 (US-097, US-098, US-099 use the current rule) |
-| mvp-Q56 | **Open (2026-11-24), redesign held item 4.** The design extends the lot when a bid lands in the last **2 minutes**, adding 5 minutes. Plan "Auction rules > Extend" (and US-043, US-015): a bid in the last `extend_window_minutes` (default 5) moves that lot's end to that many minutes after the bid; the admin edits one window. Owner must answer: (a) keep one window (current rule; phase 1 copy reads `extend_window_minutes`); (b) split into a trigger window and an extension length, which needs a new decision, a new setting and column, and a place-bid workflow change. | none in phase 1 (US-098 AC6, US-099 AC10 use the current rule) |
+| mvp-Q55 | **Answered 2026-11-25 (D-065), option (a):** the join fee stays the auction category's fee, charged once per auction and refunded on cancel (D-007, D-034). The design's per-lot, never-refunded Rp100.000 fee is not adopted. *(Was: once per auction or per lot?)* | none |
+| mvp-Q56 | **Answered 2026-11-25 (D-065), option (a):** one extend window, `extend_window_minutes` (default 5). The design's 2-minute trigger with a 5-minute extension is not adopted. *(Was: one window or a split trigger and length?)* | none |
 | mvp-Q57 | **Answered 2026-11-24 (D-064), option (b):** the lot page (`/lelang/<lot>`) is the only bidding surface; the separate live room (`/lelang/<lot>/live`, US-046) is removed and old links redirect to `/lelang/<lot>`. D-061's live link moves to the lot page; bid rules (D-058, join fee, extend) are unchanged. Plan "Key flows" updated; US-106 unblocked and rescoped to removal + redirect. *(Was: keep the live room or merge it into the lot page?)* | none (was US-106) |
-| mvp-Q58 | **Open (2026-11-24), redesign held item 6.** The design adds koi fields: variety, size (cm), age, sex, certificate (and video). Today a lot has title, description and photos only (`packages/api/src/api/vendor/auctions/validators.ts:12-14`); the plan's lot table holds only bid numbers, the koi lives on the Mercur product. Owner must answer: which fields, required or optional, fixed lists (variety names, age terms like Nisai) or free text, how "certificate" relates to the fee category (which already says with/without certificate), and whether they can change after approval. Until then the storefront hides those rows and filters and labels the category `Kategori`. | US-105 |
-| mvp-Q59 | **Open (2026-11-24).** The design's watch control (labelled heart, `Dipantau` tab, "Ingatkan saya" on upcoming auctions) is not in the plan and needs a new table; the web-only MVP has no notification channel for reminders (bot held, `mvp-Q12`). Options: (a) not in the MVP, drop it from the design; (b) a per-customer watch list with no alerts; (c) with reminders, which needs a channel (email over D-013?) and a new decision. | US-104 |
+| mvp-Q58 | **Answered 2026-11-25 (D-067):** no new koi fields in the MVP. A lot keeps title, description and photos; the storefront hides the spec rows and the variety/size/certificate filters and labels the category `Kategori`. US-105 parked. *(Was: which koi fields, required or optional, fixed lists or free text?)* | US-105 (parked) |
+| mvp-Q59 | **Answered 2026-11-25 (D-066), option (a):** no watch list in the MVP; the heart, `Dipantau` tab and "Ingatkan saya" are dropped from the design. US-104 parked. *(Was: drop it, a watch list without alerts, or with reminders?)* | US-104 (parked) |
 | mvp-Q60 | **Open (2026-11-24, non-blocking).** Which brand name? The storefront defaults to "Indokoi" (`apps/storefront-koi/src/app/layout.tsx:14-15`), the design says "Koi Auction House", the docs say "Koi Store". US-103 AC6 reads `NEXT_PUBLIC_SITE_NAME` everywhere, so only the env value changes. Options: (a) Indokoi; (b) Koi Auction House; (c) another name. | none (US-103 ships with the env value) |
 | mvp-Q61 | **Open (2026-11-24, non-blocking).** The design promises "Top-up dicek admin, biasanya kurang dari 1 jam"; its own review lists this as an unconfirmed assumption, and no decision commits to a time. Phase 1 uses neutral wording (US-099 AC3, US-102 AC6). Options: (a) keep neutral wording; (b) the owner commits to a stated check time and hours, recorded as a decision, then the copy adds it. | none |
 | mvp-Q62 | **Open (2026-11-24, non-blocking).** The info page `/rekber` says "Uang pembeli ditahan rumah lelang sampai ikan diterima hidup" (`apps/storefront-koi/src/const/info.ts:72-75`), which contradicts D-058 (the platform holds no money). `/pembayaran`, `/garansi` and `/karantina` were not reviewed and may also state rules the plan doesn't have. Options: (a) unpublish `/rekber` until beta escrow, and the owner reviews the other three; (b) the owner supplies corrected copy. US-103 AC5 removes links to `/rekber` either way. | none (US-103 AC5 unlinks it) |

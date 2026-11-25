@@ -72,6 +72,9 @@ The product-owner agent drafts entries. The owner approves them.
 | D-062 | 2026-11-20 | The phone in Medusa's address snapshots (`cart_address`, `order_address`, `fulfillment_address`, `stock_location_address`) is encrypted too; D-039/D-043 cover it (answers the US-092/T-092.1 scope question) | Drafted 2026-11-20, pending owner approval (built and verified in US-092; `mvp-Q53`) |
 | D-063 | 2026-11-20 | A bid-removal reason (`POST /admin/bids/:id/remove`) is required, non-blank and at most 500 characters, the same cap as US-059's strike reason (answers `mvp-Q52`) | In force |
 | D-064 | 2026-11-24 | The lot page (`/lelang/<lot>`) is the only bidding surface; the separate live room (`/lelang/<lot>/live`, US-046) is removed and old links redirect to the lot page; bid rules (D-058, join fee, extend) unchanged (answers `mvp-Q57`, option b) | In force |
+| D-065 | 2026-11-25 | The redesign keeps the join fee once per auction, refunded on cancel (D-007, D-034), and the one extend window `extend_window_minutes`; the per-lot fee and 2-minute extend are not adopted (answers `mvp-Q55` and `mvp-Q56`, option a) | In force |
+| D-066 | 2026-11-25 | No watch list in the MVP: heart, `Dipantau` tab and "Ingatkan saya" dropped; US-104 parked (answers `mvp-Q59`, option a) | In force |
+| D-067 | 2026-11-25 | No new koi fields (variety, size, age, sex, certificate, video) in the MVP; no spec rows or koi filters; US-105 parked (answers `mvp-Q58`) | In force |
 
 ---
 
@@ -858,3 +861,35 @@ how bidding works.
 **Reason:** the owner wants the design's single-page flow — a bidder never
 switches screens to bid.
 **Source:** Owner, answer to `mvp-Q57`, option (b) (2026-11-24).
+
+### D-065: The redesign keeps the current join fee and extend rules
+**Status: In force (2026-11-25).** Answers `mvp-Q55` and `mvp-Q56`, option (a) for both.
+**Decision:** the redesign adopts neither the per-lot join fee nor the split
+extend. The join fee stays the auction category's fee, charged once per auction
+and refunded when the auction is cancelled (D-007, D-034). A bid in the last
+`extend_window_minutes` (one admin setting, default 5) moves that lot's end to
+that many minutes after the bid (plan "Auction rules > Extend").
+**Superseded behaviour:** none. The design's Rp100.000 per-lot, never-refunded
+fee and its "bid in the last 2 minutes adds 5 minutes" rule are not adopted;
+the design copy follows the current rules.
+**Reason:** keeps the built and tested rules; no workflow or data change.
+**Source:** Owner, answers to `mvp-Q55` (a) and `mvp-Q56` (a) (2026-11-25).
+
+### D-066: No watch list in the MVP
+**Status: In force (2026-11-25).** Answers `mvp-Q59`, option (a).
+**Decision:** customers cannot watch a lot in the MVP. The design's labelled
+heart, the `Dipantau` tab in Bid Saya and "Ingatkan saya" on upcoming auctions
+are dropped. US-104 is `parked`; no table or route is added.
+**Reason:** not in the plan, and the web-only MVP has no channel for reminders
+(bot held, `mvp-Q12`).
+**Source:** Owner, answer to `mvp-Q59` (a) (2026-11-25).
+
+### D-067: No new koi fields in the MVP
+**Status: In force (2026-11-25).** Answers `mvp-Q58`.
+**Decision:** a lot keeps title, description and photos only. The design's
+variety, size, age, sex, certificate and video fields are not added: the farm
+auction form is unchanged, lot cards show no koi subtitle, the lot page shows no
+specification rows for them, `/lelang` has no variety/size/certificate filters,
+and the category is labelled `Kategori`. US-105 is `parked`.
+**Reason:** owner's call to keep phase 1 to the screens already in scope.
+**Source:** Owner, answer to `mvp-Q58` (2026-11-25).
