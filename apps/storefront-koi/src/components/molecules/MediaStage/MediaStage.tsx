@@ -22,10 +22,13 @@ export type MediaStageProps = {
      in its column. "wide" also covers the 32 px gutter from `sm` up, so the
      product gallery stays flush to both edges on tablets (owner 2026-11-25). */
   bleed?: "phone" | "wide"
+  /* Board 03/10: the lot gallery switches through its thumbnails and video
+     tile, so the Foto/Video pills would be a second, redundant control. */
+  hideTabs?: boolean
   className?: string
 }
 
-export function MediaStage({ items, title, overlay, bleed, className }: MediaStageProps) {
+export function MediaStage({ items, title, overlay, bleed, hideTabs, className }: MediaStageProps) {
   const [index, setIndex] = useState(0)
   if (!items.length) return null
 
@@ -44,7 +47,7 @@ export function MediaStage({ items, title, overlay, bleed, className }: MediaSta
       )}
     >
       <div className="pointer-events-none absolute inset-x-3 top-3 z-10 flex items-center justify-between gap-3">
-        <RenderIf when={kinds.length > 1}>
+        <RenderIf when={!hideTabs && kinds.length > 1}>
           {() => (
             <div className="pointer-events-auto flex gap-1.5">
               {kinds.map((tab) => (

@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Clock,
   ImageUp,
+  Info,
   Upload,
   X,
   XCircle
@@ -30,6 +31,7 @@ import {
   RenderIf
 } from '@koi/ui';
 import { CopyValue, EmptyFeed } from '@/components/cells';
+import { ROUTES } from '@/const/routes';
 import { createTopupRequest } from '@/lib/data/topups';
 import type {
   PlatformBankAccount,
@@ -128,7 +130,7 @@ export function Topup({
   });
 
   const chipValues = Array.from(
-    new Set([...(initialAmount ? [initialAmount] : []), 5_000_000, 10_000_000])
+    new Set([...(initialAmount ? [initialAmount] : []), 1_000_000, 5_000_000, 10_000_000])
   );
   const amountIsOther = amountText !== '' && !chipValues.includes(Number(amountText));
 
@@ -220,12 +222,14 @@ export function Topup({
   return (
     <AccountFrame
       title="Saldo & top-up"
+      mobileTitle="Top-up saldo"
+      backHref={ROUTES.account}
       openOrders={openOrders}
       identity={identity}
     >
       <Card className="border-accent bg-accent px-5 py-4">
         <p className="text-sm text-muted-foreground">Saldo tersedia</p>
-        <p className="mt-1 font-heading text-2xl font-extrabold text-foreground tabular-nums">
+        <p className="mt-1 font-heading text-2xl font-bold text-foreground tabular-nums">
           {balance === null ? 'Belum bisa dimuat' : formatPrice(balance)}
         </p>
         <p className="mt-2 text-sm text-muted-foreground">
@@ -256,10 +260,14 @@ export function Topup({
         className="grid scroll-mt-24 gap-6 lg:grid-cols-2 lg:items-start"
         noValidate
       >
-        <Card className="px-5 py-5 lg:col-start-1 lg:row-start-1">
-          <StepHeading step={1}>Pilih nominal</StepHeading>
+        {/* On phones the steps are three cards in numeric order. On desktop the
+            first and third share one card (the board's left column), so the
+            wrapper is `contents` on phones and the card itself from lg up. */}
+        <div className="contents lg:col-start-1 lg:row-start-1 lg:flex lg:flex-col lg:rounded-card lg:border lg:border-card-edge lg:bg-card lg:shadow-card">
+          <Card className="order-1 px-5 py-5 lg:rounded-none lg:border-0 lg:bg-transparent lg:px-6 lg:pt-6 lg:pb-0 lg:shadow-none">
+            <StepHeading step={1}>Pilih nominal</StepHeading>
 
-          <div role="group" aria-label="Nominal cepat" className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div role="group" aria-label="Nominal cepat" className="mt-4 grid grid-cols-4 gap-2">
             {chipValues.map(value => {
               const selected = Number(amountText) === value;
               return (
@@ -269,13 +277,13 @@ export function Topup({
                   aria-pressed={selected}
                   onClick={() => chooseAmount(value)}
                   className={cn(
-                    'h-11 rounded-control border px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+                    'h-11 rounded-control border px-2 text-sm font-semibold whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
                     selected
-                      ? 'border-accent-ink bg-accent text-accent-foreground'
-                      : 'border-outline-edge bg-background text-foreground hover:bg-secondary'
+                      ? 'border-accent-ink bg-accent text-accent-ink ring-1 ring-accent-ink'
+                      : 'border-outline-edge bg-background text-foreground shadow-xs hover:bg-secondary'
                   )}
                 >
-                  {formatPriceCompact(value)}
+                  {chipLabel(value)}
                 </button>
               );
             })}
@@ -288,10 +296,10 @@ export function Topup({
                 amountRef.current?.focus();
               }}
               className={cn(
-                'h-11 rounded-control border px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+                'h-11 rounded-control border px-2 text-sm font-semibold whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
                 amountIsOther
-                  ? 'border-accent-ink bg-accent text-accent-foreground'
-                  : 'border-outline-edge bg-background text-foreground hover:bg-secondary'
+                  ? 'border-accent-ink bg-accent text-accent-ink ring-1 ring-accent-ink'
+                  : 'border-outline-edge bg-background text-foreground shadow-xs hover:bg-secondary'
               )}
             >
               Lainnya
@@ -316,7 +324,7 @@ export function Topup({
 
               return (
                 <div className="mt-4 grid gap-1.5">
-                  <Label htmlFor={amountId}>
+                  <Label htmlFor={amountId} className="font-semibold">
                     Nominal top-up (Rp){' '}
                     <span aria-hidden className="text-signal">
                       *
@@ -324,13 +332,16 @@ export function Topup({
                   </Label>
                   <div
                     className={cn(
-                      'flex h-12 items-center gap-2 rounded-control border bg-background px-3 focus-within:ring-2 focus-within:ring-ring/50',
-                      fieldState.error ? 'border-destructive' : 'border-input focus-within:border-info'
+                      'flex h-12 items-center gap-2 rounded-field bg-muted px-2',
+                      fieldState.error
+                        ? 'ring-1 ring-destructive'
+                        : 'focus-within:ring-2 focus-within:ring-accent-ink/40'
                     )}
                   >
-                    <span aria-hidden className="text-sm font-semibold text-muted-foreground">
-                      Rp
-                    </span>
+                    <span
+                      aria-hidden
+                      className="inline-flex h-9 shrink-0 items-center rounded-control bg-background px-2.5 shadow-xs before:text-sm before:font-semibold before:text-muted-foreground before:content-['Rp']"
+                    />
                     <input
                       id={amountId}
                       ref={element => {
@@ -355,12 +366,12 @@ export function Topup({
                     />
                   </div>
                   {showHint ? (
-                    <p id={`${amountId}-hint`} className="text-xs text-muted-foreground">
+                    <p id={`${amountId}-hint`} className="text-sm text-muted-foreground">
                       Diisi dari kekurangan biaya ikut {initialTitle ?? 'lelang'}. Bisa diubah.
                     </p>
                   ) : null}
                   {fieldState.error ? (
-                    <p id={`${amountId}-error`} role="alert" className="text-xs text-destructive-ink">
+                    <p id={`${amountId}-error`} role="alert" className="text-sm text-destructive-ink">
                       {fieldState.error.message}
                     </p>
                   ) : null}
@@ -368,44 +379,15 @@ export function Topup({
               );
             }}
           />
-        </Card>
+          </Card>
 
-        <Card className="px-5 py-5 lg:col-start-2 lg:row-start-1">
-          <StepHeading step={2}>Transfer ke rekening ini</StepHeading>
+          <div
+            aria-hidden
+            className="order-2 my-5 hidden h-px bg-divider lg:mx-6 lg:block"
+          />
 
-          {bankConfigured && bankAccount ? (
-            <>
-              <div className="mt-2 divide-y divide-border">
-                <BankRow label="Bank" value={bankAccount.bank_name} />
-                <BankRow
-                  label="Nomor rekening"
-                  value={bankAccount.bank_account_number}
-                  numeric
-                  copy={{ value: bankAccount.bank_account_number, label: 'nomor rekening' }}
-                />
-                <BankRow label="Atas nama" value={bankAccount.bank_account_holder} />
-                <BankRow
-                  label="Nominal transfer"
-                  value={parsed.ok ? formatPrice(parsed.amount) : '—'}
-                  numeric
-                  copy={parsed.ok ? { value: String(parsed.amount), label: 'nominal' } : undefined}
-                />
-              </div>
-              <p className="mt-3 text-sm text-muted-foreground">
-                Transfer tepat sesuai nominal agar cepat dicocokkan admin.
-              </p>
-            </>
-          ) : (
-            <p className="mt-3 text-sm text-muted-foreground">
-              {bankAccount
-                ? 'Rekening tujuan belum diatur. Hubungi admin.'
-                : 'Rekening tujuan belum bisa dimuat. Muat ulang halaman untuk mencoba lagi.'}
-            </p>
-          )}
-        </Card>
-
-        <Card className="px-5 py-5 lg:col-start-1 lg:row-start-2">
-          <StepHeading step={3}>Unggah bukti transfer</StepHeading>
+          <Card className="order-3 px-5 py-5 lg:rounded-none lg:border-0 lg:bg-transparent lg:px-6 lg:pt-0 lg:pb-6 lg:shadow-none">
+            <StepHeading step={3}>Unggah bukti transfer</StepHeading>
 
           <div className="mt-4 grid gap-3">
             <input
@@ -474,13 +456,15 @@ export function Topup({
                   acceptFile(event.dataTransfer.files?.[0]);
                 }}
                 className={cn(
-                  'flex flex-col items-center gap-2 rounded-control border border-dashed p-5 text-center',
-                  dragging ? 'border-accent-ink bg-accent' : 'border-border bg-muted/30'
+                  'flex flex-col items-center gap-2 rounded-control border border-dashed p-6 text-center',
+                  dragging
+                    ? 'border-accent-ink bg-accent'
+                    : 'border-outline-edge bg-muted/40'
                 )}
               >
-                <Upload aria-hidden className="size-7 text-muted-foreground" />
+                <Upload aria-hidden className="size-8 text-muted-foreground" />
                 <p className="text-sm text-foreground">
-                  Tarik foto ke sini atau{' '}
+                  <span className="font-semibold">Tarik foto ke sini</span> atau{' '}
                   <Button
                     type="button"
                     variant="outline"
@@ -498,7 +482,7 @@ export function Topup({
               {MAX_SCREENSHOT_BYTES / (1024 * 1024)} MB.
             </p>
             {errors.screenshot?.message ? (
-              <p role="alert" className="text-xs text-destructive-ink">
+              <p role="alert" className="text-sm text-destructive-ink">
                 {errors.screenshot.message}
               </p>
             ) : null}
@@ -508,7 +492,7 @@ export function Topup({
             <Button
               type="submit"
               size="lg"
-              className="w-full"
+              className="w-full disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none"
               disabled={isSubmitting || disabledReason !== null}
             >
               <Upload aria-hidden />
@@ -518,11 +502,50 @@ export function Topup({
               <p className="text-center text-sm text-muted-foreground">{disabledReason}</p>
             ) : null}
           </div>
+          </Card>
+        </div>
+
+        <Card className="order-2 px-5 py-5 lg:col-start-2 lg:row-start-1 lg:p-6">
+          <StepHeading step={2}>Transfer ke rekening ini</StepHeading>
+
+          {bankConfigured && bankAccount ? (
+            <>
+              <div className="mt-2 divide-y divide-border">
+                <BankRow label="Bank" value={bankAccount.bank_name} />
+                <BankRow
+                  label="Nomor rekening"
+                  value={bankAccount.bank_account_number}
+                  numeric
+                  copy={{ value: bankAccount.bank_account_number, label: 'nomor rekening' }}
+                />
+                <BankRow label="Atas nama" value={bankAccount.bank_account_holder} />
+                <BankRow
+                  label="Nominal transfer"
+                  value={parsed.ok ? formatPrice(parsed.amount) : '—'}
+                  numeric
+                  copy={parsed.ok ? { value: String(parsed.amount), label: 'nominal' } : undefined}
+                />
+              </div>
+              <div className="mt-4 flex gap-3 rounded-control bg-accent px-4 py-3 text-sm text-accent-ink">
+                <Info aria-hidden className="mt-0.5 size-4 shrink-0" />
+                <p>
+                  Transfer tepat sesuai nominal. Admin mencocokkan mutasi, biasanya kurang dari 60
+                  menit, lalu saldo bertambah.
+                </p>
+              </div>
+            </>
+          ) : (
+            <p className="mt-3 text-sm text-muted-foreground">
+              {bankAccount
+                ? 'Rekening tujuan belum diatur. Hubungi admin.'
+                : 'Rekening tujuan belum bisa dimuat. Muat ulang halaman untuk mencoba lagi.'}
+            </p>
+          )}
         </Card>
       </form>
 
       <section aria-labelledby="riwayat-saldo" className="grid gap-3">
-        <h2 id="riwayat-saldo" className="font-heading text-lg font-bold text-foreground">
+        <h2 id="riwayat-saldo" className="font-heading text-lg font-semibold text-foreground">
           Riwayat saldo
         </h2>
 
@@ -550,7 +573,7 @@ export function Topup({
               <table className="w-full border-collapse text-left text-sm">
                 <caption className="sr-only">Riwayat saldo dan top-up, terbaru di atas</caption>
                 <thead className="hidden lg:table-header-group">
-                  <tr className="border-b border-border bg-muted/40 text-xs text-muted-foreground">
+                  <tr className="border-b border-divider text-xs text-muted-foreground">
                     <th scope="col" className="px-4 py-3 font-semibold">
                       Tanggal
                     </th>
@@ -569,13 +592,13 @@ export function Topup({
                   {rows.map((row) => (
                     <tr
                       key={row.id}
-                      className="grid grid-cols-[auto_1fr_auto] items-center gap-x-3 gap-y-1 border-b border-border px-4 py-3 last:border-b-0 lg:table-row lg:px-0 lg:py-0"
+                      className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1 border-b border-divider px-4 py-3 last:border-b-0 lg:table-row lg:px-0 lg:py-0"
                     >
-                      <td className="order-2 whitespace-nowrap text-xs text-muted-foreground tabular-nums lg:table-cell lg:px-4 lg:py-3 lg:align-top lg:text-sm">
+                      <td className="order-3 whitespace-nowrap text-sm text-muted-foreground tabular-nums lg:table-cell lg:px-4 lg:py-3 lg:align-top">
                         <span className="sr-only">Tanggal: </span>
                         {formatDeadline(row.created_at)} WIB
                       </td>
-                      <td className="order-1 col-span-3 min-w-0 lg:table-cell lg:px-4 lg:py-3 lg:align-top">
+                      <td className="order-4 col-span-2 min-w-0 lg:table-cell lg:px-4 lg:py-3 lg:align-top">
                         <span className="sr-only">Keterangan: </span>
                         <p className="font-semibold text-foreground">{row.keterangan}</p>
                         {row.kind === 'topup' && row.status === 'rejected' && row.reason ? (
@@ -593,11 +616,11 @@ export function Topup({
                           </Button>
                         ) : null}
                       </td>
-                      <td className="order-3 lg:table-cell lg:px-4 lg:py-3 lg:align-top">
+                      <td className="order-2 justify-self-end lg:table-cell lg:px-4 lg:py-3 lg:align-top">
                         <span className="sr-only">Status: </span>
                         <HistoryStatus row={row} />
                       </td>
-                      <td className="order-4 justify-self-end whitespace-nowrap font-semibold tabular-nums lg:table-cell lg:px-4 lg:py-3 lg:text-right lg:align-top">
+                      <td className="order-1 whitespace-nowrap font-semibold tabular-nums lg:table-cell lg:px-4 lg:py-3 lg:text-right lg:align-top">
                         <span className="sr-only">Jumlah: </span>
                         <span className={row.amount < 0 ? 'text-foreground' : 'text-success'}>
                           {formatSignedAmount(row.amount)}
@@ -614,7 +637,9 @@ export function Topup({
         <RenderIf when={!failed && !history.length}>
           {() => (
             <EmptyFeed
-              icon={<Banknote aria-hidden />}
+              icon={<Banknote aria-hidden className="size-8" />}
+              iconClassName="size-16 rounded-full border border-border bg-muted"
+              titleClassName="font-heading text-lg font-bold sm:text-xl"
               narrowing={false}
               noMatchTitle="Belum ada transaksi"
               noMatchBody="Top-up, biaya lelang dan koreksi muncul di sini."
@@ -628,16 +653,22 @@ export function Topup({
 
 function StepHeading({ step, children }: { step: number; children: ReactNode }) {
   return (
-    <h2 className="flex items-center gap-3 text-base font-bold text-foreground">
+    <h2 className="flex items-center gap-3 text-base font-semibold text-foreground">
       <span
         aria-hidden
-        className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground"
+        className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground"
       >
         {step}
       </span>
       {children}
     </h2>
   );
+}
+
+// The design's quick amounts read "5 jt", not "Rp 5 jt"; the field below shows
+// the full rupiah value once one is chosen.
+function chipLabel(value: number) {
+  return formatPriceCompact(value).replace(/^Rp[\s ]*/, '');
 }
 
 function BankRow({
@@ -657,7 +688,7 @@ function BankRow({
         <p className="text-sm text-muted-foreground">{label}</p>
         <p
           className={cn(
-            'text-sm font-semibold text-foreground',
+            'text-base font-semibold text-foreground',
             numeric && 'tabular-nums tracking-wide'
           )}
         >

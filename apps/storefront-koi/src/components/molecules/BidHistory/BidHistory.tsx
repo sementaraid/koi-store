@@ -1,7 +1,6 @@
 "use client"
 
 import { cn } from "cn"
-import { Crown } from "lucide-react"
 import { useEffect, useState } from "react"
 
 import { Badge, RenderIf } from "@koi/ui"
@@ -93,12 +92,7 @@ export function BidHistory({
                 </RenderIf>
               )}
               <RenderIf when={top}>
-                {() => (
-                  <Badge variant="muted">
-                    <Crown aria-hidden />
-                    Tertinggi
-                  </Badge>
-                )}
+                {() => <Badge variant="muted">Tertinggi</Badge>}
               </RenderIf>
             </span>
             <span

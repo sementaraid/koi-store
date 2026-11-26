@@ -38,6 +38,8 @@ export type LotIdentityProps = {
      identity row keeps it from `lg` up. The product page has no such header
      and shows it in the identity row at every width. */
   shareOnMobile?: boolean
+  /* The product page shares its product URL; a lot keeps `lotHref`. */
+  shareUrl?: string
 }
 
 export function LotIdentity({
@@ -46,6 +48,7 @@ export function LotIdentity({
   className,
   subtitle,
   shareOnMobile,
+  shareUrl,
 }: LotIdentityProps) {
   const { title, listing, highlights, stamps, auction } = lot
   const badges = [...(highlights ?? []), ...(stamps ?? [])]
@@ -134,18 +137,18 @@ export function LotIdentity({
               identity row keeps it from `lg` up only. */}
           <ShareButton
             title={title}
-            url={lotHref(lot.id)}
+            url={shareUrl ?? lotHref(lot.id)}
             className={cn("ms-auto", !shareOnMobile && "max-lg:hidden")}
           />
         </div>
 
-        <h1 className="font-heading text-xl leading-8 font-bold tracking-[-0.01em] text-balance lg:text-2xl lg:leading-[30px]">
+        <h1 className="font-heading text-xl leading-[34px] font-bold tracking-[-0.01em] text-balance lg:text-2xl lg:leading-10 lg:font-semibold">
           {title}
         </h1>
 
         <RenderIf when={subtitle}>
           {(text) => (
-            <p className="text-sm text-muted-foreground">{text}</p>
+            <p className="text-[15px] text-muted-foreground">{text}</p>
           )}
         </RenderIf>
 

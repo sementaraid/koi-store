@@ -177,17 +177,9 @@ export function groupLots<T extends { auction: { status?: string } }>(
   tab: "live" | "ended",
   products: T[]
 ): LotGroup<T>[] {
-  const groups: LotGroup<T>[] =
-    tab === "live"
-      ? [
-          { key: "open", title: "Sedang live", items: products.filter((p) => p.auction.status === "live") },
-          {
-            key: "closed",
-            title: "Sudah ditutup di lelang ini",
-            items: products.filter((p) => p.auction.status !== "live"),
-          },
-        ]
-      : [{ key: "ended", title: "Baru selesai", items: products }]
+  // The approved mockup draws one continuous grid per tab, without section
+  // headings, so every tab is a single untitled group.
+  const groups: LotGroup<T>[] = products.length > 0 ? [{ key: tab, title: "", items: products }] : []
 
   return groups.filter((g) => g.items.length > 0)
 }

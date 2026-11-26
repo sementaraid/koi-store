@@ -21,6 +21,9 @@ export type EmptyFeedProps = {
   onReset?: () => void
   action?: ReactNode
   className?: string
+  /** Extra classes for the icon disc, e.g. the account pages' 64 px circle. */
+  iconClassName?: string
+  titleClassName?: string
 }
 
 export function EmptyFeed({
@@ -33,6 +36,8 @@ export function EmptyFeed({
   onReset,
   action,
   className,
+  iconClassName,
+  titleClassName,
 }: EmptyFeedProps) {
   return (
     <Empty
@@ -42,8 +47,12 @@ export function EmptyFeed({
       )}
     >
       <EmptyHeader>
-        <EmptyMedia variant="icon">{icon}</EmptyMedia>
-        <EmptyTitle>{narrowing ? noMatchTitle : (emptyTitle ?? noMatchTitle)}</EmptyTitle>
+        <EmptyMedia variant="icon" className={iconClassName}>
+          {icon}
+        </EmptyMedia>
+        <EmptyTitle className={titleClassName}>
+          {narrowing ? noMatchTitle : (emptyTitle ?? noMatchTitle)}
+        </EmptyTitle>
         <EmptyDescription>
           {narrowing ? noMatchBody : (emptyBody ?? noMatchBody)}
         </EmptyDescription>

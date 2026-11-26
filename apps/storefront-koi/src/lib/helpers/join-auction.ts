@@ -49,7 +49,7 @@ export function joinBalanceAfter(fee: number, balance: number): number {
 // US-111 AC6 (D-070): the fee is paid per lot, not once per auction.
 export function joinGuestCopy(fee: number): string {
   return fee > 0
-    ? `Untuk bid, Anda perlu akun dan saldo untuk biaya ikut ${formatPrice(fee)} (per lot).`
+    ? `Untuk bid, Anda perlu akun dan saldo. Biaya ikut ${formatPrice(fee)} per lot, tidak dikembalikan.`
     : 'Untuk bid, Anda perlu akun dan saldo.';
 }
 
@@ -84,7 +84,7 @@ export function joinAvailable(input: {
 }
 
 export function joinFeeLabel(fee: number): string {
-  return fee > 0 ? `Ikut lot ini · ${formatPrice(fee)}` : 'Ikut lot ini';
+  return fee > 0 ? `Ikut lelang · ${formatPrice(fee)}` : 'Ikut lelang';
 }
 
 export type JoinFailure = {

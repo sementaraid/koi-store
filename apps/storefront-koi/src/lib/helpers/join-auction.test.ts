@@ -43,8 +43,8 @@ test('joinable only while scheduled or live and not cancelled or closed (D-048, 
 });
 
 test('the label carries the fee, and Rp0 stays a real fee', () => {
-  assert.equal(joinFeeLabel(50_000), `Ikut lot ini · ${formatPrice(50_000)}`);
-  assert.equal(joinFeeLabel(0), 'Ikut lot ini');
+  assert.equal(joinFeeLabel(50_000), `Ikut lelang · ${formatPrice(50_000)}`);
+  assert.equal(joinFeeLabel(0), 'Ikut lelang');
 });
 
 test('the lot page picks the panel state from sign-in, ownership, join and balance (AC1–AC3, AC12)', () => {
@@ -82,7 +82,7 @@ test('the balance after joining never goes below zero', () => {
 test('guest and confirm copy name the real fee, and a Rp0 fee has no fee line', () => {
   assert.equal(
     joinGuestCopy(100_000),
-    `Untuk bid, Anda perlu akun dan saldo untuk biaya ikut ${formatPrice(100_000)} (per lot).`
+    `Untuk bid, Anda perlu akun dan saldo. Biaya ikut ${formatPrice(100_000)} per lot, tidak dikembalikan.`
   );
   assert.equal(joinGuestCopy(0), 'Untuk bid, Anda perlu akun dan saldo.');
   assert.equal(joinConfirmLabel(100_000), `Bayar ${formatPrice(100_000)} & ikut`);

@@ -37,7 +37,9 @@ export function UpcomingAuctionCard({ auction, href }: { auction: UpcomingAuctio
             Sesi {farm ?? "lelang"}
           </Link>
         </h3>
-        <p className="truncate text-sm text-muted-foreground tabular-nums">
+        {/* The meta line wraps rather than truncates, so the session's
+            varieties are never cut off (US-105 AC5). */}
+        <p className="text-sm leading-5 text-muted-foreground tabular-nums">
           {lotCount} lot · {formatEndTime(startAt)}
           {varieties.length > 0 ? ` · ${varieties.join(", ")}` : ""}
         </p>

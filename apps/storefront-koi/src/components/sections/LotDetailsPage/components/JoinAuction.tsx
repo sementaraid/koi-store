@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from 'cn';
+import { Ticket, Wallet } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -144,12 +145,12 @@ export function JoinAuction({
     return (
       <div className="hidden gap-2 lg:grid">
         <p className="text-sm text-muted-foreground">{joinGuestCopy(fee)}</p>
-        <div className="flex flex-col gap-2 sm:flex-row">
+        <div className="flex flex-col gap-2">
           <Button
             size="lg"
             render={<Link href={signInHref(returnPath)} />}
             nativeButton={false}
-            className="w-full sm:w-auto"
+            className="w-full rounded-button!"
           >
             Masuk untuk ikut lelang
           </Button>
@@ -158,7 +159,7 @@ export function JoinAuction({
             variant="outline"
             render={<Link href={signUpHref(returnPath)} />}
             nativeButton={false}
-            className="w-full sm:w-auto"
+            className="w-full rounded-button!"
           >
             Daftar gratis
           </Button>
@@ -180,16 +181,16 @@ export function JoinAuction({
 
   const shortfall = joinShortfall(fee, balance);
   const isShort = state === 'shortfall';
-  const heading = isShort ? 'Saldo belum cukup' : `Ikut lot ini ${title}`;
+  const heading = isShort ? 'Saldo belum cukup' : `Ikut lelang ${title}`;
   const description = isShort
     ? 'Top-up dulu, lalu kembali ke lot ini.'
-    : 'Dipotong dari saldo untuk lot ini.';
+    : 'Baca aturan sebelum biaya dipotong.';
   const closeLabel = isShort ? 'Kembali ke lot' : 'Batal';
 
   const headingNode = isMobile ? (
-    <SheetTitle className="pe-8">{heading}</SheetTitle>
+    <SheetTitle className="pe-8 text-lg font-bold">{heading}</SheetTitle>
   ) : (
-    <DialogTitle className="pe-8">{heading}</DialogTitle>
+    <DialogTitle className="pe-8 font-bold">{heading}</DialogTitle>
   );
   const descriptionNode = isMobile ? (
     <SheetDescription>{description}</SheetDescription>
@@ -208,14 +209,28 @@ export function JoinAuction({
 
   const body = (
     <div className={cn('flex flex-col gap-4', isMobile && 'p-4')}>
-      <div className="flex flex-col gap-1">
-        {headingNode}
-        {descriptionNode}
+      <div className="flex items-start gap-4 pe-8">
+        <span
+          className={cn(
+            'flex size-12 shrink-0 items-center justify-center rounded-full',
+            isShort ? 'bg-warning/10 text-warning' : 'bg-accent text-accent-ink'
+          )}
+        >
+          {isShort ? (
+            <Wallet aria-hidden className="size-5" />
+          ) : (
+            <Ticket aria-hidden className="size-5" />
+          )}
+        </span>
+        <div className="flex min-w-0 flex-col gap-1">
+          {headingNode}
+          {descriptionNode}
+        </div>
       </div>
 
       {isShort ? (
         <>
-          <dl className="grid gap-2 rounded-control bg-surface p-3 text-sm">
+          <dl className="grid divide-y divide-primary/15 rounded-xl border border-primary/15 bg-accent px-4 text-sm [&>*]:py-2">
             <PriceRow label="Biaya ikut" value={formatPrice(fee)} />
             <PriceRow label="Saldo tersedia" value={formatPrice(balance ?? 0)} />
             <PriceRow label="Kurang" value={formatPrice(shortfall)} tone />
@@ -223,13 +238,13 @@ export function JoinAuction({
           <p className="text-sm text-muted-foreground">
             Lelang ini berakhir {formatEndTime(auctionEnd)}.
           </p>
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <div className="flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:justify-end">
             {closeButton}
             <Button
               size="lg"
               render={<Link href={topupHref(shortfall, title)} />}
               nativeButton={false}
-              className="w-full sm:w-auto"
+              className="w-full rounded-button! sm:w-auto"
             >
               Top-up {formatPrice(shortfall)}
             </Button>
@@ -237,10 +252,10 @@ export function JoinAuction({
         </>
       ) : (
         <>
-          <LotRules rules={rules} />
+          <LotRules rules={rules} heading={false} checks />
 
           {fee > 0 ? (
-            <dl className="grid gap-2 rounded-control bg-surface p-3 text-sm">
+            <dl className="grid divide-y divide-primary/15 rounded-xl border border-primary/15 bg-accent px-4 text-sm [&>*]:py-2">
               <PriceRow
                 label="Biaya ikut (tidak dikembalikan jika kalah)"
                 value={formatPrice(fee)}
@@ -281,7 +296,7 @@ export function JoinAuction({
             </div>
           ) : null}
 
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <div className="flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:justify-end">
             {closeButton}
             <Button
               size="lg"
@@ -301,11 +316,12 @@ export function JoinAuction({
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetTrigger
         id="lot-join-trigger-sheet"
-        render={<Button size="lg" className="w-full sm:w-auto" />}
+        render={<Button size="lg" className="w-full" />}
       >
         {joinFeeLabel(fee)}
       </SheetTrigger>
-      <SheetContent id="lot-join-sheet" side="bottom">
+      <SheetContent id="lot-join-sheet" side="bottom" className="rounded-t-[20px]!">
+        <span aria-hidden className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-border" />
         {body}
       </SheetContent>
     </Sheet>
@@ -313,29 +329,36 @@ export function JoinAuction({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger
         id="lot-join-trigger"
-        render={<Button size="lg" className="w-full sm:w-auto" />}
+        render={<Button size="lg" className="w-full" />}
       >
         {joinFeeLabel(fee)}
       </DialogTrigger>
-      <DialogContent id="lot-join-popup">{body}</DialogContent>
+      <DialogContent
+        id="lot-join-popup"
+        className="gap-5 rounded-[20px]! p-7 sm:max-w-[480px]"
+      >
+        {body}
+      </DialogContent>
     </Dialog>
   );
 
   return (
     <div className="grid gap-2">
-      <p className="text-sm text-muted-foreground">Belum ikut</p>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        {modal}
+      <div className="flex items-center justify-between gap-2 text-sm">
+        <Badge variant="neutral">Belum ikut</Badge>
         {fee > 0 && balance !== null ? (
-          <p className="text-sm text-muted-foreground">
+          <span className="text-sm text-muted-foreground">
             Saldo tersedia{' '}
             <span className="font-semibold text-foreground tabular-nums">
               {formatPrice(balance)}
             </span>
-          </p>
+          </span>
         ) : null}
       </div>
-      {fee > 0 ? <p className="text-xs text-muted-foreground">{JOIN_FEE_NOTE}</p> : null}
+      {modal}
+      {fee > 0 ? (
+        <p className="text-center text-sm text-muted-foreground">{JOIN_FEE_NOTE}</p>
+      ) : null}
     </div>
   );
 }

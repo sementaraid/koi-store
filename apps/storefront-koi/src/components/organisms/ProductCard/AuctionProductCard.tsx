@@ -96,11 +96,11 @@ export function AuctionProductCard({
       </div>
 
       <div className="flex flex-1 flex-col gap-3 p-4">
-        <div>
+        <div className="flex flex-col gap-1">
           {/* Title left, lot number right. With no title the lot number is the
               title, so it is not repeated on the right. */}
           <div className="flex items-start justify-between gap-3">
-            <h3 className="line-clamp-2 min-w-0 text-base font-bold">
+            <h3 className="line-clamp-2 min-w-0 text-base leading-[22px] font-bold">
               {href ? (
                 <Link
                   href={href}
@@ -124,7 +124,7 @@ export function AuctionProductCard({
               left out so a legacy lot reads farm only (US-097 AC14, US-105
               AC5). Never print separators around nothing. */}
           <RenderIf when={subtitle}>
-            {(line) => <p className="truncate text-sm text-muted-foreground">{line}</p>}
+            {(line) => <p className="truncate text-sm leading-5 text-muted-foreground">{line}</p>}
           </RenderIf>
           <RenderIf when={joinNote}>
             {(note) => (
@@ -154,7 +154,7 @@ export function AuctionProductCard({
               {(line) => (
                 <>
                   <span className="text-sm text-muted-foreground md:text-xs">{line.label}</span>
-                  <span className="text-xl font-bold whitespace-nowrap tabular-nums">
+                  <span className="text-2xl font-bold whitespace-nowrap tabular-nums">
                     {formatPrice(line.amount)}
                   </span>
                 </>
@@ -187,7 +187,7 @@ export function AuctionProductCard({
                   {() => (
                     <span
                       className={cn(
-                        "inline-flex items-center gap-1 text-sm font-bold whitespace-nowrap",
+                        "inline-flex items-center gap-1 text-[15px] font-bold whitespace-nowrap md:text-sm",
                         endingSoon && "text-warning"
                       )}
                     >

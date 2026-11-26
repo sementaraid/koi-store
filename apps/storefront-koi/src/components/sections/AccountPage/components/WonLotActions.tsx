@@ -14,6 +14,12 @@ import { claimWindowInfo } from '@/lib/helpers/claim';
 // as the lot page, through the same component and server actions, so the two
 // views can't drift. Only the opening differs: the claim form sits behind
 // `Laporkan` on the card instead of staying open.
+// The lot page keeps WonLotPanel's own box. On the Bid Saya card the panel is
+// the card's action footer, so the box is flattened and only its top edge stays
+// as the divider before the actions.
+const PANEL_FOOTER =
+  '[&>div]:rounded-none [&>div]:border-x-0 [&>div]:border-b-0 [&>div]:border-border [&>div]:bg-transparent [&>div]:px-0 [&>div]:pt-4 [&>div]:pb-0';
+
 export function WonLotActions(props: WonLotPanelProps) {
   const [claimOpen, setClaimOpen] = useState(false);
 
@@ -22,10 +28,16 @@ export function WonLotActions(props: WonLotPanelProps) {
     !props.claim &&
     claimWindowInfo(props.claimWindowEndsAt, props.now).open;
 
-  if (!claimable || claimOpen) return <WonLotPanel {...props} />;
+  if (!claimable || claimOpen) {
+    return (
+      <div className={PANEL_FOOTER}>
+        <WonLotPanel {...props} />
+      </div>
+    );
+  }
 
   return (
-    <div className="grid gap-3">
+    <div className="grid gap-3 border-t border-border pt-4">
       {/* US-110 AC2: on a delivered lot inside the claim window the full panel
           stays behind `Laporkan`, but the arrival proof must stay reachable. */}
       <ArrivalProof lotId={props.lotId} proof={props.arrivalProof} />

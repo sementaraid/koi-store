@@ -180,11 +180,55 @@ export function AddressesSkeleton() {
   );
 }
 
-// Bid Saya: two bid cards, the seeded customer's active list. Each mirrors
-// ActiveBidCard's boxes and line heights (h3 24 px, text-sm 20 px, chip 24 px,
-// two dl rows of 20 px), so the loaded list is the same 452 px and the footer
-// does not move (AC11).
-function BidCardsSkeleton() {
+// One won card: the photo, the title/seller/price stack, the four-step ladder
+// and the action footer, at the same box sizes as WonCard so the list does not
+// jump when the data lands (US-107 AC11).
+function WonCardSkeleton() {
+  return (
+    <div className="flex flex-col gap-4 rounded-card border border-card-edge bg-card p-4 shadow-card lg:gap-5 lg:p-5">
+      <div className="flex min-w-0 gap-3 lg:gap-5">
+        <Skeleton className="h-[66px] w-[88px] shrink-0 rounded-xl lg:h-[120px] lg:w-40" />
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <Skeleton className="h-5 w-40" />
+          <Skeleton className="mt-0.5 h-6 w-2/3 lg:h-7" />
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="mt-1 h-5 w-28 lg:h-7" />
+        </div>
+      </div>
+      <div className="grid gap-3 lg:grid-cols-4">
+        {[0, 1, 2, 3].map((key) => (
+          <div key={key} className="flex items-center gap-3 lg:flex-col lg:items-stretch lg:gap-2">
+            <Skeleton className="size-4 shrink-0 rounded-full lg:hidden" />
+            <Skeleton className="hidden h-1 w-full rounded-full lg:block" />
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-col gap-2 border-t border-divider pt-4">
+        <Skeleton className="h-4 w-44" />
+        <Skeleton className="h-10 w-full sm:w-44" />
+      </div>
+    </div>
+  );
+}
+
+// Bid Saya: two bid cards in the shape of the selected tab. The active and
+// lost lists mirror ActiveBidCard's boxes (h3 24 px, text-sm 20 px, chip 24 px,
+// two dl rows of 20 px); the won list mirrors WonCard.
+function BidCardsSkeleton({ shape = 'active' }: { shape?: 'active' | 'won' }) {
+  if (shape === 'won') {
+    return (
+      <div className="flex flex-col gap-4">
+        {[0, 1].map((key) => (
+          <WonCardSkeleton key={key} />
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4">
       {[0, 1].map((key) => (
@@ -235,11 +279,11 @@ export function BidSayaListSkeleton() {
 }
 
 // The in-page fallback: the tabs already sit in the title row, so only the
-// cards are missing.
-export function BidSayaSkeleton() {
+// cards are missing. The Menang tab gets the won card's taller shape.
+export function BidSayaSkeleton({ shape = 'active' }: { shape?: 'active' | 'won' }) {
   return (
     <LoadingRegion label="Memuat bid…">
-      <BidCardsSkeleton />
+      <BidCardsSkeleton shape={shape} />
     </LoadingRegion>
   );
 }
@@ -289,11 +333,17 @@ export function WalletSkeleton() {
   );
 }
 
+// Balance card, the left card with steps 1 and 3, the right card with step 2,
+// then the history table. Heights follow the loaded page closely enough that
+// the footer does not move when it swaps.
 export function TopupSkeleton() {
   return (
     <AccountSkeleton label="Memuat top-up…">
-      <SummaryCard className="h-[154px]" />
-      <FormCard className="h-[392px] lg:h-[328px]" fields={2} />
+      <SummaryCard className="h-[118px]" />
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+        <FormCard className="h-[652px]" fields={4} />
+        <FormCard className="h-[392px]" fields={2} />
+      </div>
       <RowsCard className="h-[260px]" rows={3} />
     </AccountSkeleton>
   );

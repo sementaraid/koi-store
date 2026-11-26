@@ -8,3 +8,4 @@ export { LotTrustList } from './LotTrust/LotTrust';
 export { MediaStage } from './MediaStage/MediaStage';
 export { PaymentInstructions } from './PaymentInstructions/PaymentInstructions';
 export { PaymentProof } from './PaymentProof/PaymentProof';
+export { QuantityStepper } from './QuantityStepper/QuantityStepper';

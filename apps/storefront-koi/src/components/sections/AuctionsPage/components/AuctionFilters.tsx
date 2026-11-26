@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Check, SlidersHorizontal } from "lucide-react"
+import { Check, ChevronDown, SlidersHorizontal } from "lucide-react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import { Button, Input, Label } from "@koi/ui"
@@ -25,11 +25,15 @@ const SORT = { value: "end_time", label: "Berakhir paling cepat" }
 const SORT_CHIP = "Berakhir duluan"
 
 const CHIP =
-  "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border border-border bg-background px-4 text-sm font-semibold whitespace-nowrap outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+  "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border border-border bg-background px-3 text-sm font-medium whitespace-nowrap outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
 
 const FILTER_KEYS = ["variety", "size_min", "size_max", "certificate", "has_video", "joined"]
 const SIZE_MIN = 1
 const SIZE_MAX = 150
+// The sidebar lists the first five varieties, as board 08 does; the rest sit
+// behind `Varietas lain`. A chosen variety outside the five stays visible, so a
+// filter is never hidden from the reader.
+const VARIETY_PREVIEW = 5
 
 function SortField({ id }: { id: string }) {
   return (
@@ -62,7 +66,7 @@ function CheckOption({
   return (
     <label
       htmlFor={id}
-      className="group/opt flex cursor-pointer items-center gap-3 py-1.5 text-sm"
+      className="group/opt flex cursor-pointer items-center gap-3 py-2 text-sm"
     >
       <input
         id={id}
@@ -126,6 +130,11 @@ function FilterPanel({
   onToggleJoined,
   onReset,
 }: PanelProps) {
+  const [showAllVarieties, setShowAllVarieties] = useState(false)
+  const varieties = KOI_VARIETIES.filter(
+    (variety, index) => index < VARIETY_PREVIEW || showAllVarieties || selected.includes(variety)
+  )
+
   return (
     <>
       {tab === "ended" ? (
@@ -137,20 +146,6 @@ function FilterPanel({
         <SortField id={`auctions-sort-${place}`} />
       )}
 
-      {/* US-111 AC6 (US-097 AC13): the viewer's own lots. Only a signed-in
-          customer can have joined anything, so guests never see it. */}
-      {signedIn ? (
-        <fieldset className="flex flex-col">
-          <legend className={`${SECTION_LABEL} mb-1`}>Ikut lelang</legend>
-          <CheckOption
-            id={`joined-${place}`}
-            label="Yang saya ikuti"
-            checked={joined}
-            onChange={onToggleJoined}
-          />
-        </fieldset>
-      ) : null}
-
       <fieldset className="flex flex-col">
         <legend className={`${SECTION_LABEL} mb-1`}>Varietas</legend>
         <CheckOption
@@ -159,7 +154,7 @@ function FilterPanel({
           checked={selected.length === 0}
           onChange={onClearVariety}
         />
-        {KOI_VARIETIES.map((variety) => (
+        {varieties.map((variety) => (
           <CheckOption
             key={variety}
             id={`variety-${place}-${variety}`}
@@ -169,11 +164,21 @@ function FilterPanel({
             onChange={() => onToggleVariety(variety)}
           />
         ))}
+        {showAllVarieties || varieties.length < KOI_VARIETIES.length ? (
+          <button
+            type="button"
+            onClick={() => setShowAllVarieties((open) => !open)}
+            aria-expanded={showAllVarieties}
+            className="mt-1 self-start rounded-control text-sm font-semibold text-accent-ink outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          >
+            {showAllVarieties ? "Sembunyikan varietas lain" : "Varietas lain"}
+          </button>
+        ) : null}
       </fieldset>
 
       <fieldset className="flex flex-col gap-2">
         <legend className={`${SECTION_LABEL} mb-1`}>Ukuran (cm)</legend>
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <Input
             key={`${place}-min-${sizeMin}`}
             id={`size-min-${place}`}
@@ -184,7 +189,7 @@ function FilterPanel({
             defaultValue={sizeMin}
             placeholder="Min"
             aria-label="Ukuran minimum (cm)"
-            className="h-11 md:h-10"
+            className="h-11 rounded-field border-0 bg-field px-3.5 text-base md:h-11 md:text-base"
             onBlur={(event) => onCommitSize("size_min", event.currentTarget.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
@@ -193,9 +198,6 @@ function FilterPanel({
               }
             }}
           />
-          <span aria-hidden className="text-muted-foreground">
-            –
-          </span>
           <Input
             key={`${place}-max-${sizeMax}`}
             id={`size-max-${place}`}
@@ -206,7 +208,7 @@ function FilterPanel({
             defaultValue={sizeMax}
             placeholder="Maks"
             aria-label="Ukuran maksimum (cm)"
-            className="h-11 md:h-10"
+            className="h-11 rounded-field border-0 bg-field px-3.5 text-base md:h-11 md:text-base"
             onBlur={(event) => onCommitSize("size_max", event.currentTarget.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
@@ -232,6 +234,16 @@ function FilterPanel({
           checked={hasVideo}
           onChange={() => onToggleFlag("has_video")}
         />
+        {/* US-111 AC6 (US-097 AC13): the viewer's own lots. Only a signed-in
+            customer can have joined anything, so guests never see it. */}
+        {signedIn ? (
+          <CheckOption
+            id={`joined-${place}`}
+            label="Yang saya ikuti"
+            checked={joined}
+            onChange={onToggleJoined}
+          />
+        ) : null}
       </fieldset>
 
       {active ? (
@@ -247,8 +259,9 @@ function FilterPanel({
   )
 }
 
-// Desktop: the board's left sidebar with `Urutkan`, `Varietas` (counts),
-// `Ukuran (cm)` and `Lainnya`. Phone: the chip row, with every sidebar control
+// Desktop: the board's left sidebar with `Urutkan`, `Varietas` (counts, first
+// five plus `Varietas lain`), `Ukuran (cm)` and `Lainnya` (certificate, video,
+// the viewer's own lots). Phone: the chip row, with every sidebar control
 // in a bottom sheet behind `Filter`, `Varietas` or `Ukuran` (US-097 AC13, AC16;
 // US-105 AC5). The koi filters are all in the URL, like the tab, so a narrowed
 // list can be linked and the back button undoes a change.
@@ -371,6 +384,7 @@ export function AuctionFilters({
           className={CHIP}
         >
           Varietas
+          <ChevronDown aria-hidden className="size-4 text-field-icon" />
         </button>
         <button
           type="button"
@@ -380,6 +394,7 @@ export function AuctionFilters({
           className={CHIP}
         >
           Ukuran
+          <ChevronDown aria-hidden className="size-4 text-field-icon" />
         </button>
         {tab !== "ended" ? (
           <button
@@ -391,6 +406,7 @@ export function AuctionFilters({
             className={CHIP}
           >
             {SORT_CHIP}
+            <ChevronDown aria-hidden className="size-4 text-field-icon" />
           </button>
         ) : null}
 

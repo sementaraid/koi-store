@@ -22,9 +22,11 @@ export type AppShellProps = {
  *   header below `lg`.
  * - `data-shell="lot-page"`: the lot page renders it in every state. Its tab bar
  *   is gone (US-099 AC14), so the shell drops the tab bar's reserved space.
- * - `data-shell="lot-bar"`: the lot page's sticky footer shows. The bottom space
- *   then reserves the footer's measured height (`--lot-bar-h`, set by
- *   `LotPriceBar`) and nothing else.
+ * - `data-shell="product-page"`: the product page's phone footer also takes the
+ *   tab bar's place, so the shell drops that space here too.
+ * - `data-shell="lot-bar"`: a detail page's sticky footer shows. The bottom
+ *   space then reserves the footer's measured height (`--lot-bar-h`, set by
+ *   `LotPriceBar` or `ProductBuyBar`) and nothing else.
  */
 export function AppShell({
   account,
@@ -34,7 +36,7 @@ export function AppShell({
   return (
     <div
       data-slot="shell"
-      className="group/shell flex min-h-svh flex-col bg-background pb-[calc(4rem+env(safe-area-inset-bottom))] has-[[data-shell=lot-page]]:pb-0 has-[[data-shell=lot-page]]:has-[[data-shell=lot-bar]]:pb-[var(--lot-bar-h,calc(14.5rem+env(safe-area-inset-bottom)))] lg:pb-0"
+      className="group/shell flex min-h-svh flex-col bg-background pb-[calc(4rem+env(safe-area-inset-bottom))] has-[[data-shell=lot-page]]:pb-0 has-[[data-shell=product-page]]:pb-0 has-[[data-shell=lot-page]]:has-[[data-shell=lot-bar]]:pb-[var(--lot-bar-h,calc(14.5rem+env(safe-area-inset-bottom)))] has-[[data-shell=product-page]]:has-[[data-shell=lot-bar]]:pb-[var(--lot-bar-h,calc(9rem+env(safe-area-inset-bottom)))] lg:pb-0"
     >
       <a
         href="#konten"
@@ -51,7 +53,12 @@ export function AppShell({
 
       <Footer />
 
-      <BottomNav signedIn={Boolean(account)} />
+      {/* The product page's phone footer takes the tab bar's place, as the lot
+          page's does. Its marker hides the fixed nav through the shell's
+          `:has()`; the lot page keeps its own rule in BottomNav. */}
+      <div className="group-has-[[data-shell=product-page]]/shell:hidden">
+        <BottomNav signedIn={Boolean(account)} />
+      </div>
     </div>
   )
 }

@@ -20,7 +20,7 @@ export type ProductPageProps = ComponentProps<"div"> &
     koi?: boolean
     pageSize?: number
     media?: MediaItem[]
-    onBuy?: (product: SimpleProduct) => void
+    onBuy?: (product: SimpleProduct, quantity: number) => void
     backHref?: string
     description?: string
     attributes?: { label: string; value: string }[]

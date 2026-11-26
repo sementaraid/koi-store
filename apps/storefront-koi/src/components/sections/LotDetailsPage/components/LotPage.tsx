@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react"
 import { cn } from "cn"
-import { Clock, ExternalLink, Gavel, RefreshCw, WifiOff } from "lucide-react"
+import { Clock, ExternalLink, Gavel, RefreshCw, TriangleAlert, WifiOff } from "lucide-react"
 import { Alert, Button, RenderIf } from "@koi/ui"
 import {
   Sheet,
@@ -40,13 +40,13 @@ import { WonLotPanel } from "@/components/sections/LotDetailsPage/components/Won
 import type { LotPageProps } from "@/types/lot"
 import type { AuctionProduct } from "@/types/product"
 import { toAuctionProduct } from "@/lib/adapters/lot"
-import { bidStanding, standingForLot, type BidStanding } from "@/lib/helpers/bid-status"
+import { bidStanding, outbidNotice, standingForLot, type BidStanding } from "@/lib/helpers/bid-status"
 import type { OwnBid } from "@/lib/helpers/bid-history"
 import { formatPrice } from "@/lib/helpers/format-price"
 import { isLiveStreamUrl } from "@/lib/helpers/live-stream-url"
 import { formatEndTime, formatLotCountdown, formatLotNumber, lotPriceLine, lotStatusChip, type Chip } from "@/lib/helpers/lot-card"
 import { sessionCrumb } from "@/lib/helpers/session-range"
-import { joinGuestCopy } from "@/lib/helpers/join-auction"
+import { joinGuestCopy, JOIN_FEE_NOTE } from "@/lib/helpers/join-auction"
 import { lotBarAction } from "@/lib/helpers/lot-action"
 import { lotRules } from "@/lib/helpers/lot-rules"
 import { bidAmountOptions, minimumNextBid } from "@/lib/helpers/place-bid"
@@ -99,7 +99,7 @@ function PriceFact({
       </dt>
       <dd
         className={cn(
-          "text-base font-semibold tabular-nums",
+          "text-[15px] font-semibold tabular-nums",
           tone === "panel" ? "text-price-panel-foreground" : "text-foreground"
         )}
       >
@@ -386,18 +386,23 @@ export function LotPage({
           03); the spacer keeps the fixed bar from covering the page top. */}
       <div data-shell="lot-header" className="h-14 lg:hidden">
         <div className="fixed inset-x-0 top-0 z-50 border-b border-divider bg-card">
-          <div className={cn(CONTAINER, "flex h-14 items-center gap-1")}>
+          <div className={cn(CONTAINER, "flex h-14 items-center gap-1 px-1 sm:px-1")}>
             <BackButton
               href={backHref}
               label="Kembali ke Lelang"
-              className="[&_svg:not([class*='size-'])]:size-5"
+              className="ms-0 size-11 rounded-full! [&_svg:not([class*='size-'])]:size-5"
             />
             <span className="min-w-0 flex-1 truncate text-[15px] leading-6 font-semibold">
               {lotLabel}
             </span>
             {/* Board 03: share sits in the phone's header, not below the
                 gallery. No heart (D-066). */}
-            <ShareButton title={title} url={lotHref(lot.id)} iconOnly className="shrink-0" />
+            <ShareButton
+              title={title}
+              url={lotHref(lot.id)}
+              iconOnly
+              className="shrink-0 [&>button]:size-11 [&>button]:rounded-full [&_svg]:size-5"
+            />
           </div>
         </div>
       </div>
@@ -418,10 +423,11 @@ export function LotPage({
             stacked sections. Board 10 on desktop: gallery and tabs left, the
             sticky bid column right. The phone rows come after the column in
             the DOM only when `lg` hides it, so both orders fit one markup. */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:gap-x-12 lg:gap-y-6">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:gap-x-10 lg:gap-y-6">
           <div className="flex min-w-0 flex-col gap-6 lg:contents">
             <MediaStage
               bleed="phone"
+              hideTabs
               items={media}
               title={title}
               className="lg:col-span-7 lg:col-start-1 lg:row-start-1"
@@ -481,7 +487,7 @@ export function LotPage({
             </Tabs>
           </div>
 
-          <aside className="flex flex-col gap-4 lg:col-span-5 lg:col-start-8 lg:row-span-3">
+          <aside className="flex flex-col gap-4 lg:col-span-5 lg:col-start-8 lg:row-span-3 lg:max-w-[460px] lg:justify-self-end">
             {/* US-098 AC3: the identity and bid panel stick while the page
                 scrolls. The aside is stretched to the gallery/tabs/feed rows,
                 so the sticky group has the whole row to travel in; `self-start`
@@ -511,14 +517,16 @@ export function LotPage({
                   <div className="flex flex-col gap-4 lg:rounded-card lg:border lg:border-card-edge lg:bg-card lg:p-5 lg:shadow-card">
                     <RenderIf when={extension}>
                       {(notice) => (
-                        <Alert
-                          tone="neutral"
-                          role="status"
-                          icon={<RefreshCw aria-hidden />}
-                          title={notice.title}
-                        >
-                          {notice.text}
-                        </Alert>
+                        <div className="hidden lg:block">
+                          <Alert
+                            tone="neutral"
+                            role="status"
+                            icon={<RefreshCw aria-hidden />}
+                            title={notice.title}
+                          >
+                            {notice.text}
+                          </Alert>
+                        </div>
                       )}
                     </RenderIf>
 
@@ -544,6 +552,27 @@ export function LotPage({
                               Coba lagi
                             </Button>
                           </div>
+                        </Alert>
+                      )}
+                    </RenderIf>
+
+                    {/* Board 02 / 09: an outbid viewer reads the result above
+                        the price, not under the controls. */}
+                    <RenderIf
+                      when={
+                        !closed && standing === "outbid"
+                          ? outbidNotice(nextMinimum, currency)
+                          : null
+                      }
+                    >
+                      {(notice) => (
+                        <Alert
+                          tone="signal"
+                          role="status"
+                          icon={<TriangleAlert aria-hidden />}
+                          title={notice.title}
+                        >
+                          {notice.text}
                         </Alert>
                       )}
                     </RenderIf>
@@ -585,7 +614,7 @@ export function LotPage({
 
                     <section
                       data-slot="price-panel"
-                      className="flex flex-col gap-4 rounded-dialog bg-price-panel p-4 text-price-panel-foreground"
+                      className="flex flex-col gap-4 rounded-dialog bg-price-panel p-4 text-price-panel-foreground lg:gap-2"
                     >
                       <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
                         <div className="flex min-w-0 flex-col">
@@ -643,6 +672,20 @@ export function LotPage({
                         )}
                       </RenderIf>
 
+                      {/* Board 02: on a phone the extension explains itself on
+                          one line inside the dark panel, not as a second alert
+                          block above it. */}
+                      <RenderIf when={extension}>
+                        {(notice) => (
+                          <p className="flex items-start gap-2 text-sm leading-[18px] text-price-panel-foreground/80 lg:hidden">
+                            <RefreshCw aria-hidden className="mt-0.5 size-4 shrink-0" />
+                            <span>
+                              {notice.title} {notice.text}
+                            </span>
+                          </p>
+                        )}
+                      </RenderIf>
+
                       {/* US-100 AC3: say when the price was last read, and that
                           the poll will bring it back by itself. */}
                       <RenderIf when={disconnected}>
@@ -672,19 +715,6 @@ export function LotPage({
                           tone="panel"
                         />
                       </dl>
-
-                      <RenderIf when={closed ? null : nextMinimum}>
-                        {(amount) => (
-                          <div className="flex items-baseline justify-between gap-3 border-t border-price-panel-foreground/15 pt-3 text-sm">
-                            <span className="text-price-panel-foreground/80">
-                              Bid berikutnya minimal
-                            </span>
-                            <span className="font-semibold tabular-nums">
-                              {formatPrice(amount, currency)}
-                            </span>
-                          </div>
-                        )}
-                      </RenderIf>
                     </section>
 
                     <dl className="hidden grid-cols-2 gap-2 lg:grid">
@@ -741,6 +771,8 @@ export function LotPage({
                           openAmount={bidOpenAmount}
                           balance={join?.balance ?? null}
                           disconnected={disconnected}
+                          thumb={media.find((item) => item.kind === "image")?.src}
+                          extendMinutes={auction.extendWindowMinutes ?? 0}
                           onAcceptedChange={setAcceptedAmount}
                         />
                       ) : (
@@ -766,7 +798,7 @@ export function LotPage({
             <RenderIf when={!cancelled}>
               {() => (
                 <div className="hidden lg:block">
-                  <LotRules rules={rules} />
+                  <LotRules rules={rules} heading={false} />
                 </div>
               )}
             </RenderIf>
@@ -853,15 +885,13 @@ export function LotPage({
                 nor the marker, and the lot-page rule leaves no extra space. */}
             <span data-shell="lot-bar" hidden />
             <LotPriceBar
-              label={priceLabel}
-              amount={line.amount}
               currency={currency}
-              remaining={remaining}
               stale={disconnected}
               action={barAction}
               signInHref={join ? signInHref(join.returnPath) : ROUTES.login}
               signUpHref={join ? signUpHref(join.returnPath) : ROUTES.signup}
               guestCopy={join ? joinGuestCopy(join.fee) : undefined}
+              joinNote={join ? JOIN_FEE_NOTE : undefined}
               onAction={onBarAction}
               bidOptions={barOptions}
               bidAmount={barBidAmount}

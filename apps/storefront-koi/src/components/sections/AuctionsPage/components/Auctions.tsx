@@ -2,7 +2,6 @@ import type { ReactNode } from "react"
 import { CalendarClock, Gavel, TriangleAlert } from "lucide-react"
 
 import { Button } from "@koi/ui"
-import { Eyebrow } from "@/components/atoms/Eyebrow/Eyebrow"
 import { FeedGrid } from "@/components/atoms/FeedGrid/FeedGrid"
 import { Link } from "@/components/atoms/Link/Link"
 import { EmptyFeed } from "@/components/cells/EmptyFeed/EmptyFeed"
@@ -106,7 +105,7 @@ function Body({
             Lihat semua
           </Link>
         </div>
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-6 sm:grid-cols-2">
           {upcoming.slice(0, 2).map((a) => (
             <UpcomingAuctionCard key={a.auctionId} auction={a} href={lotHref(a.firstLotId)} />
           ))}
@@ -157,7 +156,7 @@ function Body({
 
   if (tab === "upcoming") {
     return (
-      <FeedGrid cols={3}>
+      <FeedGrid cols={3} className="gap-6">
         {upcoming.map((a) => (
           <UpcomingAuctionCard key={a.auctionId} auction={a} href={lotHref(a.firstLotId)} />
         ))}
@@ -168,11 +167,18 @@ function Body({
   return (
     <div className="flex flex-col gap-8">
       {groupLots(tab, lots).map((group) => (
-        <section key={group.key} aria-labelledby={`grup-${group.key}`} className="flex flex-col gap-4">
-          <h2 id={`grup-${group.key}`} className="text-lg font-semibold">
-            {group.title}
-          </h2>
-          <FeedGrid cols={3}>
+        <section
+          key={group.key}
+          aria-labelledby={group.title ? `grup-${group.key}` : undefined}
+          aria-label={group.title ? undefined : "Lot"}
+          className="flex flex-col gap-4"
+        >
+          {group.title ? (
+            <h2 id={`grup-${group.key}`} className="text-lg font-semibold">
+              {group.title}
+            </h2>
+          ) : null}
+          <FeedGrid cols={3} className="gap-6">
             {group.items.map((lot) => (
               <AuctionProductCard
                 key={lot.id}
@@ -207,38 +213,19 @@ export function AuctionsLayout({
 }) {
   return (
     <div data-slot="auctions">
-      <section data-slot="auctions-hero" className="border-b border-divider bg-surface">
-        <div className={`${CONTAINER} flex flex-col gap-4 py-8 max-sm:gap-3 max-sm:py-5 lg:py-10`}>
-          <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 max-sm:flex-col max-sm:items-stretch">
-            <div className="flex flex-col gap-2 max-sm:gap-1.5">
-              <Eyebrow>
-                <Gavel aria-hidden className="size-3.5" />
-                Katalog Lelang
-              </Eyebrow>
-              <h1 className="font-heading text-3xl font-extrabold max-sm:text-2xl lg:text-4xl">
-                Lelang
-              </h1>
-              <p className="max-w-xl text-sm leading-relaxed text-muted-foreground max-sm:text-[13px]">
-                Lot yang sedang dibuka, akan datang, dan sudah selesai.
-              </p>
-            </div>
-
-            {/* Tabs sit on the title row on desktop and stack under the band
-                copy on a phone (US-097 AC12). */}
-            <div className="flex flex-wrap items-center gap-3 max-sm:flex-col max-sm:items-stretch">
-              <Button
-                variant="outline"
-                size="md"
-                render={<Link href={auctionsTabHref("live")} />}
-                nativeButton={false}
-                className="gap-2 rounded-full border-signal bg-signal px-4 text-signal-foreground shadow-none hover:bg-signal/90 max-sm:self-start"
-              >
-                <span aria-hidden className="size-2 rounded-full bg-signal-foreground" />
-                Lelang live
-              </Button>
-              <AuctionTabs active={tab} counts={counts} />
-            </div>
+      {/* Plain white hero, as on boards 01 and 08: the title and lede on the
+          left, the tabs on the title row at the end (US-097 AC12). */}
+      <section data-slot="auctions-hero" className={CONTAINER}>
+        <div className="flex flex-col gap-3 pt-5 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-6 sm:pt-8 lg:pt-10">
+          <div className="flex flex-col gap-1">
+            <h1 className="font-heading text-xl leading-7 font-bold tracking-[-0.01em] lg:text-2xl lg:leading-[48px]">
+              Lelang
+            </h1>
+            <p className="max-w-xl text-[15px] leading-[22px] text-muted-foreground sm:text-sm sm:leading-5">
+              Semua koi dari farm terverifikasi dan lolos karantina BBKP sebelum dikirim.
+            </p>
           </div>
+          <AuctionTabs active={tab} counts={counts} />
         </div>
       </section>
       {children}
@@ -263,11 +250,11 @@ export function Auctions({
   | "signedIn"
 >) {
   return (
-    <div className={`${CONTAINER} flex flex-col gap-8 py-8 max-sm:gap-6 max-sm:py-5 lg:py-10`}>
+    <div className={`${CONTAINER} flex flex-col gap-8 pt-3 pb-8 sm:gap-8 sm:pt-6 sm:pb-10`}>
       {/* Sidebar from 1024 px, the board's filter column; the phone gets the
           chip row and bottom sheet instead (US-097 AC13, AC16). The 3-column
           grid needs the 240 px column taken out of the 1216 px content. */}
-      <div className="grid gap-8 max-sm:gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
+      <div className="grid gap-4 sm:gap-8 lg:grid-cols-[240px_minmax(0,1fr)]">
         <AuctionFilters tab={tab} counts={varietyCount} signedIn={state.signedIn} />
         <div className="min-w-0">
           <Body tab={tab} {...state} />

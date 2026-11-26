@@ -7,7 +7,7 @@ import { AuctionFilters } from "./AuctionFilters"
 
 export function AuctionsSkeleton({ tab }: { tab: AuctionTab }) {
   return (
-    <div role="status" aria-busy="true" className={`${CONTAINER} py-8 lg:py-10`}>
+    <div role="status" aria-busy="true" className={`${CONTAINER} pt-3 pb-8 sm:pt-6 sm:pb-10`}>
       <span className="sr-only">Memuat lot</span>
       {/* Same two-column frame as the loaded page, so the sidebar and grid do
           not jump when the list arrives (US-097 AC13). */}

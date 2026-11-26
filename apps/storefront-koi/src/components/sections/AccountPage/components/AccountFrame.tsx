@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
+import { ChevronLeft } from 'lucide-react';
 import { cn } from 'cn';
 
+import { Link } from '@/components/atoms';
 import { AccountNav, type AccountNavItem } from '@/components/cells/AccountNav/AccountNav';
 import { CONTAINER } from '@/const/layout';
 import { ROUTES } from '@/const/routes';
@@ -13,9 +15,15 @@ export type { AccountIdentity };
 export type AccountFrameProps = {
   openOrders?: number;
   title: string;
+  /** A compact title for phones, when the frame opens a focused sub-page. */
+  mobileTitle?: string;
+  /** Adds the phone-only back control before the title. */
+  backHref?: string;
   identity?: AccountIdentity;
   /** Sits on the title line, e.g. the page's tabs or a page-level button. */
   action?: ReactNode;
+  /** Extra classes for the action wrapper, e.g. a full-width mobile tab row. */
+  actionClassName?: string;
   children: ReactNode;
   className?: string;
   /** Extra classes for the content column, e.g. a route's stable min-height. */
@@ -42,8 +50,11 @@ const NAV_ITEMS: Omit<AccountNavItem, 'count'>[] = [
 export function AccountFrame({
   openOrders,
   title,
+  mobileTitle,
+  backHref,
   identity,
   action,
+  actionClassName,
   children,
   className,
   contentClassName,
@@ -105,12 +116,39 @@ export function AccountFrame({
       </aside>
 
       <div className={cn('flex min-w-0 flex-col gap-6', contentClassName)}>
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <h1 className="font-heading text-xl leading-8 font-bold text-balance text-foreground sm:text-2xl">
-            {title}
-          </h1>
+        <div className="flex flex-wrap items-end justify-between gap-4 max-sm:flex-col max-sm:items-stretch">
+          <div className="flex min-w-0 items-center gap-1">
+            {backHref ? (
+              <Link
+                href={backHref}
+                aria-label="Kembali"
+                className="-ml-2 inline-flex size-10 shrink-0 items-center justify-center rounded-full text-foreground hover:bg-muted lg:hidden"
+              >
+                <ChevronLeft aria-hidden className="size-5" />
+              </Link>
+            ) : null}
+            <h1
+              className={cn(
+                'font-heading leading-8 font-bold text-balance text-foreground',
+                mobileTitle
+                  ? 'text-base font-semibold lg:text-2xl lg:font-bold'
+                  : 'text-xl sm:text-2xl'
+              )}
+            >
+              {mobileTitle ? (
+                <>
+                  <span className="lg:hidden">{mobileTitle}</span>
+                  <span className="hidden lg:inline">{title}</span>
+                </>
+              ) : (
+                title
+              )}
+            </h1>
+          </div>
           <RenderIf when={action}>
-            {(node) => <div className="flex flex-wrap items-center gap-3">{node}</div>}
+            {(node) => (
+              <div className={cn('flex flex-wrap items-center gap-3', actionClassName)}>{node}</div>
+            )}
           </RenderIf>
         </div>
 

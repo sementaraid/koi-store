@@ -57,7 +57,7 @@ export function ProductDetail({
   const picked = picks?.find((variant) => variant.id === variantId) ?? picks?.[0];
   const onOffer = picked?.offerId ?? offerId;
 
-  const onBuy = () => {
+  const onBuy = (_product: SimpleProduct, quantity: number) => {
     if (pending) return;
 
     if (!onOffer) {
@@ -67,7 +67,7 @@ export function ProductDetail({
 
     start(async () => {
       try {
-        await addToCart({ offerId: onOffer, quantity: 1, countryCode: COUNTRY_CODE });
+        await addToCart({ offerId: onOffer, quantity, countryCode: COUNTRY_CODE });
         router.push(ROUTES.cart);
       } catch {
         toast.error('Gagal menambahkan ke keranjang. Coba lagi.');

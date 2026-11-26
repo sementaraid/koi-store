@@ -1,4 +1,4 @@
-import { Ban, Gavel, Timer, Truck, Wallet, type LucideIcon } from "lucide-react"
+import { Ban, CircleCheck, Gavel, Timer, Truck, Wallet, type LucideIcon } from "lucide-react"
 import { Link } from "@/components/atoms/Link/Link"
 import { SECTION_LABEL } from "@/const/layout"
 import { ROUTES } from "@/const/routes"
@@ -14,17 +14,32 @@ const RULE_ICONS: Record<LotRuleKind, LucideIcon> = {
 
 // US-098 AC6: the current rules only, built from this auction's live values.
 // Board 03/10 puts them on the page surface, not in a bordered card.
-export function LotRules({ rules }: { rules: LotRule[] }) {
+export function LotRules({
+  rules,
+  heading = true,
+  checks = false,
+}: {
+  rules: LotRule[]
+  /* Board 10 runs the rules straight on from the bid card with no heading;
+     board 02 and the dialogs keep it. */
+  heading?: boolean
+  /* The join dialog reads as a consent list: one green check per rule. */
+  checks?: boolean
+}) {
   return (
     <div className="flex flex-col gap-3 lg:gap-2">
-      <h2 className={SECTION_LABEL}>Aturan lot ini</h2>
+      {heading ? <h2 className={SECTION_LABEL}>Aturan &amp; biaya lot ini</h2> : null}
 
       <ul className="flex flex-col gap-3 text-sm leading-5 lg:gap-2">
         {rules.map((rule) => {
           const Icon = RULE_ICONS[rule.kind]
           return (
             <li key={rule.kind} className="flex gap-3">
-              <Icon aria-hidden className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
+              {checks ? (
+                <CircleCheck aria-hidden className="mt-0.5 size-5 shrink-0 text-success" />
+              ) : (
+                <Icon aria-hidden className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
+              )}
               <span>
                 <span className="font-semibold text-foreground">{rule.title}</span>
                 {rule.detail ? (

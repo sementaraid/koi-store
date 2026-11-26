@@ -1,6 +1,6 @@
 'use client';
 
-import { CircleCheck, LoaderCircle, TriangleAlert } from 'lucide-react';
+import { CircleCheck, Gavel, LoaderCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useRef, useState, type FocusEvent } from 'react';
 
@@ -25,12 +25,7 @@ import {
 import { useIsMobile } from '@/hooks/use-mobile';
 import { placeBid } from '@/lib/data/lots';
 import { formatPrice } from '@/lib/helpers/format-price';
-import {
-  acceptedNotice,
-  bidStanding,
-  outbidNotice,
-  type BidStanding
-} from '@/lib/helpers/bid-status';
+import { acceptedNotice, bidStanding, type BidStanding } from '@/lib/helpers/bid-status';
 import {
   bidActionLabel,
   bidAmountOptions,
@@ -46,8 +41,14 @@ import {
   type BidFailure
 } from '@/lib/helpers/place-bid';
 
-type PlaceBidProps = {
-  lotId: string;
+/* Board 09 / 12: the quick amount is a 44 px box; the chosen one is the accent
+   tint with an indigo edge and indigo text, not a filled primary button. */
+const CHIP =
+  'h-11 min-w-0 rounded-xl border border-outline-edge bg-background px-1 text-sm font-semibold tabular-nums shadow-none';
+const CHIP_ON =
+  'h-11 min-w-0 rounded-xl border-2 border-primary bg-accent px-1 text-sm font-semibold text-accent-ink tabular-nums shadow-none hover:bg-accent';
+
+type PlaceBidProps = {  lotId: string;
   mode: BidControlState;
   minimum: number;
   step: number;
@@ -69,6 +70,10 @@ type PlaceBidProps = {
   // "Saldo tersedia" under the highest chip (AC15). Balance pays platform fees
   // only, so a bid never changes it (D-058, D-068).
   balance?: number | null;
+  /* Board 09: the bid card names the koi with its photo in the confirmation. */
+  thumb?: string;
+  /* The auction's extension window, for the helper line under the bid button. */
+  extendMinutes?: number;
   // The amount the server accepted (null when cleared), so the page derives
   // the same standing for the mobile bar from the same poll.
   onAcceptedChange?: (amount: number | null) => void;
@@ -97,6 +102,8 @@ export function PlaceBid({
   onSheetOpenChange,
   openAmount,
   balance,
+  thumb,
+  extendMinutes = 0,
   disconnected = false,
   onAcceptedChange
 }: PlaceBidProps) {
@@ -232,45 +239,61 @@ export function PlaceBid({
   function renderConfirm(mobile: boolean, shownAmount: number) {
     return (
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1 pe-8">
-          {mobile ? (
-            <SheetTitle>Konfirmasi bid</SheetTitle>
-          ) : (
-            <DialogTitle>Konfirmasi bid</DialogTitle>
-          )}
-          {mobile ? (
-            <SheetDescription>Periksa nominal sebelum bid dipasang.</SheetDescription>
-          ) : (
-            <DialogDescription>Periksa nominal sebelum bid dipasang.</DialogDescription>
-          )}
+        <div className="flex items-start gap-4 pe-8">
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-accent text-accent-ink">
+            <Gavel aria-hidden className="size-5" />
+          </span>
+          <div className="flex min-w-0 flex-col gap-1">
+            {mobile ? (
+              <SheetTitle className="text-lg font-bold">Konfirmasi bid</SheetTitle>
+            ) : (
+              <DialogTitle className="font-bold">Konfirmasi bid</DialogTitle>
+            )}
+            {mobile ? (
+              <SheetDescription>Periksa nominal sebelum bid dipasang.</SheetDescription>
+            ) : (
+              <DialogDescription>Periksa nominal sebelum bid dipasang.</DialogDescription>
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-col gap-0.5 rounded-control border border-border bg-surface p-3">
-          <p className="font-semibold">{title}</p>
-          <p className="text-sm text-muted-foreground">
-            {lotLabel}
-            {farm ? ` · ${farm}` : ''}
-          </p>
+        <div className="flex items-center gap-3 rounded-xl border border-card-edge bg-surface p-3">
+          {thumb ? (
+            <img
+              src={thumb}
+              alt=""
+              className="h-12 w-16 shrink-0 rounded-xl object-cover"
+            />
+          ) : null}
+          <div className="min-w-0">
+            <p className="truncate text-sm font-bold">{title}</p>
+            <p className="truncate text-sm text-muted-foreground">
+              {lotLabel}
+              {farm ? ` · ${farm}` : ''}
+            </p>
+          </div>
         </div>
 
-        <dl className="flex items-baseline justify-between gap-4 text-sm">
-          <dt className="text-muted-foreground">Nominal bid</dt>
-          <dd className="text-base font-semibold tabular-nums">
-            {formatPrice(shownAmount, currency)}
-          </dd>
-        </dl>
+        <div className="rounded-xl border border-primary/15 bg-accent px-4 py-1">
+          <dl className="flex items-baseline justify-between gap-4 border-b border-primary/15 py-3 text-sm">
+            <dt className="text-muted-foreground">Nominal bid</dt>
+            <dd className="text-base font-bold tabular-nums">
+              {formatPrice(shownAmount, currency)}
+            </dd>
+          </dl>
 
-        {/* AC15 / D-068: what the winner pays is a labelled row, not a
-            sentence, and it names the company account. */}
-        <dl className="flex items-baseline justify-between gap-4 text-sm">
-          <dt className="text-muted-foreground">Jika menang, Anda transfer</dt>
-          <dd className="text-right font-semibold tabular-nums">
-            {formatPrice(shownAmount, currency)}{" "}
-            <span className="block text-xs font-normal text-muted-foreground">
-              ke rekening Koi Auction House dalam 1×24 jam.
-            </span>
-          </dd>
-        </dl>
+          {/* AC15 / D-068: what the winner pays is a labelled row, not a
+              sentence, and it names the company account. */}
+          <dl className="flex items-baseline justify-between gap-4 py-3 text-sm">
+            <dt className="text-muted-foreground">Jika menang, Anda transfer</dt>
+            <dd className="text-right font-semibold tabular-nums">
+              {formatPrice(shownAmount, currency)}{' '}
+              <span className="block text-xs font-normal text-muted-foreground">
+                ke rekening Koi Auction House dalam 1×24 jam.
+              </span>
+            </dd>
+          </dl>
+        </div>
 
         <p className="text-sm text-muted-foreground">
           Bid tidak bisa dibatalkan setelah dipasang.
@@ -280,7 +303,7 @@ export function PlaceBid({
             no panel behind it, so it shows its own. */}
         {mobile ? pendingLine : null}
 
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <div className="flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:justify-end">
           {mobile ? (
             <Button
               variant="outline"
@@ -349,8 +372,8 @@ export function PlaceBid({
         <Button
           key={option}
           type="button"
-          variant={chipActive(option) ? 'solid' : 'outline'}
-          className="h-11 min-w-0 px-1 tabular-nums"
+          variant="outline"
+          className={chipActive(option) ? CHIP_ON : CHIP}
           disabled={pending || disconnected}
           aria-pressed={chipActive(option)}
           aria-label={`Bid ${formatPrice(option, currency)}`}
@@ -389,6 +412,17 @@ export function PlaceBid({
 
   const bidFields = (id: string) => (
     <>
+      <div className="flex items-baseline justify-between gap-2 text-sm">
+        <span className="font-semibold">Pilih nominal bid</span>
+        {balance !== null && balance !== undefined ? (
+          <span className="text-muted-foreground">
+            Saldo tersedia{' '}
+            <span className="font-semibold text-foreground tabular-nums">
+              {formatPrice(balance, currency)}
+            </span>
+          </span>
+        ) : null}
+      </div>
       {chipsField}
       {typedField(id)}
       {failureLine}
@@ -396,7 +430,6 @@ export function PlaceBid({
   )
 
   const acceptedView = accepted ? acceptedNotice(accepted.amount, currency) : null;
-  const outbidView = outbidNotice(baseMinimum, currency);
 
   return (
     <div className="grid gap-3" data-slot="place-bid">
@@ -433,16 +466,6 @@ export function PlaceBid({
         </div>
       ) : (
         <>
-          {standing === 'outbid' ? (
-            <Alert
-              tone="signal"
-              icon={<TriangleAlert aria-hidden />}
-              title={outbidView.title}
-            >
-              {outbidView.text}
-            </Alert>
-          ) : null}
-
           {/* The desktop controls are hidden below `lg` from the first paint,
               so a phone never sees them flash before `isMobile` settles. */}
           <div className="hidden gap-3 lg:grid">
@@ -464,16 +487,26 @@ export function PlaceBid({
                 >
                   {submitLabel}
                 </DialogTrigger>
-                <DialogContent id="lot-bid-popup">
+                <DialogContent
+                  id="lot-bid-popup"
+                  className="gap-5 rounded-[20px]! p-7 sm:max-w-[480px]"
+                >
                   {confirmAmount !== null ? renderConfirm(false, confirmAmount) : null}
                 </DialogContent>
               </Dialog>
             ) : null}
+            <p className="text-sm leading-[18px] text-muted-foreground">
+              Ada konfirmasi sebelum bid dikirim.
+              {extendMinutes > 0
+                ? ` Bid di 2 menit terakhir memperpanjang lelang ${extendMinutes} menit.`
+                : ''}
+            </p>
           </div>
 
           {isMobile ? (
             <Sheet open={open} onOpenChange={onSheetChange}>
-              <SheetContent id="lot-bid-sheet" side="bottom" className="gap-0">
+              <SheetContent id="lot-bid-sheet" side="bottom" className="gap-0 rounded-t-[20px]!">
+              <span aria-hidden className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-border" />
                 {mobileConfirmAmount !== null ? (
                   <div className="p-4">{renderConfirm(true, mobileConfirmAmount)}</div>
                 ) : (
@@ -481,7 +514,7 @@ export function PlaceBid({
                      confirmation; the pencil opens this typed input. */
                   <div className="flex flex-col gap-4 p-4">
                     <div className="flex flex-col gap-1 pe-8">
-                      <SheetTitle>Ketik nominal bid</SheetTitle>
+                      <SheetTitle className="text-lg font-bold">Ketik nominal bid</SheetTitle>
                       <SheetDescription>
                         {lotLabel}
                         {farm ? ` · ${farm}` : ''}

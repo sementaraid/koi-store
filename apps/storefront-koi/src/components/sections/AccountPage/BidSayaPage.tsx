@@ -75,13 +75,14 @@ export async function BidSayaPage({ tab: raw }: BidSayaPageProps) {
       title="Bid Saya"
       identity={identity}
       contentClassName={BID_SAYA_CONTENT}
+      actionClassName="max-sm:w-full"
       action={
         <Suspense fallback={<BidTabs active={tab} />}>
           <BidTabsHeader tab={tab} />
         </Suspense>
       }
     >
-      <Suspense key={tab} fallback={<BidSayaSkeleton />}>
+      <Suspense key={tab} fallback={<BidSayaSkeleton shape={tab === 'menang' ? 'won' : 'active'} />}>
         <BidSayaContent tab={tab} />
       </Suspense>
     </AccountFrame>
@@ -170,7 +171,7 @@ function BidTabs({
   return (
     <nav
       aria-label="Bid saya"
-      className="flex w-full gap-1 overflow-x-auto rounded-control bg-muted p-1 sm:w-fit"
+      className="flex w-full gap-1 overflow-x-auto rounded-xl bg-muted p-1 sm:w-fit"
     >
       {BID_TABS.map((tab) => (
         <Link
@@ -178,9 +179,9 @@ function BidTabs({
           href={myBidsTabHref(tab)}
           aria-current={tab === active ? 'page' : undefined}
           className={cn(
-            'inline-flex h-11 flex-1 items-center justify-center rounded-control px-3 text-sm font-medium whitespace-nowrap focus-visible:ring-2 focus-visible:ring-ring sm:flex-none',
+            'inline-flex h-10 flex-1 items-center justify-center rounded-lg px-3 text-sm font-medium whitespace-nowrap focus-visible:ring-2 focus-visible:ring-ring sm:h-9 sm:flex-none',
             tab === active
-              ? 'bg-background font-semibold text-accent-ink shadow-xs'
+              ? 'bg-background font-semibold text-accent-ink shadow-xs ring-1 ring-accent-ink/15'
               : 'text-muted-foreground hover:text-foreground'
           )}
         >
@@ -196,6 +197,8 @@ function ActiveList({ bids, liveCount }: { bids: StoreMyBid[]; liveCount: number
     return (
       <EmptyFeed
         icon={<Gavel aria-hidden className="size-8" />}
+        iconClassName="size-16 rounded-full border border-border bg-muted"
+        titleClassName="font-heading text-lg font-bold sm:text-xl"
         narrowing={false}
         noMatchTitle="Belum ada bid aktif"
         noMatchBody="Lot yang Anda ikuti muncul di sini, lengkap dengan posisi bid dan sisa waktunya."
@@ -240,6 +243,8 @@ function WonList({
     return (
       <EmptyFeed
         icon={<Trophy aria-hidden className="size-8" />}
+        iconClassName="size-16 rounded-full border border-border bg-muted"
+        titleClassName="font-heading text-lg font-bold sm:text-xl"
         narrowing={false}
         noMatchTitle="Belum ada lot yang dimenangkan"
         noMatchBody="Lot yang Anda menangkan di lelang muncul di sini, lengkap dengan status dan nama peternaknya."
@@ -314,26 +319,52 @@ function WonCard({
   const rateable = extra ? canRateLot({ status, rating }).show : false;
 
   return (
-    <Card className="gap-4 p-4">
-      <div className="flex min-w-0 gap-3">
+    <Card className="gap-4 p-4 lg:gap-5 lg:p-5">
+      <div className="flex min-w-0 gap-3 lg:gap-5">
         {lot.photos[0] ? (
           <img
             src={lot.photos[0]}
             alt={title}
             loading="lazy"
-            className="h-16 w-20 shrink-0 rounded-xl object-cover"
+            className="h-[66px] w-[88px] shrink-0 rounded-xl object-cover lg:h-[120px] lg:w-40"
           />
         ) : (
-          <div aria-hidden className="h-16 w-20 shrink-0 rounded-xl bg-muted" />
+          <div
+            aria-hidden
+            className="h-[66px] w-[88px] shrink-0 rounded-xl bg-muted lg:h-[120px] lg:w-40"
+          />
         )}
 
-        <div className="flex min-w-0 flex-col gap-1">
-          {nextAction ? (
-            <Badge variant="warning" icon={<AlertTriangle />} className="mb-0.5">
-              Perlu tindakan
-            </Badge>
-          ) : null}
-          <h3 className="text-base font-semibold">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            {nextAction ? (
+              <Badge variant="warning" icon={<AlertTriangle />}>
+                Perlu tindakan
+              </Badge>
+            ) : null}
+            <p className="flex min-w-0 flex-wrap items-center gap-x-1.5 text-sm text-muted-foreground">
+              <span className="whitespace-nowrap tabular-nums">
+                {formatLotNumber(lot.lot_number)}
+              </span>
+              {lot.auction.seller || closedAt ? <span aria-hidden>·</span> : null}
+              {/* The mobile frame puts the farm on this line and the win date in
+                  the timeline; the desktop frame does the reverse. */}
+              {lot.auction.seller ? (
+                <span className="min-w-0 truncate lg:hidden">{lot.auction.seller.name}</span>
+              ) : null}
+              {closedAt ? (
+                <span
+                  className={cn(
+                    'whitespace-nowrap',
+                    lot.auction.seller && 'hidden lg:inline'
+                  )}
+                >
+                  menang {formatDeadline(closedAt)} WIB
+                </span>
+              ) : null}
+            </p>
+          </div>
+          <h3 className="text-base font-semibold lg:text-xl">
             <Link
               href={lotHref(lot.id)}
               className="rounded-control underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring"
@@ -341,34 +372,24 @@ function WonCard({
               {title}
             </Link>
           </h3>
-          <p className="flex flex-wrap items-center gap-x-1.5 text-sm text-muted-foreground">
-            <span className="whitespace-nowrap tabular-nums">
-              {formatLotNumber(lot.lot_number)}
-            </span>
-            {closedAt ? (
-              <>
-                <span aria-hidden>·</span>
-                <span className="whitespace-nowrap">
-                  menang {formatDeadline(closedAt)} WIB
-                </span>
-              </>
-            ) : null}
-          </p>
           {lot.auction.seller ? (
-            <p className="min-w-0 truncate text-sm text-muted-foreground">
+            <p className="hidden min-w-0 truncate text-sm text-muted-foreground lg:block">
               {lot.auction.seller.name}
             </p>
           ) : null}
           {price !== null ? (
-            <p className="font-semibold tabular-nums">{formatPrice(price)}</p>
+            <p className="mt-0.5 text-base font-semibold tabular-nums lg:text-xl">
+              {formatPrice(price)}
+            </p>
           ) : null}
         </div>
       </div>
 
       {nextAction ? (
-        <p className="rounded-md border border-warning/40 bg-warning/8 px-3 py-2 text-sm font-medium text-foreground">
-          {nextAction}
-        </p>
+        <div className="flex gap-3 rounded-control border border-warning/30 bg-warning/8 px-4 py-3 text-sm text-foreground">
+          <AlertTriangle aria-hidden className="mt-0.5 size-5 shrink-0 text-warning" />
+          <p>{nextAction}</p>
+        </div>
       ) : null}
 
       <WonTimeline steps={steps} />
@@ -403,37 +424,55 @@ function WonCard({
 
 function WonTimeline({ steps }: { steps: WonStep[] }) {
   return (
-    <ol aria-label="Riwayat lot" className="grid">
+    <ol
+      aria-label="Riwayat lot"
+      className="grid lg:grid-cols-4 lg:gap-3"
+    >
       {steps.map((step, index) => {
         const last = index === steps.length - 1;
         const reached = step.state !== 'todo';
         return (
-          <li key={step.key} className="relative flex gap-3 pb-4 last:pb-0">
+          <li
+            key={step.key}
+            aria-current={step.state === 'current' ? 'step' : undefined}
+            className="relative flex gap-3 pb-4 last:pb-0 lg:flex-col lg:gap-2 lg:pb-0"
+          >
             {last ? null : (
               <span
                 aria-hidden
-                className="absolute top-5 bottom-0 left-[7px] w-px bg-border"
+                className="absolute top-6 bottom-0 left-[9px] w-px bg-border lg:hidden"
               />
             )}
-            <span className="relative z-10 bg-card">
+            <span className="relative z-10 bg-card lg:hidden">
               <StepIcon state={step.state} />
             </span>
+            <span
+              aria-hidden
+              className={cn(
+                'hidden h-1 w-full rounded-full lg:block',
+                step.state === 'done'
+                  ? 'bg-success'
+                  : step.state === 'current'
+                    ? 'bg-accent-ink'
+                    : 'bg-divider'
+              )}
+            />
             <div className="min-w-0">
               <p
                 className={cn(
                   'text-sm',
-                  reached ? 'font-medium text-foreground' : 'text-muted-foreground'
+                  reached ? 'font-semibold text-foreground' : 'text-muted-foreground'
                 )}
               >
                 {step.label}
               </p>
               {reached && step.date ? (
-                <p className="text-xs text-muted-foreground tabular-nums">
+                <p className="text-xs text-muted-foreground tabular-nums lg:text-sm">
                   {formatDeadline(step.date)} WIB
                 </p>
               ) : null}
               {reached && step.tracking ? (
-                <p className="text-xs text-muted-foreground">Resi {step.tracking}</p>
+                <p className="text-xs text-muted-foreground lg:text-sm">Resi {step.tracking}</p>
               ) : null}
             </div>
           </li>
@@ -444,11 +483,13 @@ function WonTimeline({ steps }: { steps: WonStep[] }) {
 }
 
 function StepIcon({ state }: { state: WonStepState }) {
-  if (state === 'done') return <CircleCheck aria-hidden className="size-4 shrink-0" />;
-  if (state === 'current') {
-    return <CircleDot aria-hidden className="size-4 shrink-0 text-accent-ink" />;
+  if (state === 'done') {
+    return <CircleCheck aria-hidden className="size-5 shrink-0 text-success" />;
   }
-  return <Circle aria-hidden className="size-4 shrink-0 text-muted-foreground" />;
+  if (state === 'current') {
+    return <CircleDot aria-hidden className="size-5 shrink-0 text-accent-ink" />;
+  }
+  return <Circle aria-hidden className="size-5 shrink-0 text-muted-foreground" />;
 }
 
 function ClaimBlock({ lotId, claim }: { lotId: string; claim: WonLotClaim }) {
@@ -489,6 +530,8 @@ function LostList({ bids }: { bids: StoreMyBid[] }) {
     return (
       <EmptyFeed
         icon={<Clock aria-hidden className="size-8" />}
+        iconClassName="size-16 rounded-full border border-border bg-muted"
+        titleClassName="font-heading text-lg font-bold sm:text-xl"
         narrowing={false}
         noMatchTitle="Belum ada lot yang kalah"
         noMatchBody="Lot yang Anda ikuti tetapi dimenangkan pembeli lain muncul di sini, lengkap dengan harga akhirnya."

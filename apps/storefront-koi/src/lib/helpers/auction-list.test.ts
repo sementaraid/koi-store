@@ -112,15 +112,12 @@ test("tab counts leave out a count whose request failed", () => {
   )
 })
 
-test("live tab splits open lots from lots already closed in a live auction", () => {
+test("each tab is one untitled group, as the mockup draws it", () => {
   const p = (id: string, status: string) => ({ id, auction: { status } })
   const groups = groupLots("live", [p("a", "live"), p("b", "ended"), p("c", "cancelled"), p("d", "live")])
   assert.deepEqual(
-    groups.map((g) => [g.key, g.items.map((i) => i.id)]),
-    [
-      ["open", ["a", "d"]],
-      ["closed", ["b", "c"]],
-    ]
+    groups.map((g) => [g.key, g.title, g.items.map((i) => i.id)]),
+    [["live", "", ["a", "b", "c", "d"]]]
   )
 })
 
