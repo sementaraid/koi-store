@@ -31,8 +31,8 @@ export function farmStatusInfo(seller: FarmSellerStatus): FarmStatusInfo {
       return {
         label: 'Disetujui',
         tone: 'info',
-        title: 'Kebun Anda sudah aktif',
-        body: 'Pendaftaran disetujui. Anda bisa membuat lelang dan lot dari area petani.',
+        title: 'Farm Anda sudah aktif',
+        body: 'Pendaftaran disetujui. Anda bisa membuat lelang dan lot dari area peternak.',
         approved: true
       };
     case 'pending_approval':
@@ -40,7 +40,7 @@ export function farmStatusInfo(seller: FarmSellerStatus): FarmStatusInfo {
         label: 'Menunggu',
         tone: 'neutral',
         title: 'Menunggu persetujuan admin',
-        body: 'Admin sedang memeriksa data kebun, KTP, dan rekening Anda. Anda bisa membuat lelang setelah disetujui.',
+        body: 'Admin sedang memeriksa data farm, KTP, dan rekening Anda. Anda bisa membuat lelang setelah disetujui.',
         approved: false
       };
     case 'suspended':
@@ -48,7 +48,7 @@ export function farmStatusInfo(seller: FarmSellerStatus): FarmStatusInfo {
         ? {
             label: 'Ditolak',
             tone: 'urgent',
-            title: 'Pendaftaran kebun ditolak',
+            title: 'Pendaftaran farm ditolak',
             body: 'Penolakan bersifat final. Pendaftaran tidak dapat diajukan ulang dengan akun ini.',
             reasonLabel: 'Alasan penolakan',
             approved: false
@@ -56,8 +56,8 @@ export function farmStatusInfo(seller: FarmSellerStatus): FarmStatusInfo {
         : {
             label: 'Ditangguhkan',
             tone: 'urgent',
-            title: 'Kebun Anda ditangguhkan',
-            body: 'Kebun Anda tidak dapat dipakai sampai admin mengaktifkannya kembali. Hubungi admin bila Anda tidak tahu sebabnya.',
+            title: 'Farm Anda ditangguhkan',
+            body: 'Farm Anda tidak dapat dipakai sampai admin mengaktifkannya kembali. Hubungi admin bila Anda tidak tahu sebabnya.',
             reasonLabel: 'Alasan',
             approved: false
           };
@@ -65,15 +65,15 @@ export function farmStatusInfo(seller: FarmSellerStatus): FarmStatusInfo {
       return {
         label: 'Ditutup',
         tone: 'muted',
-        title: 'Kebun Anda sudah ditutup',
-        body: 'Akun kebun ini tidak dapat dipakai lagi.',
+        title: 'Farm Anda sudah ditutup',
+        body: 'Akun farm ini tidak dapat dipakai lagi.',
         approved: false
       };
     default:
       return {
         label: 'Tidak dikenal',
         tone: 'neutral',
-        title: 'Status kebun belum bisa dibaca',
+        title: 'Status farm belum bisa dibaca',
         body: 'Muat ulang halaman. Bila status tetap tidak muncul, hubungi admin.',
         approved: false
       };

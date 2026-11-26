@@ -1,6 +1,7 @@
 import { Award, ShieldCheck } from "lucide-react"
 
 import { ROUTES } from "@/const/routes"
+import { SITE_NAME } from "@/const/site"
 import type {
   FooterColumn,
   FooterLink,
@@ -22,9 +23,9 @@ export const DEFAULT_FOOTER_COLUMNS: FooterColumn[] = [
     label: "Kepatuhan & Pengiriman",
     links: [
       { label: "Mekanisme Pembayaran", href: "/pembayaran" },
-      { label: "Mekanisme Rekening Bersama", href: ROUTES.escrow },
+      { label: "Mekanisme Pembayaran & Pencairan", href: ROUTES.escrow },
       { label: "Standar Karantina BBKP RI", href: "/karantina" },
-      { label: "Garansi Ikan Hidup D.O.A", href: "/garansi" },
+      { label: "Garansi Tiba Hidup (Klaim 4 Jam)", href: "/garansi" },
       { label: "Cek Sertifikat Breeder", href: "/sertifikat" },
     ],
   },
@@ -32,9 +33,9 @@ export const DEFAULT_FOOTER_COLUMNS: FooterColumn[] = [
     label: "Bantuan & Edukasi",
     links: [
       { label: "Pusat Bantuan & FAQ", href: "/bantuan" },
-      { label: "Panduan Bidding Pemula", href: "/panduan" },
+      { label: "Panduan bid pemula", href: "/panduan" },
       { label: "Hubungi Admin", href: "/kontak" },
-      { label: "Kemitraan Farm & Breeder", href: "/kemitraan" },
+      { label: "Kemitraan Farm", href: "/kemitraan" },
       { label: "Syarat & Ketentuan", href: "/syarat" },
     ],
   },
@@ -42,7 +43,7 @@ export const DEFAULT_FOOTER_COLUMNS: FooterColumn[] = [
 
 export const DEFAULT_FOOTER_LEGAL_LINKS: FooterLink[] = [
   { label: "Kebijakan Privasi", href: "/privasi" },
-  { label: "Syarat & Ketentuan Bidding", href: "/syarat" },
+  { label: "Syarat & Ketentuan Bid", href: "/syarat" },
   { label: "Regulasi Lelang", href: "/regulasi" },
 ]
 
@@ -51,7 +52,7 @@ export const DEFAULT_FOOTER_TRUST: FooterTrust[] = [
   { label: "Verifikasi APKI Resmi", icon: Award, tone: "gold" },
 ]
 
-export const DEFAULT_BRAND_NAME = "Mafia Koi Jogja"
+export const DEFAULT_BRAND_NAME = SITE_NAME
 
 export const DEFAULT_BRAND_SUBTITLE = "Portal Lelang Koi"
 

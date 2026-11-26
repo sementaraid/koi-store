@@ -1,7 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@koi/ui';
+import { Button } from '@koi/ui';
+import { AdminEmpty } from '@/components/AdminEmpty';
+import { AdminError } from '@/components/AdminError';
+import { AdminPageHeader } from '@/components/AdminPageHeader';
 import { LiveAuctions } from '@/components/LiveAuctions';
 import { LiveLotPanel } from '@/components/LiveLotPanel';
 import { ROUTES } from '@/const/routes';
@@ -29,63 +32,52 @@ export default async function LiveAuctionsRoute({
 
   return (
     <div className="grid gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="grid gap-1">
-          <h1 className="text-xl font-medium tracking-tight">Pantau lelang</h1>
-          <p className="text-sm text-muted-foreground">
-            Harga dan jumlah bid tiap lot yang sedang berjalan. Buka satu lot untuk menghapus
-            bid yang salah.
-          </p>
-        </div>
-        <Link
-          href={lotId ? `${ROUTES.liveAuctions}?lot=${encodeURIComponent(lotId)}` : ROUTES.liveAuctions}
-          className="text-sm text-accent-ink underline underline-offset-4"
-        >
-          Muat ulang
-        </Link>
-      </div>
+      <AdminPageHeader
+        title="Pantau lelang"
+        description="Harga dan jumlah bid tiap lot yang sedang berjalan. Buka satu lot untuk menghapus bid yang salah."
+        actions={
+          <Link
+            href={
+              lotId ? `${ROUTES.liveAuctions}?lot=${encodeURIComponent(lotId)}` : ROUTES.liveAuctions
+            }
+            className="text-sm text-accent-ink underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            Muat ulang
+          </Link>
+        }
+      />
 
       {lotId ? (
         detail ? (
           <div className="grid gap-2">
             <Link
               href={ROUTES.liveAuctions}
-              className="text-sm text-accent-ink underline underline-offset-4"
+              className="text-sm text-accent-ink underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             >
               Kembali ke daftar
             </Link>
             <LiveLotPanel detail={detail} now={now} />
           </div>
         ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>Lot tidak ditemukan</CardTitle>
-              <CardDescription>
-                Lot ini tidak ada atau gagal dimuat. Kembali ke daftar dan pilih lot lain.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link
-                href={ROUTES.liveAuctions}
-                className="text-sm text-accent-ink underline underline-offset-4"
-              >
+          <AdminEmpty
+            title="Lot tidak ditemukan"
+            description="Lot ini tidak ada atau gagal dimuat. Kembali ke daftar dan pilih lot lain."
+            action={
+              <Button render={<Link href={ROUTES.liveAuctions} />} variant="outline">
                 Kembali ke daftar
-              </Link>
-            </CardContent>
-          </Card>
+              </Button>
+            }
+          />
         )
       ) : null}
 
       {list ? (
         <LiveAuctions auctions={list.auctions} total={list.total} now={now} />
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Gagal memuat lelang berjalan</CardTitle>
-            <CardDescription>Muat ulang halaman untuk mencoba lagi.</CardDescription>
-          </CardHeader>
-          <CardContent />
-        </Card>
+        <AdminError
+          title="Gagal memuat lelang berjalan"
+          description="Daftar lelang yang sedang berjalan tidak dapat dimuat."
+        />
       )}
     </div>
   );

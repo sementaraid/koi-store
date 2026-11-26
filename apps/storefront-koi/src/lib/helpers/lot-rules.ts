@@ -19,8 +19,9 @@ export type LotRulesInput = {
   extendWindowMinutes?: number;
 };
 
-// The current MVP rules only (US-098 AC6): join fee once per auction, KB and
-// next minimum, per-lot extend, no withdrawal, and direct payment to the farm.
+// The current MVP rules only (US-098 AC6): the per-lot join fee (US-111 AC6,
+// D-070), KB and next minimum, per-lot extend, no withdrawal, and payment to
+// the company account (D-068: the winner transfers, an admin confirms).
 export function lotRules({
   joinFee,
   bidStep,
@@ -34,16 +35,17 @@ export function lotRules({
       joinFee > 0
         ? {
             kind: 'join-fee',
-            title: `Biaya ikut ${formatPrice(joinFee)}, sekali per lelang, dipotong dari saldo.`,
-            // Refund copy follows the plan's cancellations section and D-034:
-            // no refund on a loss or a leave, only on a farmer or admin cancel.
+            title: `Biaya ikut ${formatPrice(joinFee)}, dipotong dari saldo.`,
+            // Refund copy follows the plan's cancellations section, D-034 and
+            // D-076: no refund on a loss or a leave, only on a farmer, auction
+            // or single-lot admin cancel.
             detail:
-              'Satu biaya untuk semua lot di lelang ini. Tidak dikembalikan jika Anda kalah atau keluar. Hanya dikembalikan jika farm atau admin membatalkan lelang.'
+              'Berlaku untuk lot ini saja. Tidak dikembalikan jika Anda kalah atau keluar. Hanya dikembalikan jika farm atau admin membatalkan lelang atau lot ini.'
           }
         : {
             kind: 'join-fee',
-            title: 'Ikut lelang ini tanpa biaya.',
-            detail: 'Berlaku untuk semua lot di lelang ini.'
+            title: 'Ikut lot ini tanpa biaya.',
+            detail: 'Berlaku untuk lot ini saja.'
           }
     );
   }
@@ -76,8 +78,8 @@ export function lotRules({
 
   rules.push({
     kind: 'payment',
-    title: 'Jika menang, Anda bayar langsung ke farm dalam 1×24 jam.',
-    detail: 'Farm menandai lot lunas, lalu mengirim koi. Pembayaran di luar aplikasi.'
+    title: 'Jika menang, Anda transfer harga menang ke rekening Koi Auction House dalam 1×24 jam.',
+    detail: 'Admin memverifikasi transfer, lalu lot ditandai lunas dan farm mengirim koi.'
   });
 
   return rules;

@@ -1,9 +1,7 @@
 
-export { BidTerminal } from './BidTerminal/BidTerminal';
 export { CartSummary } from './CartSummary/CartSummary';
 export { Footer } from './Footer/Footer';
 export { Header } from './Header/Header';
-export { LotDetailsSheet } from './LotDetailsSheet/LotDetailsSheet';
 export { PartnerCard } from './PartnerCard/PartnerCard';
 export {
   AuctionProductCard,

@@ -4,6 +4,7 @@ import type {
 } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import { createAuctionWorkflow } from "../../../workflows/create-auction"
+import { NO_CERTIFICATE_ISSUER } from "../../../utils/koi-lot-fields"
 import type {
   VendorCreateAuctionType,
   VendorGetAuctionsParamsType,
@@ -24,6 +25,16 @@ export type VendorAuctionLot = {
   winner_customer_id: string | null
   final_price: number | null
   cancel_reason: string | null
+  // US-105 AC4 (D-081): the koi's fields as saved, null when unset.
+  variety: string | null
+  size_cm: number | null
+  age: string | null
+  sex: string | null
+  has_certificate: boolean | null
+  certificate_issuer: string | null
+  pond_origin: string | null
+  breeder_notes: string | null
+  video_url: string | null
 }
 
 export type VendorAuction = {
@@ -85,6 +96,16 @@ export const LOT_FIELDS = [
   "winner_customer_id",
   "final_price",
   "cancel_reason",
+  // US-105 AC4 (D-081).
+  "variety",
+  "size_cm",
+  "age",
+  "sex",
+  "has_certificate",
+  "certificate_issuer",
+  "pond_origin",
+  "breeder_notes",
+  "video_url",
 ]
 
 export const toVendorLot = (lot: Record<string, unknown>): VendorAuctionLot => ({
@@ -98,6 +119,19 @@ export const toVendorLot = (lot: Record<string, unknown>): VendorAuctionLot => (
   winner_customer_id: (lot.winner_customer_id as string | null) ?? null,
   final_price: (lot.final_price as number | null) ?? null,
   cancel_reason: (lot.cancel_reason as string | null) ?? null,
+  variety: (lot.variety as string | null) ?? null,
+  size_cm: (lot.size_cm as number | null) ?? null,
+  age: (lot.age as string | null) ?? null,
+  sex: (lot.sex as string | null) ?? null,
+  has_certificate: (lot.has_certificate as boolean | null) ?? null,
+  // D-081: the issuer reads this label when there is no certificate.
+  certificate_issuer:
+    lot.has_certificate === false
+      ? NO_CERTIFICATE_ISSUER
+      : ((lot.certificate_issuer as string | null) ?? null),
+  pond_origin: (lot.pond_origin as string | null) ?? null,
+  breeder_notes: (lot.breeder_notes as string | null) ?? null,
+  video_url: (lot.video_url as string | null) ?? null,
 })
 
 // A lot with the koi listing it points at (title, photos), for the farmer's

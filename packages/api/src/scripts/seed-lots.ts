@@ -20,10 +20,14 @@ import type AuctionModuleService from "../modules/auction/service"
  * workflow's guards apply. Products still go through the product workflow so
  * their links, sales channel and category joins stay consistent.
  *
- * Idempotent: skips entirely when the seeded auction exists.
+ * Idempotent: a re-run replaces the auction this seeder owns (found through
+ * its own products, see below) instead of adding a second copy.
  */
 
-const SEED_AUCTION_MARKER = "Seed · Lelang Minggu Ini"
+// Demo live link (D-061 / US-106 AC3): a real URL the lot page can render as
+// the farmer's outbound "Tonton siaran farm" link. The video id is a
+// placeholder; isLiveStreamUrl() only checks the https YouTube/Instagram shape.
+const DEMO_LIVE_STREAM_URL = "https://www.youtube.com/live/abc123"
 const COUNTRY = "id"
 const CURRENCY = "idr"
 
@@ -74,6 +78,11 @@ const LOTS: LotPlan[] = [
   },
 ]
 
+// Deterministic product handle: this is the seeder's ownership marker.
+// `product.handle` is unique, and only this script creates `seed-lelang-*`.
+const productHandle = (suffix: string) =>
+  `seed-lelang-${suffix.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`
+
 const minutesFromNow = (minutes: number) =>
   new Date(Date.now() + minutes * 60_000)
 
@@ -83,30 +92,58 @@ export default async function seedLots({ container }: ExecArgs) {
   const auctionService = container.resolve<AuctionModuleService>(AUCTION_MODULE)
   const productService = container.resolve(Modules.PRODUCT)
 
-  // Replace this seeder's own data (not anyone else's): an auction, its lots,
-  // their bids and the products it created. Re-running refreshes end times and
-  // photos instead of leaving yesterday's expired copy behind.
-  const { data: existing } = await query.graph({
-    entity: "auction",
-    fields: ["id", "lots.id", "lots.bids.id", "lots.product_id"],
-    filters: { live_stream_url: SEED_AUCTION_MARKER },
+  // Replace this seeder's own data (not anyone else's): its four products (by
+  // their deterministic handle), the auction their lots belong to, those lots
+  // and their bids. Re-running refreshes end times, photos and the demo live
+  // link instead of leaving yesterday's expired copy behind.
+  //
+  // Marker: the auction row has no title/slug column, and `live_stream_url` is
+  // a URL (D-061), not a marker. The products this seeder creates are unique
+  // and stable, so the previous auction is found through their lots.
+  const { data: seededProducts } = await query.graph({
+    entity: "product",
+    fields: ["id"],
+    filters: { handle: LOTS.map((lot) => productHandle(lot.suffix)) },
   })
-  for (const old of existing as {
-    id: string
-    lots?: { id: string; bids?: { id: string }[]; product_id: string }[]
-  }[]) {
-    const lots = old.lots ?? []
-    const bidIds = lots.flatMap((lot) => (lot.bids ?? []).map((b) => b.id))
-    const lotIds = lots.map((lot) => lot.id)
-    const productIds = lots.map((lot) => lot.product_id)
+  const seededProductIds = (seededProducts as { id: string }[]).map((p) => p.id)
+  const oldLots = (
+    seededProductIds.length
+      ? (
+          await query.graph({
+            entity: "lot",
+            fields: ["auction_id"],
+            filters: { product_id: seededProductIds },
+          })
+        ).data
+      : []
+  ) as { auction_id: string }[]
+  const auctionIds = [...new Set(oldLots.map((lot) => lot.auction_id))]
 
-    if (bidIds.length) await auctionService.deleteBids(bidIds)
-    if (lotIds.length) await auctionService.deleteLots(lotIds)
-    await auctionService.deleteAuctions([old.id])
-    if (productIds.length) {
-      await productService.deleteProducts(productIds)
-    }
-    logger.info(`Replaced earlier seeded auction ${old.id}.`)
+  // Re-read the whole auction, so every lot and bid is removed even if one of
+  // the products above was deleted by hand.
+  const oldAuctions = (
+    auctionIds.length
+      ? (
+          await query.graph({
+            entity: "auction",
+            fields: ["id", "lots.id", "lots.bids.id"],
+            filters: { id: auctionIds },
+          })
+        ).data
+      : []
+  ) as { id: string; lots?: { id: string; bids?: { id: string }[] }[] }[]
+  const oldLotRows = oldAuctions.flatMap((auction) => auction.lots ?? [])
+  const bidIds = oldLotRows.flatMap((lot) => (lot.bids ?? []).map((b) => b.id))
+  const lotIds = oldLotRows.map((lot) => lot.id)
+
+  if (bidIds.length) await auctionService.deleteBids(bidIds)
+  if (lotIds.length) await auctionService.deleteLots(lotIds)
+  if (auctionIds.length) await auctionService.deleteAuctions(auctionIds)
+  if (seededProductIds.length) {
+    await productService.deleteProducts(seededProductIds)
+  }
+  if (auctionIds.length) {
+    logger.info(`Replaced earlier seeded auction ${auctionIds.join(", ")}.`)
   }
 
   // The first farm in seed-koi.ts's list; its email is derived from the name.
@@ -153,7 +190,7 @@ export default async function seedLots({ container }: ExecArgs) {
   logger.info("Seeding auction products...")
   const products = LOTS.map((lot) => ({
     title: lot.suffix,
-    handle: `seed-lelang-${lot.suffix.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+    handle: productHandle(lot.suffix),
     description:
       "Koi contoh untuk mencoba ruang lelang. Foto, ukuran dan harga hanya data demo.",
     status: ProductStatus.PUBLISHED,
@@ -192,7 +229,7 @@ export default async function seedLots({ container }: ExecArgs) {
       listing_fee: 0,
       join_fee: fee.join_fee,
       extend_window_minutes: 5,
-      live_stream_url: SEED_AUCTION_MARKER,
+      live_stream_url: DEMO_LIVE_STREAM_URL,
     },
   ])
 

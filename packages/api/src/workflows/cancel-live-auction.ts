@@ -5,7 +5,7 @@ import {
   cancelOpenLotsStep,
   getCancellableLiveAuctionStep,
 } from "./steps/auction-cancel"
-import { getJoinFeeRefundsStep, refundJoinFeesStep } from "./steps/join-fee"
+import { getAuctionJoinFeeRefundsStep, refundJoinFeesStep } from "./steps/join-fee"
 
 export type CancelLiveAuctionWorkflowInput = {
   auction_id: string
@@ -17,11 +17,14 @@ export type CancelLiveAuctionWorkflowInput = {
 // `live` auction. The refund is each participant's own recorded `join_fee`
 // (US-060's rule), appended as a `refund` (+) row; the listing fee is never
 // refunded. The auction's `open` lots become `cancelled` with the same reason;
-// a `won` lot is untouched. Same lock key as the other auction transitions, so
-// no join can land between the refund read and the insert. The refund is ONE
-// batched insert and the last mutation: the ledger is append-only, so it has
-// no compensation; a failure before it leaves the lot and status steps to
-// compensate back.
+// a `won` lot is untouched. Same `auction:<id>` lock as the other auction
+// transitions, and join-lot takes that lock before its own: this workflow and
+// a join therefore cannot interleave, so no join lands between the refund read
+// and the insert (a join either finishes first and is refunded, or waits and
+// is refused because the auction and its open lots are cancelled). The refund
+// is ONE batched insert and the last mutation: the ledger is append-only, so
+// it has no compensation; a failure before it leaves the lot and status steps
+// to compensate back.
 export const cancelLiveAuctionWorkflow = createWorkflow(
   "cancel-live-auction",
   function (input: CancelLiveAuctionWorkflowInput) {
@@ -32,7 +35,7 @@ export const cancelLiveAuctionWorkflow = createWorkflow(
 
     getCancellableLiveAuctionStep({ auction_id: input.auction_id })
 
-    const refunds = getJoinFeeRefundsStep({ auction_id: input.auction_id })
+    const refunds = getAuctionJoinFeeRefundsStep({ auction_id: input.auction_id })
 
     cancelOpenLotsStep({
       auction_id: input.auction_id,

@@ -2,6 +2,7 @@
   "permissions": {
     "defaultMode": "auto",
     "allow": [
+      "Bash(python3 /tmp/claude-1001/tg-watch/tg_watch.py)",
       "mcp__mercur",
       "mcp__medusa",
       "mcp__plugin_telegram_telegram__reply",

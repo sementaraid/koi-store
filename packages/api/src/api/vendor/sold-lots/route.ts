@@ -24,21 +24,44 @@ export type SoldLotAddress = { city: string | null; province: string | null }
 // `reported_at` is the row's created_at; nothing else about it is exposed.
 export type SoldLotUnpaid = { reported_at: string }
 
+// US-110 (AC5, D-078): the farmer's own payout state for this lot. Gross, the
+// typed fee and the net are shown; the bank reference is the admin's record and
+// no winner/customer field is exposed. Null before the admin confirms the
+// winner's payment (`won`).
+export type SoldLotPayout = {
+  status: "pending" | "due" | "paid" | "cancelled"
+  gross_amount: number
+  bank_fee: number | null
+  net_amount: number | null
+  due_reason: string | null
+  due_at: string | null
+  paid_at: string | null
+  transfer_reference: string | null
+}
+
 export type SoldLot = {
   id: string
   status: string
   final_price: number | null
   closed_at: string | null
+  // D-072: set when an admin confirms the winner's transfer; null before.
+  paid_at: string | null
   // D-058: closed_at + 24 h, ISO. null when the lot has no closed_at.
   pay_by: string | null
   // US-058: null until the farmer reports the winner.
   unpaid: SoldLotUnpaid | null
   // US-052 T-052.1: null for self-delivery, and until the lot is shipped.
   tracking_number: string | null
+  // D-072: saved when the farmer ships and when the winner marks it
+  // delivered; null until each step is reached.
+  shipped_at: string | null
+  delivered_at: string | null
   auction: { id: string; delivery_method: string }
   product: { title: string | null; thumbnail: string | null }
   // D-052: name only. No phone, email or customer id, ever.
   winner: { name: string; address: SoldLotAddress | null }
+  // US-110 (AC5): null while the lot is `won` (the winner has not paid).
+  payout: SoldLotPayout | null
 }
 
 export type VendorSoldLotsResponse = {
@@ -53,7 +76,10 @@ export const SOLD_LOT_FIELDS = [
   "status",
   "final_price",
   "closed_at",
+  "paid_at",
   "tracking_number",
+  "shipped_at",
+  "delivered_at",
   "winner_customer_id",
   "auction.id",
   "auction.seller_id",
@@ -131,6 +157,60 @@ const reportsByLot = async (
   )
 }
 
+// US-110 (AC5): the page's payouts in one query, keyed by lot id.
+const payoutsByLot = async (
+  scope: MedusaContainer,
+  lotIds: string[]
+): Promise<Map<string, SoldLotPayout>> => {
+  if (!lotIds.length) return new Map()
+  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
+  const { data } = await query.graph({
+    entity: "lot_payout",
+    fields: [
+      "id",
+      "lot_id",
+      "status",
+      "gross_amount",
+      "bank_fee",
+      "due_reason",
+      "due_at",
+      "paid_at",
+      "transfer_reference",
+    ],
+    filters: { lot_id: lotIds },
+  })
+  return new Map(
+    (
+      data as {
+        lot_id: string
+        status: SoldLotPayout["status"]
+        gross_amount: number
+        bank_fee: number | null
+        due_reason: string | null
+        due_at: Date | string | null
+        paid_at: Date | string | null
+        transfer_reference: string | null
+      }[]
+    ).map((row) => {
+      const gross = Number(row.gross_amount)
+      const fee = row.bank_fee === null ? null : Number(row.bank_fee)
+      return [
+        row.lot_id,
+        {
+          status: row.status,
+          gross_amount: gross,
+          bank_fee: fee,
+          net_amount: fee === null ? null : Math.max(0, gross - fee),
+          due_reason: row.due_reason ?? null,
+          due_at: row.due_at ? new Date(row.due_at).toISOString() : null,
+          paid_at: row.paid_at ? new Date(row.paid_at).toISOString() : null,
+          transfer_reference: row.transfer_reference ?? null,
+        },
+      ]
+    })
+  )
+}
+
 export const toSoldLots = async (
   scope: MedusaContainer,
   rows: Record<string, unknown>[]
@@ -142,12 +222,11 @@ export const toSoldLots = async (
         .filter((id): id is string => typeof id === "string")
     ),
   ]
-  const [winners, reports] = await Promise.all([
+  const lotIds = rows.map((row) => row.id as string)
+  const [winners, reports, payouts] = await Promise.all([
     winnersById(scope, winnerIds),
-    reportsByLot(
-      scope,
-      rows.map((row) => row.id as string)
-    ),
+    reportsByLot(scope, lotIds),
+    payoutsByLot(scope, lotIds),
   ])
 
   return rows.map((row) => {
@@ -169,12 +248,21 @@ export const toSoldLots = async (
       status: row.status as string,
       final_price: (row.final_price as number | null) ?? null,
       closed_at: closedAt,
+      paid_at: row.paid_at
+        ? new Date(row.paid_at as string).toISOString()
+        : null,
       pay_by:
         closedAt === null
           ? null
           : new Date(new Date(closedAt).getTime() + PAY_WINDOW_MS).toISOString(),
       unpaid: reports.get(row.id as string) ?? null,
       tracking_number: (row.tracking_number as string | null) ?? null,
+      shipped_at: row.shipped_at
+        ? new Date(row.shipped_at as string).toISOString()
+        : null,
+      delivered_at: row.delivered_at
+        ? new Date(row.delivered_at as string).toISOString()
+        : null,
       auction: {
         id: auction.id as string,
         delivery_method: auction.delivery_method as string,
@@ -184,6 +272,7 @@ export const toSoldLots = async (
         thumbnail: product?.thumbnail ?? null,
       },
       winner,
+      payout: payouts.get(row.id as string) ?? null,
     }
   })
 }

@@ -57,14 +57,14 @@ export function SubmitAuctionButton({
             </p>
             <div className="flex flex-wrap gap-2">
               <Button
-                render={<Link href={ROUTES.topup} />}
+                render={<Link href={ROUTES.saldoTopup} />}
                 nativeButton={false}
               >
                 Top-up saldo
               </Button>
               <Button
                 variant="outline"
-                render={<Link href={ROUTES.wallet} />}
+                render={<Link href={ROUTES.saldoTopup} />}
                 nativeButton={false}
               >
                 Lihat saldo

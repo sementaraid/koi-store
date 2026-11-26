@@ -18,6 +18,10 @@ import {
 import { formatRupiah, formatTopupDate } from '@/lib/helpers/topup-format';
 import { walletTransactionTypeLabel } from '@/lib/helpers/wallet-format';
 
+import { AdminEmpty } from './AdminEmpty';
+import { AdminError } from './AdminError';
+import { ConfirmDialog } from './ConfirmDialog';
+
 function customerName(customer: WalletCustomer): string {
   const name = [customer.first_name, customer.last_name].filter(Boolean).join(' ');
   return name || customer.email;
@@ -61,9 +65,10 @@ export function BalanceCorrection() {
             {wallet.status === 'loading' || wallet.status === 'idle' ? (
               <p className="text-sm text-muted-foreground">Memuat saldo…</p>
             ) : wallet.status === 'error' ? (
-              <p role="alert" className="text-sm text-destructive-ink">
-                Gagal memuat saldo. Muat ulang untuk mencoba lagi.
-              </p>
+              <AdminError
+                title="Gagal memuat saldo"
+                description="Saldo pelanggan ini tidak dapat dimuat."
+              />
             ) : (
               <>
                 <p className="text-lg font-medium">{formatRupiah(wallet.data.balance)}</p>
@@ -73,7 +78,10 @@ export function BalanceCorrection() {
                 <div className="grid gap-2">
                   <h2 className="text-sm font-medium">Riwayat transaksi</h2>
                   {wallet.data.transactions.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Belum ada transaksi.</p>
+                    <AdminEmpty
+                      title="Belum ada transaksi"
+                      description="Mutasi dan koreksi saldo akan muncul di sini."
+                    />
                   ) : (
                     wallet.data.transactions.map((t: CustomerWallet['transactions'][number]) => (
                       <div
@@ -134,6 +142,7 @@ function CustomerSearch({
       <CardContent className="grid gap-3">
         <form onSubmit={search} className="flex gap-2" noValidate>
           <FormField
+            id="balance-search"
             label="Cari pelanggan"
             className="flex-1"
             placeholder="Nama atau email"
@@ -146,13 +155,17 @@ function CustomerSearch({
         </form>
 
         {state.status === 'error' ? (
-          <p role="alert" className="text-sm text-destructive-ink">
-            Gagal mencari pelanggan. Coba lagi.
-          </p>
+          <AdminError
+            title="Gagal mencari pelanggan"
+            description="Pencarian tidak dapat diselesaikan."
+          />
         ) : null}
 
         {state.status === 'ready' && state.results.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Tidak ada pelanggan yang cocok.</p>
+          <AdminEmpty
+            title="Tidak ada pelanggan yang cocok"
+            description="Coba nama atau email lain."
+          />
         ) : null}
 
         {state.status === 'ready' && state.results.length > 0 ? (
@@ -162,7 +175,7 @@ function CustomerSearch({
                 key={customer.id}
                 type="button"
                 onClick={() => onSelect(customer)}
-                className="rounded-md border border-border p-2 text-left text-sm hover:bg-muted data-[selected=true]:border-ring"
+                className="min-h-11 rounded-md border border-border p-2 text-left text-sm hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring data-[selected=true]:border-ring"
                 data-selected={selected?.id === customer.id}
               >
                 <p className="font-medium">{customerName(customer)}</p>
@@ -200,15 +213,20 @@ function AdjustmentForm({
     resolver: zodResolver(adjustmentSchema),
     defaultValues: { direction: 'add', amount: 0, reason: '' }
   });
+  const [pending, setPending] = useState<AdjustmentData | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
-  async function submit(data: AdjustmentData) {
-    const verb = data.direction === 'add' ? 'Tambah' : 'Kurangi';
+  function submit(data: AdjustmentData) {
+    setPending(data);
+    setConfirmOpen(true);
+  }
 
-    if (!confirm(`${verb} saldo pelanggan sebesar ${formatRupiah(data.amount)}?`)) {
-      return;
-    }
+  async function confirm() {
+    if (!pending) return;
 
-    const result = await adjustWalletBalance(customerId, data);
+    const result = await adjustWalletBalance(customerId, pending);
+    setConfirmOpen(false);
+    setPending(null);
 
     if (!result.success) {
       toast.error(result.error);
@@ -219,6 +237,8 @@ function AdjustmentForm({
     onSuccess(result.wallet_transaction, result.balance);
     reset();
   }
+
+  const verb = pending?.direction === 'add' ? 'Tambah' : 'Kurangi';
 
   return (
     <form onSubmit={handleSubmit(submit)} className="grid gap-3 rounded-md border border-border p-3" noValidate>
@@ -253,6 +273,17 @@ function AdjustmentForm({
           {isSubmitting ? 'Menyimpan…' : 'Simpan koreksi'}
         </Button>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Simpan koreksi saldo?"
+        description={`${verb} saldo pelanggan sebesar ${formatRupiah(pending?.amount ?? 0)}?`}
+        confirmLabel="Simpan koreksi"
+        busyLabel="Menyimpan…"
+        destructive={pending?.direction === 'subtract'}
+        onConfirm={confirm}
+      />
     </form>
   );
 }

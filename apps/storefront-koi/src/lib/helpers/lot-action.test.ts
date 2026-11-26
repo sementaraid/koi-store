@@ -16,7 +16,7 @@ test('a signed-in customer who has not joined gets the join action with the fee'
     kind: 'join',
     label: joinFeeLabel(100_000)
   });
-  assert.equal(lotBarAction({ joinMode: 'join', fee: 0, standing: 'none' }).label, 'Ikut lelang');
+  assert.equal(lotBarAction({ joinMode: 'join', fee: 0, standing: 'none' }).label, 'Ikut lot ini');
 });
 
 test('a joined bidder gets Pasang Bid, or the status when already highest', () => {

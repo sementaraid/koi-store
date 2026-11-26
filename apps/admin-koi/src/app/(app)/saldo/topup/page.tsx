@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@koi/ui';
+import { AdminError } from '@/components/AdminError';
+import { AdminPageHeader } from '@/components/AdminPageHeader';
 import { TopupQueue } from '@/components/TopupQueue';
 import { ROUTES } from '@/const/routes';
 import { getTopupQueues } from '@/lib/data/topups';
@@ -16,23 +17,18 @@ export default async function TopupsRoute() {
 
   return (
     <div className="grid gap-6">
-      <div className="grid gap-1">
-        <h1 className="text-xl font-medium tracking-tight">Permintaan top-up</h1>
-        <p className="text-sm text-muted-foreground">
-          Cocokkan bukti transfer dengan mutasi bank, lalu setujui atau tolak.
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Permintaan top-up"
+        description="Cocokkan bukti transfer dengan mutasi bank, lalu setujui atau tolak."
+      />
 
       {queues ? (
         <TopupQueue pending={queues.pending} decided={queues.decided} />
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Gagal memuat permintaan top-up</CardTitle>
-            <CardDescription>Muat ulang halaman untuk mencoba lagi.</CardDescription>
-          </CardHeader>
-          <CardContent />
-        </Card>
+        <AdminError
+          title="Gagal memuat permintaan top-up"
+          description="Antrean permintaan top-up tidak dapat dimuat."
+        />
       )}
     </div>
   );

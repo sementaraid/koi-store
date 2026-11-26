@@ -30,7 +30,9 @@ export function useFeedSearch<S extends string>(
   const write = useCallback(
     (next: URLSearchParams) => {
       const query = next.toString();
-      router.replace(query ? `${pathname}?${query}` : pathname, {
+      // Push, not replace: every filter change is its own history entry, so
+      // the back button undoes the last filter instead of leaving the feed.
+      router.push(query ? `${pathname}?${query}` : pathname, {
         scroll: false
       });
     },

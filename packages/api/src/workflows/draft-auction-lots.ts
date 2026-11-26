@@ -80,6 +80,16 @@ export const addDraftLotsWorkflow = createWorkflow(
           ob: lot.ob,
           kb: lot.kb,
           end_ms: draft.end_ms,
+          // US-105 (D-081): same fields as create.
+          variety: lot.variety,
+          size_cm: lot.size_cm,
+          age: lot.age ?? null,
+          sex: lot.sex ?? null,
+          has_certificate: lot.has_certificate ?? null,
+          certificate_issuer: lot.certificate_issuer ?? null,
+          pond_origin: lot.pond_origin ?? null,
+          breeder_notes: lot.breeder_notes ?? null,
+          video_url: lot.video_url ?? null,
         })),
       }))
     )

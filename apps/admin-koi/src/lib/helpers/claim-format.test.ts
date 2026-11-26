@@ -31,10 +31,11 @@ test('labels both remedies', () => {
   assert.equal(claimRemedyLabel('replacement'), 'Penggantian ikan');
 });
 
-test('reads the open time in Jakarta time', () => {
+test('reads the open time in Jakarta time, labelled WIB', () => {
   const formatted = formatClaimDate('2026-11-14T17:20:00.000Z');
   assert.match(formatted, /2026/);
   assert.match(formatted, /15/);
+  assert.match(formatted, / WIB$/);
 });
 
 test('a claim decided meanwhile (409) refreshes with the app copy', () => {

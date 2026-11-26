@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Star } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useId, useState } from 'react';
+import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -31,7 +31,10 @@ export type RateFarmerProps = {
 
 export function RateFarmer({ lotId, sellerName }: RateFarmerProps) {
   const router = useRouter();
-  const id = useId();
+  // Derived from the lot id: the won list renders one form per lot, and a
+  // `useId` here replays differently on the server and the client under
+  // Next's bundled React, leaving the label pointing at an id that isn't there.
+  const id = `rate-farmer-${lotId}`;
   const ratingErrorId = `${id}-rating-error`;
   const noteErrorId = `${id}-note-error`;
   const [open, setOpen] = useState(false);
@@ -78,13 +81,13 @@ export function RateFarmer({ lotId, sellerName }: RateFarmerProps) {
     <>
       <Button type="button" variant="outline" size="xs" onClick={() => setOpen(true)}>
         <Star aria-hidden className="size-3" />
-        Nilai kebun
+        Nilai farm
       </Button>
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>Nilai kebun</SheetTitle>
+            <SheetTitle>Nilai farm</SheetTitle>
             <SheetDescription>
               Bagaimana pengalaman Anda dengan {sellerName}? Penilaian ini hanya bisa dikirim
               sekali untuk lot ini.

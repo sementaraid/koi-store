@@ -69,16 +69,6 @@ export function Addresses({ addresses, openOrders, identity }: AddressesProps) {
   return (
     <AccountFrame
       title="Alamat"
-      eyebrow={
-        <>
-          <MapPin
-            aria-hidden
-            className="size-3.5"
-          />
-          Akun
-        </>
-      }
-      description="Alamat yang dipakai saat koi Anda dikirim."
       action={
         <Button onClick={openCreate}>
           <Plus className="size-4" aria-hidden />

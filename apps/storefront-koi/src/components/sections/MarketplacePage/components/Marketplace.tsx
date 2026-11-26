@@ -1,4 +1,4 @@
-import { Boxes, PackageCheck } from "lucide-react"
+import { Boxes, PackageCheck, TriangleAlert } from "lucide-react"
 
 import { Button, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
@@ -14,6 +14,7 @@ import {
 } from "@/const/marketplace"
 import { EmptyFeed } from "@/components/cells/EmptyFeed/EmptyFeed"
 import { FacetSidebar } from "@/components/cells/FacetSidebar/FacetSidebar"
+import { RetryButton } from "@/components/cells/RetryButton/RetryButton"
 import { FeedFilters } from "@/components/molecules/FeedFilters/FeedFilters"
 import { FeedGrid } from "@/components/atoms/FeedGrid/FeedGrid"
 import { FeedHero } from "@/components/cells/FeedHero/FeedHero"
@@ -38,6 +39,7 @@ export function Marketplace({
   pageSize = PAGE_SIZE,
   onFilterChange,
   onPageChange,
+  failed = false,
   attributes,
   selected = {},
   onAttributesChange,
@@ -87,17 +89,18 @@ export function Marketplace({
             {inStock} produk siap kirim
           </>
         }
-      />
-
-      <FeedFilters
-        scope="market"
-        filter={filter}
-        onFilterChange={onFilterChange}
-        tabs={DEFAULT_MARKET_TABS}
+        tabs={
+          <FeedFilters
+            scope="market"
+            filter={filter}
+            onFilterChange={onFilterChange}
+            tabs={DEFAULT_MARKET_TABS}
+          />
+        }
       />
 
       <div
-        className={`${CONTAINER} grid gap-8 py-8 max-sm:gap-4 max-sm:py-4 lg:grid-cols-[240px_minmax(0,1fr)] lg:py-10`}
+        className={`${CONTAINER} grid gap-8 py-8 max-sm:gap-4 max-sm:py-5 lg:grid-cols-[240px_minmax(0,1fr)] lg:py-10`}
       >
         <FacetSidebar
           scope="market"
@@ -113,76 +116,92 @@ export function Marketplace({
           onCategoryChange={(category) => onFilterChange?.({ ...filter, category })}
           attributes={attributes}
           selected={selected}
+          onReset={reset}
+          hasFilters={narrowing}
           {...(onAttributesChange ? { onAttributesChange } : {})}
         />
 
         <div className="min-w-0">
-          <FeedSummary
-            total={total}
-            statusLabel={STOCK_LABEL[filter.status]}
-            category={filter.category}
-            page={current}
-            pageCount={pageCount}
-            onReset={narrowing ? reset : undefined}
-          />
-
-          <RenderIf when={items.length ? items : null}>
-            {(list) => (
-              <FeedGrid cols={3}>
-                {list.map((item) => {
-                  const level = item.sale.stock?.level
-                  return (
-                    <ProductCard
-                      key={item.id}
-                      product={item}
-                      href={goodHref(item.id)}
-                      action={
-                        <Button
-                          render={<Link href={goodHref(item.id)} />}
-                          size="sm"
-                          variant={level === "in-stock" ? "solid" : "outline"}
-                          className="flex-1"
-                        >
-                          {level === "in-stock"
-                            ? "Beli sekarang"
-                            : "Lihat detail"}
-                        </Button>
-                      }
-                    />
-                  )
-                })}
-              </FeedGrid>
-            )}
-          </RenderIf>
-
-          <RenderIf when={!items.length}>
-            {() => (
+          {failed ? (
+            <div role="alert">
               <EmptyFeed
-                icon={<Boxes aria-hidden />}
-                narrowing={narrowing}
-                onReset={reset}
-                noMatchTitle="Tidak ada produk yang cocok"
-                noMatchBody="Coba longgarkan filter, atau lihat semua produk yang tersedia."
-                emptyTitle="Belum ada produk"
-                emptyBody="Stok baru masuk setiap minggu. Pantau halaman ini atau lihat koi yang sedang dilelang."
-                action={
-                  <Button
-                    render={<Link href={ROUTES.auctions} />}
-                    nativeButton={false}
-                  >
-                    Lihat lelang
-                  </Button>
-                }
+                icon={<TriangleAlert aria-hidden />}
+                narrowing={false}
+                noMatchTitle="Perlengkapan belum bisa dimuat"
+                noMatchBody="Ada gangguan saat mengambil daftar produk. Data Anda aman. Muat ulang daftar ini."
+                action={<RetryButton />}
               />
-            )}
-          </RenderIf>
+            </div>
+          ) : (
+            <>
+              <FeedSummary
+                total={total}
+                statusLabel={STOCK_LABEL[filter.status]}
+                category={filter.category}
+                page={current}
+                pageCount={pageCount}
+                onReset={narrowing ? reset : undefined}
+              />
 
-          <FeedPagination
-            page={current}
-            pageCount={pageCount}
-            href={basePath}
-            onPageChange={onPageChange}
-          />
+              <RenderIf when={items.length ? items : null}>
+                {(list) => (
+                  <FeedGrid cols={3}>
+                    {list.map((item) => {
+                      const level = item.sale.stock?.level
+                      return (
+                        <ProductCard
+                          key={item.id}
+                          product={item}
+                          href={goodHref(item.id)}
+                          action={
+                            level === "in-stock" ? (
+                              <Button
+                                render={<Link href={goodHref(item.id)} />}
+                                size="sm"
+                                variant="solid"
+                                className="flex-1"
+                              >
+                                Beli sekarang
+                              </Button>
+                            ) : undefined
+                          }
+                        />
+                      )
+                    })}
+                  </FeedGrid>
+                )}
+              </RenderIf>
+
+              <RenderIf when={!items.length}>
+                {() => (
+                  <EmptyFeed
+                    icon={<Boxes aria-hidden />}
+                    narrowing={narrowing}
+                    onReset={reset}
+                    noMatchTitle="Tidak ada produk yang cocok"
+                    noMatchBody="Coba longgarkan filter, atau lihat semua produk yang tersedia."
+                    emptyTitle="Belum ada produk"
+                    emptyBody="Stok baru masuk setiap minggu. Pantau halaman ini atau lihat koi yang sedang dilelang."
+                    action={
+                      <Button
+                        render={<Link href={ROUTES.auctions} />}
+                        nativeButton={false}
+                      >
+                        Lihat lelang
+                      </Button>
+                    }
+                  />
+                )}
+              </RenderIf>
+
+              <FeedPagination
+                page={current}
+                pageCount={pageCount}
+                href={basePath}
+                onPageChange={onPageChange}
+              />
+            </>
+          )}
         </div>
       </div>
     </div>

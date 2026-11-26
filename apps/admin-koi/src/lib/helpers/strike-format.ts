@@ -52,9 +52,10 @@ export function strikeFailureInfo(status: number | undefined, message: string): 
 }
 
 export function formatStrikeDate(iso: string): string {
-  return new Intl.DateTimeFormat('id-ID', {
+  const formatted = new Intl.DateTimeFormat('id-ID', {
     dateStyle: 'medium',
     timeStyle: 'short',
     timeZone: 'Asia/Jakarta'
   }).format(new Date(iso));
+  return `${formatted} WIB`;
 }

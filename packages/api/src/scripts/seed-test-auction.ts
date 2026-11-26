@@ -27,11 +27,10 @@ import { authIdentityFor } from "./seed-koi"
  * through the product workflow. The balance goes through the admin
  * "Koreksi saldo" workflow (US-013), never a hand-written ledger row.
  *
- * Idempotent: a marked auction that is still live is kept; the customer, its
+ * Idempotent: a fixture auction that is still live is kept; the customer, its
  * wallet and the one credit are each created only when missing.
  */
 
-const TEST_AUCTION_MARKER = "UJI QA · jangan dipakai"
 const FARM_EMAIL = "nusantara.nishikigoi@koi.dev"
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@koi.dev"
 const CREDIT_REASON = "Saldo uji QA US-099"
@@ -76,11 +75,39 @@ export default async function seedTestAuction({ container }: ExecArgs) {
   const auctionService = container.resolve<AuctionModuleService>(AUCTION_MODULE)
 
   // --- Auction --------------------------------------------------------------
-  const { data: existing } = await query.graph({
-    entity: "auction",
-    fields: ["id", "status", "lots.id", "lots.end_time"],
-    filters: { live_stream_url: TEST_AUCTION_MARKER, status: "live" },
+  // Marker: the auction row has no title/slug column, and `live_stream_url` is
+  // a URL (D-061), not a marker. This fixture owns the products it creates,
+  // whose titles are stable across runs and start with "[UJI] " (only this
+  // script creates that prefix), so a previous run is found through their lots.
+  // Products of a cancelled fixture keep the same titles, hence the status
+  // filter on the auction below.
+  const { data: fixtureProducts } = await query.graph({
+    entity: "product",
+    fields: ["id"],
+    filters: { title: LOTS.map((lot) => lot.title) },
   })
+  const fixtureProductIds = (fixtureProducts as { id: string }[]).map(
+    (p) => p.id
+  )
+  const fixtureLots = (
+    fixtureProductIds.length
+      ? (
+          await query.graph({
+            entity: "lot",
+            fields: ["auction_id"],
+            filters: { product_id: fixtureProductIds },
+          })
+        ).data
+      : []
+  ) as { auction_id: string }[]
+  const fixtureAuctionIds = [...new Set(fixtureLots.map((lot) => lot.auction_id))]
+  const { data: existing } = fixtureAuctionIds.length
+    ? await query.graph({
+        entity: "auction",
+        fields: ["id", "status", "lots.id", "lots.end_time"],
+        filters: { id: fixtureAuctionIds, status: "live" },
+      })
+    : { data: [] }
   const live = existing[0] as
     | { id: string; lots?: { id: string; end_time: string }[] }
     | undefined
@@ -173,7 +200,9 @@ export default async function seedTestAuction({ container }: ExecArgs) {
         listing_fee: 0,
         join_fee: Number(fee.join_fee),
         extend_window_minutes: extendWindow,
-        live_stream_url: TEST_AUCTION_MARKER,
+        // The demo auction (seed-lots.ts) carries the US-106 AC3 live link;
+        // this QA fixture stays without one.
+        live_stream_url: null,
       },
     ])
 

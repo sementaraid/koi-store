@@ -46,3 +46,6 @@ yarn-error.log*
 .DS_Store
 *.pem
 .claude/settings.local.json
+
+# Derived extraction of the design mockup (regenerate from the HTML)
+ui_ux/boards/

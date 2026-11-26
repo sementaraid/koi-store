@@ -1,11 +1,12 @@
 import type { ReactNode } from "react"
-import { Ban, CalendarClock, CircleCheck, Clock, Radio, TrendingDown } from "lucide-react"
+import { Ban, CalendarClock, CircleCheck, Clock, TrendingDown } from "lucide-react"
 
 import { Badge } from "@koi/ui"
 import type { Chip, ChipIcon } from "@/lib/helpers/lot-card"
 
 const ICONS: Record<ChipIcon, ReactNode> = {
-  live: <Radio />,
+  // The live chip is a dot plus the word, as on the boards; the others stay icons.
+  live: <span className="size-1.5 rounded-full bg-current" />,
   clock: <Clock />,
   calendar: <CalendarClock />,
   done: <CircleCheck />,

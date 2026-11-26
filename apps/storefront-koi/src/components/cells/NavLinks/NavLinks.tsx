@@ -30,7 +30,7 @@ export function NavLinks({
     : undefined
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-6">
       {links.map(({ label, href, live }) => {
         const active = href === activeHref
         return (
@@ -42,9 +42,10 @@ export function NavLinks({
             size="sm"
             aria-current={active ? "page" : undefined}
             className={cn(
-              "gap-1.5 px-2 text-xs",
+              // US-103 AC9: 14 px, 2 px underline on the current item.
+              "gap-1.5 px-0 text-sm hover:no-underline",
               active
-                ? "font-bold text-accent-ink"
+                ? "font-semibold text-accent-ink shadow-[inset_0_-2px_0_0_var(--accent-ink)]"
                 : "text-muted-foreground hover:text-accent-ink"
             )}
           >

@@ -14,7 +14,10 @@ import {
   listProducts,
   searchProducts
 } from '@/lib/data/products';
-import { readAttributeSelection } from '@/lib/helpers/attribute-facets';
+import {
+  readAttributeSelection,
+  splitAttributeSelection
+} from '@/lib/helpers/attribute-facets';
 import { COUNTRY_CODE } from '@/lib/region';
 
 import { CatalogsFeed } from './components/CatalogsFeed';
@@ -39,22 +42,28 @@ export async function CatalogPage({
     : undefined;
 
   const selected = readAttributeSelection(facets, params);
+  const { variantAxis, productValues } = splitAttributeSelection(facets, selected);
   const narrowed = Object.keys(selected).length > 0;
 
-  const products =
+  const { products, failed } =
     query || narrowed
       ? await searchProducts({
           ...(query ? { query } : {}),
-          ...(narrowed ? { attributes: selected } : {}),
+          ...(narrowed
+            ? { attributes: variantAxis, attributeValues: productValues }
+            : {}),
           category_id,
           countryCode: COUNTRY_CODE,
           limit: FEED_LIMIT
-        }).then(({ products }) => products)
+        })
       : await listProducts({
           category_id,
           countryCode: COUNTRY_CODE,
           queryParams: { limit: FEED_LIMIT }
-        }).then(({ response }) => response.products);
+        }).then(({ response, failed }) => ({
+          products: response.products,
+          failed
+        }));
 
   const basePathQuery = new URLSearchParams();
   if (query) basePathQuery.set('q', query);
@@ -70,6 +79,7 @@ export async function CatalogPage({
     <CatalogsFeed
       koi={toSimpleProducts(products)}
       attributes={facets}
+      failed={failed}
       {...(basePath ? { basePath } : {})}
       {...(query
         ? {

@@ -6,11 +6,12 @@ import { LoginSkeleton } from '@/components/sections/LoadingPages/AuthLoadingPag
 
 import { LoginPage } from '@/components/sections';
 import { ROUTES } from '@/const/routes';
+import { SITE_NAME } from '@/const/site';
 import { getSession } from '@/lib/data/session';
 
 export const metadata: Metadata = {
   title: 'Masuk',
-  description: 'Masuk ke akun Indokoi Anda.'
+  description: `Masuk ke akun ${SITE_NAME} Anda.`
 };
 
 export default async function MasukRoute() {

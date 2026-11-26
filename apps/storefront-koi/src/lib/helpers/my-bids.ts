@@ -52,7 +52,23 @@ export function groupMyBids<T extends GroupableBid>(bids: T[]): BidBuckets<T> {
 
 export type WonStepKey = "won" | "paid" | "shipped" | "delivered"
 export type WonStepState = "done" | "current" | "todo"
-export type WonStep = { key: WonStepKey; label: string; state: WonStepState }
+export type WonStepDates = {
+  closed_at?: string | null
+  paid_at?: string | null
+  shipped_at?: string | null
+  delivered_at?: string | null
+  tracking_number?: string | null
+}
+export type WonStep = {
+  key: WonStepKey
+  label: string
+  state: WonStepState
+  // D-072: the saved step date in ISO, null when the step has none (a lot paid
+  // before US-108) or has not been reached.
+  date: string | null
+  // The courier tracking number rides on the shipped step only.
+  tracking: string | null
+}
 
 export const WON_STEPS: { key: WonStepKey; label: string }[] = [
   { key: "won", label: "Menang" },
@@ -61,9 +77,22 @@ export const WON_STEPS: { key: WonStepKey; label: string }[] = [
   { key: "delivered", label: "Diterima" },
 ]
 
-// The ladder from US-101 AC3. `claimed` happens after delivery, so it shows
+const stepDate = (key: WonStepKey, dates?: WonStepDates): string | null => {
+  switch (key) {
+    case "won":
+      return dates?.closed_at ?? null
+    case "paid":
+      return dates?.paid_at ?? null
+    case "shipped":
+      return dates?.shipped_at ?? null
+    case "delivered":
+      return dates?.delivered_at ?? null
+  }
+}
+
+// The ladder from US-101 AC3/AC8. `claimed` happens after delivery, so it shows
 // Diterima as the reached step. An unknown status starts at Menang.
-export function wonSteps(status?: string | null): WonStep[] {
+export function wonSteps(status?: string | null, dates?: WonStepDates): WonStep[] {
   const key = status === "claimed" ? "delivered" : status
   const found = WON_STEPS.findIndex((step) => step.key === key)
   const reached = found < 0 ? 0 : found
@@ -71,5 +100,7 @@ export function wonSteps(status?: string | null): WonStep[] {
   return WON_STEPS.map((step, index) => ({
     ...step,
     state: index < reached ? "done" : index === reached ? "current" : "todo",
+    date: stepDate(step.key, dates),
+    tracking: step.key === "shipped" ? (dates?.tracking_number ?? null) : null,
   }))
 }

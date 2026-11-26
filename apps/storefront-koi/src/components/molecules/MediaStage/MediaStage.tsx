@@ -19,8 +19,9 @@ export type MediaStageProps = {
   title?: string
   overlay?: ReactNode
   /* Board 03: the phone gallery runs full width and the desktop gallery stays
-     in its column. */
-  bleed?: boolean
+     in its column. "wide" also covers the 32 px gutter from `sm` up, so the
+     product gallery stays flush to both edges on tablets (owner 2026-11-25). */
+  bleed?: "phone" | "wide"
   className?: string
 }
 
@@ -38,7 +39,7 @@ export function MediaStage({ items, title, overlay, bleed, className }: MediaSta
     <div
       className={cn(
         "relative flex flex-col gap-2",
-        bleed && "-mx-4 lg:mx-0",
+        bleed === "wide" ? "-mx-4 sm:-mx-8 lg:mx-0" : bleed && "-mx-4 lg:mx-0",
         className
       )}
     >

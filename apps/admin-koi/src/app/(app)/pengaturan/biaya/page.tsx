@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@koi/ui';
+import { AdminError } from '@/components/AdminError';
+import { AdminPageHeader } from '@/components/AdminPageHeader';
 import { FeeTable } from '@/components/FeeTable';
 import { SettingsForm } from '@/components/SettingsForm';
 import { ROUTES } from '@/const/routes';
@@ -18,35 +19,27 @@ export default async function FeesRoute() {
 
   return (
     <div className="grid gap-6">
-      <div className="grid gap-1">
-        <h1 className="text-xl font-medium tracking-tight">Tabel biaya</h1>
-        <p className="text-sm text-muted-foreground">
-          Biaya listing dan join per kategori, plus jendela extend.
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Tabel biaya"
+        description="Biaya listing dan biaya ikut per lot, per kategori, plus jendela extend."
+      />
 
       {categories ? (
         <FeeTable categories={categories} />
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Gagal memuat tabel biaya</CardTitle>
-            <CardDescription>Muat ulang halaman untuk mencoba lagi.</CardDescription>
-          </CardHeader>
-          <CardContent />
-        </Card>
+        <AdminError
+          title="Gagal memuat tabel biaya"
+          description="Kategori biaya tidak dapat dimuat."
+        />
       )}
 
       {settings ? (
         <SettingsForm settings={settings} />
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Gagal memuat pengaturan</CardTitle>
-            <CardDescription>Muat ulang halaman untuk mencoba lagi.</CardDescription>
-          </CardHeader>
-          <CardContent />
-        </Card>
+        <AdminError
+          title="Gagal memuat pengaturan"
+          description="Pengaturan platform tidak dapat dimuat."
+        />
       )}
     </div>
   );

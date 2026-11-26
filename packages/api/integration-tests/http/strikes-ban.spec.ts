@@ -163,8 +163,8 @@ medusaIntegrationTestRunner({
       return row
     }
 
-    const join = (auctionId: string, headers: Record<string, string>) =>
-      api.post(`/store/auctions/${auctionId}/join`, {}, { headers })
+    const join = (lotId: string, headers: Record<string, string>) =>
+      api.post(`/store/lots/${lotId}/join`, {}, { headers })
 
     const bid = (
       headers: Record<string, string>,
@@ -254,6 +254,9 @@ medusaIntegrationTestRunner({
           photos: ["http://localhost:9000/static/koi.jpg"],
           ob: 1_000_000,
           kb: 100_000,
+          // US-105 (D-081): required on every new lot.
+          variety: "Kohaku",
+          size_cm: 55,
         },
       ],
     })
@@ -267,9 +270,10 @@ medusaIntegrationTestRunner({
         await strike(banned.id)
         await strike(banned.id)
         const event = await auction()
+        const seeded = await lot(event.id)
         const ledgerBefore = await wallets().listWalletTransactions()
 
-        const res = await failure(join(event.id, banned.auth))
+        const res = await failure(join(seeded.id, banned.auth))
         expect(res.status).toEqual(403)
         expect(res.data.code).toEqual("banned_customer")
         expect(res.data.message).toEqual(
@@ -277,7 +281,7 @@ medusaIntegrationTestRunner({
         )
 
         expect(
-          await auctions().listAuctionParticipants({ auction_id: event.id })
+          await auctions().listLotParticipants({ lot_id: seeded.id })
         ).toHaveLength(0)
         expect(await joinFeeRows(banned.walletId)).toHaveLength(0)
         expect(await wallets().listWalletTransactions()).toHaveLength(
@@ -320,7 +324,7 @@ medusaIntegrationTestRunner({
         const { buyer, event, seeded } = await both()
         await strike(buyer.id)
 
-        expect((await join(event.id, buyer.auth)).status).toEqual(201)
+        expect((await join(seeded.id, buyer.auth)).status).toEqual(201)
         expect(await joinFeeRows(buyer.walletId)).toHaveLength(1)
         expect((await bid(buyer.auth, seeded.id)).status).toEqual(201)
         expect(await auctions().listBids({ lot_id: seeded.id })).toHaveLength(1)
@@ -339,7 +343,7 @@ medusaIntegrationTestRunner({
           },
         ])
 
-        expect((await join(event.id, buyer.auth)).status).toEqual(201)
+        expect((await join(seeded.id, buyer.auth)).status).toEqual(201)
         expect((await bid(buyer.auth, seeded.id)).status).toEqual(201)
       })
 
@@ -349,7 +353,7 @@ medusaIntegrationTestRunner({
         await backdate(old.id, 181)
         await strike(buyer.id)
 
-        expect((await join(event.id, buyer.auth)).status).toEqual(201)
+        expect((await join(seeded.id, buyer.auth)).status).toEqual(201)
         expect((await bid(buyer.auth, seeded.id)).status).toEqual(201)
       })
     })
@@ -433,7 +437,7 @@ medusaIntegrationTestRunner({
     })
 
     describe("the ban does not reach the other farmer actions (D-054, D-060)", () => {
-      it("a banned farmer still marks paid and shipped, and accepts a claim", async () => {
+      it("a banned farmer still ships a paid lot and accepts a claim", async () => {
         const farm = await registerFarm()
         await strike(farm.customer.id)
         await strike(farm.customer.id)
@@ -448,7 +452,8 @@ medusaIntegrationTestRunner({
         })
         const paidLot = await lot(sold.id, {
           product_id: "prod_ban_paid",
-          status: "won",
+          // US-108 (D-068): an admin confirms payment, so the lot starts paid.
+          status: "paid",
           winner_customer_id: winner.id,
           final_price: 1_500_000,
           closed_at: new Date(Date.now() - HOUR),
@@ -474,14 +479,6 @@ medusaIntegrationTestRunner({
         const ledgerBefore = await wallets().listWalletTransactions()
         const walletRowsBefore = await wallets().listWallets()
 
-        const paid = await api.post(
-          `/vendor/sold-lots/${paidLot.id}/paid`,
-          {},
-          { headers: farm.vendor }
-        )
-        expect(paid.status).toEqual(200)
-        expect(paid.data.lot).toMatchObject({ id: paidLot.id, status: "paid" })
-
         const shipped = await api.post(
           `/vendor/sold-lots/${paidLot.id}/shipped`,
           {},
@@ -498,7 +495,7 @@ medusaIntegrationTestRunner({
         expect(accepted.status).toEqual(200)
         expect(accepted.data.claim).toMatchObject({ status: "approved" })
 
-        // D-058: off-platform payment, so no money row moved anywhere.
+        // Shipping and the claim accept move no money row anywhere.
         expect(await wallets().listWalletTransactions()).toHaveLength(
           ledgerBefore.length
         )

@@ -7,6 +7,9 @@ import { StrikePanel } from '@/components/StrikePanel';
 import type { UserReportList } from '@/lib/data/accounts';
 import { formatReportedAt } from '@/lib/helpers/report-format';
 
+import { AdminEmpty } from './AdminEmpty';
+import { AdminError } from './AdminError';
+
 // US-070 T-070.2c (US-058 T-058.4b, US-059): the user page's Strike and Laporan
 // tabs. No new strike UI: US-059's StrikePanel is mounted as-is.
 export function AccountTabs({
@@ -30,16 +33,21 @@ export function AccountTabs({
           defaultReasonType="winner_unpaid"
           customerId={customerId}
           target={{ customer_id: customerId }}
+          idPrefix={`account-${customerId}`}
         />
       </TabsContent>
 
       <TabsContent value="laporan" className="grid gap-3">
         {reports === null ? (
-          <p role="alert" className="text-sm text-destructive-ink">
-            Gagal memuat laporan. Muat ulang halaman untuk mencoba lagi.
-          </p>
+          <AdminError
+            title="Gagal memuat laporan"
+            description="Riwayat laporan akun ini tidak dapat dimuat."
+          />
         ) : reports.reports.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Belum ada laporan untuk akun ini.</p>
+          <AdminEmpty
+            title="Belum ada laporan untuk akun ini"
+            description="Laporan lama yang tersimpan akan muncul di sini."
+          />
         ) : (
           <>
             {reports.count > reports.reports.length ? (

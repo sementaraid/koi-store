@@ -30,14 +30,21 @@ export function ProductDetail({
 } & Pick<
   ProductPageProps,
   | 'description'
+  | 'koi'
   | 'attributes'
   | 'offers'
   | 'offerWinnerId'
   | 'sellerHandle'
-  | 'chatPartner'
   | 'postedAt'
 >) {
-  const state = useFeedSearch<Availability>(DEFAULT_CATALOG_FILTER);
+  // The product page has no attribute facets. Keep the facet selection and the
+  // server action handler out of `state`: spread onto the wrapper div they
+  // render as `selected="[object Object]"` and an unknown DOM event handler.
+  const {
+    selected: _selected,
+    onAttributesChange: _onAttributesChange,
+    ...state
+  } = useFeedSearch<Availability>(DEFAULT_CATALOG_FILTER);
   const router = useRouter();
   const [pending, start] = useTransition();
 

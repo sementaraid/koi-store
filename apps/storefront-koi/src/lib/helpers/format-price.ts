@@ -54,7 +54,13 @@ export function formatPriceCompact(amount: number, currency = "IDR") {
       tenths = Math.round((abs * 10) / COMPACT_UNITS[index][0])
     }
 
-    const number = `${groupDigits(String(Math.floor(tenths / 10)))},${tenths % 10}`
+    // A whole juta-or-above value drops its empty decimal ("Rp 5 jt", not
+    // "Rp 5,0 jt"), and zero is just "Rp 0". Ribu and plain rupiah keep it
+    // ("Rp 500,0 rb", "Rp 999,0"), as before.
+    const fraction = tenths % 10
+    const keepFraction = fraction !== 0 || (index > 2 && abs !== 0)
+    const whole = groupDigits(String(Math.floor(tenths / 10)))
+    const number = keepFraction ? `${whole},${fraction}` : whole
     return `${amount < 0 ? '-' : ''}Rp${NBSP}${number}${COMPACT_UNITS[index][1].replace(' ', NBSP)}`
   }
 

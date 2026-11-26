@@ -14,6 +14,7 @@ import {
 } from '@/lib/helpers/report-format';
 import { activeStrikeLabel, banLabel } from '@/lib/helpers/strike-format';
 
+import { AdminEmpty } from './AdminEmpty';
 import { StrikePanel } from './StrikePanel';
 
 export type ReportQueueProps = {
@@ -21,24 +22,30 @@ export type ReportQueueProps = {
   total: number;
 };
 
+// D-079 retired the farmer's non-payment report. This page is now a read-only
+// archive of the rows that already exist; the admin raises a new non-payment
+// from the Pembayaran pemenang queue instead.
 export function ReportQueue({ reports, total }: ReportQueueProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Laporan belum dibayar</CardTitle>
+        <CardTitle>Arsip laporan belum dibayar</CardTitle>
         <CardDescription>
-          Pemenang tidak membayar dalam 1×24 jam setelah lot ditutup.
+          Laporan yang dibuat petani sebelum alur laporan dipensiunkan (D-079). Laporan baru
+          tidak dibuat lagi; strike diberikan dari Pembayaran pemenang.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-3">
         {total > reports.length ? (
           <p className="text-sm text-muted-foreground">
-            Menampilkan {reports.length} dari {total} laporan. Tindak lanjuti yang di atas
-            untuk melihat sisanya.
+            Menampilkan {reports.length} dari {total} laporan.
           </p>
         ) : null}
         {reports.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Belum ada laporan.</p>
+          <AdminEmpty
+            title="Belum ada laporan lama"
+            description="Tidak ada laporan petani yang tersimpan. Pantau Pembayaran pemenang untuk lot yang lewat batas."
+          />
         ) : (
           reports.map((report) => <ReportRow key={report.id} report={report} />)
         )}
@@ -87,6 +94,7 @@ function ReportRow({ report }: { report: AdminReport }) {
                 ? { customer_id: report.winner.customer_id }
                 : { lot_id: report.lot_id }
             }
+            idPrefix={`report-${report.id}`}
           />
         ) : null}
       </div>

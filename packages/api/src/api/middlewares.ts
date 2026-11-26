@@ -8,6 +8,7 @@ import {
   validateAndTransformQuery,
 } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
+import { z } from "@medusajs/framework/zod"
 import multer from "multer"
 import {
   AdminCreateFeeCategory,
@@ -23,6 +24,11 @@ import {
   AdminGetTopupRequestsParams,
   AdminRejectTopupRequest,
 } from "./admin/topup-requests/validators"
+import {
+  AdminGetPayoutsParams,
+  AdminPayPayout,
+  AdminRefundPayout,
+} from "./admin/payouts/validators"
 import {
   AdminGetFarmsParams,
   AdminRevealFarmPii,
@@ -49,10 +55,7 @@ import { StorePhone } from "./store/customers/validators"
 import { StoreGetWalletParams } from "./store/wallet/validators"
 import { StoreGetLotsParams } from "./store/lots/validators"
 import { StoreGetRatingsParams } from "./store/ratings/validators"
-import {
-  StoreGetWonLotsParams,
-  StoreRevealWonLot,
-} from "./store/won-lots/validators"
+import { StoreGetWonLotsParams } from "./store/won-lots/validators"
 import { StoreRateLot } from "./store/won-lots/[id]/rating/validators"
 import { StorePlaceBid } from "./store/bids/validators"
 import { StoreGetMyBidsParams } from "./store/my-bids/validators"
@@ -77,6 +80,10 @@ import {
   StoreCreateClaimBody,
 } from "./store/won-lots/[id]/claims/validators"
 import {
+  ARRIVAL_PROOF_MAX_BYTES,
+  ARRIVAL_PROOF_MIME_TYPES,
+} from "./store/won-lots/[id]/arrival-proof/validators"
+import {
   captureVendorClaimStatus,
   VendorGetClaimsParams,
 } from "./vendor/claims/validators"
@@ -93,7 +100,11 @@ import {
   AdminRemoveStrike,
 } from "./admin/strikes/validators"
 import { AdminRemoveBid } from "./admin/bids/validators"
-import { AdminCancelReason } from "./admin/lots/validators"
+import {
+  AdminCancelReason,
+  AdminGetLotsParams,
+  AdminRejectPaymentProofReason,
+} from "./admin/lots/validators"
 import { AdminGetLiveAuctionsParams } from "./admin/live-auctions/validators"
 import { AdminGetFarmBiddersParams } from "./admin/farms/[id]/bidders/validators"
 import {
@@ -149,6 +160,53 @@ const clientErrorsAsBadRequest = (
     })
 
 const parseScreenshot = clientErrorsAsBadRequest(screenshotUpload)
+
+// US-109 T-109.1 (AC1, D-077): the winner's one transfer proof, same rule as the
+// top-up screenshot (JPEG/PNG/WebP, 5 MB). Private (D-018).
+const paymentProofUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: SCREENSHOT_MAX_BYTES, files: 1 },
+  fileFilter: (_req, file, cb) =>
+    SCREENSHOT_MIME_TYPES.includes(file.mimetype)
+      ? cb(null, true)
+      : cb(
+          new MedusaError(
+            MedusaError.Types.INVALID_DATA,
+            "Bukti transfer harus berupa gambar JPEG, PNG, atau WebP."
+          )
+        ),
+}).single("proof")
+
+const parsePaymentProof = clientErrorsAsBadRequest(paymentProofUpload, (err) =>
+  err.code === "LIMIT_FILE_SIZE"
+    ? "Ukuran bukti transfer maksimal 5 MB."
+    : "Unggahan bukti transfer tidak valid."
+)
+
+// US-110 T-110.1 (AC2, D-018): the winner's one "arrived healthy" photo or
+// video. The parser accepts either type; the route applies the 5 MB image cap
+// (the parser's own cap is the 100 MB video one).
+const arrivalProofUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: ARRIVAL_PROOF_MAX_BYTES, files: 1 },
+  fileFilter: (_req, file, cb) =>
+    ARRIVAL_PROOF_MIME_TYPES.includes(file.mimetype)
+      ? cb(null, true)
+      : cb(
+          new MedusaError(
+            MedusaError.Types.INVALID_DATA,
+            "Foto atau video kondisi koi harus berupa JPEG, PNG, WebP, MP4, WebM, atau QuickTime."
+          )
+        ),
+}).single("file")
+
+const parseArrivalProof = clientErrorsAsBadRequest(
+  arrivalProofUpload,
+  (err) =>
+    err.code === "LIMIT_FILE_SIZE"
+      ? "Ukuran video maksimal 100 MB dan foto maksimal 5 MB."
+      : "Unggahan kondisi koi tidak valid."
+)
 
 // US-054 T-054.1a (AC2, D-055): the unboxing video, video-only, up to 100 MB.
 const claimVideoUpload = multer({
@@ -293,6 +351,118 @@ const refuseUnsuspendOfRejectedFarm = async (
   } catch (error) {
     next(error)
   }
+}
+
+// Mercur's `/store/products` `attributes[<handle>]` filter only matches variant
+// axis values: its middleware rewrites every entry to `variants.options.value`.
+// Koi's descriptive attributes (bloodline, origin, age, sex, scale type,
+// certificate) are `product_attribute_values`, not variant options, so that
+// filter can never match them. This adds `attribute_values[<handle>]=value`,
+// which filters on the product attribute value link instead.
+//
+// Two steps: Mercur's `validateAndTransformQuery` rejects unknown query keys
+// and runs on the leaf path, so a method-less (global) middleware strips the
+// parameter first; the method-specific entry then runs after Mercur's and
+// appends the filter it built.
+const StoreProductAttributeValueFilters = z.record(
+  z.string(),
+  z.union([z.string(), z.array(z.string())])
+)
+
+const pendingAttributeValueFilters = new WeakMap<
+  MedusaRequest,
+  Record<string, string | string[]>
+>()
+
+const captureAttributeValueFilters = (
+  req: MedusaRequest,
+  _res: MedusaResponse,
+  next: MedusaNextFunction
+) => {
+  const query = req.query as Record<string, unknown>
+  const raw = query.attribute_values
+  if (!raw) {
+    return next()
+  }
+
+  delete query.attribute_values
+
+  const parsed = StoreProductAttributeValueFilters.safeParse(raw)
+  if (!parsed.success) {
+    return next(
+      new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        "attribute_values must map attribute handles to one or more values"
+      )
+    )
+  }
+
+  pendingAttributeValueFilters.set(req, parsed.data)
+  next()
+}
+
+const applyAttributeValueFilters = async (
+  req: MedusaRequest,
+  _res: MedusaResponse,
+  next: MedusaNextFunction
+) => {
+  const selected = pendingAttributeValueFilters.get(req)
+  pendingAttributeValueFilters.delete(req)
+  if (!selected) {
+    return next()
+  }
+
+  const entries = Object.entries(selected)
+    .map(([handle, value]) => ({
+      handle,
+      values: (Array.isArray(value) ? value : value.split(","))
+        .map((entry) => entry.trim())
+        .filter(Boolean),
+    }))
+    .filter(({ values }) => values.length > 0)
+
+  if (!entries.length) {
+    return next()
+  }
+
+  try {
+    const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+
+    // A single link filter can't AND across two attributes (one joined value
+    // row belongs to one attribute), and query.graph rejects link aliases
+    // inside the top-level `$and`. Resolve each attribute to product ids, then
+    // intersect them; the route filters on the result.
+    let matched: Set<string> | undefined
+
+    for (const { handle, values } of entries) {
+      const { data } = await query.graph({
+        entity: "product",
+        fields: ["id"],
+        filters: {
+          product_attribute_values: { attribute: { handle }, name: values },
+        } as never,
+        // No `take`: the graph query returns every match, so the intersection
+        // is not truncated at the default page size.
+        pagination: { skip: 0 },
+      })
+
+      const ids = new Set((data as { id: string }[]).map((product) => product.id))
+      matched = matched
+        ? new Set([...matched].filter((id) => ids.has(id)))
+        : ids
+
+      if (matched.size === 0) {
+        break
+      }
+    }
+
+    const filters = (req.filterableFields ??= {}) as Record<string, unknown>
+    filters.id = matched ? [...matched] : []
+  } catch (error) {
+    return next(error)
+  }
+
+  next()
 }
 
 export default defineMiddlewares({
@@ -490,6 +660,26 @@ export default defineMiddlewares({
         validateAndTransformBody(StoreRateLot),
       ],
     },
+    // US-109 T-109.1 (AC1, D-077): the winner uploads one transfer proof on a
+    // `won` lot. Auth first, so an anonymous request never gets its body parsed.
+    {
+      method: ["POST"],
+      matcher: "/store/won-lots/:id/proof",
+      middlewares: [
+        authenticate("customer", ["bearer", "session"]),
+        parsePaymentProof,
+      ],
+    },
+    // US-110 T-110.1 (AC2, D-018): the winner uploads one photo or video of the
+    // koi arrived healthy on a `shipped`/`delivered` lot. Auth first.
+    {
+      method: ["POST"],
+      matcher: "/store/won-lots/:id/arrival-proof",
+      middlewares: [
+        authenticate("customer", ["bearer", "session"]),
+        parseArrivalProof,
+      ],
+    },
     // US-051 T-051.6 / US-053 T-053.2: the caller's own won lots, read only.
     // Customer token; no farmer contact in either response (D-052).
     {
@@ -508,16 +698,6 @@ export default defineMiddlewares({
       method: ["GET"],
       matcher: "/store/won-lots/:id",
       middlewares: [authenticate("customer", ["bearer", "session"])],
-    },
-    // US-051 T-051.3a (D-057): the winner reveals the farmer's bank account.
-    // Auth first, so an anonymous request never gets its body parsed.
-    {
-      method: ["POST"],
-      matcher: "/store/won-lots/:id/reveal",
-      middlewares: [
-        authenticate("customer", ["bearer", "session"]),
-        validateAndTransformBody(StoreRevealWonLot),
-      ],
     },
     {
       method: ["GET"],
@@ -670,6 +850,29 @@ export default defineMiddlewares({
       matcher: "/admin/topup-requests/:id/reject",
       middlewares: [validateAndTransformBody(AdminRejectTopupRequest)],
     },
+    // US-110 T-110.3 (AC4, D-002, D-078): the admin-koi payout queue and the
+    // recorded manual transfer/refund. Admin auth is Medusa's /admin default.
+    {
+      method: ["GET"],
+      matcher: "/admin/payouts",
+      middlewares: [
+        validateAndTransformQuery(AdminGetPayoutsParams, {
+          defaults: [],
+          isList: true,
+          defaultLimit: 20,
+        }),
+      ],
+    },
+    {
+      method: ["POST"],
+      matcher: "/admin/payouts/:id/pay",
+      middlewares: [validateAndTransformBody(AdminPayPayout)],
+    },
+    {
+      method: ["POST"],
+      matcher: "/admin/payouts/:id/refund",
+      middlewares: [validateAndTransformBody(AdminRefundPayout)],
+    },
     // US-030. Mercur's /vendor/* catch-all already authenticates the member
     // and resolves `req.seller_context` from `x-seller-id`; these only validate.
     {
@@ -781,12 +984,33 @@ export default defineMiddlewares({
       matcher: "/admin/bids/:id/remove",
       middlewares: [validateAndTransformBody(AdminRemoveBid)],
     },
+    // US-108 T-108.3a (AC5, D-002, D-068): the admin-koi "Pembayaran pemenang"
+    // queue. Status defaults to `won`; `overdue=true` keeps past-deadline lots.
+    {
+      method: ["GET"],
+      matcher: "/admin/lots",
+      middlewares: [
+        validateAndTransformQuery(AdminGetLotsParams, {
+          defaults: [],
+          isList: true,
+          defaultLimit: 20,
+        }),
+      ],
+    },
     // US-091 T-091.1a (AC1, D-035, D-055): the admin cancels one open lot with
     // a written reason. Admin auth is Medusa's /admin default.
     {
       method: ["POST"],
       matcher: "/admin/lots/:id/cancel",
       middlewares: [validateAndTransformBody(AdminCancelReason)],
+    },
+    // US-109 T-109.1 (AC2, D-077): the admin rejects the winner's pending
+    // transfer proof with a required, non-blank reason. Admin auth is Medusa's
+    // /admin default.
+    {
+      method: ["POST"],
+      matcher: "/admin/lots/:id/reject-payment-proof",
+      middlewares: [validateAndTransformBody(AdminRejectPaymentProofReason)],
     },
     // US-072 T-072.1b (D-002): the admin-koi live monitoring list; only paging.
     {
@@ -911,6 +1135,17 @@ export default defineMiddlewares({
       method: ["POST"],
       matcher: "/admin/customers/:id/wallet-adjustments",
       middlewares: [validateAndTransformBody(AdminCreateWalletAdjustment)],
+    },
+    // Product attribute values that are not variant axes. No method on the
+    // first entry: it must run before Mercur's strict query validator.
+    {
+      matcher: "/store/products",
+      middlewares: [captureAttributeValueFilters],
+    },
+    {
+      method: ["GET"],
+      matcher: "/store/products",
+      middlewares: [applyAttributeValueFilters],
     },
   ],
 })

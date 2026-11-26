@@ -70,6 +70,12 @@ module.exports = withMercur({
       resolve: './src/modules/moderation',
     },
 
+    // US-110 (D-069, D-074, D-075, D-078): one payout per paid lot, the
+    // winner's arrival proof and the admin's recorded transfer/refund.
+    {
+      resolve: './src/modules/payout',
+    },
+
     // US-020 (T-020.1). Farm registration data that Mercur's seller has no
     // column for. D-017: the KTP photo key and NIK are private; the farm photos
     // are public and will show on auction pages. The module creates the linked

@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 
 import {
   Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -11,6 +12,9 @@ import {
 } from '@koi/ui';
 import { AccountPhone } from '@/components/AccountPhone';
 import { AccountTabs } from '@/components/AccountTabs';
+import { AdminEmpty } from '@/components/AdminEmpty';
+import { AdminError } from '@/components/AdminError';
+import { AdminPageHeader } from '@/components/AdminPageHeader';
 import { FarmBidders } from '@/components/FarmBidders';
 import { ROUTES } from '@/const/routes';
 import {
@@ -41,41 +45,33 @@ export default async function UserRoute({ params }: { params: Promise<{ id: stri
     if (result.error === 'not_found') {
       return (
         <div className="grid gap-6">
-          <div className="grid gap-1">
-            <Link href={ROUTES.users} className="text-sm text-muted-foreground hover:underline">
-              ← Kembali ke pengguna
-            </Link>
-            <h1 className="text-xl font-medium tracking-tight">Pengguna</h1>
-          </div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Pengguna tidak ditemukan</CardTitle>
-              <CardDescription>
-                Akun ini tidak ada. Kembali ke daftar dan pilih pengguna lain.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+          <AdminPageHeader
+            title="Pengguna"
+            back={
               <Link
                 href={ROUTES.users}
-                className="text-sm text-accent-ink underline underline-offset-4"
+                className="text-sm text-muted-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               >
-                Kembali ke daftar
+                ← Kembali ke pengguna
               </Link>
-            </CardContent>
-          </Card>
+            }
+          />
+          <AdminEmpty
+            title="Pengguna tidak ditemukan"
+            description="Akun ini tidak ada. Kembali ke daftar dan pilih pengguna lain."
+            action={
+              <Button render={<Link href={ROUTES.users} />} variant="outline">
+                Kembali ke daftar
+              </Button>
+            }
+          />
         </div>
       );
     }
     return (
       <div className="grid gap-6">
-        <h1 className="text-xl font-medium tracking-tight">Pengguna</h1>
-        <Card>
-          <CardHeader>
-            <CardTitle>Gagal memuat akun</CardTitle>
-            <CardDescription>Muat ulang halaman untuk mencoba lagi.</CardDescription>
-          </CardHeader>
-          <CardContent />
-        </Card>
+        <AdminPageHeader title="Pengguna" />
+        <AdminError title="Gagal memuat akun" description="Profil akun ini tidak dapat dimuat." />
       </div>
     );
   }
@@ -89,20 +85,27 @@ export default async function UserRoute({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="grid gap-6">
-      <div className="grid gap-1">
-        <Link href={ROUTES.users} className="text-sm text-muted-foreground hover:underline">
-          ← Kembali ke pengguna
-        </Link>
-        <h1 className="text-xl font-medium tracking-tight">{accountName(account)}</h1>
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant={account.active_strikes >= 2 ? 'urgent' : 'muted'}>
-            {account.active_strikes} strike aktif
-          </Badge>
-          <Badge variant={account.banned ? 'urgent' : 'neutral'}>
-            {account.banned ? 'Diblokir' : 'Tidak diblokir'}
-          </Badge>
-        </div>
-      </div>
+      <AdminPageHeader
+        title={accountName(account)}
+        back={
+          <Link
+            href={ROUTES.users}
+            className="text-sm text-muted-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            ← Kembali ke pengguna
+          </Link>
+        }
+        description={
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={account.active_strikes >= 2 ? 'urgent' : 'muted'}>
+              {account.active_strikes} strike aktif
+            </Badge>
+            <Badge variant={account.banned ? 'urgent' : 'neutral'}>
+              {account.banned ? 'Diblokir' : 'Tidak diblokir'}
+            </Badge>
+          </div>
+        }
+      />
 
       <Card>
         <CardHeader>
@@ -142,14 +145,15 @@ export default async function UserRoute({ params }: { params: Promise<{ id: stri
         </CardHeader>
         <CardContent className="grid gap-3">
           {wallet === null ? (
-            <p role="alert" className="text-sm text-destructive-ink">
-              Gagal memuat saldo. Muat ulang halaman untuk mencoba lagi.
-            </p>
+            <AdminError title="Gagal memuat saldo" description="Saldo akun ini tidak dapat dimuat." />
           ) : (
             <>
               <p className="text-lg font-medium">{formatRupiah(wallet.balance)}</p>
               {wallet.transactions.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Belum ada transaksi.</p>
+                <AdminEmpty
+                  title="Belum ada transaksi"
+                  description="Mutasi dan koreksi saldo akan muncul di sini."
+                />
               ) : (
                 <div className="grid gap-2">
                   {wallet.transactions.map((transaction) => (
@@ -179,7 +183,7 @@ export default async function UserRoute({ params }: { params: Promise<{ id: stri
       <Card>
         <CardHeader>
           <CardTitle>Moderasi</CardTitle>
-          <CardDescription>Beri strike atau tinjau laporan akun ini.</CardDescription>
+          <CardDescription>Beri strike atau tinjau arsip laporan akun ini.</CardDescription>
         </CardHeader>
         <CardContent>
           <AccountTabs customerId={account.id} reports={reports} />

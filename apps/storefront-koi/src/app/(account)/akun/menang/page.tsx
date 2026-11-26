@@ -1,22 +1,9 @@
-import type { Metadata } from 'next';
-import { Suspense } from 'react';
+import { redirect } from 'next/navigation';
 
-import { WonLotsPage } from '@/components/sections';
-import { WonLotsSkeleton } from '@/components/sections/LoadingPages/AccountLoadingPages';
+import { myBidsTabHref } from '@/const/routes';
 
-export const metadata: Metadata = {
-  title: 'Lot yang dimenangkan'
-};
-
-export default async function Page({
-  searchParams
-}: {
-  searchParams: Promise<{ page?: string | string[] }>;
-}) {
-  const { page } = await searchParams;
-  return (
-    <Suspense fallback={<WonLotsSkeleton />}>
-      <WonLotsPage page={page} />
-    </Suspense>
-  );
+// US-101 AC9: the old won-lot page duplicated the `Menang` tab. Old links keep
+// working by landing on that tab instead.
+export default function Page() {
+  redirect(myBidsTabHref('menang'));
 }

@@ -12,10 +12,10 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
   FormField
 } from '@koi/ui';
 import { ROUTES } from '@/const/routes';
+import { SITE_NAME } from '@/const/site';
 import { login } from '@/lib/data/auth';
 import { safeRedirect } from '@/lib/helpers/safe-redirect';
 
@@ -70,7 +70,7 @@ export function LoginForm() {
             <p className="text-2xs font-bold tracking-widest text-muted-foreground uppercase">
               Admin
             </p>
-            <CardTitle className="text-xl tracking-tight">Koi Store Back Office</CardTitle>
+            <h1 className="font-heading text-xl font-bold tracking-tight">{SITE_NAME} Admin</h1>
             <CardDescription>
               Masuk dengan akun admin untuk menyetujui kebun, top-up, dan lelang.
             </CardDescription>

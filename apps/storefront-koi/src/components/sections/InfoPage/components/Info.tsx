@@ -16,7 +16,8 @@ export function Info({ doc, slug }: InfoProps) {
     <div data-slot="info-page">
       <PageTrail trail={[{ label: 'Beranda', href: ROUTES.home }, { label: doc.title }]} />
       <article className={`${CONTAINER} max-w-[760px] py-10 lg:py-14`}>
-        <header className="flex flex-col gap-3">
+        {/* AC12: the shell already renders the page's one <header>. */}
+        <div className="flex flex-col gap-3">
           <Eyebrow>{doc.eyebrow}</Eyebrow>
           <h1 className="font-heading text-2xl font-black text-pretty sm:text-3xl">
             {doc.title}
@@ -24,7 +25,7 @@ export function Info({ doc, slug }: InfoProps) {
           <p className="text-sm leading-relaxed text-muted-foreground text-pretty">
             {doc.lede}
           </p>
-        </header>
+        </div>
 
         <div className="mt-10 flex flex-col gap-9">
           {doc.sections.map((section) => (

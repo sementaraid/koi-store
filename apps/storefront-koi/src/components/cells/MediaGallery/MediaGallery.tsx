@@ -1,12 +1,22 @@
 import { useState, type KeyboardEvent, type ReactNode } from "react"
 import { cn } from "cn"
-import { ChevronLeft, ChevronRight, Play } from "lucide-react"
+import { Check, ChevronLeft, ChevronRight, Play, ZoomIn } from "lucide-react"
 
-import { Button, RenderIf } from "@koi/ui"
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger,
+  RenderIf,
+} from "@koi/ui"
 export type MediaItem = {
   src: string
   kind: "image" | "video"
   poster?: string
+  // US-105 AC5 / US-098 AC12: a YouTube video plays through a
+  // youtube-nocookie embed, not a native <video>.
+  youtubeId?: string
 }
 
 export type MediaGalleryProps = {
@@ -17,8 +27,9 @@ export type MediaGalleryProps = {
   title?: string
   overlay?: ReactNode
   /* Boards 03/10: the phone gallery runs edge to edge, the desktop one sits in
-     the column. The thumbnail strip keeps the page edge either way. */
-  bleed?: boolean
+     the column. The thumbnail strip keeps the page edge either way. "wide"
+     stays edge to edge through the `sm` gutter too (product page). */
+  bleed?: "phone" | "wide"
   className?: string
 }
 
@@ -33,6 +44,7 @@ export function MediaGallery({
 }: MediaGalleryProps) {
   const controlled = index !== undefined
   const [picked, setPicked] = useState(0)
+  const [videoOpen, setVideoOpen] = useState(false)
 
   if (!items.length) return null
 
@@ -41,6 +53,7 @@ export function MediaGallery({
     items.length - 1
   )
   const active = items[current]
+  const video = items.find((item) => item.youtubeId)
 
   const select = (at: number) => {
     if (!controlled) setPicked(at)
@@ -65,135 +78,267 @@ export function MediaGallery({
       : `${title ?? "Foto koi dari breeder"}, foto ${current + 1} dari ${items.length}`
 
   return (
-    <div
-      data-slot="media-gallery"
-      className={cn("flex w-full flex-col gap-2", className)}
-    >
+    <Dialog open={videoOpen} onOpenChange={setVideoOpen}>
       <div
-        className={cn(
-          "relative flex aspect-4/3 w-full items-center justify-center overflow-hidden bg-surface",
-          bleed ? "rounded-none lg:rounded-control" : "rounded-control"
-        )}
-        onKeyDown={onKeyDown}
+        data-slot="media-gallery"
+        className={cn("flex w-full flex-col gap-2", className)}
       >
-        <RenderIf when={active.kind === "video"}>
-          {() => (
-            <video
-              key={active.src}
-              src={active.src}
-              poster={active.poster}
-              aria-label={alt}
-              controls
-              playsInline
-              preload="metadata"
-              className="size-full object-contain"
-            />
+        <div
+          className={cn(
+            "relative flex aspect-4/3 w-full items-center justify-center overflow-hidden bg-surface",
+            bleed ? "rounded-none lg:rounded-control" : "rounded-control"
           )}
-        </RenderIf>
-        <RenderIf when={active.kind !== "video"}>
-          {() => (
-            <img
-              key={active.src}
-              src={active.src}
-              alt={alt}
-              className="size-full object-cover"
-            />
-          )}
-        </RenderIf>
+          onKeyDown={onKeyDown}
+        >
+          {/* A YouTube item shows a play stage; the Dialog closes on Esc and
+              returns focus to the trigger (US-098 AC12). No autoplay. Literal
+              trigger and popup ids skip React 19's `useId` replay, which
+              otherwise hydrates a different id on this streaming page. The two
+              triggers need distinct ids because both render while the video is
+              active. */}
+          <RenderIf when={active.kind === "video" && !!active.youtubeId}>
+            {() => (
+              <DialogTrigger
+                id="media-video-trigger"
+                render={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    aria-label="Putar video"
+                    className="flex size-full flex-col items-center justify-center gap-3 rounded-none hover:bg-transparent"
+                  />
+                }
+              >
+                <span
+                  aria-hidden
+                  className="flex size-16 items-center justify-center rounded-full bg-foreground/70 text-background"
+                >
+                  <Play className="size-7 fill-current" />
+                </span>
+                <span className="text-sm font-semibold">Putar video</span>
+              </DialogTrigger>
+            )}
+          </RenderIf>
+
+          <RenderIf when={active.kind === "video" && !active.youtubeId}>
+            {() => (
+              <video
+                key={active.src}
+                src={active.src}
+                poster={active.poster}
+                aria-label={alt}
+                controls
+                playsInline
+                preload="metadata"
+                className="size-full object-contain"
+              />
+            )}
+          </RenderIf>
+          <RenderIf when={active.kind !== "video"}>
+            {() => (
+              <img
+                key={active.src}
+                src={active.src}
+                alt={alt}
+                className="size-full object-cover"
+              />
+            )}
+          </RenderIf>
+
+          <RenderIf when={items.length > 1}>
+            {() => (
+              <>
+                <Button
+                  type="button"
+                  variant="soft"
+                  size="icon-md"
+                  aria-label="Media sebelumnya"
+                  onClick={() => step(-1)}
+                  className="absolute start-3 top-1/2 -translate-y-1/2 rounded-full bg-background/90 [&_svg:not([class*='size-'])]:size-5 md:size-11 md:after:hidden"
+                >
+                  <ChevronLeft aria-hidden />
+                </Button>
+                <Button
+                  type="button"
+                  variant="soft"
+                  size="icon-md"
+                  aria-label="Media berikutnya"
+                  onClick={() => step(1)}
+                  className="absolute end-3 top-1/2 -translate-y-1/2 rounded-full bg-background/90 [&_svg:not([class*='size-'])]:size-5 md:size-11 md:after:hidden"
+                >
+                  <ChevronRight aria-hidden />
+                </Button>
+              </>
+            )}
+          </RenderIf>
+
+          <span className="pointer-events-none absolute end-3 bottom-3 rounded-badge bg-foreground/70 px-2 py-1 text-xs font-semibold text-background tabular-nums">
+            {current + 1} / {items.length}
+          </span>
+
+          <RenderIf when={overlay}>
+            {(node) => (
+              <div className="pointer-events-none absolute bottom-3 start-3 z-10 flex max-w-[calc(100%-1.5rem)] flex-wrap items-end gap-3">
+                {node}
+              </div>
+            )}
+          </RenderIf>
+
+          {/* US-098 AC12: "Perbesar" opens the photo in a Dialog. Base UI moves
+              focus in, closes on Esc and returns it to this trigger. Literal ids
+              keep the trigger and popup stable through React 19's `useId` replay;
+              a gallery renders once per page. */}
+          <RenderIf when={active.kind === "image"}>
+            {() => (
+              <Dialog>
+                <DialogTrigger
+                  id="media-zoom-trigger"
+                  render={
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="absolute start-3 bottom-3 z-10 bg-background/90"
+                    />
+                  }
+                >
+                  <ZoomIn aria-hidden />
+                  Perbesar
+                </DialogTrigger>
+                <DialogContent
+                  id="media-zoom-popup"
+                  className="max-w-[min(96vw,72rem)] p-2 sm:p-3"
+                >
+                  <DialogTitle className="sr-only">{alt}</DialogTitle>
+                  <img
+                    src={active.src}
+                    alt={alt}
+                    className="max-h-[calc(100dvh-6rem)] w-full rounded-control object-contain"
+                  />
+                </DialogContent>
+              </Dialog>
+            )}
+          </RenderIf>
+        </div>
 
         <RenderIf when={items.length > 1}>
           {() => (
-            <>
-              <Button
-                type="button"
-                variant="soft"
-                size="icon-md"
-                aria-label="Media sebelumnya"
-                onClick={() => step(-1)}
-                className="absolute start-3 top-1/2 -translate-y-1/2 rounded-full bg-background/90 [&_svg:not([class*='size-'])]:size-5"
-              >
-                <ChevronLeft aria-hidden />
-              </Button>
-              <Button
-                type="button"
-                variant="soft"
-                size="icon-md"
-                aria-label="Media berikutnya"
-                onClick={() => step(1)}
-                className="absolute end-3 top-1/2 -translate-y-1/2 rounded-full bg-background/90 [&_svg:not([class*='size-'])]:size-5"
-              >
-                <ChevronRight aria-hidden />
-              </Button>
-            </>
-          )}
-        </RenderIf>
-
-        <span className="pointer-events-none absolute end-3 bottom-3 rounded-badge bg-foreground/70 px-2 py-1 text-xs font-semibold text-background tabular-nums">
-          {current + 1} / {items.length}
-        </span>
-
-        <RenderIf when={overlay}>
-          {(node) => (
-            <div className="pointer-events-none absolute bottom-3 start-3 z-10 flex max-w-[calc(100%-1.5rem)] flex-wrap items-end gap-3">
-              {node}
-            </div>
+            <ul
+              aria-label={title ? `Media ${title}` : "Media"}
+              className={cn(
+                "flex snap-x gap-2 overflow-x-auto pb-1",
+                bleed === "wide" ? "px-4 sm:px-8 lg:px-0" : bleed && "px-4 lg:px-0"
+              )}
+            >
+              {items.map((item, at) => (
+                <li key={`${item.src}-${at}`} className="shrink-0 snap-start">
+                  {/* The video tile sits after the photos and opens the embed
+                      (US-098 AC12), labelled in Indonesian. */}
+                  <RenderIf when={item.youtubeId}>
+                    {() => (
+                      <DialogTrigger
+                        id="media-video-trigger-thumb"
+                        render={
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => select(at)}
+                            aria-current={at === current ? "true" : undefined}
+                            aria-label="Putar video"
+                            className={cn(
+                              "relative h-12 w-16 overflow-hidden rounded-control p-0 hover:bg-transparent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring lg:h-18 lg:w-24",
+                              at === current
+                                ? "border-2 border-primary"
+                                : "border border-divider hover:border-input"
+                            )}
+                          />
+                        }
+                      >
+                        <span className="absolute inset-0 flex items-center justify-center bg-foreground/60 text-background">
+                          <Play aria-hidden className="size-4 fill-current" />
+                        </span>
+                        <span className="absolute inset-x-0 bottom-0 bg-foreground/70 py-0.5 text-center text-[10px] font-semibold text-background">
+                          Video
+                        </span>
+                      </DialogTrigger>
+                    )}
+                  </RenderIf>
+                  <RenderIf when={!item.youtubeId}>
+                    {() => (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => select(at)}
+                        aria-current={at === current ? "true" : undefined}
+                        aria-label={
+                          item.kind === "video"
+                            ? `Tampilkan rekaman ${at + 1}`
+                            : `Tampilkan foto ${at + 1}`
+                        }
+                        className={cn(
+                          "relative h-12 w-16 overflow-hidden rounded-control p-0 hover:bg-transparent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring lg:h-18 lg:w-24",
+                          at === current
+                            ? "border-2 border-primary"
+                            : "border border-divider hover:border-input"
+                        )}
+                      >
+                        <RenderIf
+                          when={item.kind === "video" ? item.poster : item.src}
+                        >
+                          {(src) => (
+                            <img
+                              src={src}
+                              alt=""
+                              loading="lazy"
+                              className="size-full object-cover"
+                            />
+                          )}
+                        </RenderIf>
+                        <RenderIf when={item.kind === "video"}>
+                          {() => (
+                            <span className="absolute inset-0 flex items-center justify-center bg-foreground/40 text-background">
+                              <Play aria-hidden className="size-4 fill-current" />
+                            </span>
+                          )}
+                        </RenderIf>
+                        {/* The current thumbnail is marked with an icon, not only the
+                            border colour (US-098 AC12). */}
+                        <RenderIf when={at === current}>
+                          {() => (
+                            <span className="pointer-events-none absolute end-1 top-1 z-10 flex size-4 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                              <Check aria-hidden className="size-3" />
+                            </span>
+                          )}
+                        </RenderIf>
+                      </Button>
+                    )}
+                  </RenderIf>
+                </li>
+              ))}
+            </ul>
           )}
         </RenderIf>
       </div>
 
-      <RenderIf when={items.length > 1}>
-        {() => (
-          <ul
-            aria-label="Media lot"
-            className={cn(
-              "flex snap-x gap-2 overflow-x-auto pb-1",
-              bleed && "px-4 lg:px-0"
-            )}
+      <RenderIf when={video}>
+        {(item) => (
+          <DialogContent
+            id="media-video-popup"
+            className="max-w-[min(96vw,56rem)] p-2 sm:p-3"
           >
-            {items.map((item, at) => (
-              <li key={`${item.src}-${at}`} className="shrink-0 snap-start">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => select(at)}
-                  aria-current={at === current ? "true" : undefined}
-                  aria-label={
-                    item.kind === "video"
-                      ? `Tampilkan rekaman ${at + 1}`
-                      : `Tampilkan foto ${at + 1}`
-                  }
-                  className={cn(
-                    "relative h-12 w-16 overflow-hidden rounded-control p-0 hover:bg-transparent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring lg:h-18 lg:w-24",
-                    at === current
-                      ? "border-2 border-primary"
-                      : "border border-divider hover:border-input"
-                  )}
-                >
-                  <RenderIf
-                    when={item.kind === "video" ? item.poster : item.src}
-                  >
-                    {(src) => (
-                      <img
-                        src={src}
-                        alt=""
-                        loading="lazy"
-                        className="size-full object-cover"
-                      />
-                    )}
-                  </RenderIf>
-                  <RenderIf when={item.kind === "video"}>
-                    {() => (
-                      <span className="absolute inset-0 flex items-center justify-center bg-foreground/40 text-background">
-                        <Play aria-hidden className="size-4 fill-current" />
-                      </span>
-                    )}
-                  </RenderIf>
-                </Button>
-              </li>
-            ))}
-          </ul>
+            <DialogTitle className="sr-only">
+              {title ? `Video ${title}` : "Video lot"}
+            </DialogTitle>
+            <iframe
+              src={`https://www.youtube-nocookie.com/embed/${item.youtubeId}?rel=0`}
+              title={title ? `Video ${title}` : "Video lot"}
+              allow="encrypted-media; picture-in-picture; fullscreen"
+              allowFullScreen
+              className="aspect-video w-full rounded-control"
+            />
+          </DialogContent>
         )}
       </RenderIf>
-    </div>
+    </Dialog>
   )
 }

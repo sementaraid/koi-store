@@ -11,6 +11,8 @@ import { formatAuctionDate } from '@/lib/helpers/auction-format';
 import { lotStatusLabel, lotStatusTone, timeLeftLabel } from '@/lib/helpers/live-bid-format';
 import { formatRupiah } from '@/lib/helpers/topup-format';
 
+import { AdminEmpty } from './AdminEmpty';
+
 export type LiveAuctionsProps = {
   auctions: AdminLiveAuction[];
   total: number;
@@ -42,7 +44,10 @@ export function LiveAuctions({ auctions, total, now }: LiveAuctionsProps) {
           </p>
         ) : null}
         {auctions.length === 0 && cancelled.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Tidak ada lelang yang sedang berjalan.</p>
+          <AdminEmpty
+            title="Tidak ada lelang yang sedang berjalan"
+            description="Lelang yang sudah dimulai muncul di sini."
+          />
         ) : (
           auctions.map((auction) => (
             <AuctionCard

@@ -86,7 +86,7 @@ export async function FarmHomePage({ searchParams }: FarmHomePageProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <AlertTriangle aria-hidden className="size-4 text-destructive-ink" />
-          Gagal memuat status kebun
+          Gagal memuat status farm
         </CardTitle>
         <CardDescription>Muat ulang halaman untuk mencoba lagi.</CardDescription>
       </CardHeader>
@@ -106,14 +106,7 @@ export async function FarmHomePage({ searchParams }: FarmHomePageProps) {
 
   return (
     <AccountFrame
-      title="Area petani"
-      eyebrow={
-        <>
-          <Sprout aria-hidden className="size-3.5" />
-          Kebun
-        </>
-      }
-      description="Tempat mengelola lelang dan lot Anda."
+      title="Area peternak"
       openOrders={countOpen(groups)}
       identity={identity}
     >
@@ -129,10 +122,10 @@ function Closed({ seller }: { seller: FarmSeller | null }): ReactNode {
         <CardHeader className="px-0 pt-0">
           <CardTitle className="flex items-center gap-2 text-base">
             <LockKeyhole aria-hidden className="size-4 text-muted-foreground" />
-            Area petani belum terbuka
+            Area peternak belum terbuka
           </CardTitle>
           <CardDescription>
-            Akun ini belum punya kebun. Daftarkan kebun dulu; area petani terbuka setelah admin
+            Akun ini belum punya farm. Daftarkan farm dulu; area peternak terbuka setelah admin
             menyetujuinya.
           </CardDescription>
         </CardHeader>
@@ -142,7 +135,7 @@ function Closed({ seller }: { seller: FarmSeller | null }): ReactNode {
             nativeButton={false}
           >
             <Sprout aria-hidden />
-            Daftarkan kebun
+            Daftarkan farm
           </Button>
         </CardContent>
       </Card>
@@ -176,7 +169,7 @@ function Closed({ seller }: { seller: FarmSeller | null }): ReactNode {
             render={<Link href={ROUTES.farm} />}
             nativeButton={false}
           >
-            Lihat status kebun
+            Lihat status farm
           </Button>
         </div>
       </CardContent>
@@ -284,7 +277,7 @@ function MyAuctions({
                         {auction.lot_count} lot
                       </p>
                       <p className="mt-0.5 text-sm text-muted-foreground">
-                        {formatDeadline(auction.start_at)} – {formatDeadline(auction.end_at)}
+                        {formatDeadline(auction.start_at)} – {formatDeadline(auction.end_at)} WIB
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">

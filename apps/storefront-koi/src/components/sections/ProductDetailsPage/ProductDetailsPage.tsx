@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { cache } from 'react';
 
 import { SHELF_LIMIT } from '@/const';
+import { CATALOG_CATEGORY_HANDLE } from '@/const/catalog';
 import type { MediaItem } from '@/types/product-page';
 import {
   toOfferQuotes,
@@ -10,6 +11,10 @@ import {
   toSimpleProducts,
   toVariantChoices
 } from '@/lib/adapters/product';
+import {
+  collectCategorySubtreeIds,
+  getCategoryByHandle
+} from '@/lib/data/categories';
 import { listOffers } from '@/lib/data/offers';
 import { listProducts } from '@/lib/data/products';
 import { getBuyboxWinner, rankOffers } from '@/lib/helpers/buybox';
@@ -32,13 +37,24 @@ export async function ProductDetailsPage({ handle }: { handle: string }) {
 
   if (!product) notFound();
 
-  const [{ offers }, shelf] = await Promise.all([
+  const [{ offers }, shelf, koiDepartment] = await Promise.all([
     listOffers({ productId: product.id, countryCode: COUNTRY_CODE }),
     listProducts({
       countryCode: COUNTRY_CODE,
       queryParams: { limit: SHELF_LIMIT }
-    }).then(({ response }) => toSimpleProducts(response.products))
+    }).then(({ response }) => toSimpleProducts(response.products)),
+    // /katalog and /toko split on this department subtree, not on the seller
+    // kind: a farm can sell pond supplies too.
+    getCategoryByHandle(CATALOG_CATEGORY_HANDLE)
   ]);
+
+  const koiCategoryIds = koiDepartment
+    ? new Set(collectCategorySubtreeIds(koiDepartment))
+    : null;
+  const koi =
+    koiCategoryIds && product.categories?.length
+      ? product.categories.some((category) => koiCategoryIds.has(category.id))
+      : undefined;
 
   const winner = getBuyboxWinner(rankOffers(offers));
 
@@ -52,11 +68,19 @@ export async function ProductDetailsPage({ handle }: { handle: string }) {
 
   const attributes = toProductAttributes(product);
   const variants = toVariantChoices(product.variants, offers);
+  const simple = toSimpleProduct(product, offers);
+  // The SKU is internal. Strip it before the product crosses to the client, so
+  // it never shows up in the page or its serialized props.
+  const displayedProduct = {
+    ...simple,
+    listing: { ...(simple.listing ?? {}), ref: undefined }
+  };
 
   return (
     <ProductDetail
-      product={toSimpleProduct(product, offers)}
+      product={displayedProduct}
       shelf={shelf}
+      {...(koi !== undefined ? { koi } : {})}
       {...(media.length ? { media } : {})}
       offerId={winner?.id}
       {...(variants.length > 1 ? { variants } : {})}
@@ -66,15 +90,6 @@ export async function ProductDetailsPage({ handle }: { handle: string }) {
       {...(winner?.id ? { offerWinnerId: winner.id } : {})}
       {...(winner?.seller?.handle
         ? { sellerHandle: winner.seller.handle }
-        : {})}
-      {...(winner?.seller?.id
-        ? {
-            chatPartner: {
-              id: winner.seller.id,
-              name: winner.seller.name,
-              ...(winner.seller.logo ? { photoUrl: winner.seller.logo } : {})
-            }
-          }
         : {})}
       {...(product.created_at
         ? { postedAt: new Date(product.created_at).toISOString() }

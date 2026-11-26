@@ -14,7 +14,10 @@ import {
   listProducts,
   searchProducts
 } from '@/lib/data/products';
-import { readAttributeSelection } from '@/lib/helpers/attribute-facets';
+import {
+  readAttributeSelection,
+  splitAttributeSelection
+} from '@/lib/helpers/attribute-facets';
 import { COUNTRY_CODE } from '@/lib/region';
 
 import { MarketplaceFeed } from './components/MarketplaceFeed';
@@ -35,20 +38,25 @@ export async function MarketplacePage({
     : undefined;
 
   const selected = readAttributeSelection(facets, params);
+  const { variantAxis, productValues } = splitAttributeSelection(facets, selected);
   const narrowed = Object.keys(selected).length > 0;
 
-  const products = narrowed
+  const { products, failed } = narrowed
     ? await searchProducts({
-        attributes: selected,
+        attributes: variantAxis,
+        attributeValues: productValues,
         category_id,
         countryCode: COUNTRY_CODE,
         limit: FEED_LIMIT
-      }).then(({ products }) => products)
+      })
     : await listProducts({
         category_id,
         countryCode: COUNTRY_CODE,
         queryParams: { limit: FEED_LIMIT }
-      }).then(({ response }) => response.products);
+      }).then(({ response, failed }) => ({
+        products: response.products,
+        failed
+      }));
 
   const facetQuery = new URLSearchParams(selected).toString();
 
@@ -56,6 +64,7 @@ export async function MarketplacePage({
     <MarketplaceFeed
       goods={toSimpleProducts(products)}
       attributes={facets}
+      failed={failed}
       basePath={
         facetQuery
           ? `${ROUTES.marketplace}?${facetQuery}`

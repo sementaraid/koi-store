@@ -51,7 +51,7 @@ The product-owner agent drafts entries. The owner approves them.
 | D-041 | 2026-11-15 | Every seller suspend and every ban needs a reason (extends D-015) | In force |
 | D-042 | 2026-11-15 | Admins see masked PII everywhere; a full value only through an explicit reveal, logged (answers `mvp-Q25`) | In force |
 | D-043 | 2026-11-15 | Column-level encryption for NIK, bank account and phone on top of disk encryption; the wallet and top-up tables are included in US-092 (answers `mvp-Q26`) | In force |
-| D-044 | 2026-11-15 | The winner of a lot sees the farmer's full bank account for that lot only, through the logged reveal (answers `mvp-Q27`) | On hold (owner re-confirmed the hold, 2026-11-20; first held 2026-11-16): the winner sees no farmer contact at all; D-059's 2026-11-17 return is superseded; US-051's built reveal stays shipped; the 2026-11-15 "farmer reveals the winner's phone" confirmation superseded by D-052 |
+| D-044 | 2026-11-15 | The winner of a lot sees the farmer's full bank account for that lot only, through the logged reveal (answers `mvp-Q27`) | Superseded by D-068 (2026-11-25): the winner pays the company account and never sees the farmer's bank details; US-051's winner reveal is removed (US-108). Earlier: on hold 2026-11-16 and 2026-11-20; phone confirmation superseded by D-052 |
 | D-045 | 2026-11-15 | A person sees their own full PII on their own record; every other caller, admins included, gets the mask | In force |
 | D-046 | 2026-11-15 | Public pages show `scheduled`, `live` and `closed` auctions; a closed lot shows final price and sold/unsold, never the winner | In force; "masked name" clause superseded in part by D-051 |
 | D-047 | 2026-11-15 | Join ships before bans; the ban check lands with strikes (US-059) | In force |
@@ -61,20 +61,26 @@ The product-owner agent drafts entries. The owner approves them.
 | D-051 | 2026-11-16 | Bidders shown as `Bud***x7` (3 letters of first name + `***` + last 2 characters of the customer id); full masked bid history on open and closed lots (supersedes D-046 in part) | In force |
 | D-052 | 2026-11-16 | No phone between winner and farmer in the MVP: the winner gets only the farmer's bank account (D-044 reveal), the farmer only the winner's name; no wa.me link (answers `mvp-Q34`; supersedes D-044's phone confirmation) | In force for "no phone either way"; the farmer also gets the winner's address (D-056); the winner's bank-account part on hold with D-044 |
 | D-053 | 2026-11-16 | A lot the winner never marks delivered stays `shipped`; no job, no setting in the MVP (answers `mvp-Q35`) | In force |
-| D-054 | 2026-11-16 | A farm suspended after approval may still mark its already-sold lots paid and shipped; it can't create auctions or lots; a terminated farm can't (answers `mvp-Q36`) | In force |
+| D-054 | 2026-11-16 | A farm suspended after approval may still mark its already-sold lots paid and shipped; it can't create auctions or lots; a terminated farm can't (answers `mvp-Q36`) | In force for shipping; the "mark paid" part is moot since D-068 (an admin confirms payment) |
 | D-055 | 2026-11-16 | Error messages the Koi apps show verbatim are Indonesian, written on the backend, rupiah in `id-ID`; `@mercurjs/client` is not patched | In force |
 | D-056 | 2026-11-16 | The farmer gets the winner's default shipping address: masked (city + province) on the sold lot, full only through a logged reveal (answers `mvp-Q37`; relaxes D-052 for the address only, never the phone) | In force |
-| D-057 | 2026-11-16 | If the winner's bank reveal returns, it returns the account number and the account-holder name, both full, one audit row (answers `mvp-Q39`) | On hold with D-044 (re-confirmed 2026-11-20): intended rule; the built US-051 reveal stays shipped |
-| D-058 | 2026-11-17 | The MVP pays off-platform: the winner pays the farmer directly within 1×24 h, the farmer marks the lot paid then ships; the platform holds and pays out no money (answers the payment-model question; un-parks US-056, US-058, US-059's strike and T-052.4) | In force |
+| D-057 | 2026-11-16 | If the winner's bank reveal returns, it returns the account number and the account-holder name, both full, one audit row (answers `mvp-Q39`) | Superseded with D-044 by D-068 (2026-11-25) |
+| D-058 | 2026-11-17 | The MVP pays off-platform: the winner pays the farmer directly within 1×24 h, the farmer marks the lot paid then ships; the platform holds and pays out no money (answers the payment-model question; un-parks US-056, US-058, US-059's strike and T-052.4) | Superseded by D-068 and D-069 (2026-11-25): the winner pays the company account, an admin confirms and pays the farmer. Still in force: 1×24 h deadline, no payment gateway |
 | D-059 | 2026-11-17 | D-044 returns: the winner reveals the farmer's full account number and holder name through the logged reveal on their own won lot; no phone, no `wa.me` (D-052 stands) | Superseded by the owner's 2026-11-20 re-hold of D-044 (built code stays shipped; D-044 carries the current rule) |
 | D-060 | 2026-11-17 | A farm suspended after approval may also accept or dispute claims on its own sold lots (ownership + not `terminated`, not `validateSellerOpenStep`); extends D-054 (answers `mvp-Q45`, option b) | In force |
 | D-061 | 2026-11-17 | The farmer's live link is a nullable `auction.live_stream_url` column, written through `/vendor/auctions/:id/live-link` and admin-koi in any status but `closed`/`cancelled`, rendered as an outbound link (answers `mvp-Q43`) | In force |
 | D-062 | 2026-11-20 | The phone in Medusa's address snapshots (`cart_address`, `order_address`, `fulfillment_address`, `stock_location_address`) is encrypted too; D-039/D-043 cover it (answers the US-092/T-092.1 scope question) | Drafted 2026-11-20, pending owner approval (built and verified in US-092; `mvp-Q53`) |
 | D-063 | 2026-11-20 | A bid-removal reason (`POST /admin/bids/:id/remove`) is required, non-blank and at most 500 characters, the same cap as US-059's strike reason (answers `mvp-Q52`) | In force |
 | D-064 | 2026-11-24 | The lot page (`/lelang/<lot>`) is the only bidding surface; the separate live room (`/lelang/<lot>/live`, US-046) is removed and old links redirect to the lot page; bid rules (D-058, join fee, extend) unchanged (answers `mvp-Q57`, option b) | In force |
-| D-065 | 2026-11-25 | The redesign keeps the join fee once per auction, refunded on cancel (D-007, D-034), and the one extend window `extend_window_minutes`; the per-lot fee and 2-minute extend are not adopted (answers `mvp-Q55` and `mvp-Q56`, option a) | In force |
+| D-065 | 2026-11-25 | The redesign keeps the join fee once per auction, refunded on cancel (D-007, D-034), and the one extend window `extend_window_minutes`; the per-lot fee and 2-minute extend are not adopted (answers `mvp-Q55` and `mvp-Q56`, option a) | Join-fee half superseded by D-070 (2026-11-25, per lot); extend half in force |
 | D-066 | 2026-11-25 | No watch list in the MVP: heart, `Dipantau` tab and "Ingatkan saya" dropped; US-104 parked (answers `mvp-Q59`, option a) | In force |
-| D-067 | 2026-11-25 | No new koi fields (variety, size, age, sex, certificate, video) in the MVP; no spec rows or koi filters; US-105 parked (answers `mvp-Q58`) | In force |
+| D-067 | 2026-11-25 | No new koi fields (variety, size, age, sex, certificate, video) in the MVP; no spec rows or koi filters; US-105 parked (answers `mvp-Q58`) | Superseded by D-071 (2026-11-25, later the same day): koi fields return |
+| D-068 | 2026-11-25 | The winner transfers the winning price to the company bank account (the platform bank account setting) within 1×24 h; an admin confirms it and the lot moves `won → paid`; the farmer no longer marks it paid; no payment gateway; the winner never sees farmer bank details; saldo still pays platform fees only | In force (owner answers relayed 2026-11-25; wording pending owner sign-off) |
+| D-069 | 2026-11-25 | An admin pays the farmer manually: the winning price minus only the bank transfer fee, due when the winner uploads a photo or video of the koi arrived healthy, or 3 days after the farmer marks the lot shipped if the winner sends nothing | In force (owner answers relayed 2026-11-25; wording pending owner sign-off); claim and fee details open (`mvp-Q66`, `mvp-Q67`, `mvp-Q70`) |
+| D-070 | 2026-11-25 | The join fee is charged per lot, at the auction's category amount from the fee table; refunds unchanged (every join fee back on a farmer or admin auction cancel, none on losing) | In force (owner answers relayed 2026-11-25; wording pending owner sign-off); supersedes D-065's join-fee half |
+| D-071 | 2026-11-25 | Koi fields return: variety, size (cm), age, sex, certificate, pond origin, breeder notes and a YouTube video link, with `/lelang` filters and a photo + video gallery; US-105 unparked | In force (owner answers relayed 2026-11-25; wording pending owner sign-off); field shapes open (`mvp-Q73`) |
+| D-072 | 2026-11-25 | Each won-lot step stores and shows its date: paid, shipped, delivered | In force (owner answers relayed 2026-11-25; wording pending owner sign-off) |
+| D-073 | 2026-11-25 | Brand is "Koi Auction House" everywhere; the top-up page says the check takes "biasanya kurang dari 60 menit" (answers `mvp-Q60`, `mvp-Q61`) | In force (owner answers relayed 2026-11-25; wording pending owner sign-off) |
 
 ---
 
@@ -510,7 +516,9 @@ column encryption protects both.
 **Source:** Owner, answer to `mvp-Q26` (2026-11-15).
 
 ### D-044: Winner sees the farmer's full bank account for its own lot
-**Status: On hold (owner re-confirmed the hold, 2026-11-20; first held
+**Status: Superseded by D-068 (2026-11-25).** The winner pays the company
+account and never sees the farmer's bank details. Earlier status, kept for
+history: **On hold (owner re-confirmed the hold, 2026-11-20; first held
 2026-11-16).** Owner: "for now don't show farmer contact, that's all, I will
 recalculate it." The D-059 return of 2026-11-17 is **superseded by this
 re-hold**: the winner sees no farmer contact at all (no phone, D-052; no bank
@@ -750,7 +758,8 @@ back, one reveal returns the full `account_number` **and** the full
 **Source:** Owner, answer to `mvp-Q39` (2026-11-16).
 
 ### D-058: The MVP pays off-platform; the farmer marks the lot paid
-**Status: In force (2026-11-17).** Supersedes the "payment model under review"
+**Status: Superseded by D-068 and D-069 (2026-11-25).** The 1×24 h deadline and
+"no payment gateway" carry over into D-068. Earlier status: In force (2026-11-17). Supersedes the "payment model under review"
 note in `docs/releases/mvp/stories.md` and un-parks US-056, US-058, US-059's
 payment strike and T-052.4.
 **Decision:** The winner pays the farmer directly, outside the app, within
@@ -863,7 +872,8 @@ switches screens to bid.
 **Source:** Owner, answer to `mvp-Q57`, option (b) (2026-11-24).
 
 ### D-065: The redesign keeps the current join fee and extend rules
-**Status: In force (2026-11-25).** Answers `mvp-Q55` and `mvp-Q56`, option (a) for both.
+**Status: Join-fee half superseded by D-070 (2026-11-25, per lot); the extend
+half stays in force.** Earlier status: In force (2026-11-25). Answers `mvp-Q55` and `mvp-Q56`, option (a) for both.
 **Decision:** the redesign adopts neither the per-lot join fee nor the split
 extend. The join fee stays the auction category's fee, charged once per auction
 and refunded when the auction is cancelled (D-007, D-034). A bid in the last
@@ -885,7 +895,8 @@ are dropped. US-104 is `parked`; no table or route is added.
 **Source:** Owner, answer to `mvp-Q59` (a) (2026-11-25).
 
 ### D-067: No new koi fields in the MVP
-**Status: In force (2026-11-25).** Answers `mvp-Q58`.
+**Status: Superseded by D-071 (2026-11-25, later the same day).** Earlier
+status: In force (2026-11-25). Answers `mvp-Q58`.
 **Decision:** a lot keeps title, description and photos only. The design's
 variety, size, age, sex, certificate and video fields are not added: the farm
 auction form is unchanged, lot cards show no koi subtitle, the lot page shows no
@@ -893,3 +904,212 @@ specification rows for them, `/lelang` has no variety/size/certificate filters,
 and the category is labelled `Kategori`. US-105 is `parked`.
 **Reason:** owner's call to keep phase 1 to the screens already in scope.
 **Source:** Owner, answer to `mvp-Q58` (2026-11-25).
+
+### D-068: The winner pays the company account; an admin confirms the payment
+**Status: In force (2026-11-25).** Owner's answers to the new design export,
+relayed by the main session (`ui_ux/gap-analysis.md`, "Owner answers"); wording
+drafted by the product-owner, pending the owner's sign-off. Supersedes D-058 and
+D-044 (with D-057, D-059).
+**Decision:** the winner transfers the winning price (`final_price`) manually to
+the **company bank account**, which is the existing platform bank account setting
+(D-009, D-010, `bank_name` / `bank_account_number` / `bank_account_holder`),
+within **1×24 h** of the lot closing. An admin confirms the transfer in
+`apps/admin-koi` and the lot moves `won → paid`, saving the date (D-072). The
+farmer no longer marks a lot paid; `POST /vendor/sold-lots/:id/paid` is retired.
+- A winner who does not pay within 1×24 h gets a strike under today's rule
+  (admin gives it after checking, plan "Strikes"). Who raises the case now that
+  the farmer cannot see the payment is `mvp-Q71` (answered by D-079,
+  2026-11-25).
+- No payment gateway. Xendit stays a later idea (`docs/releases/README.md`).
+- The winner never sees the farmer's bank or payment details, masked or full;
+  the winner's farmer-bank reveal (US-051) is removed.
+- Saldo (store credit) still pays platform fees only (join and listing fees). No
+  held bid balance, no auto-pay of the winning price from saldo.
+- Whether the winner uploads a transfer proof is `mvp-Q69`.
+**Reason:** the winner needs a way to pay that does not expose the farmer's
+bank account, and the platform needs to know the koi was paid before the farmer
+ships and before the farmer is paid (D-069).
+**Source:** Owner, 2026-11-25 (answers 1 and d in `ui_ux/gap-analysis.md`).
+
+### D-069: An admin pays the farmer manually after the koi arrives
+**Status: In force (2026-11-25).** Owner's answers, relayed by the main session;
+wording pending the owner's sign-off. Supersedes D-058's "the platform pays out
+nothing".
+**Decision:** for each paid lot, an admin transfers the farmer's payout manually
+from the company account and records it in `apps/admin-koi`.
+- **Amount:** the full winning price minus only the bank transfer fee. No
+  commission. How the fee amount is set is `mvp-Q70`.
+- **Due:** when the winner uploads a photo or video showing the koi arrived
+  healthy, or, if the winner sends nothing, 3 days after the farmer marks the lot
+  shipped (counted from `shipped_at`, the same way as D-027's 3-day
+  auto-confirm). "Automatically" means the payout becomes due on its own; the
+  money still moves only when an admin pays and records it (no gateway).
+- The farmer's bank account comes from the farm record through the existing
+  admin logged reveal (D-042).
+- How an open or approved claim changes the payout is `mvp-Q66` and `mvp-Q67`
+  (answered by D-074 and D-075; the fee by D-078, 2026-11-25).
+**Reason:** the owner's chosen money flow without a payment gateway.
+**Source:** Owner, 2026-11-25 (answers d and e in `ui_ux/gap-analysis.md`).
+
+### D-070: The join fee is charged per lot
+**Status: In force (2026-11-25).** Owner's answers, relayed by the main session;
+wording pending the owner's sign-off. Supersedes D-065's join-fee half and the
+plan's "paid once per auction".
+**Decision:** a customer joins each lot they want to bid on and pays that lot's
+join fee from saldo: the auction's join fee (the category amount from the fee
+table, snapshotted on the auction at submit, D-032, or the admin's override,
+D-032). The starting amounts stay 100.000 / 250.000 / 500.000 / 1.000.000. A
+customer may bid only on a lot they joined.
+- Refunds unchanged (D-034, D-022): a farmer cancel before start, or an admin
+  cancel of a live auction, refunds every join fee paid on that auction's lots.
+  Losing or leaving never refunds. A single-lot admin cancel is `mvp-Q68`
+  (answered by D-076, 2026-11-25).
+- Joins made per auction before this change: `mvp-Q72` (answered by D-080,
+  2026-11-25).
+**Reason:** a buyer pays only for the koi they want.
+**Source:** Owner, 2026-11-25 (answers 2, b and c in `ui_ux/gap-analysis.md`).
+
+### D-071: Koi fields return
+**Status: In force (2026-11-25).** Owner's answers, relayed by the main session;
+wording pending the owner's sign-off. Supersedes D-067; US-105 unparked.
+**Decision:** a lot carries the koi's variety, size in cm, age, sex,
+certificate, pond origin, breeder notes and a video as a **YouTube link**. The
+farmer enters them on the auction's lot form; the storefront shows them on cards
+and the lot page, filters `/lelang` by them, and shows a photo + video gallery.
+Required/optional, fixed lists and formats are `mvp-Q73` (answered by D-081,
+2026-11-25).
+**Reason:** buyers compare koi by these fields; the design is built around them.
+**Source:** Owner, 2026-11-25 (answer 4 in `ui_ux/gap-analysis.md`).
+
+### D-072: Each won-lot step stores and shows its date
+**Status: In force (2026-11-25).** Owner's answers, relayed by the main session;
+wording pending the owner's sign-off.
+**Decision:** a won lot saves the date of each step: paid (new, set when an admin
+confirms the payment, D-068), shipped (`shipped_at`, exists) and delivered
+(`delivered_at`, exists). The winner's timeline and the farmer's sold lot show
+each date in WIB.
+**Reason:** the winner and the farmer can see when each step happened.
+**Source:** Owner, 2026-11-25 (answer 9 in `ui_ux/gap-analysis.md`).
+
+### D-073: Brand name and top-up check estimate
+**Status: In force (2026-11-25).** Answers `mvp-Q60` and `mvp-Q61`. Owner's
+answers, relayed by the main session; wording pending the owner's sign-off.
+**Decision:** the brand is **Koi Auction House** on every customer, farmer and
+admin screen and in metadata. The top-up page may say the admin check is
+"biasanya kurang dari 60 menit". No notification is promised.
+**Reason:** one brand; buyers want to know roughly how long a top-up takes.
+**Source:** Owner, 2026-11-25 (answers 7 and 8 in `ui_ux/gap-analysis.md`).
+
+### D-074: The farmer payout waits while a claim is open
+**Status: In force (2026-11-25).** Answers `mvp-Q66`, option (a). Owner chose the
+recommended option 2026-11-25; wording drafted by the product-owner.
+**Decision:** a lot's payout (D-069) does not become due and is not paid while a
+claim on that lot is open.
+- The winner's "arrived healthy" photo or video makes the payout due only once
+  the 4-hour claim window (D-027) has passed with no claim. Uploading it does not
+  mark the lot delivered and does not end the claim right.
+- The 3-days-after-`shipped_at` path also waits while a claim is open.
+- After the claim is rejected, or the claim window passes with no claim, the
+  payout follows D-069. An approved claim follows D-075 instead.
+**Reason:** owner chose the recommended option 2026-11-25.
+**Source:** Owner, answer to `mvp-Q66` (2026-11-25), option (a).
+
+### D-075: Money on an approved claim and on a paid lot never shipped
+**Status: In force (2026-11-25).** Answers `mvp-Q67`, option (a). Owner chose the
+recommended option 2026-11-25; wording drafted by the product-owner. Supersedes
+US-056's farmer-refunds-directly wording for the money path; the claim states,
+routes and 3-day auto-confirm (D-027, D-038) are unchanged.
+**Decision:** now that the company account holds the winning price (D-068), the
+three cases are settled by the platform, each as a manual transfer an admin
+records in `apps/admin-koi` (D-002) with amount, reference, date and admin. Not a
+wallet transaction; the winning price never touches saldo (D-068).
+1. **Approved refund claim:** the admin refunds the winning price to the winner
+   from the company account, and the farmer is not paid for that lot.
+2. **Approved replacement claim:** the farmer's payout becomes due once the
+   replacement arrives healthy, under the same arrival proof or
+   3-days-after-shipped rules (D-069, D-074).
+3. **Paid lot the farmer never ships:** the admin refunds the winning price to
+   the winner from the company account.
+The farmer's strike rules do not change (plan "Strikes", US-059).
+**Reason:** owner chose the recommended option 2026-11-25.
+**Source:** Owner, answer to `mvp-Q67` (2026-11-25), option (a).
+
+### D-076: An admin cancel of a single open lot refunds that lot's join fees
+**Status: In force (2026-11-25).** Answers `mvp-Q68`, option (a). Owner chose the
+recommended option 2026-11-25; wording drafted by the product-owner.
+**Decision:** when an admin cancels one open lot (D-035), every join fee paid on
+that lot is refunded as a `refund` wallet transaction, one per join row, read
+from the recorded charges and never from the auction's current fee (the same
+rule as D-034 and D-070). Auction-level cancels keep D-034. The refund lands
+with the per-lot join fee (US-111, T-111.4); until that ships there is no
+per-lot charge to refund.
+**Reason:** owner chose the recommended option 2026-11-25.
+**Source:** Owner, answer to `mvp-Q68` (2026-11-25), option (a).
+
+### D-077: The winner uploads one transfer proof image
+**Status: In force (2026-11-25).** Answers `mvp-Q69`, option (a). Owner chose the
+recommended option 2026-11-25; wording drafted by the product-owner.
+**Decision:** on a `won` lot the winner uploads one transfer proof image (JPG,
+PNG or WEBP, at most 5 MB, the top-up proof rule of US-102 AC4), stored as a
+private file (D-018, D-040). The admin confirms the payment (D-068, US-108) or
+rejects the proof with a written reason the winner sees; after a rejection the
+winner may upload again while the lot is `won`. A rejected proof alone gives no
+strike: only the 1×24 h deadline rule does (D-068, D-079).
+**Reason:** owner chose the recommended option 2026-11-25.
+**Source:** Owner, answer to `mvp-Q69` (2026-11-25), option (a).
+
+### D-078: The admin types the bank transfer fee on each payout
+**Status: In force (2026-11-25).** Answers `mvp-Q70`, option (a). Owner chose the
+recommended option 2026-11-25; wording drafted by the product-owner.
+**Decision:** when recording a payout (D-069) the admin types the actual bank
+transfer fee in whole rupiah (0 or more). The fee is saved on that payout record
+and there is no global fee setting. Net = gross − fee, never below 0. The farmer
+sees gross, fee and net.
+**Reason:** owner chose the recommended option 2026-11-25.
+**Source:** Owner, answer to `mvp-Q70` (2026-11-25), option (a).
+
+### D-079: The admin raises a winner's non-payment
+**Status: In force (2026-11-25).** Answers `mvp-Q71`, option (a). Owner chose the
+recommended option 2026-11-25; wording drafted by the product-owner. Supersedes
+US-058's farmer report as the way a non-payment is raised.
+**Decision:** `apps/admin-koi` lists `won` lots past the 1×24 h deadline
+(`closed_at` + 24 h, the derived `pay_by` of US-108 T-108.3a) with no confirmed
+payment, and the admin gives the strike from that list (US-059). The farmer's
+non-payment report route `POST /vendor/sold-lots/:id/report` and its Farm area
+control are removed; existing `lot_report` rows are not deleted (append-only).
+D-026's second-bidder offer stays as today: fully off-platform, nothing recorded,
+the lot is never reassigned.
+**Reason:** owner chose the recommended option 2026-11-25.
+**Source:** Owner, answer to `mvp-Q71` (2026-11-25), option (a).
+
+### D-080: Joins made per auction keep access to every lot of that auction
+**Status: In force (2026-11-25).** Answers `mvp-Q72`, option (a). Owner chose the
+recommended option 2026-11-25; wording drafted by the product-owner.
+**Decision:** a customer who joined an auction under the earlier once-per-auction
+rule keeps access to every lot of that auction until the auction closes. The
+per-lot rule (D-070) applies to auctions approved after US-111 ships. No refund
+and no extra charge either way. There is no data conversion of those joins;
+US-111 (T-111.1) must keep an auction-wide join recognizable so the lot access
+and the bid check still work.
+**Reason:** owner chose the recommended option 2026-11-25.
+**Source:** Owner, answer to `mvp-Q72` (2026-11-25), option (a).
+
+### D-081: Koi field formats
+**Status: In force (2026-11-25).** Answers `mvp-Q73`, option (a). Owner chose the
+recommended option 2026-11-25; wording drafted by the product-owner. Fills in
+D-071's fields.
+**Decision:**
+- **Required:** variety and size (cm). Every other field is optional.
+- **Variety:** a fixed list, the koi variety categories `/katalog` already uses,
+  plus `Lainnya`.
+- **Size:** whole cm, 1 to 150.
+- **Age:** a fixed list, `Tosai (1 tahun)`, `Nisai (2 tahun)`,
+  `Sansai (3 tahun)`, `Yonsai (4 tahun)`, `Gosai+ (5 tahun atau lebih)`.
+- **Sex:** `Jantan`, `Betina`, `Belum diketahui`.
+- **Certificate:** yes/no plus an optional issuer text; with no certificate the
+  issuer reads `Tidak ada (koi lokal)`.
+- **Pond origin:** free text (city, province).
+- **Breeder notes:** free text up to 1000 characters.
+- **Video:** one YouTube link (D-071, allow-list in US-105 AC2).
+**Reason:** owner chose the recommended option 2026-11-25.
+**Source:** Owner, answer to `mvp-Q73` (2026-11-25), option (a).

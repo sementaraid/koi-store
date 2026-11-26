@@ -20,6 +20,17 @@ export type CreateAuctionLotInput = {
   photos: string[]
   ob: number
   kb: number
+  // US-105 (D-081). The validator makes variety and size required; the rest
+  // stay absent for an old or minimal lot.
+  variety: string
+  size_cm: number
+  age?: string
+  sex?: string
+  has_certificate?: boolean
+  certificate_issuer?: string
+  pond_origin?: string
+  breeder_notes?: string
+  video_url?: string
 }
 
 export type CreateAuctionWorkflowInput = {
@@ -110,6 +121,16 @@ export const createAuctionWorkflow = createWorkflow(
             kb: lot.kb,
             // A lot starts with the auction's end; per-lot extend is US-043.
             end_ms: Date.parse(input.end_at),
+            // US-105 (D-081): null when the farmer left the field empty.
+            variety: lot.variety,
+            size_cm: lot.size_cm,
+            age: lot.age ?? null,
+            sex: lot.sex ?? null,
+            has_certificate: lot.has_certificate ?? null,
+            certificate_issuer: lot.certificate_issuer ?? null,
+            pond_origin: lot.pond_origin ?? null,
+            breeder_notes: lot.breeder_notes ?? null,
+            video_url: lot.video_url ?? null,
           })),
         })
       )

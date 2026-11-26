@@ -5,11 +5,12 @@ export function deliveryMethodLabel(method: string): string {
 }
 
 export function formatAuctionDate(iso: string): string {
-  return new Intl.DateTimeFormat('id-ID', {
+  const formatted = new Intl.DateTimeFormat('id-ID', {
     dateStyle: 'medium',
     timeStyle: 'short',
     timeZone: 'Asia/Jakarta'
   }).format(new Date(iso));
+  return `${formatted} WIB`;
 }
 
 export function auctionFeeTotal(listingFee: number, joinFee: number): number {
@@ -27,7 +28,7 @@ export function overrideFormError(input: OverrideFormInput): string | null {
   const hasReason = input.reason.trim().length > 0;
 
   if (hasFee && !hasReason) return 'Alasan wajib diisi saat mengubah biaya.';
-  if (hasReason && !hasFee) return 'Masukkan biaya listing atau biaya join yang baru.';
+  if (hasReason && !hasFee) return 'Masukkan biaya listing atau biaya ikut yang baru.';
   return null;
 }
 

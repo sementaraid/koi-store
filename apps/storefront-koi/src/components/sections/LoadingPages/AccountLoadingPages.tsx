@@ -2,31 +2,32 @@ import type { ReactNode } from 'react';
 import { cn } from 'cn';
 
 import { Skeleton } from '@koi/ui';
-import { CONTAINER } from '@/const/layout';
+import { BID_SAYA_CONTENT, CONTAINER } from '@/const/layout';
 
-import { LoadingRegion, TrailSkeleton } from './LoadingPages';
+import { LoadingRegion } from './LoadingPages';
 
 /*
  * Loading skeletons for the customer account routes under (account)/akun
- * (US-107 AC9-AC11). `AccountSkeleton` repeats AccountFrame's boxes: the
- * breadcrumb strip, the page head, then the grid with the menu column (lg) and
- * the content column. Heights come from the loaded pages at 390 and 1440 px, so
- * the footer does not move when the content arrives. A route's `loading.tsx`
- * and the `fallback` of its `<Suspense>` render the same skeleton.
+ * (US-107 AC9-AC11). `AccountSkeleton` repeats AccountFrame's boxes (US-103
+ * AC10): the menu column on the left (lg), and in the content column the small
+ * title row above the content. A route's `loading.tsx` and the `fallback` of
+ * its `<Suspense>` render the same skeleton.
  */
 
-// One menu row (AccountNav: min-h-11).
+// One menu row (AccountNav: min-h-11). Eight account pages, then the divider and
+// the farm and sign-out rows (US-103 AC10).
 function MenuRows() {
   return (
     <>
       <div className="flex flex-col gap-1">
-        {Array.from({ length: 10 }, (_, i) => (
-          <Skeleton key={i} className="h-11 w-full rounded-[10px]" />
+        {Array.from({ length: 8 }, (_, i) => (
+          <Skeleton key={i} className="h-11 w-full rounded-lg" />
         ))}
       </div>
-      <div className="mt-3 flex flex-col gap-1">
+      <Skeleton className="mx-3 my-2 h-px w-[calc(100%-1.5rem)]" />
+      <div className="flex flex-col gap-1">
         {Array.from({ length: 2 }, (_, i) => (
-          <Skeleton key={i} className="h-11 w-full rounded-[10px]" />
+          <Skeleton key={i} className="h-11 w-full rounded-lg" />
         ))}
       </div>
     </>
@@ -35,62 +36,50 @@ function MenuRows() {
 
 export function AccountSkeleton({
   label,
-  head = 'h-[117px]',
   menu = false,
+  contentClassName,
   children
 }: {
   label: string;
-  /** Height of the head block (the loaded head minus its py-8), per breakpoint. */
-  head?: string;
   /** The menu list below the content on mobile (the account home only). */
   menu?: boolean;
+  /** Extra classes for the content column, matching the page's AccountFrame. */
+  contentClassName?: string;
   children: ReactNode;
 }) {
   return (
     <LoadingRegion label={label}>
-      <TrailSkeleton />
-      <div className={cn(CONTAINER, 'py-8')}>
-        <div className={cn('flex max-w-xl flex-col gap-3 overflow-hidden', head)}>
-          <Skeleton className="h-[14px] w-24" />
-          <Skeleton className="h-9 w-64 max-w-full sm:h-10 lg:h-12" />
-          <Skeleton className="h-4 w-full" />
-        </div>
-      </div>
-
-      <div className="border-t border-border bg-muted/40">
-        <div
-          className={cn(
-            CONTAINER,
-            'grid gap-8 py-8 sm:py-10 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start lg:gap-10'
-          )}
-        >
-          <aside className="hidden lg:block">
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-3 px-3">
-                <Skeleton className="size-10 shrink-0 rounded-full" />
-                <div className="flex flex-1 flex-col gap-1.5">
-                  <Skeleton className="h-4 w-28" />
-                  <Skeleton className="h-3 w-36" />
-                </div>
-              </div>
-              <div>
-                <MenuRows />
+      <div
+        className={cn(
+          CONTAINER,
+          'grid gap-8 py-8 sm:py-10 lg:grid-cols-[232px_minmax(0,1fr)] lg:items-start lg:gap-10'
+        )}
+      >
+        <aside className="hidden lg:block">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-3 px-3 pb-2">
+              <Skeleton className="size-11 shrink-0 rounded-full" />
+              <div className="flex flex-1 flex-col gap-1.5">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-3 w-36" />
               </div>
             </div>
-          </aside>
-
-          <div className="flex min-w-0 flex-col gap-10">
-            {children}
-
-            {menu ? (
-              <section className="flex flex-col gap-3 lg:hidden">
-                <Skeleton className="mx-3 h-6 w-28" />
-                <div className="h-[598px] rounded-xl border border-border bg-card p-2">
-                  <MenuRows />
-                </div>
-              </section>
-            ) : null}
+            <MenuRows />
           </div>
+        </aside>
+
+        <div className={cn('flex min-w-0 flex-col gap-6', contentClassName)}>
+          <Skeleton className="h-8 w-40" />
+          {children}
+
+          {menu ? (
+            <section className="flex flex-col gap-3 lg:hidden">
+              <Skeleton className="mx-3 h-6 w-28" />
+              <div className="rounded-xl border border-border bg-card p-2">
+                <MenuRows />
+              </div>
+            </section>
+          ) : null}
         </div>
       </div>
     </LoadingRegion>
@@ -176,7 +165,7 @@ function SectionBlock({ className, rows }: { className: string; rows: number }) 
 
 export function AccountHomeSkeleton() {
   return (
-    <AccountSkeleton label="Memuat akun…" head="h-[117px] lg:h-[140px]" menu>
+    <AccountSkeleton label="Memuat akun…" menu>
       <SectionBlock className="h-[365px] lg:h-[357px]" rows={3} />
       <SectionBlock className="h-[322px] lg:h-[153px]" rows={1} />
     </AccountSkeleton>
@@ -185,14 +174,53 @@ export function AccountHomeSkeleton() {
 
 export function AddressesSkeleton() {
   return (
-    <AccountSkeleton label="Memuat alamat…" head="h-[174px] lg:h-[117px]">
+    <AccountSkeleton label="Memuat alamat…">
       <RowsCard className="h-[198px]" rows={2} />
     </AccountSkeleton>
   );
 }
 
-// Bid Saya: the tab strip and three bid cards (140 px, like a loaded card). The route's
-// loading.tsx and the tab change in BidSayaPage both render this list.
+// Bid Saya: two bid cards, the seeded customer's active list. Each mirrors
+// ActiveBidCard's boxes and line heights (h3 24 px, text-sm 20 px, chip 24 px,
+// two dl rows of 20 px), so the loaded list is the same 452 px and the footer
+// does not move (AC11).
+function BidCardsSkeleton() {
+  return (
+    <div className="flex flex-col gap-4">
+      {[0, 1].map((key) => (
+        <div
+          key={key}
+          className="flex flex-col gap-4 rounded-control border border-divider bg-background p-4 sm:flex-row sm:items-start"
+        >
+          <div className="flex min-w-0 flex-1 gap-3">
+            <Skeleton className="h-16 w-20 shrink-0 rounded-xl" />
+            <div className="flex min-w-0 flex-col gap-1">
+              <Skeleton className="h-6 w-2/3" />
+              <Skeleton className="h-5 w-1/2" />
+              <Skeleton className="mt-1 h-6 w-40 max-w-full rounded-full" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:w-64 sm:shrink-0">
+            <div className="flex flex-col">
+              <Skeleton className="h-5 w-16" />
+              <Skeleton className="h-5 w-24" />
+            </div>
+            <div className="flex flex-col">
+              <Skeleton className="h-5 w-20" />
+              <Skeleton className="h-5 w-24" />
+            </div>
+            <div className="col-span-2 flex flex-col">
+              <Skeleton className="h-5 w-28" />
+              <Skeleton className="h-5 w-36" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// The route's loading.tsx: the title row's tab strip, then the cards.
 export function BidSayaListSkeleton() {
   return (
     <div className="flex flex-col gap-6">
@@ -201,45 +229,25 @@ export function BidSayaListSkeleton() {
           <Skeleton key={key} className="h-11 flex-1 rounded-control sm:w-24" />
         ))}
       </div>
-      <div className="flex flex-col gap-4">
-        {[0, 1, 2].map((key) => (
-          <div
-            key={key}
-            className="flex min-h-[140px] gap-3 rounded-control border border-divider bg-background p-4"
-          >
-            <Skeleton className="h-16 w-20 shrink-0 rounded-xl" />
-            <div className="flex flex-1 flex-col gap-2">
-              <Skeleton className="h-5 w-2/3" />
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-6 w-40" />
-            </div>
-          </div>
-        ))}
-      </div>
+      <BidCardsSkeleton />
     </div>
   );
 }
 
+// The in-page fallback: the tabs already sit in the title row, so only the
+// cards are missing.
 export function BidSayaSkeleton() {
   return (
     <LoadingRegion label="Memuat bid…">
-      <BidSayaListSkeleton />
+      <BidCardsSkeleton />
     </LoadingRegion>
   );
 }
 
 export function BidSayaRouteSkeleton() {
   return (
-    <AccountSkeleton label="Memuat bid…" head="h-[94px] lg:h-[117px]">
+    <AccountSkeleton label="Memuat bid…" contentClassName={BID_SAYA_CONTENT}>
       <BidSayaListSkeleton />
-    </AccountSkeleton>
-  );
-}
-
-export function WonLotsSkeleton() {
-  return (
-    <AccountSkeleton label="Memuat lot yang dimenangkan…">
-      <RowsCard className="h-[269px] lg:h-[175px]" rows={1} />
     </AccountSkeleton>
   );
 }
@@ -254,17 +262,9 @@ export function SettingsSkeleton() {
   );
 }
 
-export function MessagesSkeleton() {
-  return (
-    <AccountSkeleton label="Memuat pesan…" head="h-[94px] lg:h-[117px]">
-      <RowsCard className="h-[237px]" rows={3} />
-    </AccountSkeleton>
-  );
-}
-
 export function OrdersSkeleton() {
   return (
-    <AccountSkeleton label="Memuat pesanan…" head="h-[117px] lg:h-[140px]">
+    <AccountSkeleton label="Memuat pesanan…">
       <RowsCard className="h-[308px] lg:h-[300px]" rows={3} />
     </AccountSkeleton>
   );
@@ -273,7 +273,7 @@ export function OrdersSkeleton() {
 // One parcel card and the total card. Heights are estimated: no seed customer has an order.
 export function OrderDetailSkeleton() {
   return (
-    <AccountSkeleton label="Memuat pesanan…" head="h-[94px]">
+    <AccountSkeleton label="Memuat pesanan…">
       <RowsCard className="h-[200px]" rows={1} />
       <Skeleton className="h-[68px] w-full rounded-xl" />
     </AccountSkeleton>
@@ -291,7 +291,7 @@ export function WalletSkeleton() {
 
 export function TopupSkeleton() {
   return (
-    <AccountSkeleton label="Memuat top-up…" head="h-[140px]">
+    <AccountSkeleton label="Memuat top-up…">
       <SummaryCard className="h-[154px]" />
       <FormCard className="h-[392px] lg:h-[328px]" fields={2} />
       <RowsCard className="h-[260px]" rows={3} />
@@ -312,7 +312,7 @@ export function ReviewsSkeleton() {
 // those heights are estimates for a typical seller (not measured: farmer sign-in was blocked).
 export function FarmSkeleton() {
   return (
-    <AccountSkeleton label="Memuat kebun…">
+    <AccountSkeleton label="Memuat farm…">
       <SummaryCard className="h-[360px]" />
     </AccountSkeleton>
   );
@@ -320,7 +320,7 @@ export function FarmSkeleton() {
 
 export function FarmHomeSkeleton() {
   return (
-    <AccountSkeleton label="Memuat area petani…" head="h-[94px] lg:h-[117px]">
+    <AccountSkeleton label="Memuat area peternak…">
       <div className="grid gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Skeleton className="h-[68px] w-full sm:h-8 sm:w-96" />
@@ -347,7 +347,7 @@ export function CreateAuctionSkeleton() {
 
 export function EditAuctionSkeleton() {
   return (
-    <AccountSkeleton label="Memuat lelang…" head="h-[181px] lg:h-[117px]">
+    <AccountSkeleton label="Memuat lelang…">
       <FormCard className="h-[310px] sm:h-[254px]" fields={2} />
       <SummaryCard className="h-[254px] sm:h-[206px]" />
       <RowsCard className="h-[259px] sm:h-[163px]" rows={2} thumb={false} />

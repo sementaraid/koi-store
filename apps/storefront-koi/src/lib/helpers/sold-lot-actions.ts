@@ -1,8 +1,10 @@
+import { formatDeadline } from './format-deadline.ts';
 
-export type SoldLotAction = 'pay' | 'ship';
+export type SoldLotAction = 'ship';
 
+// US-108 AC4 (D-068): the farmer no longer marks a lot paid; the admin confirms
+// the winner's transfer and the lot arrives here already `paid`.
 export function soldLotAction(status: string): SoldLotAction | null {
-  if (status === 'won') return 'pay';
   return status === 'paid' ? 'ship' : null;
 }
 
@@ -49,37 +51,18 @@ export function soldLotFailureInfo(input: {
   return { message: input.message || 'Gagal memperbarui status lot. Coba lagi.', refresh: false };
 }
 
-export function canReportUnpaid(input: {
+// D-079: the farmer no longer reports a non-payment; the admin raises the
+// strike. Past the pay window (pay_by = closed_at + 24 h) the farmer still sees
+// the honest state, read-only, so they know why the lot has not moved.
+export function soldLotUnpaidNotice(input: {
   status: string;
   payBy: string | null;
-  reportedAt: string | null;
   now: number;
-}): { show: boolean } {
-  if (input.status !== 'won' || input.reportedAt || !input.payBy) {
-    return { show: false };
-  }
+}): string | null {
+  if (input.status !== 'won' || !input.payBy) return null;
   const deadline = Date.parse(input.payBy);
-  return { show: Number.isFinite(deadline) && input.now >= deadline };
-}
-
-export function unpaidFailureInfo(input: {
-  code?: string;
-  status?: number;
-  message: string;
-}): SoldLotFailure {
-  if (input.status === 409) {
-    if (input.code === 'lot_already_reported') {
-      return { message: 'Lot ini sudah dilaporkan.', refresh: true };
-    }
-    return { message: 'Status lot sudah berubah. Halaman diperbarui.', refresh: true };
-  }
-  if (input.status === 404) {
-    return { message: input.message, refresh: true };
-  }
-  return {
-    message: input.message || 'Gagal mengirim laporan. Coba lagi.',
-    refresh: false
-  };
+  if (!Number.isFinite(deadline) || input.now < deadline) return null;
+  return `Pemenang belum membayar sampai batas ${formatDeadline(input.payBy)} WIB.`;
 }
 
 export function shippedTrackingLabel(

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@koi/ui';
+import { AdminPageHeader } from '@/components/AdminPageHeader';
 import { NAV } from '@/const/nav';
 
 export const metadata: Metadata = {
@@ -10,12 +11,10 @@ export const metadata: Metadata = {
 export default function HomeRoute() {
   return (
     <div className="grid gap-6">
-      <div className="grid gap-1">
-        <h1 className="text-xl font-medium tracking-tight">Beranda</h1>
-        <p className="text-sm text-muted-foreground">
-          Antrean dan pengaturan yang ditangani tim admin.
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Beranda"
+        description="Antrean dan pengaturan yang ditangani tim admin."
+      />
 
       {NAV.map((group) => (
         <section key={group.label} className="grid gap-3">

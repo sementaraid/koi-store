@@ -12,13 +12,10 @@ export const ROUTES = {
   shipping: "/pengiriman",
   account: "/akun",
   orders: "/akun/pesanan",
-  wonLots: "/akun/menang",
   myBids: "/akun/bid",
   addresses: "/akun/alamat",
   reviews: "/akun/ulasan",
-  wallet: "/akun/saldo",
-  topup: "/akun/topup",
-  messages: "/akun/pesan",
+  saldoTopup: "/akun/saldo-topup",
   farm: "/akun/kebun",
   farmHome: "/akun/kebun/beranda",
   farmAuctionNew: "/akun/kebun/lelang/baru",
@@ -40,9 +37,18 @@ export const signInHref = (from: string) =>
 export const signUpHref = (from: string) =>
   `${ROUTES.signup}?redirect=${encodeURIComponent(from)}`
 
-/** Top-up, with the shortfall prefilled (US-099 AC3, US-102 AC2). */
-export const topupHref = (amount?: number) =>
-  amount && amount > 0 ? `${ROUTES.topup}?amount=${amount}` : ROUTES.topup
+/** Top-up, with the shortfall and the lot title prefilled (US-099 AC3, US-102 AC2). */
+export const topupHref = (amount?: number, lotTitle?: string) => {
+  const params = new URLSearchParams()
+  if (amount && amount > 0) params.set('amount', String(amount))
+  if (lotTitle) params.set('judul', lotTitle)
+  const query = params.toString()
+  return query ? `${ROUTES.saldoTopup}?${query}` : ROUTES.saldoTopup
+}
+
+/** The merged Saldo & top-up page, with the shortfall prefilled (US-102 AC9, AC11). */
+export const saldoTopupHref = (amount?: number, lotTitle?: string) =>
+  topupHref(amount, lotTitle)
 
 export const auctionsTabHref = (tab: string) =>
   tab === "live" ? ROUTES.auctions : `${ROUTES.auctions}?status=${tab}`

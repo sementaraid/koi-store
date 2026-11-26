@@ -139,6 +139,9 @@ medusaIntegrationTestRunner({
           photos: ["http://localhost:9000/static/koi.jpg"],
           ob: 1_000_000,
           kb: 100_000,
+          // US-105 (D-081): required on every new lot.
+          variety: "Kohaku",
+          size_cm: 55,
         },
       ],
     })
@@ -198,8 +201,8 @@ medusaIntegrationTestRunner({
       }
     }
 
-    const join = async (auctionId: string, headers: Record<string, string>) => {
-      const res = await api.post(`/store/auctions/${auctionId}/join`, {}, { headers })
+    const join = async (lotId: string, headers: Record<string, string>) => {
+      const res = await api.post(`/store/lots/${lotId}/join`, {}, { headers })
       expect(res.status).toEqual(201)
     }
 
@@ -235,8 +238,8 @@ medusaIntegrationTestRunner({
       const auction = await scheduledAuction(farm)
       const first = await buyer(150_000)
       const second = await buyer(150_000)
-      await join(auction.id, first.headers)
-      await join(auction.id, second.headers)
+      await join(auction.lots[0].id, first.headers)
+      await join(auction.lots[0].id, second.headers)
 
       const before = {
         first: await balanceOf(first.walletId),
@@ -294,6 +297,33 @@ medusaIntegrationTestRunner({
       expect(res.data.auction).not.toHaveProperty("participants")
     })
 
+    // US-111 fix round: a farmer cancel leaves the lots `open` (D-035), so an
+    // admin can still cancel a lot afterwards. Its joins were already refunded
+    // under the auction id; the lot cancel must append nothing more.
+    it("writes no second refund when a lot is cancelled after the auction", async () => {
+      const farm = await registerFarm({ balance: 1_000_000 })
+      const auction = await scheduledAuction(farm)
+      const joiner = await buyer(150_000)
+      await join(auction.lots[0].id, joiner.headers)
+
+      expect((await cancel(farm.vendor, auction.id)).status).toEqual(200)
+      expect(await refundsFor(auction.id)).toHaveLength(1)
+
+      const res = await api.post(
+        `/admin/lots/${auction.lots[0].id}/cancel`,
+        { reason: "Ikan sakit." },
+        { headers: admin }
+      )
+      expect(res.status).toEqual(200)
+      expect(res.data.lot.status).toEqual("cancelled")
+      expect(
+        (await wallets().listWalletTransactions()).filter(
+          (t) => t.type === "refund"
+        )
+      ).toHaveLength(1)
+      expect(await balanceOf(joiner.walletId)).toEqual(150_000)
+    })
+
     it("cancels a draft with no participants: no refund, no ledger row (AC1)", async () => {
       const farm = await registerFarm({ balance: 1_000_000 })
       const auction = await createAuction(farm.vendor)
@@ -317,7 +347,7 @@ medusaIntegrationTestRunner({
       // Joining needs `scheduled`/`live` (D-048): seed the participant and its
       // charge the way the join workflow writes them, then put it back.
       await auctions().updateAuctions([{ id: auction.id, status: "scheduled" }])
-      await join(auction.id, joiner.headers)
+      await join(auction.lots[0].id, joiner.headers)
       await auctions().updateAuctions([{ id: auction.id, status: "pending_approval" }])
 
       const res = await cancel(farm.vendor, auction.id)
@@ -334,12 +364,12 @@ medusaIntegrationTestRunner({
       const free = await buyer(0)
       // The paid joiner charges at the real fee; the override then lets the
       // second join at Rp0, which writes no `join_fee` row.
-      await join(auction.id, paid.headers)
+      await join(auction.lots[0].id, paid.headers)
       await auctions().updateAuctions([{ id: auction.id, fee_override_join_fee: 0 }])
-      await join(auction.id, free.headers)
+      await join(auction.lots[0].id, free.headers)
       expect(
         (await ledgerOf(free.walletId)).filter(
-          (t) => t.type === "join_fee" && t.reference === auction.id
+          (t) => t.type === "join_fee" && t.reference === auction.lots[0].id
         )
       ).toHaveLength(0)
 
@@ -371,7 +401,7 @@ medusaIntegrationTestRunner({
       const farm = await registerFarm({ balance: 1_000_000 })
       const auction = await scheduledAuction(farm)
       const joiner = await buyer(150_000)
-      await join(auction.id, joiner.headers)
+      await join(auction.lots[0].id, joiner.headers)
 
       expect((await cancel(farm.vendor, auction.id)).status).toEqual(200)
       const refused = await failure(cancel(farm.vendor, auction.id))
@@ -385,7 +415,7 @@ medusaIntegrationTestRunner({
       const other = await registerFarm({ balance: 1_000_000 })
       const auction = await scheduledAuction(owner)
       const joiner = await buyer(150_000)
-      await join(auction.id, joiner.headers)
+      await join(auction.lots[0].id, joiner.headers)
 
       const notMine = await failure(cancel(other.vendor, auction.id))
       expect(notMine.status).toEqual(404)
@@ -440,7 +470,7 @@ medusaIntegrationTestRunner({
       const farm = await registerFarm({ balance: 1_000_000 })
       const auction = await scheduledAuction(farm)
       const joiner = await buyer(150_000)
-      await join(auction.id, joiner.headers)
+      await join(auction.lots[0].id, joiner.headers)
 
       const refused = await failure(cancel(farm.vendor, auction.id, { status: "cancelled" }))
       expect(refused.status).toEqual(400)
@@ -453,7 +483,7 @@ medusaIntegrationTestRunner({
       const farm = await registerFarm({ balance: 1_000_000 })
       const auction = await scheduledAuction(farm)
       const joiner = await buyer(150_000)
-      await join(auction.id, joiner.headers)
+      await join(auction.lots[0].id, joiner.headers)
 
       const spy = jest
         .spyOn(wallets(), "createWalletTransactions")
@@ -476,7 +506,7 @@ medusaIntegrationTestRunner({
       const farm = await registerFarm({ balance: 1_000_000 })
       const auction = await scheduledAuction(farm)
       const joiner = await buyer(150_000)
-      await join(auction.id, joiner.headers)
+      await join(auction.lots[0].id, joiner.headers)
 
       const spy = jest
         .spyOn(auctions(), "updateAuctions")

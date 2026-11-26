@@ -6,7 +6,7 @@ import { FarmHomeSkeleton } from '@/components/sections/LoadingPages/AccountLoad
 import { FarmHomePage } from '@/components/sections';
 
 export const metadata: Metadata = {
-  title: 'Area petani'
+  title: 'Area peternak'
 };
 
 export default function Page({

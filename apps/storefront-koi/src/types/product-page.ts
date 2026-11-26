@@ -7,7 +7,6 @@ import type {
   SimpleProduct,
 } from "@/types/product"
 import type { OfferQuote, VariantChoice } from "@/lib/adapters/product"
-import type { ChatPartner } from "@/components/cells/ChatButton/ChatButton"
 
 export type { MediaItem } from "@/components/cells/MediaGallery/MediaGallery"
 
@@ -16,6 +15,9 @@ export type ProductPageProps = ComponentProps<"div"> &
   {
     product?: SimpleProduct
     shelf?: SimpleProduct[]
+    // True for a koi product, false for a pond supply. The product page derives
+    // it from the listing categories, the same split /katalog and /toko use.
+    koi?: boolean
     pageSize?: number
     media?: MediaItem[]
     onBuy?: (product: SimpleProduct) => void
@@ -28,6 +30,5 @@ export type ProductPageProps = ComponentProps<"div"> &
     selectedVariantId?: string
     onVariantChange?: (id: string) => void
     sellerHandle?: string
-    chatPartner?: ChatPartner
     postedAt?: string
   }

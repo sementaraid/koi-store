@@ -2,6 +2,7 @@ import { ROUTES } from '@/const/routes';
 import { listOrders } from '@/lib/data/orders';
 import { requireCustomer } from '@/lib/guard';
 import { groupOrders } from '@/lib/helpers/order-groups';
+import { getAccountIdentity } from '@/lib/shell';
 import type { AccountOrder } from '@/types/order';
 
 import { AccountHome } from './components/AccountHome';
@@ -14,13 +15,17 @@ export async function listOrderGroups() {
 }
 
 export async function AccountPage() {
-  const customer = await requireCustomer(ROUTES.account);
+  const [customer, identity] = await Promise.all([
+    requireCustomer(ROUTES.account),
+    getAccountIdentity()
+  ]);
   const groups = await listOrderGroups();
 
   return (
     <AccountHome
       customer={customer}
       groups={groups}
+      identity={identity}
     />
   );
 }

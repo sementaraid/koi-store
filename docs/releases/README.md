@@ -29,7 +29,7 @@ item becomes a release when the owner asks for it.
 - Xendit top-ups (invoice or payment link; a webhook adds credit). See the escrow direction below (owner, 2026-11-16).
 - Refunds beyond auction cancellation (farmer or admin, D-034)
 - Fixed-price marketplace and checkout
-- Winner pays through the platform (Xendit, with xenPlatform for farmer payouts). **Planned direction (owner, 2026-11-16): escrow — winner pays platform via Xendit; farmer payout (xenPlatform) released after winner marks delivered and claim window passes without claim.** Not a decision yet; the MVP stories it would change are marked `parked (payment model: Xendit escrow pending, 2026-11-16)` in `mvp/stories.md`.
+- Winner pays through the platform (Xendit, with xenPlatform for farmer payouts). **Planned direction (owner, 2026-11-16): escrow — winner pays platform via Xendit; farmer payout (xenPlatform) released after winner marks delivered and claim window passes without claim.** Not a decision yet. **Since 2026-11-25 the MVP routes the winning price through the company bank account by hand** (D-068 winner pays the company account, admin confirms; D-069 admin pays the farmer), so Xendit would automate that flow rather than create it.
 - Proxy bidding and buy-it-now
 - WhatsApp claim notice template for the farmer and admin (MVP notices are on-site only, D-025)
 - Auto-confirm delivery N days after a lot is marked shipped (MVP: the lot stays `shipped` if the winner never marks it delivered, D-053)

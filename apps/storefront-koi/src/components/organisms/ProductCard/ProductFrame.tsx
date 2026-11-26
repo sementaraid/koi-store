@@ -74,7 +74,7 @@ export function ProductFrame({
             src={src}
             alt=""
             loading="lazy"
-            className="aspect-4/3 w-full object-cover"
+            className="aspect-3/2 w-full object-cover"
           />
         )}
       </RenderIf>
@@ -82,7 +82,7 @@ export function ProductFrame({
         {() => (
           <div
             aria-hidden
-            className="aspect-4/3 w-full bg-muted"
+            className="aspect-3/2 w-full bg-muted"
             data-slot="product-card-placeholder"
           />
         )}
@@ -96,7 +96,7 @@ export function ProductFrame({
             {(to) => (
               <a
                 href={to}
-                className="rounded-sm transition-colors outline-none hover:text-accent-ink hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                className="rounded-sm outline-none transition-colors after:absolute after:inset-0 after:rounded-card hover:text-accent-ink hover:underline focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-offset-2"
               >
                 {title}
               </a>
@@ -133,7 +133,11 @@ export function ProductFrame({
       {content}
 
       <RenderIf when={action}>
-        {(a) => <CardFooter className="mt-auto">{a}</CardFooter>}
+        {(a) => (
+          // Above the stretched title link, so the action stays clickable
+          // while the rest of the card opens the detail page.
+          <CardFooter className="relative z-10 mt-auto">{a}</CardFooter>
+        )}
       </RenderIf>
     </Card>
   )

@@ -49,10 +49,10 @@ test('a suspended farm (403) keeps the server message verbatim (D-055)', () => {
   assert.deepEqual(
     claimDecisionFailure({
       status: 403,
-      message: 'Kebun Anda belum disetujui, jadi area petani belum terbuka.'
+      message: 'Farm Anda belum disetujui, jadi area peternak belum terbuka.'
     }),
     {
-      message: 'Kebun Anda belum disetujui, jadi area petani belum terbuka.',
+      message: 'Farm Anda belum disetujui, jadi area peternak belum terbuka.',
       refresh: false
     }
   );
@@ -83,8 +83,8 @@ test('a closed farm (403) on resolve keeps the server copy verbatim (D-055)', ()
   assert.deepEqual(
     claimResolutionFailure({
       status: 403,
-      message: 'Kebun Anda sedang ditangguhkan.'
+      message: 'Farm Anda sedang ditangguhkan.'
     }),
-    { message: 'Kebun Anda sedang ditangguhkan.', refresh: false }
+    { message: 'Farm Anda sedang ditangguhkan.', refresh: false }
   );
 });

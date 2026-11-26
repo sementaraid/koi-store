@@ -3,13 +3,12 @@ import type { ReactNode } from "react"
 import { BottomNav } from "@/components/cells/BottomNav/BottomNav"
 import { Footer } from "@/components/organisms/Footer/Footer"
 import { Header } from "@/components/organisms/Header/Header"
-import type { HeaderAccount, HeaderCart } from "@/types/header"
+import type { HeaderAccount } from "@/types/header"
 
 import { ShellBalanceProvider } from "./BalanceSync"
 
 export type AppShellProps = {
   account?: HeaderAccount
-  cart?: HeaderCart
   /* The 404 card names no section, so its header marks no item. */
   markActive?: boolean
   children: ReactNode
@@ -21,19 +20,21 @@ export type AppShellProps = {
  * `:has()`, so the first server-rendered HTML is already right:
  * - `data-shell="lot-header"`: the lot page's own mobile header replaces the shell
  *   header below `lg`.
- * - `data-shell="lot-bar"`: the lot page's bid bar shows, so the bottom space
- *   covers the bar as well as the tab bar below `lg`.
+ * - `data-shell="lot-page"`: the lot page renders it in every state. Its tab bar
+ *   is gone (US-099 AC14), so the shell drops the tab bar's reserved space.
+ * - `data-shell="lot-bar"`: the lot page's sticky footer shows. The bottom space
+ *   then reserves the footer's measured height (`--lot-bar-h`, set by
+ *   `LotPriceBar`) and nothing else.
  */
 export function AppShell({
   account,
-  cart,
   markActive = true,
   children
 }: AppShellProps) {
   return (
     <div
       data-slot="shell"
-      className="group/shell flex min-h-svh flex-col bg-background pb-[calc(4rem+env(safe-area-inset-bottom))] has-[[data-shell=lot-bar]]:pb-[calc(12.5rem+env(safe-area-inset-bottom))] lg:pb-0 lg:has-[[data-shell=lot-bar]]:pb-0"
+      className="group/shell flex min-h-svh flex-col bg-background pb-[calc(4rem+env(safe-area-inset-bottom))] has-[[data-shell=lot-page]]:pb-0 has-[[data-shell=lot-page]]:has-[[data-shell=lot-bar]]:pb-[var(--lot-bar-h,calc(14.5rem+env(safe-area-inset-bottom)))] lg:pb-0"
     >
       <a
         href="#konten"
@@ -42,7 +43,7 @@ export function AppShell({
         Lewati ke konten
       </a>
 
-      <Header account={account} cart={cart} markActive={markActive} />
+      <Header account={account} markActive={markActive} />
 
       <main id="konten" className="flex-1">
         <ShellBalanceProvider balance={account?.balance}>{children}</ShellBalanceProvider>

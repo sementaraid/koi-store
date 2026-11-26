@@ -15,10 +15,11 @@ test('labels the two delivery methods', () => {
   assert.equal(deliveryMethodLabel('something_new'), 'something_new');
 });
 
-test('reads the auction date in Jakarta time', () => {
+test('reads the auction date in Jakarta time, labelled WIB', () => {
   const formatted = formatAuctionDate('2026-11-14T17:20:00.000Z');
   assert.match(formatted, /2026/);
   assert.match(formatted, /15/);
+  assert.match(formatted, / WIB$/);
 });
 
 test('sums listing and join fee for the total column', () => {
@@ -40,7 +41,7 @@ test('override form: a fee override needs a reason', () => {
 test('override form: a reason alone needs a fee', () => {
   assert.equal(
     overrideFormError({ listingFee: null, joinFee: null, reason: 'Promo' }),
-    'Masukkan biaya listing atau biaya join yang baru.'
+    'Masukkan biaya listing atau biaya ikut yang baru.'
   );
 });
 

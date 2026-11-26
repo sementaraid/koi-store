@@ -35,11 +35,11 @@ test('farm files must not be empty or over 5 MB', () => {
 });
 
 test('one to six farm photos', () => {
-  assert.equal(farmPhotosError(0), 'Unggah minimal satu foto kebun.');
+  assert.equal(farmPhotosError(0), 'Unggah minimal satu foto farm.');
   assert.equal(farmPhotosError(1), null);
   assert.equal(farmPhotosError(MAX_FARM_PHOTOS), null);
   assert.equal(
     farmPhotosError(MAX_FARM_PHOTOS + 1),
-    `Maksimal ${MAX_FARM_PHOTOS} foto kebun.`
+    `Maksimal ${MAX_FARM_PHOTOS} foto farm.`
   );
 });

@@ -11,11 +11,12 @@ import type AuctionModuleService from "../../src/modules/auction/service"
 import type { LotStatus } from "../../src/modules/auction/models/lot"
 import { PII_AUDIT_MODULE } from "../../src/modules/pii-audit"
 import type PiiAuditModuleService from "../../src/modules/pii-audit/service"
+import { confirmLotPaymentWorkflow } from "../../src/workflows/confirm-lot-payment"
 
 jest.setTimeout(120 * 1000)
 
-// US-051 T-051.6 / US-053 T-053.2 (D-046, D-052, D-056): the winner's own
-// won-and-later lots, read only. Another customer's lot is absent and 404 by
+// US-051 T-051.6 / US-053 T-053.2 / US-108 (D-046, D-052, D-056, D-068): the
+// winner's own won-and-later lots, read only. Another customer's lot is absent and 404 by
 // id; an open lot is absent; no farmer contact (phone/bank/holder) and no
 // other customer field. `seller` carries only id and name, and
 // `has_shipping_address` reflects the caller's own default shipping address.
@@ -31,10 +32,10 @@ const DAY = 24 * 60 * 60 * 1000
 const WINNER_PHONE = "+6281111222333"
 const SELLER_PHONE = "+6289999000111"
 const STREET = "Jl. Raya Bogor 1"
-// US-051 T-051.1a: the farmer's payout account. Only the mask may leave the
-// server without the logged reveal (D-044, D-059).
+// The farmer's payout account: none of it, masked or full, may reach the
+// winner (US-108 AC2, D-068). Distinct strings, so an id can't match them.
 const HOLDER = "Budi Santoso"
-const BANK = "BCA"
+const BANK = "Bank Uji Peternak"
 const ACCOUNT = "1234567890"
 
 const jwt = (container: MedusaContainer, actor_id: string) => {
@@ -162,6 +163,10 @@ medusaIntegrationTestRunner({
             ? new Date(Date.now() - closedOffsetMin * 60_000)
             : null,
           tracking_number: status === "shipped" ? "JNE12345" : null,
+          shipped_at:
+            status === "shipped" || status === "delivered"
+              ? new Date(Date.now() - 120_000)
+              : null,
           delivered_at:
             status === "delivered" ? new Date(Date.now() - 60_000) : null,
         },
@@ -199,28 +204,32 @@ medusaIntegrationTestRunner({
         status: "shipped",
         final_price: 1_500_000,
         closed_at: expect.any(String),
+        // D-072: nothing paid yet.
+        paid_at: null,
         // US-051 T-051.1a (D-058).
         pay_by: expect.any(String),
         tracking_number: "JNE12345",
+        // D-072: shipped, so the ship date is saved; not delivered yet.
+        shipped_at: expect.any(String),
         delivered_at: null,
         auction: { id: expect.any(String), delivery_method: "courier" },
         product: { title: null, thumbnail: null },
-        // US-051 T-051.1a (D-044, D-059): the payout account is masked here;
-        // the full values only come from the logged reveal (T-051.3a).
-        seller: {
-          id: farm.id,
-          name: farm.name,
-          payment_details: {
-            bank_name: BANK,
-            holder_name: "B*** S******",
-            account_number: "******7890",
-          },
-        },
+        // US-108 AC2 (D-068): no farmer bank field, masked or full.
+        seller: { id: farm.id, name: farm.name },
         // US-054 T-054.1b: shipped, so no window and no claim yet.
         claim_window_ends_at: null,
         claim: null,
         // US-057 T-057.1: no rating yet.
         rating: null,
+        // US-109 T-109.1: no proof uploaded yet, and never a key or URL.
+        proof: {
+          status: "none",
+          has_image: false,
+          reason: null,
+          uploaded_at: null,
+        },
+        // US-110 T-110.1: no arrival proof yet, and never a key or URL.
+        arrival_proof: { has_file: false, uploaded_at: null },
       })
       expect(new Date(shipped.pay_by).getTime()).toEqual(
         new Date(shipped.closed_at).getTime() + DAY
@@ -247,6 +256,51 @@ medusaIntegrationTestRunner({
       )
       expect(byId.get(noClosedAt)!.pay_by).toBeNull()
       expect(byId.get(noClosedAt)!.closed_at).toBeNull()
+    })
+
+    it("returns paid_at: null before the admin confirms the payment, the ISO date after (D-072)", async () => {
+      const farm = await seller()
+      const winner = await customer()
+      const lotId = await lot("won", winner.id, 30, farm.id)
+
+      const before = await api.get("/store/won-lots", { headers: winner.headers })
+      expect(before.data.lots[0].paid_at).toBeNull()
+
+      await confirmLotPaymentWorkflow(getContainer()).run({
+        input: { lot_id: lotId, admin_id: "user_admin" },
+      })
+
+      const list = await api.get("/store/won-lots", { headers: winner.headers })
+      const detail = await api.get(`/store/won-lots/${lotId}`, {
+        headers: winner.headers,
+      })
+      const paidAt = list.data.lots[0].paid_at
+      expect(typeof paidAt).toEqual("string")
+      expect(new Date(paidAt).toISOString()).toEqual(paidAt)
+      expect(detail.data.lot.status).toEqual("paid")
+      expect(detail.data.lot.paid_at).toEqual(paidAt)
+    })
+
+    it("returns paid_at: null for a lot marked paid before US-108, never a guessed date (AC4, D-072)", async () => {
+      const farm = await seller()
+      const winner = await customer()
+      // `paid` status from before US-108 saved a date: no paid_at column value.
+      const lotId = await lot("paid", winner.id, 30, farm.id)
+
+      const list = await api.get("/store/won-lots", { headers: winner.headers })
+      const detail = await api.get(`/store/won-lots/${lotId}`, {
+        headers: winner.headers,
+      })
+      const expected = {
+        id: lotId,
+        status: "paid",
+        closed_at: expect.any(String),
+        paid_at: null,
+        shipped_at: null,
+        delivered_at: null,
+      }
+      expect(list.data.lots[0]).toMatchObject(expected)
+      expect(detail.data.lot).toMatchObject(expected)
     })
 
     it("has_shipping_address is false with no default shipping address, true with one", async () => {
@@ -278,6 +332,9 @@ medusaIntegrationTestRunner({
       expect(res.data.lot).toMatchObject({
         id: lotId,
         status: "delivered",
+        closed_at: expect.any(String),
+        paid_at: null,
+        shipped_at: expect.any(String),
         delivered_at: expect.any(String),
         seller: { id: farm.id, name: farm.name },
       })
@@ -324,12 +381,20 @@ medusaIntegrationTestRunner({
       const lotId = await lot("shipped", winner.id, 0, farm.id)
 
       const res = await api.get("/store/won-lots", { headers: winner.headers })
-      const json = JSON.stringify(res.data)
-      // US-051 T-051.1a: the masked account is sent, the full values are not.
+      const byId = await api.get(`/store/won-lots/${lotId}`, {
+        headers: winner.headers,
+      })
+      // US-108 AC2 (D-068): no farmer bank field on the list or by id, masked
+      // or full.
       for (const forbidden of [
         "phone",
+        "payment_details",
+        "bank_name",
+        "holder_name",
+        "account_number",
         ACCOUNT,
         HOLDER,
+        BANK,
         "address_1",
         "winner_customer_id",
         winner.id,
@@ -337,159 +402,35 @@ medusaIntegrationTestRunner({
         SELLER_PHONE,
         STREET,
       ]) {
-        expect(json).not.toContain(forbidden)
+        expect(JSON.stringify(res.data)).not.toContain(forbidden)
+        expect(JSON.stringify(byId.data)).not.toContain(forbidden)
       }
-      // The farm name and masked account only; no other seller field, no phone.
-      expect(res.data.lots[0].seller).toEqual({
-        id: farm.id,
-        name: farm.name,
-        payment_details: {
-          bank_name: BANK,
-          holder_name: "B*** S******",
-          account_number: "******7890",
-        },
-      })
-      expect(
-        JSON.stringify(
-          (await api.get(`/store/won-lots/${lotId}`, { headers: winner.headers }))
-            .data
-        )
-      ).not.toContain("phone")
+      // The farm name only; no other seller field.
+      expect(res.data.lots[0].seller).toEqual({ id: farm.id, name: farm.name })
+      expect(byId.data.lot.seller).toEqual({ id: farm.id, name: farm.name })
     })
 
-    // US-051 T-051.3a (AC3, AC4, D-044, D-057, D-059): the winner's logged
-    // reveal of the farmer's full bank account. One reveal = one audit row.
-    describe("bank account reveal", () => {
-      const auditRows = (recordId: string) =>
-        getContainer()
+    // US-108 AC2 (D-068): the winner's farmer-bank reveal is gone. The route
+    // no longer exists, so it is 404 and writes no audit row.
+    it("has no bank account reveal: 404 and no audit row", async () => {
+      const farm = await seller()
+      const winner = await customer()
+      const lotId = await lot("won", winner.id, 0, farm.id)
+
+      expect(
+        await statusOf(
+          api.post(
+            `/store/won-lots/${lotId}/reveal`,
+            { field: "bank_account" },
+            { headers: winner.headers }
+          )
+        )
+      ).toEqual(404)
+      expect(
+        await getContainer()
           .resolve<PiiAuditModuleService>(PII_AUDIT_MODULE)
-          .listPiiRevealAudits({ record_id: recordId })
-
-      it("returns the full account and writes exactly one audit row (AC3, AC4)", async () => {
-        const farm = await seller()
-        const winner = await customer()
-        const lotId = await lot("won", winner.id, 0, farm.id)
-        const before = Date.now()
-
-        const res = await api.post(
-          `/store/won-lots/${lotId}/reveal`,
-          { field: "bank_account" },
-          { headers: winner.headers }
-        )
-        expect(res.status).toEqual(200)
-        // D-057: one reveal returns both fields, full.
-        expect(res.data).toEqual({
-          field: "bank_account",
-          value: {
-            bank_name: BANK,
-            holder_name: HOLDER,
-            account_number: ACCOUNT,
-          },
-        })
-        expect(JSON.stringify(res.data)).not.toContain("phone")
-        expect(JSON.stringify(res.data)).not.toContain(SELLER_PHONE)
-
-        const rows = await auditRows(lotId)
-        expect(rows).toHaveLength(1)
-        expect(rows[0]).toMatchObject({
-          actor_type: "customer",
-          actor_id: winner.id,
-          record_type: "lot",
-          record_id: lotId,
-          field: "bank_account",
-        })
-        expect(new Date(rows[0].created_at).getTime()).toBeGreaterThanOrEqual(
-          before - 1000
-        )
-
-        // A second reveal writes a second row: every reveal is recorded.
-        await api.post(
-          `/store/won-lots/${lotId}/reveal`,
-          { field: "bank_account" },
-          { headers: winner.headers }
-        )
-        expect(await auditRows(lotId)).toHaveLength(2)
-      })
-
-      it("404s another customer's lot with no audit row (AC3)", async () => {
-        const farm = await seller()
-        const winner = await customer()
-        const other = await customer()
-        const lotId = await lot("won", winner.id, 0, farm.id)
-
-        expect(
-          await statusOf(
-            api.post(
-              `/store/won-lots/${lotId}/reveal`,
-              { field: "bank_account" },
-              { headers: other.headers }
-            )
-          )
-        ).toEqual(404)
-        expect(await auditRows(lotId)).toHaveLength(0)
-      })
-
-      it("404s a non-sold lot with no audit row (AC3)", async () => {
-        const farm = await seller()
-        const winner = await customer()
-        const lotId = await lot("open", winner.id, 0, farm.id)
-
-        expect(
-          await statusOf(
-            api.post(
-              `/store/won-lots/${lotId}/reveal`,
-              { field: "bank_account" },
-              { headers: winner.headers }
-            )
-          )
-        ).toEqual(404)
-        expect(await auditRows(lotId)).toHaveLength(0)
-      })
-
-      it("404s a farm without bank details, with no audit row (AC3)", async () => {
-        const farm = await seller(false)
-        const winner = await customer()
-        const lotId = await lot("won", winner.id, 0, farm.id)
-
-        expect(
-          await statusOf(
-            api.post(
-              `/store/won-lots/${lotId}/reveal`,
-              { field: "bank_account" },
-              { headers: winner.headers }
-            )
-          )
-        ).toEqual(404)
-        expect(await auditRows(lotId)).toHaveLength(0)
-      })
-
-      it("refuses anonymous callers and a phone field (D-052, D-057)", async () => {
-        const farm = await seller()
-        const winner = await customer()
-        const lotId = await lot("won", winner.id, 0, farm.id)
-        const anon = { "x-publishable-api-key": publishable }
-
-        expect(
-          await statusOf(
-            api.post(
-              `/store/won-lots/${lotId}/reveal`,
-              { field: "bank_account" },
-              { headers: anon }
-            )
-          )
-        ).toEqual(401)
-        // `phone` is not in the enum, so it never reaches the workflow.
-        expect(
-          await statusOf(
-            api.post(
-              `/store/won-lots/${lotId}/reveal`,
-              { field: "phone" },
-              { headers: winner.headers }
-            )
-          )
-        ).toEqual(400)
-        expect(await auditRows(lotId)).toHaveLength(0)
-      })
+          .listPiiRevealAudits({ record_id: lotId })
+      ).toHaveLength(0)
     })
   },
 })

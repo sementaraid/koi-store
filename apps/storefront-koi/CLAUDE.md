@@ -6,7 +6,7 @@ winners, paid and shipped, claims and balance. What to build comes from the
 active release (`docs/releases/README.md`). Farmer auth follows D-003.
 
 Stack: Next.js 15 (App Router, Turbopack), React 19, Tailwind v4, Base UI, cva,
-react-hook-form + zod, TalkJS chat. Dev server: `bun run dev` → http://localhost:3001
+react-hook-form + zod. Dev server: `bun run dev` → http://localhost:3001
 
 ## Structure
 
@@ -20,7 +20,7 @@ react-hook-form + zod, TalkJS chat. Dev server: `bun run dev` → http://localho
 | `src/lib/helpers/*.ts` | Pure functions, each with a colocated `*.test.ts` |
 | `src/const/*.ts` | Copy, config and demo data. `routes.ts` is the only place URLs are written |
 | `src/types/*.ts` | Presentation types |
-| `src/providers` | Cart and TalkJS context |
+| `src/providers` | Cart context |
 
 ## Rules
 

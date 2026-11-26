@@ -14,6 +14,8 @@ export type WalletTransaction = {
   id: string;
   type: WalletTransactionType;
   amount: number;
+  /** Bank reference for a top-up, reason for an adjustment, lot title for an auction charge. Never an internal id. */
+  description: string | null;
   reference: string | null;
   created_at: string;
 };

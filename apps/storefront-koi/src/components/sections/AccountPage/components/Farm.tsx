@@ -55,10 +55,10 @@ export type FarmProps = {
 
 const STEP_COPY: Record<FarmStep, string> = {
   session: 'Sesi akun',
-  signin: 'Masuk sebagai petani',
+  signin: 'Masuk sebagai peternak',
   upload: 'Unggah berkas',
   register: 'Kirim pendaftaran',
-  member: 'Aktifkan sesi petani'
+  member: 'Aktifkan sesi peternak'
 };
 
 const MB = MAX_FARM_FILE_BYTES / (1024 * 1024);
@@ -66,14 +66,7 @@ const MB = MAX_FARM_FILE_BYTES / (1024 * 1024);
 export function Farm({ customer, seller, failed, openOrders, identity }: FarmProps) {
   const frame = (body: ReactNode) => (
     <AccountFrame
-      title="Kebun"
-      eyebrow={
-        <>
-          <Sprout aria-hidden className="size-3.5" />
-          Area petani
-        </>
-      }
-      description="Daftarkan kebun Anda untuk bisa membuat lelang koi. Persetujuan dilakukan admin."
+      title="Farm"
       openOrders={openOrders}
       identity={identity}
     >
@@ -87,7 +80,7 @@ export function Farm({ customer, seller, failed, openOrders, identity }: FarmPro
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertTriangle aria-hidden className="size-4 text-destructive-ink" />
-            Gagal memuat status kebun
+            Gagal memuat status farm
           </CardTitle>
           <CardDescription>Muat ulang halaman untuk mencoba lagi.</CardDescription>
         </CardHeader>
@@ -154,7 +147,7 @@ function Status({ seller }: { seller: FarmSeller }) {
                 nativeButton={false}
               >
                 <Sprout aria-hidden />
-                Buka area petani
+                Buka area peternak
               </Button>
             </div>
           )}
@@ -194,7 +187,7 @@ function BankDetails({ details }: { details: FarmSeller['payment_details'] }) {
         </dl>
       ) : (
         <p className="mt-1 text-sm text-muted-foreground">
-          Belum ada rekening bank tersimpan. Data rekening diisi saat pendaftaran kebun.
+          Belum ada rekening bank tersimpan. Data rekening diisi saat pendaftaran farm.
         </p>
       )}
     </div>
@@ -258,7 +251,7 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
 
     const error = farmPhotosError(list.length);
     if (error) {
-      setFileError(`Foto kebun: ${error}`);
+      setFileError(`Foto farm: ${error}`);
       setFarmPhotos([]);
       input.value = '';
       return;
@@ -267,7 +260,7 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
     for (const file of list) {
       const each = farmFileError(file);
       if (each) {
-        setFileError(`Foto kebun: ${each}`);
+        setFileError(`Foto farm: ${each}`);
         setFarmPhotos([]);
         input.value = '';
         return;
@@ -311,7 +304,7 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
       return;
     }
 
-    toast.success('Pendaftaran kebun terkirim. Menunggu persetujuan admin.');
+    toast.success('Pendaftaran farm terkirim. Menunggu persetujuan admin.');
     router.push(ROUTES.farm);
     router.refresh();
   }
@@ -324,18 +317,18 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
     >
       <Card className="px-5 py-4">
         <CardHeader className="px-0 pt-0">
-          <CardTitle className="text-base">Data kebun</CardTitle>
+          <CardTitle className="text-base">Data farm</CardTitle>
           <CardDescription>Nama dan lokasi yang dilihat pembeli dan admin.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 px-0 pb-0">
           <FormField
-            label="Nama kebun"
+            label="Nama farm"
             error={errors.name?.message}
             {...register('name')}
           />
 
           <div className="grid gap-1.5">
-            <Label htmlFor="farm-description">Deskripsi kebun (opsional)</Label>
+            <Label htmlFor="farm-description">Deskripsi farm (opsional)</Label>
             <textarea
               id="farm-description"
               rows={4}
@@ -353,7 +346,7 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
           </div>
 
           <FormField
-            label="Alamat kebun"
+            label="Alamat farm"
             placeholder="Jalan, nomor, desa/kelurahan…"
             error={errors.address1?.message}
             {...register('address1')}
@@ -385,7 +378,7 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
             <div id="farm-phone-hint" className="text-xs text-muted-foreground">
               {phone ? (
                 <>
-                  Nomor WhatsApp kebun memakai nomor telepon akun Anda dan tidak dapat diubah di
+                  Nomor WhatsApp farm memakai nomor telepon akun Anda dan tidak dapat diubah di
                   sini (D-016).
                 </>
               ) : (
@@ -397,7 +390,7 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
                   >
                     Pengaturan akun
                   </Link>
-                  , karena nomor ini dipakai sebagai WhatsApp kebun.
+                  , karena nomor ini dipakai sebagai WhatsApp farm.
                 </>
               )}
             </div>
@@ -409,7 +402,8 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
         <CardHeader className="px-0 pt-0">
           <CardTitle className="text-base">Rekening bank</CardTitle>
           <CardDescription>
-            Rekening milik petani sendiri. Pemenang lelang mentransfer langsung ke rekening ini.
+            Rekening milik peternak sendiri. Rumah lelang memakai rekening ini untuk mencairkan hasil
+            penjualan setelah lot lunas. Pemenang tidak melihat rekening ini.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 px-0 pb-0">
@@ -436,9 +430,9 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
 
       <Card className="px-5 py-4">
         <CardHeader className="px-0 pt-0">
-          <CardTitle className="text-base">Identitas dan foto kebun</CardTitle>
+          <CardTitle className="text-base">Identitas dan foto farm</CardTitle>
           <CardDescription>
-            KTP disimpan privat dan hanya dilihat admin. Foto kebun tampil di halaman lelang.
+            KTP disimpan privat dan hanya dilihat admin. Foto farm tampil di halaman lelang.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 px-0 pb-0">
@@ -451,6 +445,7 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
           />
 
           <FormField
+            id="farm-ktp"
             label="Foto KTP"
             type="file"
             accept="image/jpeg,image/png,image/webp"
@@ -459,7 +454,8 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
           />
 
           <FormField
-            label={`Foto kebun (1–${MAX_FARM_PHOTOS})`}
+            id="farm-photos"
+            label={`Foto farm (1–${MAX_FARM_PHOTOS})`}
             type="file"
             accept="image/jpeg,image/png,image/webp"
             multiple
@@ -471,7 +467,7 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
             {() => (
               <p className="flex items-center gap-2 text-xs text-muted-foreground">
                 <ImagePlus aria-hidden className="size-3.5" />
-                {ktp ? '1 foto KTP' : 'Belum ada foto KTP'} · {farmPhotos.length} foto kebun
+                {ktp ? '1 foto KTP' : 'Belum ada foto KTP'} · {farmPhotos.length} foto farm
               </p>
             )}
           </RenderIf>
@@ -494,7 +490,7 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
           <CardTitle className="text-base">Konfirmasi akun</CardTitle>
           <CardDescription>
             Pendaftaran memakai login yang sama. Masukkan kata sandi akun Anda sekali lagi — kata
-            sandi tidak disimpan di browser, dan sesi petani (D-003) perlu dibuka dengan login yang
+            sandi tidak disimpan di browser, dan sesi peternak (D-003) perlu dibuka dengan login yang
             sama.
           </CardDescription>
         </CardHeader>
@@ -533,13 +529,13 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
             disabled={isSubmitting || !phone}
           >
             <Upload aria-hidden />
-            {isSubmitting ? 'Mengirim pendaftaran…' : 'Kirim pendaftaran kebun'}
+            {isSubmitting ? 'Mengirim pendaftaran…' : 'Kirim pendaftaran farm'}
           </Button>
         </div>
         <RenderIf when={!phone}>
           {() => (
             <p className="text-xs text-muted-foreground">
-              Tambahkan nomor telepon di Pengaturan akun dulu — WhatsApp kebun memakainya.
+              Tambahkan nomor telepon di Pengaturan akun dulu — WhatsApp farm memakainya.
             </p>
           )}
         </RenderIf>

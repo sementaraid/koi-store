@@ -6,7 +6,8 @@ import './globals.css';
 import { Toaster } from 'sonner';
 
 import { retrieveCart } from '@/lib/data/cart';
-import { getSession } from '@/lib/data/session';
+
+import { SITE_NAME } from '@/const/site';
 
 import { Providers } from './providers';
 
@@ -18,8 +19,8 @@ const instrumentSans = Instrument_Sans({
 
 export const metadata: Metadata = {
   title: {
-    template: `%s | ${process.env.NEXT_PUBLIC_SITE_NAME || 'Indokoi'}`,
-    default: process.env.NEXT_PUBLIC_SITE_NAME || 'Indokoi — Lelang & Katalog Koi'
+    template: `%s | ${SITE_NAME}`,
+    default: SITE_NAME
   },
   description:
     process.env.NEXT_PUBLIC_SITE_DESCRIPTION ||
@@ -30,24 +31,7 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children
 }: Readonly<{ children: React.ReactNode }>) {
-  const [cart, session] = await Promise.all([
-    retrieveCart(),
-    getSession().catch(() => ({ status: 'error' as const }))
-  ]);
-  const customer = session.status === 'authenticated' ? session.customer : null;
-
-  const appId = process.env.NEXT_PUBLIC_TALKJS_APP_ID;
-  const chat =
-    appId && customer?.id && customer.email
-      ? {
-          appId,
-          userId: customer.id,
-          userName:
-            [customer.first_name, customer.last_name].filter(Boolean).join(' ') ||
-            customer.email,
-          userEmail: customer.email
-        }
-      : undefined;
+  const cart = await retrieveCart();
 
   return (
     <html
@@ -55,10 +39,7 @@ export default async function RootLayout({
       className={instrumentSans.variable}
     >
       <body className="antialiased">
-        <Providers
-          cart={cart}
-          chat={chat}
-        >
+        <Providers cart={cart}>
           {children}
         </Providers>
         <Toaster position="top-right" />

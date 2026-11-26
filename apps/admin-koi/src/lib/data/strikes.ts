@@ -76,6 +76,7 @@ export async function giveStrike(input: GiveStrikeInput): Promise<StrikeActionRe
 
     revalidatePath(ROUTES.reports);
     revalidatePath(ROUTES.claims);
+    revalidatePath(ROUTES.payments);
     return { success: true, ban: result.ban };
   } catch (err: unknown) {
     return {

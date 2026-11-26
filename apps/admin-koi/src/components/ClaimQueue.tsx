@@ -26,6 +26,8 @@ import {
 } from '@/lib/helpers/claim-format';
 import { activeStrikeLabel, banLabel } from '@/lib/helpers/strike-format';
 
+import { AdminEmpty } from './AdminEmpty';
+import { ConfirmDialog } from './ConfirmDialog';
 import { StrikePanel } from './StrikePanel';
 
 export type ClaimQueueProps = {
@@ -59,7 +61,10 @@ export function ClaimQueue({ disputed, disputedTotal, decided, now }: ClaimQueue
               </p>
             ) : null}
             {disputed.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Tidak ada sengketa menunggu.</p>
+              <AdminEmpty
+                title="Tidak ada sengketa menunggu"
+                description="Klaim baru muncul di sini setelah pemenang mengajukan sengketa."
+              />
             ) : (
               disputed.map((claim) => <DisputedRow key={claim.id} claim={claim} />)
             )}
@@ -67,7 +72,10 @@ export function ClaimQueue({ disputed, disputedTotal, decided, now }: ClaimQueue
 
           <TabsContent value="decided" className="grid gap-3">
             {decided.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Belum ada klaim yang diputuskan.</p>
+              <AdminEmpty
+                title="Belum ada klaim yang diputuskan"
+                description="Klaim yang disetujui atau ditolak muncul di sini."
+              />
             ) : (
               decided.map((claim) => <DecidedRow key={claim.id} claim={claim} now={now} />)
             )}
@@ -160,6 +168,7 @@ function DecidedRow({ claim, now }: { claim: AdminClaim; now: string }) {
               ? { customer_id: claim.seller.customer_id }
               : { seller_id: claim.seller.id }
           }
+          idPrefix={`claim-${claim.id}`}
         />
       ) : null}
     </div>
@@ -171,24 +180,27 @@ function DecisionForm({ id }: { id: string }) {
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [pendingDecision, setPendingDecision] = useState<'approve' | 'reject' | null>(null);
 
-  async function decide(decision: 'approve' | 'reject') {
-    const trimmed = reason.trim();
-    if (!trimmed) {
+  function decide(decision: 'approve' | 'reject') {
+    if (!reason.trim()) {
       setError('Masukkan alasan keputusan');
       return;
     }
-    const confirmed =
-      decision === 'approve'
-        ? confirm('Setujui klaim ini? Keputusan bersifat final.')
-        : confirm('Tolak klaim ini? Keputusan bersifat final.');
-    if (!confirmed) return;
+    setPendingDecision(decision);
+  }
 
+  async function confirmDecision() {
+    const decision = pendingDecision;
+    if (!decision) return;
+
+    const trimmed = reason.trim();
     setBusy(true);
     setError(null);
     const result =
       decision === 'approve' ? await approveClaim(id, trimmed) : await rejectClaim(id, trimmed);
     setBusy(false);
+    setPendingDecision(null);
 
     if (result.success) {
       toast.success(decision === 'approve' ? 'Klaim disetujui.' : 'Klaim ditolak.');
@@ -209,6 +221,7 @@ function DecisionForm({ id }: { id: string }) {
       noValidate
     >
       <FormField
+        id={`claim-${id}-reason`}
         label="Alasan keputusan"
         hint="Tersimpan bersama keputusan ini dan menjadi catatan audit."
         value={reason}
@@ -232,6 +245,23 @@ function DecisionForm({ id }: { id: string }) {
           Tolak
         </Button>
       </div>
+
+      <ConfirmDialog
+        open={pendingDecision !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDecision(null);
+        }}
+        title={pendingDecision === 'approve' ? 'Setujui klaim?' : 'Tolak klaim?'}
+        description={
+          pendingDecision === 'approve'
+            ? 'Setujui klaim ini? Keputusan bersifat final.'
+            : 'Tolak klaim ini? Keputusan bersifat final.'
+        }
+        confirmLabel={pendingDecision === 'approve' ? 'Setujui' : 'Tolak'}
+        busyLabel="Memproses…"
+        destructive={pendingDecision === 'reject'}
+        onConfirm={confirmDecision}
+      />
     </form>
   );
 }

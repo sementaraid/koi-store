@@ -43,6 +43,16 @@ export type ListingBase = {
   age?: string
   awards?: string
   note?: string
+  // US-105 (D-081): the koi's own fields, all absent on lots created before
+  // the story and when the farmer left an optional field empty (AC6).
+  variety?: string
+  sizeCm?: number
+  sex?: string
+  hasCertificate?: boolean
+  certificateIssuer?: string
+  pondOrigin?: string
+  breederNotes?: string
+  videoUrl?: string
 }
 
 export type SellerKind = "farm" | "shop"
@@ -60,6 +70,9 @@ export type AuctionState = {
   currency?: string
   bidCount?: number
   endsAt?: CountdownTarget
+  // The auction session's own window, for the breadcrumb (US-098 AC10).
+  startsAt?: CountdownTarget
+  sessionEndsAt?: CountdownTarget
   bids?: AuctionBid[]
   openingBid?: number
   bidStep?: number
@@ -84,6 +97,9 @@ export type AuctionProduct = {
   id: string
   title: string
   image?: string
+  // US-111 AC6 (D-070, D-080): from the list read only. A guest also receives
+  // false, so the card needs the signed-in flag before it shows "Belum ikut".
+  joined?: boolean
   listing?: ListingBase
   auction: AuctionState
   highlights?: BidHighlight[]
@@ -140,6 +156,10 @@ export type AttributeFacet = {
   handle: string
   label: string
   values: string[]
+  // True when the value is a variant option, which the store product
+  // `attributes[handle]` filter can match. Everything else filters through
+  // `attribute_values[handle]`.
+  is_variant_axis?: boolean
 }
 
 export type AttributeSelection = Record<string, string>

@@ -2,11 +2,15 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 
 import { isOpenLot, pickHome } from "./home-hero.ts"
-import type { StoreLot } from "../data/lots.ts"
+import type { StoreLotListItem } from "../data/lots.ts"
 
 const NOW = Date.parse("2026-11-24T12:00:00.000Z")
 
-const lot = (id: string, over: Partial<StoreLot> = {}, auctionStatus = "live"): StoreLot => ({
+const lot = (
+  id: string,
+  over: Partial<StoreLotListItem> = {},
+  auctionStatus = "live"
+): StoreLotListItem => ({
   id,
   lot_number: 1,
   title: id,
@@ -20,6 +24,16 @@ const lot = (id: string, over: Partial<StoreLot> = {}, auctionStatus = "live"): 
   sold: null,
   cancelled: false,
   bid_count: 0,
+  variety: null,
+  size_cm: null,
+  age: null,
+  sex: null,
+  has_certificate: null,
+  certificate_issuer: null,
+  pond_origin: null,
+  breeder_notes: null,
+  video_url: null,
+  joined: false,
   auction: {
     id: "a1",
     status: auctionStatus,

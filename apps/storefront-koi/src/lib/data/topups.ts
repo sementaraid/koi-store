@@ -66,13 +66,13 @@ export async function createTopupRequest(
       fetchOptions: { headers: { ...(await getAuthHeaders()) } }
     })
     .then(() => {
-      revalidatePath(ROUTES.topup);
+      revalidatePath(ROUTES.saldoTopup);
       return { success: true as const };
     })
     .catch((err: unknown) => {
       if (err instanceof ClientError && err.status === 401) {
         redirect(
-          `${ROUTES.login}?sessionExpired=true&redirect=${encodeURIComponent(ROUTES.topup)}`
+          `${ROUTES.login}?sessionExpired=true&redirect=${encodeURIComponent(ROUTES.saldoTopup)}`
         );
       }
 

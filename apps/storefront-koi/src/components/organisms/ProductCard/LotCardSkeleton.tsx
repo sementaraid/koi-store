@@ -6,7 +6,7 @@ import { Skeleton } from "@koi/ui"
 export function LotCardSkeleton() {
   return (
     <div className="flex w-full flex-col overflow-hidden rounded-card border border-card-edge bg-background shadow-card">
-      <Skeleton className="aspect-4/3 w-full rounded-none" />
+      <Skeleton className="aspect-3/2 w-full rounded-none" />
       <div className="flex min-h-[150px] flex-1 flex-col gap-3 p-4">
         <div className="flex flex-col gap-2">
           <Skeleton className="h-5 w-3/4" />

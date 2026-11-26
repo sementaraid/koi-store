@@ -31,16 +31,6 @@ export function Orders({
   return (
     <AccountFrame
       title="Pesanan"
-      eyebrow={
-        <>
-          <Package
-            aria-hidden
-            className="size-3.5"
-          />
-          Transaksi
-        </>
-      }
-      description="Satu baris untuk satu pembayaran. Kiriman dari tiap penjual dipisah di halaman pesanannya."
       openOrders={openOrders}
       identity={identity}
     >
@@ -71,7 +61,7 @@ export function Orders({
             icon={<Package aria-hidden />}
             narrowing={false}
             noMatchTitle="Belum ada pesanan"
-            noMatchBody="Koi yang Anda menangkan di lelang dan barang yang Anda beli muncul di sini."
+            noMatchBody="Lot yang Anda menangkan di lelang dan barang yang Anda beli muncul di sini."
             action={
               <Button
                 render={<Link href={ROUTES.catalogs} />}

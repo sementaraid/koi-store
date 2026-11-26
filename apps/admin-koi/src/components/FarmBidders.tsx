@@ -4,6 +4,9 @@ import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from
 import { userHref } from '@/const/routes';
 import type { FarmBidder, FarmBidderList } from '@/lib/data/accounts';
 
+import { AdminEmpty } from './AdminEmpty';
+import { AdminError } from './AdminError';
+
 // US-071 T-071.2 (AC1–AC3, D-028, D-037): the farmer's bidders, all-time
 // counts as the backend returned them. Flagged rows are marked only — no
 // button, no ban, no action anywhere on this table. The admin bans by hand on
@@ -20,11 +23,15 @@ export function FarmBidders({ list }: { list: FarmBidderList | null }) {
       </CardHeader>
       <CardContent className="grid gap-3">
         {list === null ? (
-          <p role="alert" className="text-sm text-destructive-ink">
-            Gagal memuat bidder. Muat ulang halaman untuk mencoba lagi.
-          </p>
+          <AdminError
+            title="Gagal memuat bidder"
+            description="Data bidder kebun ini tidak dapat dimuat."
+          />
         ) : list.bidders.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Belum ada bidder di kebun ini.</p>
+          <AdminEmpty
+            title="Belum ada bidder di kebun ini"
+            description="Bidder muncul setelah ada bid pada lot kebun ini."
+          />
         ) : (
           <>
             {list.count > list.bidders.length ? (
@@ -34,13 +41,27 @@ export function FarmBidders({ list }: { list: FarmBidderList | null }) {
             ) : null}
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
+                <caption className="sr-only">
+                  Bidder kebun ini sepanjang waktu: jumlah bid, lot yang dibid, kemenangan
+                  dan kemenangan yang belum dibayar.
+                </caption>
                 <thead className="text-xs text-muted-foreground">
                   <tr>
-                    <th className="pb-2 pr-3 font-medium">Bidder</th>
-                    <th className="pb-2 pr-3 font-medium">Bid</th>
-                    <th className="pb-2 pr-3 font-medium">Lot dibid</th>
-                    <th className="pb-2 pr-3 font-medium">Menang</th>
-                    <th className="pb-2 pr-3 font-medium">Belum dibayar</th>
+                    <th scope="col" className="pb-2 pr-3 font-medium">
+                      Bidder
+                    </th>
+                    <th scope="col" className="pb-2 pr-3 font-medium">
+                      Bid
+                    </th>
+                    <th scope="col" className="pb-2 pr-3 font-medium">
+                      Lot dibid
+                    </th>
+                    <th scope="col" className="pb-2 pr-3 font-medium">
+                      Menang
+                    </th>
+                    <th scope="col" className="pb-2 pr-3 font-medium">
+                      Belum dibayar
+                    </th>
                   </tr>
                 </thead>
                 <tbody>

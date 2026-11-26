@@ -1,23 +1,18 @@
 import type { ComponentProps } from "react"
+import { Wallet } from "lucide-react"
 import { cn } from "cn"
 
 import { Button, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
 import { CONTAINER } from "@/const/layout"
 import { ROUTES } from "@/const/routes"
+import { SITE_NAME } from "@/const/site"
 import { AccountMenu } from "@/components/cells/AccountMenu/AccountMenu"
 import { BrandMark } from "@/components/cells/BrandMark/BrandMark"
-import { CartLink } from "@/components/cells/CartLink/CartLink"
-import { ChatLink } from "@/components/cells/ChatLink/ChatLink"
 import { DEFAULT_BRAND_ICON, DEFAULT_LINKS } from "@/const/header"
 import { NavLinks } from "@/components/cells/NavLinks/NavLinks"
 import { formatPrice, formatPriceCompact } from "@/lib/helpers/format-price"
-import type {
-  HeaderAccount,
-  HeaderBrand,
-  HeaderCart,
-  HeaderLink,
-} from "@/types/header"
+import type { HeaderAccount, HeaderBrand, HeaderLink } from "@/types/header"
 
 export type * from "@/types/header"
 
@@ -27,21 +22,20 @@ export type HeaderProps = ComponentProps<"header"> &
     /* The current item comes from the pathname; the 404 card turns it off. */
     markActive?: boolean
     account?: HeaderAccount
-    cart?: HeaderCart
   }
 
 /**
- * US-103 AC1/AC3: 56 px on mobile, 64 px on desktop. Mobile shows the brand and,
- * signed in, the balance chip; the desktop nav and account menu take over from
- * `lg`. The search box and notification bell are gone.
+ * US-103 AC1/AC9: 56 px on mobile, 64 px on desktop. Mobile keeps the brand mark
+ * and, signed in, the balance chip. From `lg` the text wordmark and the nav take
+ * over, and a signed-in customer gets the indigo balance pill, Bid Saya and the
+ * avatar menu. No search box and no notification bell (D-066).
  */
 export function Header({
   brandIcon = DEFAULT_BRAND_ICON,
-  brandHref = "/",
+  brandHref = ROUTES.home,
   links = DEFAULT_LINKS,
   markActive = true,
   account,
-  cart,
   className,
   ...props
 }: HeaderProps) {
@@ -59,31 +53,43 @@ export function Header({
       <div
         className={cn(
           CONTAINER,
-          "flex h-14 items-center gap-2 lg:h-16 lg:gap-4"
+          "flex h-14 items-center gap-2 lg:h-16 lg:gap-8"
         )}
       >
-        <div className="flex min-w-0 flex-1 items-center gap-1 lg:flex-none lg:gap-4">
-          <BrandMark brandIcon={brandIcon} brandHref={brandHref} />
-          <nav aria-label="Main" className="hidden lg:flex">
+        <div className="flex min-w-0 flex-1 items-center gap-1 lg:flex-none lg:gap-8">
+          {/* AC1: the phone header keeps the fish mark. */}
+          <div className="lg:hidden">
+            <BrandMark brandIcon={brandIcon} brandHref={brandHref} />
+          </div>
+
+          <Link
+            href={brandHref}
+            className="hidden shrink-0 rounded-sm text-base font-bold tracking-[-0.01em] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring lg:inline"
+          >
+            {SITE_NAME}
+            <span className="text-accent-ink">.</span>
+          </Link>
+
+          <nav aria-label="Utama" className="hidden lg:flex">
             <NavLinks links={links} markActive={markActive} />
           </nav>
         </div>
 
-        <div className="ms-auto flex shrink-0 items-center gap-1.5 lg:gap-3">
+        <div className="ms-auto flex shrink-0 items-center gap-1.5 lg:gap-2">
           <RenderIf when={account}>
             {(value) => <BalanceChip account={value} />}
           </RenderIf>
 
-          <Link
-            href={ROUTES.myBids}
-            className="hidden h-11 items-center rounded-md px-2 text-xs font-bold text-foreground outline-none hover:text-accent-ink focus-visible:ring-2 focus-visible:ring-ring lg:inline-flex"
-          >
-            Bid Saya
-          </Link>
-
-          <RenderIf when={cart}>{(value) => <CartLink {...value} />}</RenderIf>
-
-          <RenderIf when={account}>{() => <ChatLink />}</RenderIf>
+          <RenderIf when={account}>
+            {() => (
+              <Link
+                href={ROUTES.myBids}
+                className="hidden h-10 items-center rounded-md px-2 text-sm font-semibold text-foreground outline-none hover:text-accent-ink focus-visible:ring-2 focus-visible:ring-ring lg:inline-flex"
+              >
+                Bid Saya
+              </Link>
+            )}
+          </RenderIf>
 
           <RenderIf when={account}>
             {(value) => <AccountMenu account={value} />}
@@ -94,14 +100,14 @@ export function Header({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-11 px-3 lg:h-8 lg:px-2.5"
+                  className="h-11 px-3 lg:h-10 lg:px-3"
                   render={<Link href={ROUTES.login} />}
                 >
                   Masuk
                 </Button>
                 <Button
                   size="sm"
-                  className="h-11 px-3 lg:h-8 lg:px-2.5"
+                  className="h-11 px-3 lg:h-10 lg:px-4"
                   render={<Link href={ROUTES.signup} />}
                 >
                   Daftar
@@ -115,16 +121,17 @@ export function Header({
   )
 }
 
-/** Mobile shows the compact scale word (`Rp 3,2 jt`), desktop the full amount. */
+/** Mobile shows the compact scale word (`Rp 3,2 jt`); desktop the indigo pill. */
 function BalanceChip({ account }: { account: HeaderAccount }) {
   if (account.balance === undefined) return null
 
   return (
     <Link
-      href={ROUTES.topup}
+      href={ROUTES.saldoTopup}
       aria-label={`Saldo ${formatPrice(account.balance)}. Isi saldo`}
-      className="inline-flex min-h-11 shrink-0 items-center rounded-full border border-divider bg-surface px-2.5 text-xs font-bold text-foreground tabular-nums outline-none hover:border-border focus-visible:ring-2 focus-visible:ring-ring lg:min-h-9 lg:px-3"
+      className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-divider bg-surface px-2.5 text-xs font-bold text-foreground tabular-nums outline-none hover:border-border focus-visible:ring-2 focus-visible:ring-ring lg:h-10 lg:min-h-10 lg:gap-2 lg:border-primary/30 lg:bg-accent lg:px-3 lg:text-sm lg:font-semibold lg:text-accent-ink lg:hover:border-primary/50"
     >
+      <Wallet aria-hidden className="hidden size-4 lg:inline" />
       <span className="lg:hidden">{formatPriceCompact(account.balance)}</span>
       <span className="hidden lg:inline">{formatPrice(account.balance)}</span>
     </Link>

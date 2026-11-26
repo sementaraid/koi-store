@@ -21,6 +21,12 @@ export type LotFields = Partial<
     | "shipped_at"
     | "delivered_at"
     | "cancel_reason"
+    | "paid_at"
+    | "paid_confirmed_by"
+    | "payment_proof_file_key"
+    | "payment_proof_status"
+    | "payment_proof_reason"
+    | "payment_proof_uploaded_at"
   >
 >
 
@@ -148,3 +154,93 @@ export const getCancellableLotStep = createStep(
     })
   }
 )
+
+export type ProofUploadableLot = { id: string }
+
+// US-109 T-109.1 (AC1, D-077). Read-only guard, run under the `lot:<id>` lock:
+// only the lot's own winner, and only while the lot is `won`, may upload a
+// proof. Another customer's lot is a 404 (no existence leak, like the won-lot
+// reads); a winner's lot in any other status is a 409.
+export const getProofUploadableLotStep = createStep(
+  "get-proof-uploadable-lot",
+  async (
+    input: { customer_id: string; lot_id: string },
+    { container }
+  ) => {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const {
+      data: [lot],
+    } = await query.graph({
+      entity: "lot",
+      fields: ["id", "status", "winner_customer_id"],
+      filters: { id: input.lot_id },
+    })
+    if (!lot || lot.winner_customer_id !== input.customer_id) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_FOUND,
+        `Lot ${input.lot_id} was not found`
+      )
+    }
+    if (lot.status !== "won") {
+      throw new MedusaError(
+        MedusaError.Types.CONFLICT,
+        "Bukti transfer hanya bisa diunggah untuk lot yang menunggu pembayaran.",
+        "lot_not_awaiting_payment"
+      )
+    }
+
+    return new StepResponse<ProofUploadableLot>({ id: lot.id as string })
+  }
+)
+
+export type RejectableProofLot = { id: string }
+
+// US-109 T-109.1 (AC2, D-077). Read-only guard, run under the `lot:<id>` lock:
+// a lot must be `won` and carry a proof still awaiting review. Unknown is a
+// 404; every other case (no proof, already rejected, paid) is a 409.
+export const getRejectableProofLotStep = createStep(
+  "get-rejectable-proof-lot",
+  async (input: { lot_id: string }, { container }) => {
+    const query = container.resolve(ContainerRegistrationKeys.QUERY)
+    const {
+      data: [raw],
+    } = await query.graph({
+      entity: "lot",
+      fields: [
+        "id",
+        "status",
+        "payment_proof_status",
+        "payment_proof_file_key",
+      ],
+      filters: { id: input.lot_id },
+    })
+    const lot = raw as unknown as
+      | {
+          id: string
+          status: string
+          payment_proof_status: string
+          payment_proof_file_key: string | null
+        }
+      | undefined
+    if (!lot) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_FOUND,
+        `Lot ${input.lot_id} was not found`
+      )
+    }
+    if (
+      lot.status !== "won" ||
+      lot.payment_proof_status !== "pending" ||
+      !lot.payment_proof_file_key
+    ) {
+      throw new MedusaError(
+        MedusaError.Types.CONFLICT,
+        "Tidak ada bukti transfer yang menunggu pemeriksaan.",
+        "no_pending_payment_proof"
+      )
+    }
+
+    return new StepResponse<RejectableProofLot>({ id: lot.id as string })
+  }
+)
+

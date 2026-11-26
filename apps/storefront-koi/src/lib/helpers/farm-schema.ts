@@ -8,9 +8,9 @@ const required = (label: string, max: number) =>
     .max(max, `${label[0].toUpperCase()}${label.slice(1)} maksimal ${max} karakter`);
 
 export const farmRegistrationSchema = z.object({
-  name: required('nama kebun', 100),
+  name: required('nama farm', 100),
   description: z.string().trim().max(1000, 'Deskripsi maksimal 1000 karakter'),
-  address1: required('alamat kebun', 200),
+  address1: required('alamat farm', 200),
   city: required('kota', 100),
   province: required('provinsi', 100),
   holderName: required('nama pemilik rekening', 100),

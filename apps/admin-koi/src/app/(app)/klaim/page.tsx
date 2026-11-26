@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@koi/ui';
+import { AdminError } from '@/components/AdminError';
+import { AdminPageHeader } from '@/components/AdminPageHeader';
 import { ClaimQueue } from '@/components/ClaimQueue';
 import { ROUTES } from '@/const/routes';
 import { listClaims } from '@/lib/data/claims';
@@ -27,12 +28,10 @@ export default async function ClaimsRoute() {
 
   return (
     <div className="grid gap-6">
-      <div className="grid gap-1">
-        <h1 className="text-xl font-medium tracking-tight">Klaim DOA</h1>
-        <p className="text-sm text-muted-foreground">
-          Tinjau video unboxing dari pemenang dan putuskan sengketa.
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Klaim DOA"
+        description="Tinjau video unboxing dari pemenang dan putuskan sengketa."
+      />
 
       {disputed && decided ? (
         <ClaimQueue
@@ -42,13 +41,10 @@ export default async function ClaimsRoute() {
           now={new Date().toISOString()}
         />
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Gagal memuat klaim DOA</CardTitle>
-            <CardDescription>Muat ulang halaman untuk mencoba lagi.</CardDescription>
-          </CardHeader>
-          <CardContent />
-        </Card>
+        <AdminError
+          title="Gagal memuat klaim DOA"
+          description="Antrean klaim tidak dapat dimuat."
+        />
       )}
     </div>
   );

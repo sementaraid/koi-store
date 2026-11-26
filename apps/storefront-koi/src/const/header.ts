@@ -3,7 +3,6 @@ import {
   LogOut,
   MapPin,
   MessageSquareText,
-  MessagesSquare,
   Package,
   Settings,
   ShoppingBag,
@@ -13,10 +12,13 @@ import {
 import { ROUTES } from "@/const/routes"
 import type { HeaderAccountLink, HeaderLink } from "@/types/header"
 
+/* US-103 AC9: the desktop nav list, in board order. `Farm` points at the farm
+   directory (`/mitra`); every label is the board's, not the old longer one. */
 export const DEFAULT_LINKS: HeaderLink[] = [
-  { label: "Lelang Live", href: ROUTES.auctions, live: true },
-  { label: "Katalog Koi", href: ROUTES.catalogs },
-  { label: "Perlengkapan Kolam Koi", href: ROUTES.marketplace },
+  { label: "Lelang", href: ROUTES.auctions },
+  { label: "Katalog", href: ROUTES.catalogs },
+  { label: "Perlengkapan", href: ROUTES.marketplace },
+  { label: "Farm", href: ROUTES.partners },
 ]
 
 export const DEFAULT_ACCOUNT_LINKS: HeaderAccountLink[] = [
@@ -35,13 +37,6 @@ export const DEFAULT_ACCOUNT_LINKS: HeaderAccountLink[] = [
     group: "Transaksi",
   },
 
-  {
-    label: "Pesan",
-    href: ROUTES.messages,
-    icon: MessagesSquare,
-    group: "Transaksi",
-  },
-
   { label: "Alamat", href: ROUTES.addresses, icon: MapPin, group: "Akun" },
   {
     label: "Ulasan",
@@ -49,7 +44,7 @@ export const DEFAULT_ACCOUNT_LINKS: HeaderAccountLink[] = [
     icon: MessageSquareText,
     group: "Akun",
   },
-  { label: "Kebun", href: ROUTES.farm, icon: Sprout, group: "Akun" },
+  { label: "Farm", href: ROUTES.farm, icon: Sprout, group: "Akun" },
   {
     label: "Pengaturan",
     href: ROUTES.settings,

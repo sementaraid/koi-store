@@ -7,6 +7,8 @@ import {
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { WALLET_MODULE } from "../../src/modules/wallet"
 import type WalletModuleService from "../../src/modules/wallet/service"
+import { AUCTION_MODULE } from "../../src/modules/auction"
+import type AuctionModuleService from "../../src/modules/auction/service"
 
 jest.setTimeout(60 * 1000)
 
@@ -240,6 +242,72 @@ medusaIntegrationTestRunner({
         expect(
           response.data.transactions.map((t: { reference: string }) => t.reference)
         ).toEqual(["wtx_new", "wtx_old"])
+      })
+
+      it("resolves the auction id in reference to a lot title, and never leaks the id", async () => {
+        const container = getContainer()
+        const auctions =
+          container.resolve<AuctionModuleService>(AUCTION_MODULE)
+        const [product] = await container.resolve(Modules.PRODUCT).createProducts([
+          { title: "Kohaku 48 cm", status: "draft" as never },
+        ])
+        const [auction] = await auctions.createAuctions([
+          {
+            seller_id: "sel_wallet",
+            fee_category_id: "feecat_wallet",
+            start_at: new Date(Date.now() - 60_000),
+            end_at: new Date(Date.now() + 86_400_000),
+            delivery_method: "courier",
+            listing_fee: 50_000,
+            join_fee: 100_000,
+            extend_window_minutes: 5,
+            status: "live",
+          },
+        ])
+        await auctions.createLots([
+          {
+            auction_id: auction.id,
+            product_id: product.id,
+            ob: 1_000_000,
+            kb: 100_000,
+            current_price: 1_000_000,
+            end_time: new Date(Date.now() + 86_400_000),
+          },
+        ])
+
+        await walletService.createWalletTransactions([
+          { wallet_id: walletId, type: "join_fee", amount: -100_000, reference: auction.id },
+          { wallet_id: walletId, type: "refund", amount: 100_000, reference: auction.id },
+          { wallet_id: walletId, type: "manual_topup", amount: 150_000, reference: "BCA-123" },
+          { wallet_id: walletId, type: "adjustment", amount: -25_000, reference: "Koreksi admin" },
+          { wallet_id: walletId, type: "listing_fee", amount: -50_000, reference: "auct_missing" },
+        ])
+
+        const response = await api.get("/store/wallet", {
+          headers: {
+            authorization: `Bearer ${token}`,
+            "x-publishable-api-key": key,
+          },
+        })
+
+        expect(response.status).toEqual(200)
+        const rows = response.data.transactions as {
+          type: string
+          reference: string | null
+          description: string | null
+        }[]
+        const byType = Object.fromEntries(rows.map((t) => [t.type, t]))
+
+        // The stored reference is still the auction id.
+        expect(byType.join_fee.reference).toEqual(auction.id)
+        // The history gets the lot title instead of the id.
+        expect(byType.join_fee.description).toEqual("Kohaku 48 cm")
+        expect(byType.refund.description).toEqual("Kohaku 48 cm")
+        // Already-text references are shown as they are.
+        expect(byType.manual_topup.description).toEqual("BCA-123")
+        expect(byType.adjustment.description).toEqual("Koreksi admin")
+        // An unresolved auction id is dropped, never shown raw.
+        expect(byType.listing_fee.description).toBeNull()
       })
 
       it("rejects a request without a customer token", async () => {

@@ -30,6 +30,9 @@ import {
   topupStatusTone
 } from '@/lib/helpers/topup-format';
 
+import { AdminEmpty } from './AdminEmpty';
+import { ConfirmDialog } from './ConfirmDialog';
+
 export type TopupQueueProps = {
   pending: TopupRequest[];
   decided: TopupRequest[];
@@ -53,9 +56,10 @@ export function TopupQueue({ pending, decided }: TopupQueueProps) {
 
           <TabsContent value="pending" className="grid gap-3">
             {pending.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Tidak ada permintaan top-up yang menunggu.
-              </p>
+              <AdminEmpty
+                title="Tidak ada permintaan top-up yang menunggu"
+                description="Permintaan baru muncul di sini setelah pelanggan mengunggah bukti transfer."
+              />
             ) : (
               pending.map((request) => <PendingRow key={request.id} request={request} />)
             )}
@@ -63,9 +67,10 @@ export function TopupQueue({ pending, decided }: TopupQueueProps) {
 
           <TabsContent value="decided" className="grid gap-3">
             {decided.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Belum ada permintaan yang diputuskan.
-              </p>
+              <AdminEmpty
+                title="Belum ada permintaan yang diputuskan"
+                description="Top-up yang disetujui atau ditolak muncul di sini."
+              />
             ) : (
               decided.map((request) => <DecidedRow key={request.id} request={request} />)
             )}
@@ -230,16 +235,22 @@ function ApproveForm({
     resolver: zodResolver(approveSchema),
     defaultValues: { bank_reference: '' }
   });
+  const [pending, setPending] = useState<ApproveData | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
-  async function submit(data: ApproveData) {
+  function submit(data: ApproveData) {
+    setPending(data);
+    setConfirmOpen(true);
+  }
+
+  async function confirm() {
+    if (!pending) return;
+
     onBusyChange(true);
-    if (!confirm('Setujui top-up ini dan tambahkan saldo pelanggan?')) {
-      onBusyChange(false);
-      return;
-    }
-
-    const result = await approveTopup(id, data.bank_reference);
+    const result = await approveTopup(id, pending.bank_reference);
     onBusyChange(false);
+    setConfirmOpen(false);
+    setPending(null);
 
     if (!result.success) {
       toast.error(result.error);
@@ -253,6 +264,7 @@ function ApproveForm({
   return (
     <form onSubmit={handleSubmit(submit)} className="grid gap-2" noValidate>
       <FormField
+        id={`topup-${id}-reference`}
         label="Referensi mutasi bank"
         hint="Nomor referensi atau keterangan dari mutasi rekening."
         error={errors.bank_reference?.message}
@@ -263,6 +275,16 @@ function ApproveForm({
           {isSubmitting ? 'Menyetujui…' : 'Setujui'}
         </Button>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Setujui top-up?"
+        description="Setujui top-up ini dan tambahkan saldo pelanggan?"
+        confirmLabel="Setujui"
+        busyLabel="Menyetujui…"
+        onConfirm={confirm}
+      />
     </form>
   );
 }
@@ -291,16 +313,22 @@ function RejectForm({
     resolver: zodResolver(rejectSchema),
     defaultValues: { reason: '' }
   });
+  const [pending, setPending] = useState<RejectData | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
-  async function submit(data: RejectData) {
+  function submit(data: RejectData) {
+    setPending(data);
+    setConfirmOpen(true);
+  }
+
+  async function confirm() {
+    if (!pending) return;
+
     onBusyChange(true);
-    if (!confirm('Tolak top-up ini? Keputusan tidak bisa diubah.')) {
-      onBusyChange(false);
-      return;
-    }
-
-    const result = await rejectTopup(id, data.reason);
+    const result = await rejectTopup(id, pending.reason);
     onBusyChange(false);
+    setConfirmOpen(false);
+    setPending(null);
 
     if (!result.success) {
       toast.error(result.error);
@@ -314,6 +342,7 @@ function RejectForm({
   return (
     <form onSubmit={handleSubmit(submit)} className="grid gap-2" noValidate>
       <FormField
+        id={`topup-${id}-reject-reason`}
         label="Alasan penolakan"
         hint="Pelanggan akan membaca alasan ini."
         error={errors.reason?.message}
@@ -324,6 +353,17 @@ function RejectForm({
           {isSubmitting ? 'Menolak…' : 'Tolak'}
         </Button>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Tolak top-up?"
+        description="Tolak top-up ini? Keputusan tidak bisa diubah."
+        confirmLabel="Tolak"
+        busyLabel="Menolak…"
+        destructive
+        onConfirm={confirm}
+      />
     </form>
   );
 }

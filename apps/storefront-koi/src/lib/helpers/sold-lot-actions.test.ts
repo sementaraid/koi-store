@@ -2,17 +2,16 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import {
-  canReportUnpaid,
   parseTrackingNumber,
-  soldLotFailureInfo,
   shippedTrackingLabel,
   soldLotAction,
-  trackingRequired,
-  unpaidFailureInfo
+  soldLotFailureInfo,
+  soldLotUnpaidNotice,
+  trackingRequired
 } from './sold-lot-actions.ts';
 
-test('a won lot is marked paid, a paid lot shipped, in order', () => {
-  assert.equal(soldLotAction('won'), 'pay');
+test('only a paid lot can be shipped; a won lot waits for the admin', () => {
+  assert.equal(soldLotAction('won'), null);
   assert.equal(soldLotAction('paid'), 'ship');
   assert.equal(soldLotAction('shipped'), null);
   assert.equal(soldLotAction('delivered'), null);
@@ -55,49 +54,23 @@ test('a rewritten 409 refreshes the row; 404 says not found', () => {
 
 test('a 403 keeps the server message verbatim (D-055)', () => {
   assert.deepEqual(
-    soldLotFailureInfo({ status: 403, code: 'seller_terminated', message: 'Akun kebun ini sudah ditutup.' }),
-    { message: 'Akun kebun ini sudah ditutup.', refresh: false }
+    soldLotFailureInfo({ status: 403, code: 'seller_terminated', message: 'Akun farm ini sudah ditutup.' }),
+    { message: 'Akun farm ini sudah ditutup.', refresh: false }
   );
 });
 
-test('the report button shows only on a won lot past its pay_by with no report', () => {
+test('a won lot past its pay window shows the read-only unpaid notice', () => {
   const now = Date.parse('2026-11-18T00:00:00.000Z');
   const past = '2026-11-17T00:00:00.000Z';
   const future = '2026-11-19T00:00:00.000Z';
-  assert.deepEqual(canReportUnpaid({ status: 'won', payBy: past, reportedAt: null, now }), {
-    show: true
-  });
-  assert.deepEqual(canReportUnpaid({ status: 'won', payBy: future, reportedAt: null, now }), {
-    show: false
-  });
-  assert.deepEqual(canReportUnpaid({ status: 'won', payBy: past, reportedAt: past, now }), {
-    show: false
-  });
-  assert.deepEqual(canReportUnpaid({ status: 'paid', payBy: past, reportedAt: null, now }), {
-    show: false
-  });
-  assert.deepEqual(canReportUnpaid({ status: 'won', payBy: null, reportedAt: null, now }), {
-    show: false
-  });
-});
-
-test('a refused report keys on status and writes the app copy (D-055)', () => {
-  assert.deepEqual(
-    unpaidFailureInfo({ status: 409, code: 'lot_already_reported', message: 'Conflict' }),
-    { message: 'Lot ini sudah dilaporkan.', refresh: true }
+  assert.equal(
+    soldLotUnpaidNotice({ status: 'won', payBy: past, now }),
+    'Pemenang belum membayar sampai batas 17 Nov, 07.00 WIB.'
   );
-  assert.deepEqual(unpaidFailureInfo({ status: 409, message: 'Conflict' }), {
-    message: 'Status lot sudah berubah. Halaman diperbarui.',
-    refresh: true
-  });
-  assert.deepEqual(
-    unpaidFailureInfo({ status: 403, message: 'Kebun Anda belum aktif.' }),
-    { message: 'Kebun Anda belum aktif.', refresh: false }
-  );
-  assert.deepEqual(unpaidFailureInfo({ status: 404, message: 'Lot tidak ditemukan.' }), {
-    message: 'Lot tidak ditemukan.',
-    refresh: true
-  });
+  assert.equal(soldLotUnpaidNotice({ status: 'won', payBy: future, now }), null);
+  assert.equal(soldLotUnpaidNotice({ status: 'paid', payBy: past, now }), null);
+  assert.equal(soldLotUnpaidNotice({ status: 'won', payBy: null, now }), null);
+  assert.equal(soldLotUnpaidNotice({ status: 'won', payBy: 'bukan tanggal', now }), null);
 });
 
 test('the resi line only appears from shipped onward', () => {

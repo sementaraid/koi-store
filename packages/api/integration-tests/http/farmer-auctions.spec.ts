@@ -132,6 +132,9 @@ medusaIntegrationTestRunner({
       photos: [photo],
       ob: 1_000_000,
       kb: 100_000,
+      // US-105 (D-081): required on every new lot.
+      variety: "Kohaku",
+      size_cm: 55,
       ...overrides,
     })
 
@@ -832,6 +835,110 @@ medusaIntegrationTestRunner({
             .retrieveAuction(auction.id)
         ).status
       ).toEqual("draft")
+    })
+
+    // US-105 AC1/AC4 (D-081): every koi field is saved on create and served
+    // back by the vendor lot read; only variety and size are required.
+    it("saves every koi field on create and serves it back (US-105 AC1, AC4)", async () => {
+      const { vendor } = await registerFarm({ approve: true })
+      const category = await createCategory("koi")
+
+      const fields = {
+        variety: "Sanke",
+        size_cm: 62,
+        age: "Nisai (2 tahun)",
+        sex: "Betina",
+        has_certificate: true,
+        certificate_issuer: "ZNA",
+        pond_origin: "Blitar, Jawa Timur",
+        breeder_notes: "Badan tebal, pola stabil.",
+        video_url: "https://www.youtube.com/shorts/abc123",
+      }
+      const created = await api.post(
+        "/vendor/auctions",
+        auctionBody(category.id, { lots: [lot(fields)] }),
+        { headers: vendor }
+      )
+      expect(created.status).toEqual(201)
+      expect(created.data.auction.lots[0]).toMatchObject(fields)
+
+      const detail = await api.get(
+        `/vendor/auctions/${created.data.auction.id}`,
+        { headers: vendor }
+      )
+      expect(detail.status).toEqual(200)
+      expect(detail.data.auction.lots[0]).toMatchObject(fields)
+    })
+
+    it("accepts only variety and size, leaving the rest null (US-105 AC1, AC6)", async () => {
+      const { vendor } = await registerFarm({ approve: true })
+      const category = await createCategory("koimin")
+
+      const created = await api.post(
+        "/vendor/auctions",
+        auctionBody(category.id),
+        { headers: vendor }
+      )
+      expect(created.status).toEqual(201)
+      expect(created.data.auction.lots[0]).toMatchObject({
+        variety: "Kohaku",
+        size_cm: 55,
+        age: null,
+        sex: null,
+        has_certificate: null,
+        certificate_issuer: null,
+        pond_origin: null,
+        breeder_notes: null,
+        video_url: null,
+      })
+    })
+
+    it("refuses a lot without variety or size and an invalid age, sex or certificate (US-105 AC1)", async () => {
+      const { vendor } = await registerFarm({ approve: true })
+      const category = await createCategory("koibad")
+
+      const refused = [
+        lot({ variety: undefined }),
+        lot({ size_cm: undefined }),
+        lot({ size_cm: 0 }),
+        lot({ size_cm: 151 }),
+        lot({ size_cm: 22.5 }),
+        lot({ age: "Rokuyo (6 tahun)" }),
+        lot({ sex: "Campur" }),
+        lot({ has_certificate: "ya" }),
+        lot({ variety: "Koi Marmer" }),
+      ]
+      for (const bad of refused) {
+        const res = await api
+          .post("/vendor/auctions", auctionBody(category.id, { lots: [bad] }), {
+            headers: vendor,
+          })
+          .catch((e: HttpError) => e.response)
+        expect([bad, res.status]).toEqual([bad, 400])
+      }
+    })
+
+    it("refuses a video link that is not YouTube, with an Indonesian message (US-105 AC2)", async () => {
+      const { vendor } = await registerFarm({ approve: true })
+      const category = await createCategory("koivideo")
+
+      for (const video_url of [
+        "https://vimeo.com/abc123",
+        "https://www.instagram.com/reel/abc123/",
+        "http://www.youtube.com/watch?v=abc123",
+      ]) {
+        const res = await api
+          .post(
+            "/vendor/auctions",
+            auctionBody(category.id, { lots: [lot({ video_url })] }),
+            { headers: vendor }
+          )
+          .catch((e: HttpError) => e.response)
+        expect(res.status).toEqual(400)
+        expect(res.data.message).toContain(
+          "Tautan video harus dari YouTube (tautan tonton, youtu.be, atau Shorts)."
+        )
+      }
     })
   },
 })

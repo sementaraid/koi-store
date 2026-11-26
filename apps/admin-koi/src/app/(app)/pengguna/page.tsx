@@ -11,6 +11,9 @@ import {
   CardTitle,
   Input
 } from '@koi/ui';
+import { AdminEmpty } from '@/components/AdminEmpty';
+import { AdminError } from '@/components/AdminError';
+import { AdminPageHeader } from '@/components/AdminPageHeader';
 import { ROUTES, userHref } from '@/const/routes';
 import { listAccounts } from '@/lib/data/accounts';
 import { accountCreatedLabel, accountName } from '@/lib/helpers/account-format';
@@ -38,12 +41,10 @@ export default async function UsersRoute({
 
   return (
     <div className="grid gap-6">
-      <div className="grid gap-1">
-        <h1 className="text-xl font-medium tracking-tight">Pengguna</h1>
-        <p className="text-sm text-muted-foreground">
-          Cari akun berdasarkan nama atau email untuk melihat saldo, strike, dan laporan.
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Pengguna"
+        description="Cari akun berdasarkan nama atau email untuk melihat saldo, strike, dan arsip laporan."
+      />
 
       <Card>
         <CardHeader>
@@ -73,16 +74,21 @@ export default async function UsersRoute({
                 </p>
               ) : null}
               {list.accounts.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  {q ? 'Tidak ada pengguna yang cocok.' : 'Belum ada pengguna.'}
-                </p>
+                <AdminEmpty
+                  title={q ? 'Tidak ada pengguna yang cocok' : 'Belum ada pengguna'}
+                  description={
+                    q
+                      ? 'Coba nama atau email lain.'
+                      : 'Akun pelanggan dan petani muncul di sini setelah mendaftar.'
+                  }
+                />
               ) : (
                 <div className="grid gap-1">
                   {list.accounts.map((account) => (
                     <Link
                       key={account.id}
                       href={userHref(account.id)}
-                      className="grid gap-1 rounded-md border border-border p-3 text-sm hover:bg-muted sm:grid-cols-[1fr_auto] sm:items-center sm:gap-4"
+                      className="grid gap-1 rounded-md border border-border p-3 text-sm hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:grid-cols-[1fr_auto] sm:items-center sm:gap-4"
                     >
                       <div className="grid gap-0.5">
                         <p className="font-medium">{accountName(account)}</p>
@@ -116,9 +122,10 @@ export default async function UsersRoute({
               )}
             </>
           ) : (
-            <p role="alert" className="text-sm text-destructive-ink">
-              Gagal memuat daftar pengguna. Muat ulang halaman untuk mencoba lagi.
-            </p>
+            <AdminError
+              title="Gagal memuat daftar pengguna"
+              description="Daftar akun tidak dapat dimuat."
+            />
           )}
         </CardContent>
       </Card>

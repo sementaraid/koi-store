@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Button, FormField } from '@koi/ui';
 import { Link } from '@/components/atoms';
 import { ROUTES } from '@/const/routes';
+import { SITE_NAME } from '@/const/site';
 import { signup } from '@/lib/data/customer';
 import { authErrorMessage } from '@/lib/helpers/auth-error';
 import { safeRedirect } from '@/lib/helpers/safe-redirect';
@@ -51,7 +52,7 @@ export function RegisterForm() {
       return;
     }
 
-    toast.success('Akun Anda sudah aktif. Selamat datang di Indokoi.');
+    toast.success('Akun Anda sudah aktif. Selamat datang di ' + SITE_NAME + '.');
     // `signup` already re-rendered the layouts (US-107 AC7); no second refresh.
     router.push(safeRedirect(params.get('redirect'), ROUTES.home));
   }
@@ -59,7 +60,7 @@ export function RegisterForm() {
   return (
     <AuthFrame
       eyebrow="Daftar"
-      title="Buat akun Indokoi"
+      title={`Buat akun ${SITE_NAME}`}
       lede="Satu akun untuk menawar di lelang, membeli koi, dan melacak pengiriman."
       aside={
         <>

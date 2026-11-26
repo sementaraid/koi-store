@@ -117,6 +117,9 @@ medusaIntegrationTestRunner({
           photos: ["http://localhost:9000/static/koi.jpg"],
           ob: 1_000_000,
           kb: 100_000,
+          // US-105 (D-081): required on every new lot.
+          variety: "Kohaku",
+          size_cm: 55,
         },
       ],
     })

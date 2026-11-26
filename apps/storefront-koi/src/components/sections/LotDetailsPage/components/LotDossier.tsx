@@ -2,6 +2,7 @@
 
 import { DEFAULT_AUCTION_FILTER } from '@/const/auctions';
 import { LotPage } from '@/components/sections/LotDetailsPage/components/LotPage';
+import type { WonLotArrivalProof, WonLotPaymentProof } from '@/lib/data/lots';
 import type { OwnBid } from '@/lib/helpers/bid-history';
 import type { BidStanding } from '@/lib/helpers/bid-status';
 import type { JoinControl } from '@/lib/helpers/join-auction';
@@ -17,6 +18,7 @@ export function LotDossier({
   join,
   bid,
   position,
+  myBidPosition,
   wonLot,
   ownBids,
   referenceNow
@@ -27,6 +29,7 @@ export function LotDossier({
   join?: JoinControl;
   bid?: BidControl;
   position?: BidStanding;
+  myBidPosition?: 'highest' | 'outbid' | 'won' | 'lost' | 'cancelled';
   ownBids?: OwnBid[];
   referenceNow?: number;
   wonLot?: {
@@ -35,6 +38,11 @@ export function LotDossier({
     hasShippingAddress: boolean;
     claimWindowEndsAt: string | null;
     claim: { status: string; remedy: string; opened_at: string } | null;
+    finalPrice: number | null;
+    payBy: string | null;
+    bank: { bank_name: string; bank_account_number: string; bank_account_holder: string } | null;
+    proof: WonLotPaymentProof;
+    arrivalProof: WonLotArrivalProof;
     now: number;
   };
 }) {
@@ -49,6 +57,7 @@ export function LotDossier({
       join={join}
       bid={bid}
       position={position}
+      myBidPosition={myBidPosition}
       wonLot={wonLot}
       ownBids={ownBids}
       referenceNow={referenceNow}

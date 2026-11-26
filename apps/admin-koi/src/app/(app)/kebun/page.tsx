@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@koi/ui';
+import { AdminError } from '@/components/AdminError';
+import { AdminPageHeader } from '@/components/AdminPageHeader';
 import { FarmQueue } from '@/components/FarmQueue';
 import { ROUTES } from '@/const/routes';
 import { getFarmQueues } from '@/lib/data/farms';
@@ -16,12 +17,10 @@ export default async function FarmsRoute() {
 
   return (
     <div className="grid gap-6">
-      <div className="grid gap-1">
-        <h1 className="text-xl font-medium tracking-tight">Pendaftaran kebun</h1>
-        <p className="text-sm text-muted-foreground">
-          Periksa KTP, foto kebun, dan nama pemilik rekening, lalu setujui atau tolak.
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Pendaftaran kebun"
+        description="Periksa KTP, foto kebun, dan nama pemilik rekening, lalu setujui atau tolak."
+      />
 
       {queues ? (
         <FarmQueue
@@ -30,13 +29,10 @@ export default async function FarmsRoute() {
           decided={queues.decided}
         />
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Gagal memuat pendaftaran kebun</CardTitle>
-            <CardDescription>Muat ulang halaman untuk mencoba lagi.</CardDescription>
-          </CardHeader>
-          <CardContent />
-        </Card>
+        <AdminError
+          title="Gagal memuat pendaftaran kebun"
+          description="Antrean pendaftaran kebun tidak dapat dimuat."
+        />
       )}
     </div>
   );

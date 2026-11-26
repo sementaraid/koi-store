@@ -24,9 +24,9 @@ test('403 and 404 keep the server message (D-055)', () => {
   assert.deepEqual(
     cancelFailureInfo({
       status: 403,
-      message: 'Kebun Anda belum disetujui, jadi area petani belum terbuka.'
+      message: 'Farm Anda belum disetujui, jadi area peternak belum terbuka.'
     }),
-    { message: 'Kebun Anda belum disetujui, jadi area petani belum terbuka.', refresh: false }
+    { message: 'Farm Anda belum disetujui, jadi area peternak belum terbuka.', refresh: false }
   );
   assert.deepEqual(cancelFailureInfo({ status: 404, message: 'Lelang tidak ditemukan.' }), {
     message: 'Lelang tidak ditemukan.',

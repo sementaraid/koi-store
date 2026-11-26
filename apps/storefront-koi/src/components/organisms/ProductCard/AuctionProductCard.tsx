@@ -12,7 +12,9 @@ import {
   formatEndTime,
   formatLotNumber,
   formatTimeLeft,
+  lotCardSubtitle,
   lotClosedLabel,
+  lotJoinNote,
   lotPriceLine,
   lotStatusChip,
   viewerPositionChip,
@@ -29,6 +31,9 @@ export type AuctionProductCardProps = {
   // The server's clock, so the relative time and the "Berakhir < 1 jam" chip
   // match in the first client paint.
   now?: number
+  // US-111 AC6: the API sends joined=false to guests too, so this flag decides
+  // whether "Belum ikut" means anything to the reader.
+  signedIn?: boolean
   className?: string
 }
 
@@ -39,6 +44,7 @@ export function AuctionProductCard({
   href,
   position,
   now,
+  signedIn,
   className,
 }: AuctionProductCardProps) {
   const { title, image, listing, auction } = product
@@ -49,6 +55,18 @@ export function AuctionProductCard({
   const price = lotPriceLine(auction)
   const lotLabel = lotNumber !== undefined ? formatLotNumber(lotNumber) : undefined
   const closedLabel = lotClosedLabel(auction)
+  const subtitle = lotCardSubtitle({
+    age: listing?.age,
+    sex: listing?.sex,
+    seller: listing?.seller,
+  })
+  // The fee note sits under the subtitle so the `{umur} · {jenis kelamin} ·
+  // {farm}` line stays intact (US-097 AC14). It wraps rather than truncates,
+  // so the amount is never cut off on a narrow card.
+  const joinNote = lotJoinNote(
+    { signedIn, joined: product.joined, status, joinFee: auction.joinFee },
+    formatPrice
+  )
   // The right column's time turns amber exactly when the chip says "Berakhir < 1 jam".
   const endingSoon = chip.tone === "warning"
   const live = status === "live" && remaining !== null
@@ -69,10 +87,10 @@ export function AuctionProductCard({
             src={image}
             alt={title || lotLabel || "Foto lot"}
             loading="lazy"
-            className="aspect-4/3 w-full object-cover"
+            className="aspect-3/2 w-full object-cover"
           />
         ) : (
-          <div aria-hidden className="aspect-4/3 w-full bg-muted" />
+          <div aria-hidden className="aspect-3/2 w-full bg-muted" />
         )}
         <LotChip chip={chip} className="absolute top-3 left-3" />
       </div>
@@ -86,7 +104,7 @@ export function AuctionProductCard({
               {href ? (
                 <Link
                   href={href}
-                  className="rounded-control after:absolute after:inset-0 after:rounded-card focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-offset-2"
+                  className="rounded-control after:absolute after:inset-0 after:rounded-card focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-offset-2"
                 >
                   {title || lotLabel}
                 </Link>
@@ -102,8 +120,16 @@ export function AuctionProductCard({
               )}
             </RenderIf>
           </div>
-          <RenderIf when={listing?.seller}>
-            {(seller) => <p className="truncate text-sm text-muted-foreground">{seller}</p>}
+          {/* Second line: `{umur} · {jenis kelamin} · {farm}`, with empty parts
+              left out so a legacy lot reads farm only (US-097 AC14, US-105
+              AC5). Never print separators around nothing. */}
+          <RenderIf when={subtitle}>
+            {(line) => <p className="truncate text-sm text-muted-foreground">{line}</p>}
+          </RenderIf>
+          <RenderIf when={joinNote}>
+            {(note) => (
+              <p className="text-xs leading-snug font-semibold text-accent-ink">{note}</p>
+            )}
           </RenderIf>
         </div>
 
@@ -118,9 +144,12 @@ export function AuctionProductCard({
 
         {/* Price left, time right. The end time sits under the price on
             desktop and under the time left on a phone (boards "Desktop · Lelang"
-            and "Mobile · Lelang"). */}
-        <div className="mt-auto flex items-end justify-between gap-3 border-t border-divider pt-3">
-          <div className="flex min-w-0 flex-col">
+            and "Mobile · Lelang"). The row wraps: when the price and the time
+            cannot share the width, the time drops to its own line with
+            `ml-auto` instead of painting over the price. The price keeps its
+            min-width so it never shrinks under the time block. */}
+        <div className="mt-auto flex flex-wrap items-end justify-between gap-3 border-t border-divider pt-3">
+          <div className="flex min-w-fit flex-col">
             <RenderIf when={price}>
               {(line) => (
                 <>
@@ -148,7 +177,12 @@ export function AuctionProductCard({
 
           <RenderIf when={live || endLabel}>
             {() => (
-              <div className={cn("flex shrink-0 flex-col items-end text-right tabular-nums", live && "md:pb-5")}>
+              <div
+                className={cn(
+                  "ml-auto flex shrink-0 flex-col items-end text-right tabular-nums",
+                  live && "md:pb-5"
+                )}
+              >
                 <RenderIf when={live}>
                   {() => (
                     <span

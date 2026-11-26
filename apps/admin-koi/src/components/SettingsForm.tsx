@@ -72,7 +72,7 @@ export function SettingsForm({ settings }: SettingsFormProps) {
         </CardHeader>
         <CardContent className="grid gap-5 sm:grid-cols-2">
           <FormField
-            label="Jendela extend (menit)"
+            label="Jendela perpanjangan (menit)"
             type="number"
             min={1}
             step={1}

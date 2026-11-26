@@ -48,8 +48,20 @@ export const NAV: NavGroup[] = [
       },
       {
         href: ROUTES.reports,
-        label: 'Laporan',
-        hint: 'Tinjau laporan pemenang yang tidak membayar.',
+        label: 'Arsip laporan',
+        hint: 'Laporan lama pemenang yang tidak membayar, hanya untuk dibaca.',
+        ready: true
+      },
+      {
+        href: ROUTES.payments,
+        label: 'Pembayaran pemenang',
+        hint: 'Konfirmasi transfer pemenang ke rekening perusahaan.',
+        ready: true
+      },
+      {
+        href: ROUTES.farmPayouts,
+        label: 'Pembayaran ke farm',
+        hint: 'Catat transfer ke rekening farm setelah koi diterima.',
         ready: true
       }
     ]
@@ -71,7 +83,7 @@ export const NAV: NavGroup[] = [
       {
         href: ROUTES.fees,
         label: 'Tabel biaya',
-        hint: 'Biaya listing dan join per kategori, plus jendela extend.',
+        hint: 'Biaya listing dan biaya ikut per lot, per kategori, plus jendela extend.',
         ready: true
       },
       {

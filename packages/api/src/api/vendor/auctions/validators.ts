@@ -1,5 +1,11 @@
 import { z } from "@medusajs/framework/zod"
 import { isLiveStreamUrl } from "../../../utils/live-stream"
+import {
+  isYouTubeVideoUrl,
+  KOI_AGES,
+  KOI_SEXES,
+  KOI_VARIETIES,
+} from "../../../utils/koi-lot-fields"
 
 // Whole rupiah, 4-byte integer column (same bound as fee_category).
 const rupiah = z.number().int().min(1).max(2_147_483_647)
@@ -7,6 +13,18 @@ const rupiah = z.number().int().min(1).max(2_147_483_647)
 // ISO date-time string → Date. coerce.date refuses an unparseable value.
 const isoDate = z.string().pipe(z.coerce.date())
 
+// US-105 (D-081): free text, trimmed; blank becomes absent so no empty row is
+// stored.
+const optionalText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .optional()
+    .transform((value) => (value ? value : undefined))
+
+// US-105 AC1 (D-081): variety and size are required here (the columns stay
+// nullable); age, sex and certificate use D-081's fixed lists.
 export const VendorCreateAuctionLot = z
   .object({
     title: z.string().trim().min(1),
@@ -14,8 +32,35 @@ export const VendorCreateAuctionLot = z
     photos: z.array(z.string().url()).min(1),
     ob: rupiah,
     kb: rupiah,
+    variety: z.enum(KOI_VARIETIES),
+    size_cm: z.number().int().min(1).max(150),
+    age: z.enum(KOI_AGES).optional(),
+    sex: z.enum(KOI_SEXES).optional(),
+    has_certificate: z.boolean().optional(),
+    certificate_issuer: optionalText(200),
+    pond_origin: optionalText(200),
+    breeder_notes: optionalText(1000),
+    video_url: z
+      .string()
+      .trim()
+      .max(2048)
+      .optional()
+      .transform((value) => (value ? value : undefined)),
   })
   .strict()
+  // US-105 AC2 (D-071): one YouTube link only. A `custom` issue keeps the
+  // Indonesian message; zod's own issues are rewritten by Medusa (D-055).
+  .refine((lot) => !lot.video_url || isYouTubeVideoUrl(lot.video_url), {
+    message:
+      "Tautan video harus dari YouTube (tautan tonton, youtu.be, atau Shorts).",
+    path: ["video_url"],
+  })
+  // D-081: no certificate, no issuer. The read adds the label back.
+  .transform((lot) =>
+    lot.has_certificate === false
+      ? { ...lot, certificate_issuer: undefined }
+      : lot
+  )
 
 export type VendorCreateAuctionLotType = z.infer<typeof VendorCreateAuctionLot>
 

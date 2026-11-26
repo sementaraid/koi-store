@@ -6,6 +6,7 @@ export type FeedFiltersProps<F extends GoodsFilter<string>> = {
   onFilterChange?: (filter: F) => void
   scope: string
   tabs: FilterOption[]
+  className?: string
 }
 
 export function FeedFilters<F extends GoodsFilter<string>>({
@@ -13,6 +14,7 @@ export function FeedFilters<F extends GoodsFilter<string>>({
   onFilterChange,
   scope,
   tabs,
+  className,
 }: FeedFiltersProps<F>) {
   return (
     <FilterBar
@@ -22,6 +24,7 @@ export function FeedFilters<F extends GoodsFilter<string>>({
       onStatusChange={(status) =>
         onFilterChange?.({ ...filter, status: status as F["status"] })
       }
+      {...(className ? { className } : {})}
     />
   )
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle, Gavel, ImagePlus, Trash2 } from 'lucide-react';
+import { AlertTriangle, ImagePlus, Trash2 } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -29,12 +29,17 @@ import {
 } from '@/lib/data/auctions';
 import { auctionStatusLabel } from '@/lib/helpers/auction-status';
 import { canCancelAuction } from '@/lib/helpers/auction-cancel';
+import { feeCategoryLabel } from '@/lib/helpers/fee-category-label';
 import {
   auctionFieldsSchema,
   auctionLengthError,
   canRemoveLot,
+  EMPTY_LOT,
   jakartaInputValue,
   jakartaIso,
+  KOI_AGES,
+  KOI_SEXES,
+  KOI_VARIETIES,
   lotPhotosError,
   lotSchema,
   MAX_LOTS_PER_AUCTION,
@@ -121,10 +126,11 @@ export function EditAuction({ auction: initial, categories, openOrders, identity
     register: registerLot,
     handleSubmit: handleLotSubmit,
     reset: resetLot,
+    watch: watchLot,
     formState: { errors: lotErrors, isSubmitting: addingLot }
   } = useForm<LotFormData>({
     resolver: zodResolver(lotSchema),
-    defaultValues: { title: '', description: '', ob: 0, kb: 0 }
+    defaultValues: EMPTY_LOT
   });
   const [lotPhotos, setLotPhotos] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -164,7 +170,17 @@ export function EditAuction({ auction: initial, categories, openOrders, identity
         description: data.description?.trim() ? data.description.trim() : undefined,
         photos: lotPhotos,
         ob: data.ob,
-        kb: data.kb
+        kb: data.kb,
+        variety: data.variety,
+        size_cm: Number(data.size_cm),
+        age: data.age || undefined,
+        sex: data.sex || undefined,
+        has_certificate: data.has_certificate === 'yes',
+        certificate_issuer:
+          data.has_certificate === 'yes' ? data.certificate_issuer || undefined : undefined,
+        pond_origin: data.pond_origin || undefined,
+        breeder_notes: data.breeder_notes || undefined,
+        video_url: data.video_url || undefined
       }
     ]);
 
@@ -176,7 +192,7 @@ export function EditAuction({ auction: initial, categories, openOrders, identity
     setAuction(result.data);
     setLotPhotos([]);
     setPhotoError(null);
-    resetLot({ title: '', description: '', ob: 0, kb: 0 });
+    resetLot(EMPTY_LOT);
     toast.success('Lot ditambahkan.');
     router.refresh();
   }
@@ -199,13 +215,6 @@ export function EditAuction({ auction: initial, categories, openOrders, identity
   return (
     <AccountFrame
       title="Ubah lelang"
-      eyebrow={
-        <>
-          <Gavel aria-hidden className="size-3.5" />
-          Kebun
-        </>
-      }
-      description="Hanya draf yang bisa diubah. Setelah dikirim, lelang menunggu persetujuan admin."
       action={
         canCancelAuction(auction.status) ? (
           <CancelAuctionButton
@@ -351,6 +360,110 @@ export function EditAuction({ auction: initial, categories, openOrders, identity
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="grid gap-1.5">
+                        <Label htmlFor="add-lot-variety">Varietas</Label>
+                        <NativeSelect id="add-lot-variety" {...registerLot('variety')}>
+                          <option value="">Pilih varietas</option>
+                          {KOI_VARIETIES.map((variety) => (
+                            <option key={variety} value={variety}>
+                              {variety}
+                            </option>
+                          ))}
+                        </NativeSelect>
+                        <RenderIf when={lotErrors.variety?.message}>
+                          {(message) => <p className="text-xs text-destructive-ink">{message}</p>}
+                        </RenderIf>
+                      </div>
+                      <FormField
+                        label="Ukuran (cm)"
+                        type="number"
+                        inputMode="numeric"
+                        min={1}
+                        max={150}
+                        placeholder="Contoh: 55"
+                        error={lotErrors.size_cm?.message}
+                        {...registerLot('size_cm')}
+                      />
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="grid gap-1.5">
+                        <Label htmlFor="add-lot-age">Umur</Label>
+                        <NativeSelect id="add-lot-age" {...registerLot('age')}>
+                          <option value="">Tidak diisi</option>
+                          {KOI_AGES.map((age) => (
+                            <option key={age} value={age}>
+                              {age}
+                            </option>
+                          ))}
+                        </NativeSelect>
+                      </div>
+                      <div className="grid gap-1.5">
+                        <Label htmlFor="add-lot-sex">Jenis kelamin</Label>
+                        <NativeSelect id="add-lot-sex" {...registerLot('sex')}>
+                          <option value="">Tidak diisi</option>
+                          {KOI_SEXES.map((sex) => (
+                            <option key={sex} value={sex}>
+                              {sex}
+                            </option>
+                          ))}
+                        </NativeSelect>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-1.5">
+                      <Label htmlFor="add-lot-certificate">Sertifikat</Label>
+                      <NativeSelect
+                        id="add-lot-certificate"
+                        {...registerLot('has_certificate')}
+                      >
+                        <option value="no">Tidak ada (koi lokal)</option>
+                        <option value="yes">Ya, ada sertifikat</option>
+                      </NativeSelect>
+                    </div>
+
+                    <RenderIf when={watchLot('has_certificate') === 'yes'}>
+                      {() => (
+                        <FormField
+                          label="Penerbit sertifikat (opsional)"
+                          placeholder="Contoh: Nogyosai"
+                          error={lotErrors.certificate_issuer?.message}
+                          {...registerLot('certificate_issuer')}
+                        />
+                      )}
+                    </RenderIf>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FormField
+                        label="Asal kolam (opsional)"
+                        placeholder="Kota, provinsi"
+                        error={lotErrors.pond_origin?.message}
+                        {...registerLot('pond_origin')}
+                      />
+                      <FormField
+                        label="Tautan video YouTube (opsional)"
+                        type="url"
+                        placeholder="https://youtu.be/…"
+                        hint="Tautan tonton, youtu.be, atau Shorts."
+                        error={lotErrors.video_url?.message}
+                        {...registerLot('video_url')}
+                      />
+                    </div>
+
+                    <div className="grid gap-1.5">
+                      <Label htmlFor="add-lot-notes">Catatan breeder (opsional)</Label>
+                      <textarea
+                        id="add-lot-notes"
+                        rows={3}
+                        className="w-full min-w-0 resize-y rounded-control border border-input bg-transparent px-2.5 py-2 text-base outline-none placeholder:text-muted-foreground focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 md:text-sm dark:bg-input/30"
+                        {...registerLot('breeder_notes')}
+                      />
+                      <RenderIf when={lotErrors.breeder_notes?.message}>
+                        {(message) => <p className="text-xs text-destructive-ink">{message}</p>}
+                      </RenderIf>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
                       <FormField
                         label="OB — harga awal (Rp)"
                         inputMode="numeric"
@@ -367,6 +480,7 @@ export function EditAuction({ auction: initial, categories, openOrders, identity
 
                     <div className="grid gap-1.5">
                       <FormField
+                        id="add-lot-photos"
                         label="Foto lot"
                         type="file"
                         accept="image/jpeg,image/png,image/webp"
@@ -433,7 +547,7 @@ export function EditAuction({ auction: initial, categories, openOrders, identity
               <NativeSelect id="edit-fee-category" {...register('fee_category_id')}>
                 {cats.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name}
+                    {feeCategoryLabel(c.name)}
                   </option>
                 ))}
               </NativeSelect>

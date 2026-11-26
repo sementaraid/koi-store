@@ -16,7 +16,7 @@ import { cn } from "cn"
 const LINK = "h-auto bg-transparent px-0"
 
 const buttonVariants = cva(
-  "group/button relative isolate inline-flex shrink-0 items-center justify-center gap-2 font-medium whitespace-nowrap select-none transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button relative isolate inline-flex shrink-0 items-center justify-center gap-2 font-medium whitespace-nowrap select-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       /* one axis: `variant` = tone + emphasis baked together.

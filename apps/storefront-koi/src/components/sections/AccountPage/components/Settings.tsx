@@ -1,7 +1,7 @@
 'use client';
 
 import type { HttpTypes } from '@medusajs/types';
-import { Check, Lock, Mail, Settings as SettingsIcon } from 'lucide-react';
+import { Check, Lock, Mail } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -11,6 +11,7 @@ import { Badge, Button, FormField } from "@koi/ui";
 import { Eyebrow } from '@/components/atoms/Eyebrow/Eyebrow';
 import { Separator } from '@koi/ui/primitives/separator';
 import { sendResetPasswordEmail, updateCustomer } from '@/lib/data/customer';
+import type { AccountIdentity } from '@/lib/helpers/account-identity';
 
 import { AccountFrame } from './AccountFrame';
 import { profileSchema, type ProfileData } from './schema';
@@ -18,9 +19,10 @@ import { profileSchema, type ProfileData } from './schema';
 export type SettingsProps = {
   customer: HttpTypes.StoreCustomer;
   openOrders: number;
+  identity?: AccountIdentity;
 };
 
-export function Settings({ customer, openOrders }: SettingsProps) {
+export function Settings({ customer, openOrders, identity }: SettingsProps) {
   const [sendingReset, setSendingReset] = useState(false);
 
   const {
@@ -35,9 +37,6 @@ export function Settings({ customer, openOrders }: SettingsProps) {
       phone: customer.phone ?? ''
     }
   });
-
-  const name =
-    [customer.first_name, customer.last_name].filter(Boolean).join(' ') || customer.email;
 
   async function saveProfile(data: ProfileData) {
     try {
@@ -62,17 +61,7 @@ export function Settings({ customer, openOrders }: SettingsProps) {
   return (
     <AccountFrame
       title="Pengaturan"
-      eyebrow={
-        <>
-          <SettingsIcon
-            aria-hidden
-            className="size-3.5"
-          />
-          Akun
-        </>
-      }
-      description="Nama yang tampil di pesanan Anda dan sandi untuk masuk."
-      identity={{ name, email: customer.email }}
+      identity={identity}
       openOrders={openOrders}
     >
       <section aria-labelledby="akun-profil">

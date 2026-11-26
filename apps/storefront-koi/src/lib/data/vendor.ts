@@ -9,7 +9,7 @@ export async function vendorHeaders(): Promise<{
 }> {
   const [headers, seller] = await Promise.all([getMemberAuthHeaders(), getMyFarm()]);
   if (!('authorization' in headers) || !seller) {
-    throw new ClientError('Sesi petani tidak aktif.', 'Unauthorized', 401);
+    throw new ClientError('Sesi peternak tidak aktif.', 'Unauthorized', 401);
   }
   return { ...headers, 'x-seller-id': seller.id };
 }

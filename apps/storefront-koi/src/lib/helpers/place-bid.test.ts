@@ -107,7 +107,7 @@ test('an owner refusal offers no re-read; not_participant re-reads', () => {
     status: 403,
     message: "You can't bid on your own auction."
   });
-  assert.match(owner.message, /milik kebun Anda/);
+  assert.match(owner.message, /milik farm Anda/);
   assert.equal(owner.refresh, false);
 
   const outsider = bidFailureInfo({
@@ -115,6 +115,7 @@ test('an owner refusal offers no re-read; not_participant re-reads', () => {
     status: 403,
     message: 'Join the auction before bidding.'
   });
+  assert.equal(outsider.message, 'Anda belum ikut lot ini.');
   assert.equal(outsider.refresh, true);
 });
 

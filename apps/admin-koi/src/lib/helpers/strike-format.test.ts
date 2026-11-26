@@ -45,8 +45,9 @@ test('keys the refusal on status, not the message (D-055)', () => {
   assert.match(strikeFailureInfo(undefined, '').message, /Gagal menyimpan strike/);
 });
 
-test('reads a strike time in Jakarta time', () => {
+test('reads a strike time in Jakarta time, labelled WIB', () => {
   const formatted = formatStrikeDate('2026-11-14T17:20:00.000Z');
   assert.match(formatted, /2026/);
   assert.match(formatted, /15/);
+  assert.match(formatted, / WIB$/);
 });

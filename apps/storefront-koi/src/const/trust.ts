@@ -1,12 +1,14 @@
 
 export const TRUST_CLAIMS = {
+  // D-068: the winner pays the company account; nothing is held for the buyer
+  // and the farmer is paid by an admin. State only where the money goes.
   escrow: {
-    title: "Rekber aman.",
-    body: "Dana ditahan sampai koi diterima.",
+    title: "Bayar ke Koi Auction House.",
+    body: "Dana masuk ke rekening perusahaan, bukan ke farm.",
   },
   liveGuarantee: {
-    title: "Garansi hidup 24 jam.",
-    body: "Berlaku dengan video unboxing.",
+    title: "Garansi tiba hidup.",
+    body: "Klaim maksimal 4 jam setelah diterima.",
   },
   breeder: {
     title: "Breeder terverifikasi.",
@@ -17,7 +19,7 @@ export const TRUST_CLAIMS = {
     body: "Ikan dikirim setelah pembayaran dikonfirmasi.",
   },
   doa: {
-    title: "Garansi D.O.A 100%.",
-    body: "Dengan video unboxing 24 jam.",
+    title: "Garansi tiba hidup, klaim 4 jam.",
+    body: "Berlaku dengan video unboxing.",
   },
 } as const

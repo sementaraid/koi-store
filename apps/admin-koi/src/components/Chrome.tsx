@@ -3,6 +3,7 @@ import { cn } from 'cn';
 
 import { NAV } from '@/const/nav';
 import { ROUTES } from '@/const/routes';
+import { SITE_NAME } from '@/const/site';
 import type { Admin } from '@/lib/data/auth';
 
 import { Button } from '@koi/ui';
@@ -25,7 +26,7 @@ export function Chrome({
           <p className="text-2xs font-bold tracking-widest text-muted-foreground uppercase">
             Admin
           </p>
-          <p className="font-medium">Koi Store</p>
+          <p className="font-medium">{SITE_NAME}</p>
         </Link>
 
         <nav className="mt-6 grid gap-5">
@@ -41,7 +42,7 @@ export function Chrome({
                     href={item.href}
                     aria-current={item.href === activeHref ? 'page' : undefined}
                     className={cn(
-                      'rounded-md px-2 py-1.5 text-sm hover:bg-sidebar-accent',
+                      'flex min-h-11 items-center rounded-md px-2 py-1.5 text-sm hover:bg-sidebar-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring md:min-h-0',
                       item.href === activeHref && 'bg-sidebar-accent font-medium'
                     )}
                   >
@@ -69,7 +70,11 @@ export function Chrome({
             Masuk sebagai <span className="text-foreground">{name}</span>
           </p>
           <form action={ROUTES.signout} method="post">
-            <Button type="submit" variant="outline" className="h-8 px-2.5 text-xs">
+            <Button
+              type="submit"
+              variant="outline"
+              className="h-11 px-3 text-xs md:h-8 md:px-2.5"
+            >
               Keluar
             </Button>
           </form>

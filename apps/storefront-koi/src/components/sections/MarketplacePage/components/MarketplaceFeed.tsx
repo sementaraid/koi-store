@@ -12,10 +12,11 @@ import { useFeedSearch } from '@/hooks/use-feed-search';
 export function MarketplaceFeed({
   goods,
   attributes,
+  failed,
   basePath
 }: {
   goods: SimpleProduct[];
-} & Pick<MarketplaceProps, 'attributes' | 'basePath'>) {
+} & Pick<MarketplaceProps, 'attributes' | 'failed' | 'basePath'>) {
   const handles = useMemo(() => facetHandles(attributes ?? []), [attributes]);
 
   const state = useFeedSearch<StockLevel>(DEFAULT_MARKET_FILTER, handles);
@@ -24,6 +25,7 @@ export function MarketplaceFeed({
     <Marketplace
       goods={goods}
       {...(attributes ? { attributes } : {})}
+      {...(failed ? { failed } : {})}
       {...(basePath ? { basePath } : {})}
       {...state}
     />

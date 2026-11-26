@@ -20,7 +20,7 @@ const NBSP = "\u00a0"
 
 test("shortens to the Rupiah's own scale words", () => {
   assert.equal(formatPriceCompact(500_000), `Rp${NBSP}500,0${NBSP}rb`)
-  assert.equal(formatPriceCompact(1_000_000), `Rp${NBSP}1,0${NBSP}jt`)
+  assert.equal(formatPriceCompact(1_000_000), `Rp${NBSP}1${NBSP}jt`)
 })
 
 test("keeps the half that a rounded chip would lose", () => {
@@ -43,10 +43,19 @@ test("negative and decimal amounts keep the sign and a comma tail", () => {
 })
 
 test("compact moves to the next unit when rounding reaches 1.000", () => {
-  assert.equal(formatPriceCompact(999_950), `Rp${NBSP}1,0${NBSP}jt`)
+  assert.equal(formatPriceCompact(999_950), `Rp${NBSP}1${NBSP}jt`)
   assert.equal(formatPriceCompact(3_200_000), `Rp${NBSP}3,2${NBSP}jt`)
   assert.equal(formatPriceCompact(1_500_000_000), `Rp${NBSP}1,5${NBSP}M`)
   assert.equal(formatPriceCompact(999), `Rp${NBSP}999,0`)
+})
+
+test("zero and whole juta-or-above values drop the empty decimal", () => {
+  assert.equal(formatPriceCompact(0), `Rp${NBSP}0`)
+  assert.equal(formatPriceCompact(1_000), `Rp${NBSP}1,0${NBSP}rb`)
+  assert.equal(formatPriceCompact(1_000_000), `Rp${NBSP}1${NBSP}jt`)
+  assert.equal(formatPriceCompact(3_200_000), `Rp${NBSP}3,2${NBSP}jt`)
+  assert.equal(formatPriceCompact(999_999), `Rp${NBSP}1${NBSP}jt`)
+  assert.equal(formatPriceCompact(5_000_000), `Rp${NBSP}5${NBSP}jt`)
 })
 
 test("a non-IDR currency still goes through Intl", () => {

@@ -2,25 +2,23 @@
 
 import type { LucideIcon } from 'lucide-react';
 import {
-  Banknote,
   Gavel,
-  LayoutDashboard,
+  House,
   LogOut,
   MapPin,
-  MessageSquareText,
-  MessagesSquare,
   Package,
   Settings,
   Sprout,
-  Trophy,
+  Star,
   Wallet
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from 'cn';
 
-import { RenderIf, buttonVariants } from "@koi/ui";
+import { RenderIf } from "@koi/ui";
 import { Link } from '@/components/atoms/Link/Link';
 import { ROUTES } from '@/const/routes';
+import { useSignOut } from '@/hooks/use-sign-out';
 
 export type AccountNavItem = {
   label: string;
@@ -32,22 +30,20 @@ export type AccountNavProps = {
   items: AccountNavItem[];
   footer?: AccountNavItem[];
   className?: string;
-  /** Unique per rendered menu, because the sign-out form id must be unique. */
+  /** Unique per rendered menu, so the sign-out button id stays unique. */
   signOutFormId?: string;
 };
 
 const ICONS: Record<string, LucideIcon> = {
-  [ROUTES.account]: LayoutDashboard,
-  [ROUTES.orders]: Package,
+  [ROUTES.account]: House,
   [ROUTES.myBids]: Gavel,
-  [ROUTES.wonLots]: Trophy,
-  [ROUTES.wallet]: Wallet,
-  [ROUTES.topup]: Banknote,
+  [ROUTES.orders]: Package,
+  [ROUTES.saldoTopup]: Wallet,
   [ROUTES.addresses]: MapPin,
-  [ROUTES.reviews]: MessageSquareText,
-  [ROUTES.messages]: MessagesSquare,
-  [ROUTES.farm]: Sprout,
+  [ROUTES.reviews]: Star,
   [ROUTES.settings]: Settings,
+  [ROUTES.farm]: Sprout,
+  [ROUTES.farmHome]: Sprout,
   [ROUTES.signout]: LogOut
 };
 
@@ -58,6 +54,7 @@ export function AccountNav({
   signOutFormId = 'akun-nav-keluar'
 }: AccountNavProps) {
   const pathname = usePathname();
+  const { signOut } = useSignOut();
 
   return (
     <nav
@@ -70,6 +67,7 @@ export function AccountNav({
             key={item.href}
             item={item}
             pathname={pathname}
+            onSignOut={signOut}
             signOutFormId={signOutFormId}
           />
         ))}
@@ -78,21 +76,22 @@ export function AccountNav({
       <RenderIf when={footer?.length ? footer : undefined}>
         {(rows) => (
           <>
-            <ul className="mt-3 flex flex-col gap-1">
+            {/* US-103 AC10: the divider between the account pages and farm/sign-out. */}
+            <div
+              role="separator"
+              className="mx-3 my-2 h-px bg-divider"
+            />
+            <ul className="flex flex-col gap-1">
               {rows.map((item) => (
                 <Row
                   key={item.href}
                   item={item}
                   pathname={pathname}
+                  onSignOut={signOut}
                   signOutFormId={signOutFormId}
                 />
               ))}
             </ul>
-            <form
-              id={signOutFormId}
-              method="post"
-              action={ROUTES.signout}
-            />
           </>
         )}
       </RenderIf>
@@ -103,10 +102,12 @@ export function AccountNav({
 function Row({
   item,
   pathname,
+  onSignOut,
   signOutFormId
 }: {
   item: AccountNavItem;
   pathname: string;
+  onSignOut: () => void;
   signOutFormId: string;
 }) {
   const current =
@@ -118,15 +119,12 @@ function Row({
   const Icon = ICONS[item.href];
 
   const className = cn(
-    'flex min-h-11 w-full items-center gap-2.5 rounded-[10px] px-3 py-2.5 text-sm whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
+    'flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2 text-sm whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset focus-visible:ring-offset-0 lg:min-h-10',
     current
-      ? cn(
-          buttonVariants({ variant: 'outline', size: 'sm' }),
-          'h-auto justify-start rounded-[10px] px-3 py-2.5 text-sm font-bold text-foreground'
-        )
+      ? 'bg-accent font-semibold text-accent-ink'
       : signout
         ? 'font-medium text-muted-foreground hover:bg-destructive/8 hover:text-destructive-ink'
-        : 'font-medium text-muted-foreground hover:bg-card hover:text-accent-ink'
+        : 'font-medium text-muted-foreground hover:bg-surface hover:text-accent-ink'
   );
 
   const body = (
@@ -135,7 +133,7 @@ function Row({
         {(Glyph) => (
           <Glyph
             aria-hidden
-            className={cn('size-4 shrink-0', current && 'text-accent-ink')}
+            className="size-4.5 shrink-0"
           />
         )}
       </RenderIf>
@@ -154,8 +152,9 @@ function Row({
     return (
       <li>
         <button
-          type="submit"
-          form={signOutFormId}
+          id={signOutFormId}
+          type="button"
+          onClick={onSignOut}
           className={className}
         >
           {body}

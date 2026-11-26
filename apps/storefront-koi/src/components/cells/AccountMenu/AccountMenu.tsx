@@ -1,5 +1,6 @@
+"use client"
+
 import { Fragment } from "react"
-import { ChevronDown } from "lucide-react"
 import { cn } from "cn"
 
 import { Button, RenderIf } from "@koi/ui"
@@ -14,63 +15,53 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@koi/ui/primitives/dropdown-menu"
-import { DEFAULT_ACCOUNT_LINKS, GOLD_TEXT } from "@/const/header"
+import { DEFAULT_ACCOUNT_LINKS } from "@/const/header"
 import { ROUTES } from "@/const/routes"
+import { useSignOut } from "@/hooks/use-sign-out"
 import { initials, sections } from "@/lib/helpers/header"
 import type {
   HeaderAccount,
   HeaderAccountLink,
 } from "@/types/header"
 
-const SIGN_OUT_FORM_ID = "akun-keluar"
+/* The shell is streamed ahead of the page's Suspense boundary. React 19 derives
+   a hidden `useId` for the Base UI trigger from that streamed tree, and the id
+   it computes on the client can differ from the one the server wrote into the
+   HTML (the upstream replay bug). An explicit id skips `useId` and keeps the
+   trigger, its panel and the focus guards stable across the two renders. */
+const MENU_TRIGGER_ID = "akun-menu-trigger"
+const MENU_POPUP_ID = "akun-menu-popup"
 
 export function AccountMenu({ account }: { account: HeaderAccount }) {
   const { user } = account
   const { groups, rest } = sections(account.menu ?? DEFAULT_ACCOUNT_LINKS)
+  const { signOut } = useSignOut()
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
+        id={MENU_TRIGGER_ID}
         render={
           <Button
             variant="ghost"
+            size="icon-md"
             aria-label={`Akun ${user.name}`}
-            className="hidden h-auto gap-2 rounded-full py-1 ps-1 pe-1.5 lg:flex"
+            className="hidden rounded-full p-0 lg:inline-flex"
           />
         }
       >
-        <Avatar>
+        {/* US-103 AC9: just the initials; the name lives in the aria-label. */}
+        <Avatar size="lg">
           <RenderIf when={user.avatar}>
             {(src) => <AvatarImage src={src} alt="" />}
           </RenderIf>
-          <AvatarFallback className="bg-primary text-xs font-bold tracking-wider text-primary-foreground shadow-xs">
+          <AvatarFallback className="bg-surface text-sm font-bold text-foreground">
             {initials(user.name)}
           </AvatarFallback>
         </Avatar>
-        <span className="hidden flex-col items-start text-left sm:flex">
-          <span className="text-xs font-bold text-foreground transition-colors group-hover/button:text-accent-ink">
-            {user.name}
-          </span>
-          <RenderIf when={user.role}>
-            {(role) => (
-              <span
-                className={cn(
-                  "text-2xs font-medium tracking-wider uppercase",
-                  GOLD_TEXT
-                )}
-              >
-                {role}
-              </span>
-            )}
-          </RenderIf>
-        </span>
-        <ChevronDown
-          aria-hidden
-          className="size-4 text-muted-foreground transition-transform group-data-[popup-open]/button:rotate-180"
-        />
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-60">
+      <DropdownMenuContent id={MENU_POPUP_ID} align="end" className="w-60">
         {groups.map(([label, items], index) => (
           <Fragment key={label}>
             <RenderIf when={index > 0}>
@@ -80,7 +71,9 @@ export function AccountMenu({ account }: { account: HeaderAccount }) {
               <DropdownMenuLabel className="text-xs font-bold tracking-wider text-foreground uppercase">
                 {label}
               </DropdownMenuLabel>
-              {items.map(Item)}
+              {items.map((item) => (
+                <Item key={item.href} {...item} onSignOut={signOut} />
+              ))}
             </DropdownMenuGroup>
           </Fragment>
         ))}
@@ -90,29 +83,34 @@ export function AccountMenu({ account }: { account: HeaderAccount }) {
               <RenderIf when={groups.length > 0}>
                 {() => <DropdownMenuSeparator />}
               </RenderIf>
-              {rows.map(Item)}
+              {rows.map((item) => (
+                <Item key={item.href} {...item} onSignOut={signOut} />
+              ))}
             </>
           )}
         </RenderIf>
       </DropdownMenuContent>
-
-      <form id={SIGN_OUT_FORM_ID} method="post" action={ROUTES.signout} />
     </DropdownMenu>
   )
 }
 
-function Item({ label, href, icon: Icon, variant }: HeaderAccountLink) {
+function Item({
+  label,
+  href,
+  icon: Icon,
+  variant,
+  onSignOut
+}: HeaderAccountLink & { onSignOut?: () => void }) {
   const isSignout = href === ROUTES.signout;
 
   return (
     <DropdownMenuItem
-      key={href}
       variant={variant}
+      onClick={isSignout ? onSignOut : undefined}
       render={
         isSignout ? (
           <Button
-            type="submit"
-            form={SIGN_OUT_FORM_ID}
+            type="button"
             variant="ghost"
             className="h-auto w-full justify-start bg-transparent px-0 py-0 hover:bg-transparent"
           />

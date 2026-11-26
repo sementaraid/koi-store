@@ -43,38 +43,33 @@ function PageHeadSkeleton() {
   );
 }
 
-// FeedHero: tinted band with eyebrow, h1, lede and the status badge.
+// FeedHero: surface band with eyebrow, h1, lede, the stat badge and the
+// status tabs on the title row (stacked on a phone).
 function FeedHeroSkeleton() {
   return (
-    <section className="border-b border-border bg-muted/40">
-      <div className={`${CONTAINER} py-8 lg:py-10`}>
-        <div className="flex flex-wrap items-end justify-between gap-4">
+    <section className="border-b border-divider bg-surface">
+      <div className={`${CONTAINER} py-8 max-sm:py-5 lg:py-10`}>
+        <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 max-sm:flex-col max-sm:items-stretch">
           <div className="flex w-full max-w-xl flex-col gap-2">
             <Skeleton className="h-4 w-40" />
             <Skeleton className="h-9 w-3/4 lg:h-10" />
             <Skeleton className="h-[102px] w-full sm:h-[68px] lg:h-[46px]" />
           </div>
-          <Skeleton className="h-6 w-36 rounded-full" />
+          <div className="flex flex-wrap items-center gap-3 max-sm:flex-col max-sm:items-stretch">
+            <Skeleton className="h-6 w-36 rounded-full max-sm:self-start" />
+            <Skeleton className="h-11 w-72 max-w-full rounded-field" />
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
-// FilterBar: status tabs on the left, two selects (label above) on the right.
-function FilterBarSkeleton() {
-  return (
-    <div className={`${CONTAINER} pt-6`}>
-      <Skeleton className="h-14 w-72 max-w-full rounded-field md:h-11" />
-    </div>
-  );
-}
-
-// SimpleProductCard: photo, title and seller, facts, price and the action.
+// SimpleProductCard: 3:2 photo, title and seller, facts, price and the action.
 export function ProductCardSkeleton() {
   return (
     <div className="flex w-full flex-col overflow-hidden rounded-card border border-card-edge bg-background shadow-card">
-      <Skeleton className="aspect-4/3 w-full rounded-none" />
+      <Skeleton className="aspect-3/2 w-full rounded-none" />
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="flex flex-col gap-2">
           <Skeleton className="h-5 w-3/4" />
@@ -134,7 +129,6 @@ export function HomeSkeleton() {
               <Skeleton className="h-12 w-48" />
               <Skeleton className="h-12 w-36" />
             </div>
-            <Skeleton className="mt-2 h-11 w-64" />
           </div>
           <div className="w-full max-w-md justify-self-start lg:justify-self-end">
             <LotCardSkeleton />
@@ -155,40 +149,34 @@ export function HomeSkeleton() {
           </FeedGrid>
         </div>
       </section>
-
-      <section className="border-t border-border bg-muted/40">
-        <div className={`${CONTAINER} py-10 lg:py-14`}>
-          <div className="mb-6 flex flex-col gap-1">
-            <Skeleton className="h-4 w-56" />
-            <Skeleton className="h-8 w-80" />
-          </div>
-          <div className="grid gap-5 md:grid-cols-3">
-            {Array.from({ length: 3 }, (_, i) => (
-              <PartnerCardSkeleton key={i} />
-            ))}
-          </div>
-        </div>
-      </section>
     </LoadingRegion>
   );
 }
 
-// Katalog, kategori/[category] and toko: hero, filter bar, facet sidebar and a 3-column grid.
+// Katalog, kategori/[category] and toko: hero with tabs, the chip row on a
+// phone, the sticky facet sidebar, and a 3-column grid.
 export function FeedPageSkeleton({ label, trail = false }: { label: string; trail?: boolean }) {
   return (
     <LoadingRegion label={label}>
       {trail ? <TrailSkeleton /> : null}
       <FeedHeroSkeleton />
-      <FilterBarSkeleton />
-      <div className={`${CONTAINER} grid gap-8 py-8 lg:grid-cols-[240px_minmax(0,1fr)] lg:py-10`}>
-        {/* Label over a 44 px filled field, as FacetSidebar draws each filter. */}
-        <aside className="grid grid-cols-2 content-start gap-x-3 gap-y-4 lg:grid-cols-1 lg:gap-6">
-          {Array.from({ length: 4 }, (_, i) => (
-            <div key={i} className="flex flex-col gap-2">
-              <Skeleton className="h-4 w-20" />
-              <Skeleton className="h-11 w-full rounded-field" />
-            </div>
-          ))}
+      <div className={`${CONTAINER} grid gap-8 py-8 max-sm:gap-4 max-sm:py-5 lg:grid-cols-[240px_minmax(0,1fr)] lg:py-10`}>
+        <aside className="min-w-0">
+          {/* Phone: the Filter / category / sort chips. */}
+          <div className="flex gap-2 overflow-x-auto pb-1 lg:hidden">
+            {Array.from({ length: 3 }, (_, i) => (
+              <Skeleton key={i} className="h-11 w-24 shrink-0 rounded-full" />
+            ))}
+          </div>
+          {/* Label over a 44 px filled field, as FacetSidebar draws each filter. */}
+          <div className="hidden lg:flex lg:flex-col lg:gap-6">
+            {Array.from({ length: 4 }, (_, i) => (
+              <div key={i} className="flex flex-col gap-2">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-11 w-full rounded-field" />
+              </div>
+            ))}
+          </div>
         </aside>
         <div className="min-w-0">
           <Skeleton className="mb-6 h-5 w-40" />

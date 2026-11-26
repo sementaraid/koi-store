@@ -14,7 +14,10 @@ import {
   listProducts,
   searchProducts
 } from '@/lib/data/products';
-import { readAttributeSelection } from '@/lib/helpers/attribute-facets';
+import {
+  readAttributeSelection,
+  splitAttributeSelection
+} from '@/lib/helpers/attribute-facets';
 import { COUNTRY_CODE } from '@/lib/region';
 
 export async function getCategory(handle: string) {
@@ -36,13 +39,15 @@ export async function CategoryPage({
   if (!category) notFound();
 
   const selected = readAttributeSelection(facets, params);
+  const { variantAxis, productValues } = splitAttributeSelection(facets, selected);
   const narrowed = Object.keys(selected).length > 0;
 
   const category_id = collectCategorySubtreeIds(category);
 
   const products = narrowed
     ? await searchProducts({
-        attributes: selected,
+        attributes: variantAxis,
+        attributeValues: productValues,
         category_id,
         countryCode: COUNTRY_CODE,
         limit: FEED_LIMIT

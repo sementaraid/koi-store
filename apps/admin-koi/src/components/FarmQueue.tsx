@@ -33,6 +33,9 @@ import {
   formatFarmDate
 } from '@/lib/helpers/farm-format';
 
+import { AdminEmpty } from './AdminEmpty';
+import { ConfirmDialog } from './ConfirmDialog';
+
 export type FarmQueueProps = {
   pending: AdminFarm[];
   pendingTotal: number;
@@ -64,9 +67,10 @@ export function FarmQueue({ pending, pendingTotal, decided }: FarmQueueProps) {
               </p>
             ) : null}
             {pending.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Tidak ada pendaftaran kebun yang menunggu.
-              </p>
+              <AdminEmpty
+                title="Tidak ada pendaftaran kebun yang menunggu"
+                description="Pendaftaran baru muncul di sini setelah petani mengirim datanya."
+              />
             ) : (
               pending.map((farm) => <PendingRow key={farm.id} farm={farm} />)
             )}
@@ -74,9 +78,10 @@ export function FarmQueue({ pending, pendingTotal, decided }: FarmQueueProps) {
 
           <TabsContent value="decided" className="grid gap-3">
             {decided.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Belum ada pendaftaran yang diputuskan.
-              </p>
+              <AdminEmpty
+                title="Belum ada pendaftaran yang diputuskan"
+                description="Kebun yang disetujui atau ditolak muncul di sini."
+              />
             ) : (
               decided.map((farm) => <DecidedRow key={farm.id} farm={farm} />)
             )}
@@ -387,18 +392,15 @@ function ApproveForm({
   onBusyChange: (busy: boolean) => void;
 }) {
   const [submitting, setSubmitting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   async function approve() {
     onBusyChange(true);
-    if (!confirm('Setujui pendaftaran kebun ini dan beri akses petani?')) {
-      onBusyChange(false);
-      return;
-    }
-
     setSubmitting(true);
     const result = await approveFarm(id);
     setSubmitting(false);
     onBusyChange(false);
+    setConfirmOpen(false);
 
     if (!result.success) {
       toast.error(result.error);
@@ -410,9 +412,24 @@ function ApproveForm({
 
   return (
     <div>
-      <Button type="button" size="sm" onClick={approve} disabled={submitting || busy}>
+      <Button
+        type="button"
+        size="sm"
+        onClick={() => setConfirmOpen(true)}
+        disabled={submitting || busy}
+      >
         {submitting ? 'Menyetujui…' : 'Setujui kebun'}
       </Button>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Setujui kebun?"
+        description="Setujui pendaftaran kebun ini dan beri akses petani?"
+        confirmLabel="Setujui kebun"
+        busyLabel="Menyetujui…"
+        onConfirm={approve}
+      />
     </div>
   );
 }
@@ -441,16 +458,19 @@ function RejectForm({
     resolver: zodResolver(rejectSchema),
     defaultValues: { reason: '' }
   });
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingReason, setPendingReason] = useState('');
 
-  async function submit(data: RejectData) {
+  function submit(data: RejectData) {
+    setPendingReason(data.reason);
+    setConfirmOpen(true);
+  }
+
+  async function reject() {
     onBusyChange(true);
-    if (!confirm('Tolak pendaftaran kebun ini? Keputusan ini final dan tidak bisa dibatalkan.')) {
-      onBusyChange(false);
-      return;
-    }
-
-    const result = await rejectFarm(id, data.reason);
+    const result = await rejectFarm(id, pendingReason);
     onBusyChange(false);
+    setConfirmOpen(false);
 
     if (!result.success) {
       toast.error(result.error);
@@ -458,12 +478,14 @@ function RejectForm({
     }
 
     toast.success('Kebun ditolak.');
+    setPendingReason('');
     reset();
   }
 
   return (
     <form onSubmit={handleSubmit(submit)} className="grid gap-2" noValidate>
       <FormField
+        id={`farm-${id}-reject-reason`}
         label="Alasan penolakan"
         hint="Pendaftar akan membaca alasan ini. Penolakan final, tanpa pendaftaran ulang."
         error={errors.reason?.message}
@@ -474,6 +496,17 @@ function RejectForm({
           {isSubmitting ? 'Menolak…' : 'Tolak kebun'}
         </Button>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Tolak pendaftaran kebun?"
+        description="Tolak pendaftaran kebun ini? Keputusan ini final dan tidak bisa dibatalkan."
+        confirmLabel="Tolak kebun"
+        busyLabel="Menolak…"
+        destructive
+        onConfirm={reject}
+      />
     </form>
   );
 }

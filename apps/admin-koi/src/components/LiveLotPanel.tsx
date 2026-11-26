@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useId, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge, Button, Label } from '@koi/ui';
@@ -18,6 +18,9 @@ import {
   timeLeftLabel
 } from '@/lib/helpers/live-bid-format';
 import { formatRupiah } from '@/lib/helpers/topup-format';
+
+import { AdminEmpty } from './AdminEmpty';
+import { ConfirmDialog } from './ConfirmDialog';
 
 export type LiveLotPanelProps = {
   detail: AdminLiveLotDetail;
@@ -59,7 +62,10 @@ export function LiveLotPanel({ detail, now }: LiveLotPanelProps) {
       )}
 
       {bids.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Belum ada bid di lot ini.</p>
+        <AdminEmpty
+          title="Belum ada bid di lot ini"
+          description="Bid muncul di sini saat peserta mulai menawar."
+        />
       ) : (
         <div className="grid gap-2">
           {bids.map((bid) => (
@@ -72,27 +78,33 @@ export function LiveLotPanel({ detail, now }: LiveLotPanelProps) {
 }
 
 function BidRow({ bid, lotStatus }: { bid: AdminLiveLotBid; lotStatus: string }) {
-  const id = useId();
+  /* The bid id is unique per row, so every row's label points at its own
+     textarea on both server and client. */
+  const id = `bid-${bid.id}`;
   const router = useRouter();
   const [formOpen, setFormOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const removed = bid.removed_at !== null;
 
-  async function submit(event: React.FormEvent) {
+  function submit(event: React.FormEvent) {
     event.preventDefault();
     const message = bidReasonError(reason);
     if (message) {
       setError(message);
       return;
     }
-    if (!confirm(CONFIRM_COPY)) return;
+    setConfirmOpen(true);
+  }
 
+  async function confirmRemove() {
     setBusy(true);
     setError(null);
     const result = await removeBid(bid.id, reason);
     setBusy(false);
+    setConfirmOpen(false);
 
     if (!result.success) {
       setError(result.error);
@@ -173,6 +185,17 @@ function BidRow({ bid, lotStatus }: { bid: AdminLiveLotBid; lotStatus: string })
           </div>
         )
       ) : null}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Hapus bid?"
+        description={CONFIRM_COPY}
+        confirmLabel="Hapus bid"
+        busyLabel="Menghapus…"
+        destructive
+        onConfirm={confirmRemove}
+      />
     </div>
   );
 }

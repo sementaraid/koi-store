@@ -62,9 +62,19 @@ type PlaceBidProps = {
      stays in this one instance, so the accepted/outbid UI is never duplicated. */
   sheetOpen?: boolean;
   onSheetOpenChange?: (open: boolean) => void;
+  // US-099 AC13: the quick amount the phone bar picked. When set, the sheet
+  // opens on the confirmation step; null means the pencil asked for the typed
+  // input instead.
+  openAmount?: number | null;
+  // "Saldo tersedia" under the highest chip (AC15). Balance pays platform fees
+  // only, so a bid never changes it (D-058, D-068).
+  balance?: number | null;
   // The amount the server accepted (null when cleared), so the page derives
   // the same standing for the mobile bar from the same poll.
   onAcceptedChange?: (amount: number | null) => void;
+  // US-100 AC3: no fresh poll. Every bid control waits until the connection
+  // is back, so nobody bids on a price that may be stale.
+  disconnected?: boolean;
 };
 
 /* US-099 AC4–AC9: the joined customer's bid controls and their status. Three
@@ -85,6 +95,9 @@ export function PlaceBid({
   standing: shownStanding,
   sheetOpen,
   onSheetOpenChange,
+  openAmount,
+  balance,
+  disconnected = false,
   onAcceptedChange
 }: PlaceBidProps) {
   const router = useRouter();
@@ -93,6 +106,8 @@ export function PlaceBid({
   const [typed, setTyped] = useState('');
   const [innerOpen, setInnerOpen] = useState(false);
   const [confirmAmount, setConfirmAmount] = useState<number | null>(null);
+  // AC13: the amount picked in the sheet's typed-input step, after the pencil.
+  const [mobileConfirm, setMobileConfirm] = useState<number | null>(null);
   const [pendingAmount, setPendingAmount] = useState<number | null>(null);
   const [failure, setFailure] = useState<BidFailure | null>(null);
   const [accepted, setAccepted] = useState<AcceptedBid | null>(null);
@@ -112,7 +127,7 @@ export function PlaceBid({
   if (mode === 'waiting') {
     return (
       <p className="text-center text-xs text-muted-foreground">
-        Bidding dibuka saat lelang dimulai.
+        Bid dibuka saat lelang dimulai.
       </p>
     );
   }
@@ -122,9 +137,13 @@ export function PlaceBid({
   const amount = chosen !== null && chosen >= 1 ? chosen : null;
   const pending = pendingAmount !== null;
   const options = bidAmountOptions(baseMinimum, step);
-  const shownAmount = confirmAmount ?? amount;
   const chipActive = (option: number) =>
     typed === '' && (selected === option || (selected === null && option === baseMinimum));
+  // The phone bar sends the amount it picked; the pencil sends null and the
+  // sheet opens on the typed input instead (AC13).
+  const mobileConfirmAmount = mobileConfirm ?? openAmount ?? null;
+  const mobileTypedAmount =
+    typed !== '' && typedAmount !== null ? typedAmount : baseMinimum;
 
   function choose(option: number) {
     setSelected(option);
@@ -140,6 +159,7 @@ export function PlaceBid({
   function closeSheet() {
     setOpen(false);
     setConfirmAmount(null);
+    setMobileConfirm(null);
     setFailure(null);
   }
 
@@ -147,6 +167,7 @@ export function PlaceBid({
     setOpen(next);
     if (!next) {
       setConfirmAmount(null);
+      setMobileConfirm(null);
       setFailure(null);
     }
   }
@@ -208,9 +229,7 @@ export function PlaceBid({
     if (info.refresh) router.refresh();
   }
 
-  function renderConfirm(mobile: boolean) {
-    if (shownAmount === null) return null
-
+  function renderConfirm(mobile: boolean, shownAmount: number) {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1 pe-8">
@@ -241,13 +260,21 @@ export function PlaceBid({
           </dd>
         </dl>
 
-        <div className="grid gap-1 text-sm text-muted-foreground">
-          <p>Bid tidak bisa dibatalkan setelah dipasang.</p>
-          <p>
-            Jika menang, Anda bayar {formatPrice(shownAmount, currency)} langsung ke farm dalam
-            1×24 jam.
-          </p>
-        </div>
+        {/* AC15 / D-068: what the winner pays is a labelled row, not a
+            sentence, and it names the company account. */}
+        <dl className="flex items-baseline justify-between gap-4 text-sm">
+          <dt className="text-muted-foreground">Jika menang, Anda transfer</dt>
+          <dd className="text-right font-semibold tabular-nums">
+            {formatPrice(shownAmount, currency)}{" "}
+            <span className="block text-xs font-normal text-muted-foreground">
+              ke rekening Koi Auction House dalam 1×24 jam.
+            </span>
+          </dd>
+        </dl>
+
+        <p className="text-sm text-muted-foreground">
+          Bid tidak bisa dibatalkan setelah dipasang.
+        </p>
 
         {/* The desktop line sits above the panel; the sheet's confirm step has
             no panel behind it, so it shows its own. */}
@@ -260,7 +287,7 @@ export function PlaceBid({
               size="lg"
               className="min-h-11 w-full sm:w-auto"
               disabled={pending}
-              onClick={() => setConfirmAmount(null)}
+              onClick={closeSheet}
             >
               Batal
             </Button>
@@ -277,10 +304,20 @@ export function PlaceBid({
           <Button
             size="lg"
             className="min-h-11 w-full sm:w-auto"
-            disabled={pending}
-            onClick={() => void submit(shownAmount)}
+            disabled={pending || disconnected}
+            onClick={() => {
+              // AC15: on desktop the dialog closes and the panel behind it
+              // shows the pending state; on the phone the sheet stays and
+              // shows it inline.
+              if (!mobile) setConfirmAmount(null);
+              void submit(shownAmount);
+            }}
           >
-            {pending ? 'Mengirim bid…' : bidActionLabel(shownAmount, currency)}
+            {pending
+              ? 'Mengirim bid…'
+              : disconnected
+                ? 'Menunggu koneksi…'
+                : bidActionLabel(shownAmount, currency)}
           </Button>
         </div>
       </div>
@@ -300,46 +337,61 @@ export function PlaceBid({
 
   const submitLabel = pending
     ? 'Mengirim bid…'
-    : amount === null
-      ? 'Pasang Bid'
-      : bidActionLabel(amount, currency)
+    : disconnected
+      ? 'Menunggu koneksi…'
+      : amount === null
+        ? 'Pasang Bid'
+        : bidActionLabel(amount, currency)
 
-  const bidFields = (
+  const chipsField = (
+    <div role="group" aria-label="Pilih nominal bid" className="grid grid-cols-3 gap-2">
+      {options.map((option) => (
+        <Button
+          key={option}
+          type="button"
+          variant={chipActive(option) ? 'solid' : 'outline'}
+          className="h-11 min-w-0 px-1 tabular-nums"
+          disabled={pending || disconnected}
+          aria-pressed={chipActive(option)}
+          aria-label={`Bid ${formatPrice(option, currency)}`}
+          onClick={() => choose(option)}
+        >
+          {formatBidAmount(option)}
+        </Button>
+      ))}
+    </div>
+  )
+
+  /* The desktop input and the phone sheet's input can both be in the DOM at
+     once (the desktop controls are hidden with CSS, not unmounted), so each
+     gets its own literal id instead of a generated one that can differ between
+     the streamed server tree and the hydrated client. */
+  const typedField = (id: string) => (
+    <FormField
+      id={id}
+      name="amount"
+      label={bidInputLabel(baseMinimum, currency)}
+      inputMode="numeric"
+      autoComplete="off"
+      placeholder={formatBidAmount(baseMinimum)}
+      value={typed}
+      disabled={pending || disconnected}
+      onChange={(event) => onTyped(event.target.value)}
+      onFocus={keepInputVisible}
+    />
+  )
+
+  const failureLine = failure ? (
+    <p role="alert" className="text-sm text-signal">
+      {failure.message}
+    </p>
+  ) : null
+
+  const bidFields = (id: string) => (
     <>
-      <div role="group" aria-label="Pilih nominal bid" className="grid grid-cols-3 gap-2">
-        {options.map((option) => (
-          <Button
-            key={option}
-            type="button"
-            variant={chipActive(option) ? 'solid' : 'outline'}
-            className="h-11 min-w-0 px-1 tabular-nums"
-            disabled={pending}
-            aria-pressed={chipActive(option)}
-            aria-label={`Bid ${formatPrice(option, currency)}`}
-            onClick={() => choose(option)}
-          >
-            {formatBidAmount(option)}
-          </Button>
-        ))}
-      </div>
-
-      <FormField
-        name="amount"
-        label={bidInputLabel(baseMinimum, currency)}
-        inputMode="numeric"
-        autoComplete="off"
-        placeholder={formatBidAmount(baseMinimum)}
-        value={typed}
-        disabled={pending}
-        onChange={(event) => onTyped(event.target.value)}
-        onFocus={keepInputVisible}
-      />
-
-      {failure ? (
-        <p role="alert" className="text-sm text-signal">
-          {failure.message}
-        </p>
-      ) : null}
+      {chipsField}
+      {typedField(id)}
+      {failureLine}
     </>
   )
 
@@ -364,9 +416,21 @@ export function PlaceBid({
       ) : null}
 
       {highest ? (
-        <Badge variant="success" icon={<CircleCheck aria-hidden />}>
-          Anda tertinggi
-        </Badge>
+        <div className="flex flex-col items-center gap-1" role="status">
+          <Badge variant="success" icon={<CircleCheck aria-hidden />}>
+            Anda tertinggi
+          </Badge>
+          {/* AC15: the balance sits under the highest chip. A bid never moves
+              it; saldo pays platform fees only (D-058, D-068). */}
+          {balance !== null && balance !== undefined ? (
+            <p className="text-xs text-muted-foreground">
+              Saldo tersedia{' '}
+              <span className="font-semibold text-foreground tabular-nums">
+                {formatPrice(balance, currency)}
+              </span>
+            </p>
+          ) : null}
+        </div>
       ) : (
         <>
           {standing === 'outbid' ? (
@@ -382,51 +446,59 @@ export function PlaceBid({
           {/* The desktop controls are hidden below `lg` from the first paint,
               so a phone never sees them flash before `isMobile` settles. */}
           <div className="hidden gap-3 lg:grid">
-            {bidFields}
+            {bidFields('lot-bid-amount')}
             {!isMobile ? (
               <Dialog
                 open={confirmAmount !== null}
                 onOpenChange={(next) => setConfirmAmount(next ? amount : null)}
               >
                 <DialogTrigger
+                  id="lot-bid-trigger"
                   render={
                     <Button
                       size="lg"
                       className="min-h-11 w-full"
-                      disabled={amount === null || pending}
+                      disabled={amount === null || pending || disconnected}
                     />
                   }
                 >
                   {submitLabel}
                 </DialogTrigger>
-                <DialogContent>{renderConfirm(false)}</DialogContent>
+                <DialogContent id="lot-bid-popup">
+                  {confirmAmount !== null ? renderConfirm(false, confirmAmount) : null}
+                </DialogContent>
               </Dialog>
             ) : null}
           </div>
 
           {isMobile ? (
             <Sheet open={open} onOpenChange={onSheetChange}>
-              <SheetContent side="bottom" className="gap-0">
-                {confirmAmount !== null ? (
-                  <div className="p-4">{renderConfirm(true)}</div>
+              <SheetContent id="lot-bid-sheet" side="bottom" className="gap-0">
+                {mobileConfirmAmount !== null ? (
+                  <div className="p-4">{renderConfirm(true, mobileConfirmAmount)}</div>
                 ) : (
+                  /* AC13: the bar's chips and button go straight to the
+                     confirmation; the pencil opens this typed input. */
                   <div className="flex flex-col gap-4 p-4">
                     <div className="flex flex-col gap-1 pe-8">
-                      <SheetTitle>Pasang bid</SheetTitle>
+                      <SheetTitle>Ketik nominal bid</SheetTitle>
                       <SheetDescription>
                         {lotLabel}
                         {farm ? ` · ${farm}` : ''}
                       </SheetDescription>
                     </div>
                     {pendingLine}
-                    {bidFields}
+                    {typedField('lot-bid-amount-sheet')}
+                    {failureLine}
                     <Button
                       size="lg"
                       className="min-h-11 w-full"
-                      disabled={amount === null || pending}
-                      onClick={() => setConfirmAmount(amount)}
+                      disabled={pending || disconnected}
+                      onClick={() => setMobileConfirm(mobileTypedAmount)}
                     >
-                      {submitLabel}
+                      {disconnected
+                        ? 'Menunggu koneksi…'
+                        : bidActionLabel(mobileTypedAmount, currency)}
                     </Button>
                   </div>
                 )}

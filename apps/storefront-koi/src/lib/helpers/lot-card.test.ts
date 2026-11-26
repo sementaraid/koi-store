@@ -8,11 +8,24 @@ import {
   formatLotCountdown,
   formatLotNumber,
   formatTimeLeft,
+  lotCardSubtitle,
   lotClosedLabel,
+  closedPriceLabel,
+  lotJoinNote,
   lotPriceLine,
   lotStatusChip,
   viewerPositionChip,
 } from "./lot-card.ts"
+
+test("card subtitle reads age, sex and farm, dropping empty parts", () => {
+  assert.equal(
+    lotCardSubtitle({ age: "Sansai (3 tahun)", sex: "Betina", seller: "Sakura Koi Farm" }),
+    "Sansai (3 tahun) · Betina · Sakura Koi Farm"
+  )
+  assert.equal(lotCardSubtitle({ sex: "Jantan", seller: "Sakura Koi Farm" }), "Jantan · Sakura Koi Farm")
+  assert.equal(lotCardSubtitle({ seller: "Sakura Koi Farm" }), "Sakura Koi Farm")
+  assert.equal(lotCardSubtitle({}), undefined)
+})
 
 test("lot number is zero-padded to two digits", () => {
   assert.equal(formatLotNumber(7), "Lot #07")
@@ -71,7 +84,10 @@ test("time left rounds up to minutes, then hours, then days", () => {
   assert.equal(formatTimeLeft(38 * 60_000 - 5_000), "38 menit lagi")
   assert.equal(formatTimeLeft(1_000), "1 menit lagi")
   assert.equal(formatTimeLeft(2 * 3_600_000 + 10 * 60_000), "2 jam lagi")
-  assert.equal(formatTimeLeft(3 * 86_400_000 + 5 * 3_600_000), "3 hari lagi")
+  assert.equal(formatTimeLeft(39 * 3_600_000), "1 hari 15 jam lagi")
+  assert.equal(formatTimeLeft(3 * 86_400_000 + 5 * 3_600_000), "3 hari 5 jam lagi")
+  assert.equal(formatTimeLeft(2 * 86_400_000), "2 hari lagi")
+  assert.equal(formatTimeLeft(24 * 3_600_000), "1 hari lagi")
   assert.equal(formatTimeLeft(0), "Waktu habis")
 })
 
@@ -93,6 +109,49 @@ test("the other statuses are neutral chips with their own icon", () => {
   for (const s of ["upcoming", "ended", "cancelled"] as const) {
     assert.equal(lotStatusChip(s, null).tone, "neutral")
   }
+})
+
+test("the join note shows only to a signed-in viewer on an open unjoined lot", () => {
+  const fmt = (n: number) => `Rp ${n}`
+  assert.equal(
+    lotJoinNote({ signedIn: true, joined: false, status: "live", joinFee: 100_000 }, fmt),
+    "Belum ikut · biaya ikut Rp 100000"
+  )
+  assert.equal(
+    lotJoinNote({ signedIn: true, joined: false, status: "upcoming", joinFee: 0 }, fmt),
+    "Belum ikut · biaya ikut Rp 0"
+  )
+  // Guests get joined=false from the API, but never see the note.
+  assert.equal(
+    lotJoinNote({ signedIn: false, joined: false, status: "live", joinFee: 100_000 }, fmt),
+    undefined
+  )
+  // A joined lot, or one with an unknown join state, shows nothing.
+  assert.equal(
+    lotJoinNote({ signedIn: true, joined: true, status: "live", joinFee: 100_000 }, fmt),
+    undefined
+  )
+  assert.equal(
+    lotJoinNote({ signedIn: true, status: "live", joinFee: 100_000 }, fmt),
+    undefined
+  )
+})
+
+test("a closed or cancelled lot never shows the join note", () => {
+  const fmt = (n: number) => `Rp ${n}`
+  for (const status of ["ended", "cancelled"] as const) {
+    assert.equal(
+      lotJoinNote({ signedIn: true, joined: false, status, joinFee: 100_000 }, fmt),
+      undefined
+    )
+  }
+})
+
+test("a missing fee keeps the note short instead of printing Rp NaN", () => {
+  assert.equal(
+    lotJoinNote({ signedIn: true, joined: false, status: "live" }, (n) => `Rp ${n}`),
+    "Belum ikut"
+  )
 })
 
 test("viewer position chips", () => {
@@ -135,4 +194,10 @@ test("price line: opening bid, running bid, final, unsold, cancelled", () => {
   })
   assert.equal(lotPriceLine({ ...base, bidCount: 0, sold: false }), null)
   assert.equal(lotPriceLine({ ...base, cancelled: true }), null)
+})
+
+test("lost result label carries the final price's bid count (US-100 AC2)", () => {
+  assert.equal(closedPriceLabel(7), "Harga akhir · 7 bid")
+  assert.equal(closedPriceLabel(1), "Harga akhir · 1 bid")
+  assert.equal(closedPriceLabel(0), "Harga akhir · Belum ada bid")
 })

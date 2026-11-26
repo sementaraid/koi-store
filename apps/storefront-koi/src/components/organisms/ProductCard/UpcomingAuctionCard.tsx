@@ -1,53 +1,46 @@
-import { CalendarClock } from "lucide-react"
-
-import { Badge } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
-import { formatEndTime } from "@/lib/helpers/lot-card"
 import type { UpcomingAuction } from "@/lib/helpers/auction-list"
+import { formatEndTime } from "@/lib/helpers/lot-card"
+import { wibParts } from "@/lib/helpers/wib"
 
-// One card per scheduled auction: farm, lot count and start (US-097 AC6). The
-// dashed border marks it as not open yet. No reminder button (mvp-Q59), no price.
+// One scheduled session, as on board 08: a date tile, `Sesi {farm}` and
+// `{n} lot · {start, WIB}` (US-097 AC17). The dashed border still marks it as
+// not open yet (AC6). No reminder button (D-066), no photo, no price. The
+// session's varieties join the meta line when its lots carry them (US-105 AC5).
 export function UpcomingAuctionCard({ auction, href }: { auction: UpcomingAuction; href: string }) {
-  const { farm, lotCount, startAt, image } = auction
+  const { farm, lotCount, startAt, varieties } = auction
+  const start = wibParts(new Date(startAt).getTime())
+  // Two digits on the tile ("02"), while the sentence keeps "2 Des" (board 08).
+  const day = String(start.day).padStart(2, "0")
 
   return (
     <article
       data-slot="upcoming-auction-card"
-      className="relative flex w-full flex-col overflow-hidden rounded-card border border-dashed border-card-edge bg-background shadow-card"
+      className="relative flex w-full items-center gap-4 rounded-card border border-dashed border-card-edge bg-background p-4 shadow-card"
     >
-      <div className="relative">
-        {image ? (
-          <img
-            src={image}
-            alt={farm ? `Lot dari ${farm}` : "Foto lot"}
-            loading="lazy"
-            className="aspect-4/3 w-full object-cover"
-          />
-        ) : (
-          <div aria-hidden className="aspect-4/3 w-full bg-muted" />
-        )}
-        <Badge variant="neutral" icon={<CalendarClock />} className="absolute top-3 left-3">
-          Akan datang
-        </Badge>
+      {/* The tile repeats the date that the meta line already spells out, so it
+          is decoration for screen readers. */}
+      <div
+        aria-hidden
+        className="flex size-14 shrink-0 flex-col items-center justify-center rounded-control border border-accent-foreground/25 bg-accent text-accent-foreground"
+      >
+        <span className="text-xs font-bold uppercase">{start.monthShort}</span>
+        <span className="text-lg leading-tight font-bold tabular-nums">{day}</span>
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 p-4">
-        <div className="flex flex-col gap-1">
-          <h3 className="line-clamp-2 text-base font-semibold">
-            <Link
-              href={href}
-              className="rounded-control after:absolute after:inset-0 after:rounded-card focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-offset-2"
-            >
-              {farm ?? "Lelang"}
-            </Link>
-          </h3>
-          <p className="text-sm text-muted-foreground tabular-nums">{lotCount} lot</p>
-        </div>
-
-        <div className="mt-auto flex flex-col gap-1 border-t border-divider pt-3 text-sm tabular-nums">
-          <span className="text-muted-foreground">Mulai</span>
-          <span className="font-semibold">{formatEndTime(startAt)}</span>
-        </div>
+      <div className="min-w-0">
+        <h3 className="truncate text-base font-semibold">
+          <Link
+            href={href}
+            className="rounded-control after:absolute after:inset-0 after:rounded-card focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-offset-2"
+          >
+            Sesi {farm ?? "lelang"}
+          </Link>
+        </h3>
+        <p className="truncate text-sm text-muted-foreground tabular-nums">
+          {lotCount} lot · {formatEndTime(startAt)}
+          {varieties.length > 0 ? ` · ${varieties.join(", ")}` : ""}
+        </p>
       </div>
     </article>
   )

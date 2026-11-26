@@ -12,6 +12,18 @@ import type { LotRating } from '../helpers/lot-rating';
 
 export type StoreLotStatus = 'scheduled' | 'live' | 'closed';
 
+// US-105 AC4 (D-081): the store route's koi filters. A null column matches no
+// filter, which is how a legacy lot drops out of a narrowed list (AC6).
+export type StoreLotFilters = {
+  variety?: string[];
+  sizeMin?: number;
+  sizeMax?: number;
+  certificate?: boolean;
+  hasVideo?: boolean;
+  // US-111 AC6 (D-080): the viewer's own joined lots only. Guests never set it.
+  joined?: boolean;
+};
+
 export type StoreLot = {
   id: string;
   lot_number: number;
@@ -26,6 +38,17 @@ export type StoreLot = {
   sold: boolean | null;
   cancelled: boolean;
   bid_count: number;
+  // US-105 (D-081): null on a lot created before the story or when the farmer
+  // left the optional field empty (AC6).
+  variety: string | null;
+  size_cm: number | null;
+  age: string | null;
+  sex: string | null;
+  has_certificate: boolean | null;
+  certificate_issuer: string | null;
+  pond_origin: string | null;
+  breeder_notes: string | null;
+  video_url: string | null;
   bids?: { bidder: string; amount: number; created_at: string }[];
   auction: {
     id: string;
@@ -42,8 +65,12 @@ export type StoreLot = {
   };
 };
 
+// US-111 AC6 (D-080): the list reports whether *this viewer* joined the lot; a
+// legacy auction-wide join counts for every lot. A guest receives false.
+export type StoreLotListItem = StoreLot & { joined: boolean };
+
 export type StoreLotsPage = {
-  lots: StoreLot[];
+  lots: StoreLotListItem[];
   count: number;
   limit: number;
   offset: number;
@@ -52,13 +79,30 @@ export type StoreLotsPage = {
 };
 
 export const listLots = async (
-  { limit = 20, status }: { limit?: number; status?: StoreLotStatus } = {}
+  {
+    limit = 20,
+    status,
+    filters = {}
+  }: { limit?: number; status?: StoreLotStatus; filters?: StoreLotFilters } = {}
 ): Promise<StoreLotsPage> => {
+  const { variety, sizeMin, sizeMax, certificate, hasVideo, joined } = filters;
+  const headers = await getAuthHeaders();
+  const signedIn = 'authorization' in headers;
+
   return (
     sdk.store.lots.query({
       limit,
       ...(status ? { status } : {}),
-      fetchOptions: { cache: 'no-store' }
+      ...(variety?.length ? { variety } : {}),
+      ...(sizeMin !== undefined ? { size_min: sizeMin } : {}),
+      ...(sizeMax !== undefined ? { size_max: sizeMax } : {}),
+      ...(certificate !== undefined ? { certificate: String(certificate) } : {}),
+      ...(hasVideo !== undefined ? { has_video: String(hasVideo) } : {}),
+      // US-111 AC6 (D-080): the list reads the viewer's join state, so it sends
+      // the customer token when there is one. `joined=true` needs that token
+      // (the API answers a guest with 401), so it is never sent signed out.
+      ...(joined && signedIn ? { joined: 'true' as const } : {}),
+      fetchOptions: { headers, cache: 'no-store' }
     } as never) as unknown as Promise<StoreLotsPage>
   ).catch(() => ({ lots: [], count: 0, limit, offset: 0, failed: true as const }));
 };
@@ -98,32 +142,36 @@ export const listMyBids = async (
     .catch(() => ({ lots: [], failed: true as const }));
 };
 
-export type JoinState = { joined: boolean; join_fee: number };
+// US-111 AC6 (D-070, D-080): the state is per lot. A legacy auction-wide join
+// is reported as joined for every lot, so those customers keep bidding.
+// `join_fee` is the final fee (override when set, D-032); null when the read
+// failed and the caller should fall back to the lot's own auction fee.
+export type JoinState = { joined: boolean; join_fee: number | null };
 
-export const getJoinState = async (auctionId: string): Promise<JoinState | null> => {
+export const getJoinState = async (lotId: string): Promise<JoinState | null> => {
   const headers = await getAuthHeaders();
   if (!('authorization' in headers)) return null;
 
-  return sdk.store.auctions.$id.join
-    .query({ $id: auctionId, fetchOptions: { headers, cache: 'no-store' } })
+  return sdk.store.lots.$id.join
+    .query({ $id: lotId, fetchOptions: { headers, cache: 'no-store' } })
     .catch((err: unknown) => {
       if (err instanceof ClientError && err.status === 401) return null;
-      return { joined: false, join_fee: 0 };
+      return { joined: false, join_fee: null };
     });
 };
 
-export type JoinAuctionResult =
+export type JoinLotResult =
   | {
       success: true;
-      participant: { auction_id: string; joined_at: string };
+      participant: { lot_id: string; joined_at: string };
       wallet_transaction_id: string | null;
     }
   | { success: false; error: string; code?: string; status?: number };
 
-export const joinAuction = async (auctionId: string): Promise<JoinAuctionResult> => {
+export const joinLot = async (lotId: string): Promise<JoinLotResult> => {
   const headers = await getAuthHeaders();
-  return sdk.store.auctions.$id.join
-    .mutate({ $id: auctionId, fetchOptions: { headers } })
+  return sdk.store.lots.$id.join
+    .mutate({ $id: lotId, fetchOptions: { headers } })
     .then((res) => {
       // US-107 AC7: the fee leaves the balance, so re-render the header chip and
       // the lot page together. Only a successful join gets here.
@@ -138,7 +186,7 @@ export const joinAuction = async (auctionId: string): Promise<JoinAuctionResult>
             code: err.code,
             status: err.status
           }
-        : { success: false as const, error: 'Gagal ikut lelang. Coba lagi.' }
+        : { success: false as const, error: 'Gagal ikut lot ini. Coba lagi.' }
     );
 };
 
@@ -150,10 +198,21 @@ export type WonLotClaim = {
   has_video: boolean;
 };
 
-export type WonLotSellerBank = {
-  bank_name: string | null;
-  holder_name: string | null;
-  account_number: string | null;
+// US-109 (D-077): the caller's transfer-proof state. The backend never sends
+// the private file key or a URL (D-018), only whether an image exists.
+export type WonLotPaymentProof = {
+  status: 'none' | 'pending' | 'rejected' | 'confirmed';
+  has_image: boolean;
+  reason: string | null;
+  uploaded_at: string | null;
+};
+
+// US-110 (AC2, D-074): the caller's "koi arrived healthy" proof state. Like the
+// transfer proof, the backend sends only whether a file exists and when, never
+// the private key or a URL (D-018).
+export type WonLotArrivalProof = {
+  has_file: boolean;
+  uploaded_at: string | null;
 };
 
 export type WonLot = {
@@ -161,15 +220,23 @@ export type WonLot = {
   status: string;
   final_price: number | null;
   closed_at: string | null;
+  // D-072: set when an admin confirms the winner's transfer (US-112 AC1).
+  paid_at: string | null;
   pay_by: string | null;
   tracking_number: string | null;
+  shipped_at: string | null;
   delivered_at: string | null;
   claim_window_ends_at: string | null;
   claim: WonLotClaim | null;
+  // US-109 (D-077): none | pending | rejected | confirmed.
+  proof: WonLotPaymentProof;
+  // US-110 (AC2): uploaded on a shipped/delivered lot, no key or URL.
+  arrival_proof: WonLotArrivalProof;
   rating: LotRating | null;
   auction: { id: string; delivery_method: string };
   product: { title: string | null; thumbnail: string | null };
-  seller: { id: string; name: string; payment_details: WonLotSellerBank | null };
+  // US-108 AC2 (D-068): farm name only, never the farmer's bank or contact.
+  seller: { id: string; name: string };
 };
 
 export type WonLotsPage = {
@@ -178,6 +245,9 @@ export type WonLotsPage = {
   limit: number;
   offset: number;
   has_shipping_address: boolean;
+  // Set when the request failed, so Bid Saya can show its error state instead
+  // of an empty Menang tab.
+  failed?: true;
 };
 
 export const listWonLots = async (
@@ -194,29 +264,17 @@ export const listWonLots = async (
       offset,
       fetchOptions: { headers, cache: 'no-store' }
     } as never) as unknown as Promise<WonLotsPage>
-  ).catch(() => ({ lots: [], count: 0, limit, offset, has_shipping_address: false }));
-};
-
-export const revealWonLotBank = async (
-  id: string
-): Promise<{ value: WonLotSellerBank } | { error: string }> => {
-  const headers = await getAuthHeaders();
-  if (!('authorization' in headers)) {
-    return { error: 'Sesi Anda telah berakhir. Masuk lagi.' };
-  }
-
-  try {
-    const result = await sdk.store.wonLots.$id.reveal.mutate({
-      $id: id,
-      field: 'bank_account',
-      fetchOptions: { headers }
-    });
-    return { value: result.value };
-  } catch (err: unknown) {
-    return {
-      error: err instanceof ClientError ? err.message : 'Gagal menampilkan rekening.'
-    };
-  }
+  ).catch(
+    () =>
+      ({
+        lots: [],
+        count: 0,
+        limit,
+        offset,
+        has_shipping_address: false,
+        failed: true as const
+      }) as WonLotsPage
+  );
 };
 
 export const getWonLot = async (
@@ -231,8 +289,77 @@ export const getWonLot = async (
     .catch(() => null);
 };
 
-export type MarkDeliveredResult =
+export type UploadPaymentProofResult =
   | { success: true }
+  | { success: false; message: string; code?: string; status?: number };
+
+// US-109 AC1 (D-077): one private image on the winner's `won` lot. The client
+// sends it as multipart, the same way the claim video does; the file key never
+// comes back (D-018).
+export const uploadPaymentProof = async (
+  lotId: string,
+  file: File
+): Promise<UploadPaymentProofResult> => {
+  const headers = await getAuthHeaders();
+  if (!('authorization' in headers)) {
+    return { success: false, message: 'Sesi Anda telah berakhir. Masuk lagi.' };
+  }
+
+  const body = new FormData();
+  body.append('proof', file);
+
+  try {
+    await sdk.store.wonLots.$id.proof.mutate({
+      $id: lotId,
+      fetchOptions: { headers, body }
+    });
+    revalidatePath(lotHref(lotId));
+    revalidatePath(ROUTES.myBids);
+    return { success: true };
+  } catch (err: unknown) {
+    if (err instanceof ClientError) {
+      return { success: false, message: err.message, code: err.code, status: err.status };
+    }
+    return { success: false, message: 'Gagal mengunggah bukti transfer. Coba lagi.' };
+  }
+};
+
+export type UploadArrivalProofResult =
+  | { success: true }
+  | { success: false; message: string; code?: string; status?: number };
+
+// US-110 AC2 (D-074): one private photo or video showing the koi arrived
+// healthy. Multipart, like the claim video; the route reads the field `file`.
+// It never marks the lot delivered and never ends the claim right.
+export const uploadArrivalProof = async (
+  lotId: string,
+  file: File
+): Promise<UploadArrivalProofResult> => {
+  const headers = await getAuthHeaders();
+  if (!('authorization' in headers)) {
+    return { success: false, message: 'Sesi Anda telah berakhir. Masuk lagi.' };
+  }
+
+  const body = new FormData();
+  body.append('file', file);
+
+  try {
+    await sdk.store.wonLots.$id.arrivalProof.mutate({
+      $id: lotId,
+      fetchOptions: { headers, body }
+    });
+    revalidatePath(lotHref(lotId));
+    revalidatePath(ROUTES.myBids);
+    return { success: true };
+  } catch (err: unknown) {
+    if (err instanceof ClientError) {
+      return { success: false, message: err.message, code: err.code, status: err.status };
+    }
+    return { success: false, message: 'Gagal mengunggah bukti kondisi koi. Coba lagi.' };
+  }
+};
+
+export type MarkDeliveredResult =  | { success: true }
   | { success: false; message: string; code?: string; status?: number };
 
 export const markWonLotDelivered = async (id: string): Promise<MarkDeliveredResult> => {
@@ -244,6 +371,7 @@ export const markWonLotDelivered = async (id: string): Promise<MarkDeliveredResu
   try {
     await sdk.store.wonLots.$id.delivered.mutate({ $id: id, fetchOptions: { headers } });
     revalidatePath(lotHref(id));
+    revalidatePath(ROUTES.myBids);
     return { success: true };
   } catch (err: unknown) {
     if (err instanceof ClientError) {
@@ -273,7 +401,7 @@ export const rateLot = async (
       comment: input.comment ?? null,
       fetchOptions: { headers }
     });
-    revalidatePath(ROUTES.wonLots);
+    revalidatePath(ROUTES.myBids);
     return { success: true, rating };
   } catch (err: unknown) {
     if (err instanceof ClientError) {
@@ -308,6 +436,7 @@ export const openClaim = async (
       fetchOptions: { headers, body }
     });
     revalidatePath(lotHref(lotId));
+    revalidatePath(ROUTES.myBids);
     return { success: true };
   } catch (err: unknown) {
     if (err instanceof ClientError) {
@@ -328,7 +457,7 @@ export const confirmClaim = async (lotId: string): Promise<OpenClaimResult> => {
       $id: lotId,
       fetchOptions: { headers }
     });
-    revalidatePath(ROUTES.wonLots);
+    revalidatePath(ROUTES.myBids);
     return { success: true };
   } catch (err: unknown) {
     if (err instanceof ClientError) {

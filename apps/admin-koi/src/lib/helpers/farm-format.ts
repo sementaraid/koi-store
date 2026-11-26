@@ -37,11 +37,12 @@ export function farmPiiFieldLabel(field: FarmPiiField): string {
 }
 
 export function formatFarmDate(iso: string): string {
-  return new Intl.DateTimeFormat('id-ID', {
+  const formatted = new Intl.DateTimeFormat('id-ID', {
     dateStyle: 'medium',
     timeStyle: 'short',
     timeZone: 'Asia/Jakarta'
   }).format(new Date(iso));
+  return `${formatted} WIB`;
 }
 
 export function normalizeRejectReason(reason: string): string | null {

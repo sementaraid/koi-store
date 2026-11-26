@@ -54,7 +54,7 @@ export const GET = async (
       claim_window_ends_at: null,
       claim: null,
       rating: null,
-      seller_bank: null,
+      arrival_proof: { has_file: false, uploaded_at: null },
     }),
     has_shipping_address,
   })

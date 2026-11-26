@@ -24,6 +24,8 @@ export type MarketplaceProps = ComponentProps<"div"> &
   FeedState<StockLevel> &
   {
     goods?: SimpleProduct[]
+    // The product read failed: show the retry state instead of "no products".
+    failed?: boolean
     attributes?: AttributeFacet[]
     selected?: AttributeSelection
     onAttributesChange?: (selected: AttributeSelection) => void

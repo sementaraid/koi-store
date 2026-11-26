@@ -20,6 +20,9 @@ const ITEMS = [
  * The mobile tab bar (US-103 AC2). A guest tapping a signed-in-only tab lands on
  * sign-in and comes back to that tab. The active tab carries a bar above the
  * icon as well as weight, so the state never rests on colour.
+ *
+ * The lot page never shows it (US-099 AC14): its own sticky footer takes this
+ * bar's place, so the two never stack.
  */
 export function BottomNav({ signedIn }: { signedIn: boolean }) {
   const pathname = usePathname();
@@ -31,7 +34,7 @@ export function BottomNav({ signedIn }: { signedIn: boolean }) {
   return (
     <nav
       aria-label="Navigasi utama"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-divider bg-card pb-[env(safe-area-inset-bottom)] lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-divider bg-card pb-[env(safe-area-inset-bottom)] group-has-[[data-shell=lot-page]]/shell:hidden lg:hidden"
     >
       <ul className="mx-auto flex h-16 w-full max-w-[1200px] items-stretch">
         {ITEMS.map(({ label, href, icon: Icon, signedInOnly }) => {
@@ -44,7 +47,7 @@ export function BottomNav({ signedIn }: { signedIn: boolean }) {
                 href={target}
                 aria-current={current ? 'page' : undefined}
                 className={cn(
-                  'relative flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-control px-1 text-2xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
+                  'relative flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-control px-1 text-2xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset focus-visible:ring-offset-0',
                   current
                     ? 'font-bold text-accent-ink'
                     : 'font-medium text-muted-foreground hover:text-foreground'

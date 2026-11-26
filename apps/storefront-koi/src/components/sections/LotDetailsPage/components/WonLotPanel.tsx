@@ -2,12 +2,24 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
+import { ChevronRight, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Badge, Button, FormField, RenderIf } from '@koi/ui';
 import { Link } from '@/components/atoms';
-import { ROUTES } from '@/const/routes';
-import { markWonLotDelivered, openClaim } from '@/lib/data/lots';
+import { ArrivalProof } from '@/components/molecules/ArrivalProof/ArrivalProof';
+import { PaymentInstructions } from '@/components/molecules/PaymentInstructions/PaymentInstructions';
+import { PaymentProof } from '@/components/molecules/PaymentProof/PaymentProof';
+import { ROUTES, myBidsTabHref } from '@/const/routes';
+import type { CountdownTarget } from '@/hooks/use-countdown';
+import {
+  markWonLotDelivered,
+  openClaim,
+  type WonLotArrivalProof,
+  type WonLotPaymentProof
+} from '@/lib/data/lots';
+import { formatPrice } from '@/lib/helpers/format-price';
+import { formatBidCount, formatEndTime } from '@/lib/helpers/lot-card';
 import {
   claimFailureInfo,
   claimStatusLabel,
@@ -18,7 +30,8 @@ import {
 import {
   deliverFailureInfo,
   wonLotAction,
-  wonLotStatusLabel
+  wonLotStatusLabel,
+  wonResultNextStep
 } from '@/lib/helpers/won-lot';
 
 export type WonLotPanelProps = {
@@ -27,7 +40,17 @@ export type WonLotPanelProps = {
   hasShippingAddress: boolean;
   claimWindowEndsAt: string | null;
   claim: { status: string; remedy: string; opened_at: string } | null;
+  finalPrice: number | null;
+  payBy: string | null;
+  bank: { bank_name: string; bank_account_number: string; bank_account_holder: string } | null;
+  // US-109 (D-077): the admin's decision on the transfer proof. The upload
+  // control shows only while the lot is `won`.
+  proof: WonLotPaymentProof;
+  // US-110 (AC2): the "koi arrived healthy" proof, offered once the lot ships.
+  arrivalProof: WonLotArrivalProof;
   now: number;
+  bidCount?: number;
+  endTime?: CountdownTarget;
 };
 
 function RemedyOption({
@@ -59,7 +82,14 @@ export function WonLotPanel({
   hasShippingAddress,
   claimWindowEndsAt,
   claim,
-  now
+  finalPrice,
+  payBy,
+  bank,
+  proof,
+  arrivalProof,
+  now,
+  bidCount,
+  endTime
 }: WonLotPanelProps) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -68,6 +98,7 @@ export function WonLotPanel({
 
   const label = wonLotStatusLabel(status);
   const action = wonLotAction(status);
+  const nextStep = wonResultNextStep({ status, finalPrice, payBy });
   const window = claimWindowInfo(claimWindowEndsAt, now);
   const showClaimForm = status === 'delivered' && !claim && window.open;
 
@@ -140,12 +171,48 @@ export function WonLotPanel({
 
   return (
     <div className="grid gap-2 rounded-md border border-info/40 bg-muted/40 px-3 py-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-medium text-foreground">Lot Anda menangkan</p>
-        <RenderIf when={label}>
-          {(text) => <Badge variant="info">{text}</Badge>}
+      {/* US-100 AC1 (board 05 state 3): the result first, then what happens
+          next. The `Menang` chip itself sits in the lot header. */}
+      <div className="grid gap-1">
+        <RenderIf when={finalPrice}>
+          {(amount) => (
+            <p className="text-sm font-semibold text-foreground">
+              Anda menang dengan bid {formatPrice(amount)}
+            </p>
+          )}
+        </RenderIf>
+        <RenderIf when={endTime}>
+          {(end) => (
+            <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
+              <Clock aria-hidden className="size-3.5 shrink-0" />
+              <span>
+                Lelang selesai {formatEndTime(end, { year: true, weekday: 'long' })}
+              </span>
+              <span aria-hidden>·</span>
+              <span>{formatBidCount(bidCount ?? 0)}</span>
+            </p>
+          )}
         </RenderIf>
       </div>
+
+      <RenderIf when={nextStep}>
+        {(text) => (
+          <p className="text-sm font-medium text-foreground">Berikutnya: {text}</p>
+        )}
+      </RenderIf>
+
+      <RenderIf when={label}>
+        {(text) => <Badge variant="info">{text}</Badge>}
+      </RenderIf>
+
+      <RenderIf when={status === 'won'}>
+        {() => (
+          <>
+            <PaymentInstructions finalPrice={finalPrice} payBy={payBy} bank={bank} now={now} />
+            <PaymentProof lotId={lotId} proof={proof} />
+          </>
+        )}
+      </RenderIf>
 
       <RenderIf when={!hasShippingAddress}>
         {() => (
@@ -166,7 +233,7 @@ export function WonLotPanel({
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <Button type="button" size="sm" onClick={deliver} disabled={busy}>
-                {busy ? 'Memproses…' : 'Tandai sudah diterima'}
+                {busy ? 'Memproses…' : 'Konfirmasi koi diterima'}
               </Button>
               {error ? (
                 <span role="alert" className="text-xs text-destructive-ink">
@@ -176,6 +243,12 @@ export function WonLotPanel({
             </div>
           </>
         )}
+      </RenderIf>
+
+      {/* US-110 AC2 (D-074): the arrival proof is optional and separate from
+          marking the lot delivered; the claim right stays untouched. */}
+      <RenderIf when={status === 'shipped' || status === 'delivered'}>
+        {() => <ArrivalProof lotId={lotId} proof={arrivalProof} />}
       </RenderIf>
 
       <RenderIf when={status === 'delivered' && claim ? claim : null}>
@@ -206,6 +279,7 @@ export function WonLotPanel({
             </fieldset>
 
             <FormField
+              id="lot-claim-video"
               label="Video unboxing"
               type="file"
               name="video"
@@ -228,6 +302,16 @@ export function WonLotPanel({
           </form>
         )}
       </RenderIf>
+
+      {/* US-100 AC1, US-101 AC9: the tracking view is the lot's card in Bid
+          Saya → Menang, not a second timeline on this page. */}
+      <Link
+        href={myBidsTabHref('menang')}
+        className="inline-flex min-h-11 w-fit items-center gap-1 text-sm font-semibold text-info-ink underline underline-offset-2"
+      >
+        Lacak pesanan
+        <ChevronRight aria-hidden className="size-4" />
+      </Link>
     </div>
   );
 }

@@ -6,7 +6,6 @@ import { Badge, Button, Card, RenderIf } from "@koi/ui"
 import { SECTION_LABEL } from "@/const/layout"
 import { saleState } from "@/const/stamps"
 import { TRUST_CLAIMS } from "@/const/trust"
-import { LotIdentity } from "@/components/molecules/LotIdentity/LotIdentity"
 import { PulseIcon } from "@/components/atoms/PulseIcon/PulseIcon"
 import type { SimpleProduct } from "@/types/product"
 import { formatPrice } from "@/lib/helpers/format-price"
@@ -42,8 +41,6 @@ export function SaleTerminal({
       className={cn("flex flex-col gap-5 p-5", className)}
       {...props}
     >
-      <LotIdentity lot={product} />
-
       <Card className="gap-0 overflow-hidden p-0">
         <div className="flex flex-col gap-4 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">

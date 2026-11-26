@@ -1,16 +1,13 @@
-import type { HeaderAccount, HeaderCart } from '@/types/header';
-import { retrieveCart } from '@/lib/data/cart';
+import type { HeaderAccount } from '@/types/header';
+import { getMyFarm } from '@/lib/data/farm';
 import { getSession } from '@/lib/data/session';
 import { getWallet } from '@/lib/data/wallet';
+import { accountIdentity, type AccountIdentity } from '@/lib/helpers/account-identity';
 
 export async function getShell(): Promise<{
   account?: HeaderAccount;
-  cart?: HeaderCart;
 }> {
-  const [session, cart] = await Promise.all([
-    getSession().catch(() => ({ status: 'error' as const })),
-    retrieveCart().catch(() => null)
-  ]);
+  const session = await getSession().catch(() => ({ status: 'error' as const }));
 
   const customer = session.status === 'authenticated' ? session.customer : null;
 
@@ -35,25 +32,23 @@ export async function getShell(): Promise<{
       }
     : undefined;
 
-  const count = cart?.items?.reduce((n, item) => n + item.quantity, 0) ?? 0;
-
-  return { account, cart: cart ? { count } : undefined };
+  return { account };
 }
 
 /**
- * The signed-in name an account page shows in its own sidebar. The header reads
- * the full shell in the layout; a page reads only what its content needs.
+ * The signed-in name, city and farm flag an account page shows in its own
+ * sidebar (US-103 AC10). The header reads the full shell in the layout; a page
+ * reads only what its content needs.
  */
-export async function getAccountIdentity(): Promise<
-  { name: string; email: string } | undefined
-> {
+export async function getAccountIdentity(): Promise<AccountIdentity | undefined> {
   const session = await getSession().catch(() => null);
   if (session?.status !== 'authenticated') return undefined;
 
-  const { customer } = session;
+  // No member session or no seller is not an outage: it just means this buyer
+  // has not registered a farm, so the menu keeps pointing at the registration.
+  const isFarmer = await getMyFarm()
+    .then((seller) => Boolean(seller))
+    .catch(() => false);
 
-  return {
-    name: [customer.first_name, customer.last_name].filter(Boolean).join(' ') || customer.email,
-    email: ''
-  };
+  return accountIdentity(session.customer, isFarmer);
 }

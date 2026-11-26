@@ -1,6 +1,4 @@
-
-export const VENDOR_URL =
-  process.env.NEXT_PUBLIC_VENDOR_URL || "https://vendor.mercurjs.com"
+import { ROUTES } from './routes.ts';
 
 export type InfoSection = {
   heading: string
@@ -22,7 +20,7 @@ export type InfoDoc = {
 export const INFO_DOCS: Record<string, InfoDoc> = {
   panduan: {
     eyebrow: "Panduan",
-    title: "Panduan Bidding Pemula",
+    title: "Panduan bid pemula",
     lede: "Dari daftar akun sampai ikan sampai di kolam, dalam enam langkah.",
     sections: [
       {
@@ -49,7 +47,7 @@ export const INFO_DOCS: Record<string, InfoDoc> = {
       {
         heading: "4. Menang lot",
         body: [
-          "Pemenang mendapat notifikasi dan tagihan di halaman pesanan. Pembayaran dilakukan ke rekening bersama yang dikelola rumah lelang, bukan langsung ke breeder — lihat Mekanisme Rekening Bersama.",
+          "Pemenang mendapat notifikasi dan tagihan di halaman pesanan. Transfer harga menang ke rekening Koi Auction House dalam 1×24 jam, lalu admin memverifikasi pembayaran. Rumah lelang meneruskan harga menang ke farm setelah ikan tiba sehat — lihat Mekanisme Pembayaran & Pencairan.",
           "Lot yang sudah dimenangkan tidak bisa dibatalkan sendiri dari keranjang. Pengajuan pembatalan ditujukan ke admin dan dinilai kasus per kasus."
         ]
       },
@@ -71,33 +69,33 @@ export const INFO_DOCS: Record<string, InfoDoc> = {
 
   rekber: {
     eyebrow: "Kepatuhan",
-    title: "Mekanisme Rekening Bersama",
-    lede: "Uang pembeli ditahan rumah lelang sampai ikan diterima hidup.",
+    title: "Mekanisme Pembayaran & Pencairan",
+    lede: "Harga menang dibayar ke rumah lelang, lalu diteruskan ke farm setelah ikan tiba sehat.",
     sections: [
       {
-        heading: "Kenapa tidak bayar langsung ke breeder",
+        heading: "Kenapa tidak bayar langsung ke farm",
         body: [
-          "Transaksi koi bernilai tinggi dengan barang hidup yang dikirim lintas pulau. Bila uang berpindah lebih dulu, risiko sepenuhnya di pembeli; bila ikan berpindah lebih dulu, risiko sepenuhnya di breeder. Rekening bersama memindahkan keduanya ke rumah lelang."
+          "Transaksi koi bernilai tinggi dengan barang hidup yang dikirim lintas pulau. Bila uang berpindah lebih dulu, risiko sepenuhnya di pembeli; bila ikan berpindah lebih dulu, risiko sepenuhnya di farm. Rekening bersama memindahkan keduanya ke rumah lelang."
         ]
       },
       {
         heading: "Alur dana",
         body: [
-          "Pembeli membayar ke rekening yang terdaftar atas nama rumah lelang. Dana dicatat sebagai tertahan, bukan sebagai pendapatan breeder. Breeder melihat status pesanan berubah menjadi lunas dan boleh memulai karantina, tetapi belum menerima uangnya.",
-          "Dana diteruskan ke breeder setelah pembeli mengonfirmasi penerimaan, atau otomatis setelah 2x24 jam sejak paket tercatat diterima tanpa klaim masuk."
+          "Pemenang mentransfer harga menang ke rekening Koi Auction House dalam 1×24 jam. Setelah admin memverifikasi transfer, lot ditandai lunas dan farm boleh memulai karantina.",
+          "Rumah lelang meneruskan harga menang ke farm setelah pemenang mengunggah bukti ikan tiba sehat, atau tiga hari setelah farm menandai lot dikirim bila pemenang tidak mengirim bukti. Yang dipotong hanya biaya transfer bank; tidak ada komisi."
         ]
       },
       {
         heading: "Bila ada klaim",
         body: [
-          "Klaim yang masuk sebelum dana diteruskan akan menahan pencairan sampai penilaian selesai. Pengembalian dana penuh atau sebagian dibayar dari dana yang masih tertahan, sehingga pembeli tidak menunggu itikad baik pihak mana pun.",
-          "Biaya layanan rumah lelang dipotong dari transaksi yang selesai, dan tidak dipotong dari dana yang dikembalikan."
+          "Klaim yang masuk sebelum dana diteruskan menunda pencairan sampai penilaian selesai. Pengembalian dana penuh atau sebagian dibayar rumah lelang dari rekening perusahaan, sehingga pembeli tidak menunggu itikad baik pihak mana pun.",
+          "Tidak ada komisi. Biaya transfer bank dipotong dari pencairan ke farm dan tidak pernah dari dana yang dikembalikan ke pembeli."
         ]
       },
       {
         heading: "Di luar mekanisme ini",
         body: [
-          "Pembayaran langsung ke rekening pribadi breeder di luar platform tidak dilindungi, tidak bisa diklaim, dan merupakan pelanggaran ketentuan bagi breeder yang memintanya."
+          "Pembayaran langsung ke rekening pribadi farm di luar platform tidak dilindungi, tidak bisa diklaim, dan merupakan pelanggaran ketentuan bagi farm yang memintanya."
         ]
       }
     ]
@@ -111,14 +109,14 @@ export const INFO_DOCS: Record<string, InfoDoc> = {
       {
         heading: "Batas waktu",
         body: [
-          "Tagihan lot yang dimenangkan berlaku 2x24 jam sejak sesi ditutup. Lewat batas itu lot dilepas kembali dan akun dicatat gagal bayar; tiga catatan gagal bayar menutup akses bidding.",
+          "Tagihan lot yang dimenangkan harus ditransfer ke rekening Koi Auction House dalam 1×24 jam sejak sesi ditutup. Lewat batas itu akun dicatat gagal bayar dan admin memberi strike; dua catatan gagal bayar menutup akses bid. Lot tidak dialihkan ke peserta lain.",
           "Pembelian katalog harga tetap dan perlengkapan tidak menahan stok sampai dibayar."
         ]
       },
       {
         heading: "Metode",
         body: [
-          "Transfer bank ke rekening bersama rumah lelang adalah metode utama untuk lot lelang, karena jumlahnya besar dan harus bisa ditahan. Rincian rekening muncul pada halaman tagihan masing-masing pesanan.",
+          "Transfer bank ke rekening bersama rumah lelang adalah metode utama untuk lot lelang, karena jumlahnya besar dan pembayaran harus tercatat sebelum ikan dikirim. Rincian rekening muncul pada halaman tagihan masing-masing pesanan.",
           "Nominal transfer harus sama persis sampai digit terakhir, termasuk kode unik bila ada. Nominal berbeda tidak terbaca otomatis dan harus dicocokkan manual oleh admin."
         ]
       },
@@ -139,7 +137,7 @@ export const INFO_DOCS: Record<string, InfoDoc> = {
       {
         heading: "Masa karantina",
         body: [
-          "Ikan yang akan dikirim lintas provinsi menjalani karantina di fasilitas breeder dengan parameter air tercatat harian. Masa minimum tujuh hari untuk pengiriman domestik, lebih panjang bila hasil pemeriksaan menuntutnya."
+          "Ikan yang akan dikirim lintas provinsi menjalani karantina di fasilitas farm dengan parameter air tercatat harian. Masa minimum tujuh hari untuk pengiriman domestik, lebih panjang bila hasil pemeriksaan menuntutnya."
         ]
       },
       {
@@ -160,13 +158,13 @@ export const INFO_DOCS: Record<string, InfoDoc> = {
 
   garansi: {
     eyebrow: "Kepatuhan",
-    title: "Garansi Ikan Hidup (D.O.A)",
+    title: "Garansi Tiba Hidup (Klaim 4 Jam)",
     lede: "Ikan mati dalam perjalanan diganti nilainya — dengan syarat bukti.",
     sections: [
       {
         heading: "Cakupan",
         body: [
-          "Garansi berlaku untuk kematian yang terjadi dalam masa pengiriman, dihitung dari kemasan disegel di fasilitas breeder sampai paket diterima di alamat tujuan.",
+          "Garansi berlaku untuk kematian yang terjadi dalam masa pengiriman, dihitung dari kemasan disegel di fasilitas farm sampai paket diterima di alamat tujuan.",
           "Garansi tidak mencakup kematian setelah ikan masuk kolam atau wadah pembeli, termasuk kematian akibat aklimatisasi yang terlalu cepat, parameter air tujuan yang tidak cocok, atau penyakit yang muncul kemudian."
         ]
       },
@@ -174,7 +172,7 @@ export const INFO_DOCS: Record<string, InfoDoc> = {
         heading: "Syarat bukti",
         body: [
           "Rekaman video tanpa jeda dan tanpa potongan, dimulai saat kardus masih tersegel dengan label pengiriman terbaca, berlanjut sampai kantong dibuka dan ikan terlihat. Rekaman yang dimulai setelah kardus terbuka tidak dapat diterima — tidak ada cara membedakan ikan yang sampai mati dari ikan yang mati sesudahnya.",
-          "Klaim diajukan maksimum 3 jam sejak paket tercatat diterima oleh ekspedisi."
+          "Klaim diajukan maksimum 4 jam sejak paket tercatat diterima oleh ekspedisi."
         ]
       },
       {
@@ -255,19 +253,19 @@ export const INFO_DOCS: Record<string, InfoDoc> = {
   kontak: {
     eyebrow: "Bantuan",
     title: "Hubungi Admin",
-    lede: "Satu kanal untuk transaksi, satu untuk kemitraan.",
+    lede: "Satu kanal untuk pertanyaan transaksi dan kemitraan.",
     sections: [
       {
         heading: "Pertanyaan transaksi",
         body: [
-          "Untuk pembayaran, pengiriman, klaim garansi, dan pengajuan pembatalan: kirim surel ke admin@mafiakoijogja.id dengan nomor pesanan pada baris subjek. Pesan tanpa nomor pesanan dijawab paling akhir karena harus dicari manual.",
-          "Jam kerja admin 09.00–17.00 WIB, Senin sampai Sabtu. Klaim garansi yang masuk di luar jam kerja tetap tercatat waktu masuknya, jadi batas 3 jam tidak hangus karena malam."
+          "Untuk pembayaran, pengiriman, klaim garansi, dan pengajuan pembatalan: hubungi admin melalui halaman ini dengan nomor pesanan pada baris subjek. Pesan tanpa nomor pesanan dijawab paling akhir karena harus dicari manual.",
+          "Jam kerja admin 09.00–17.00 WIB, Senin sampai Sabtu. Klaim garansi yang masuk di luar jam kerja tetap tercatat waktu masuknya, jadi batas 4 jam tidak hangus karena malam."
         ]
       },
       {
-        heading: "Kemitraan farm dan breeder",
+        heading: "Kemitraan farm",
         body: [
-          "Farm yang ingin menjual di sini mengirim pengajuan ke kemitraan@mafiakoijogja.id. Lihat Kemitraan Farm & Breeder untuk syarat dan tahapannya."
+          "Farm yang ingin menjual di sini mengajukan lewat Area Peternak di situs ini. Lihat Kemitraan Farm untuk syarat dan tahapannya."
         ]
       },
       {
@@ -281,34 +279,34 @@ export const INFO_DOCS: Record<string, InfoDoc> = {
 
   kemitraan: {
     eyebrow: "Bantuan",
-    title: "Kemitraan Farm & Breeder",
-    lede: "Syarat, tahapan, dan apa yang rumah lelang ambil.",
+    title: "Kemitraan Farm",
+    lede: "Syarat, tahapan, dan bagaimana pembayaran farm bekerja.",
     sections: [
       {
         heading: "Syarat dasar",
         body: [
-          "Farm aktif dengan kolam pembesaran sendiri, catatan indukan yang bisa ditelusuri, dan fasilitas karantina yang dapat diperiksa. Pedagang tanpa fasilitas sendiri tidak diverifikasi sebagai breeder, meski boleh mendaftar sebagai penjual perlengkapan."
+          "Farm aktif dengan kolam pembesaran sendiri, catatan indukan yang bisa ditelusuri, dan fasilitas karantina yang dapat diperiksa. Pedagang tanpa fasilitas sendiri tidak diverifikasi sebagai farm, meski boleh mendaftar sebagai penjual perlengkapan."
         ]
       },
       {
         heading: "Tahapan",
         body: [
-          "Pengajuan lewat surel, lalu pemeriksaan berkas, lalu kunjungan lokasi. Setelah lolos, farm mendapat akses panel penjual untuk mengunggah lot, mengatur harga, dan mengelola stok sendiri.",
+          "Pengajuan lewat Area Peternak di situs ini, lalu pemeriksaan berkas, lalu kunjungan lokasi. Setelah lolos, farm mengelola lelang dan lotnya sendiri lewat Area Peternak.",
           "Lot pertama ditinjau sebelum tayang. Setelah itu penayangan berjalan tanpa tinjauan, dengan audit berkala."
         ]
       },
       {
         heading: "Komisi dan pembayaran",
         body: [
-          "Rumah lelang mengambil komisi dari nilai transaksi yang selesai. Besarannya tercantum pada perjanjian kemitraan dan berbeda antara lot lelang dan penjualan harga tetap.",
-          "Pencairan mengikuti mekanisme rekening bersama: dana diteruskan setelah pembeli menerima ikan, bukan setelah pembeli membayar."
+          "Rumah lelang tidak mengambil komisi. Farm menerima harga menang penuh.",
+          "Pencairan diteruskan setelah pemenang mengunggah bukti ikan tiba sehat, atau tiga hari setelah farm menandai lot dikirim bila pemenang tidak mengirim bukti. Yang dipotong hanya biaya transfer bank."
         ]
       }
     ],
     action: {
-      label: "Buka panel penjual",
-      href: VENDOR_URL,
-      note: "Farm yang sudah terverifikasi masuk lewat panel penjual. Pengajuan baru lewat surel kemitraan di atas."
+      label: "Buka Area Peternak",
+      href: ROUTES.farm,
+      note: "Farm yang sudah terverifikasi masuk lewat Area Peternak. Pengajuan baru juga lewat Area Peternak."
     }
   },
 
@@ -333,7 +331,7 @@ export const INFO_DOCS: Record<string, InfoDoc> = {
       {
         heading: "Peran rumah lelang",
         body: [
-          "Rumah lelang menyelenggarakan lelang dan menahan dana sebagai pihak ketiga. Ikan dijual oleh breeder masing-masing; deskripsi, foto, dan catatan lot adalah pernyataan breeder yang bersangkutan.",
+          "Rumah lelang menyelenggarakan lelang dan menerima pembayaran sebagai pihak ketiga. Ikan dijual oleh farm masing-masing; deskripsi, foto, dan catatan lot adalah pernyataan farm yang bersangkutan.",
           "Rumah lelang menilai klaim atas dasar bukti yang disyaratkan, dan keputusan atas klaim bersifat final di dalam platform."
         ]
       },

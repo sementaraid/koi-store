@@ -6,6 +6,8 @@ export const ROUTES = {
 
   farms: '/kebun',
   topups: '/saldo/topup',
+  payments: '/pembayaran',
+  farmPayouts: '/pembayaran-farm',
   adjustments: '/saldo/koreksi',
   fees: '/pengaturan/biaya',
   auctions: '/lelang',

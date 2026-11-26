@@ -3,6 +3,8 @@ import { Instrument_Sans } from 'next/font/google';
 import { Toaster } from 'sonner';
 import './globals.css';
 
+import { SITE_NAME } from '@/const/site';
+
 const instrumentSans = Instrument_Sans({
   subsets: ['latin'],
   variable: '--font-instrument-sans',
@@ -11,8 +13,8 @@ const instrumentSans = Instrument_Sans({
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | Koi Store Admin',
-    default: 'Koi Store Admin'
+    template: `%s | ${SITE_NAME} Admin`,
+    default: `${SITE_NAME} Admin`
   },
   robots: { 
     index: false, 

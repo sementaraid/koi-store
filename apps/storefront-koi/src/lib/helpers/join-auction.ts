@@ -6,7 +6,7 @@ import { formatPrice } from './format-price.ts';
 export type JoinControlState = 'signed-out' | 'owner' | 'joined' | 'join' | 'unknown';
 
 export type JoinControl = {
-  auctionId: string;
+  lotId: string;
   fee: number;
   returnPath: string;
   balance: number | null;
@@ -46,19 +46,20 @@ export function joinBalanceAfter(fee: number, balance: number): number {
   return Math.max(balance - fee, 0);
 }
 
+// US-111 AC6 (D-070): the fee is paid per lot, not once per auction.
 export function joinGuestCopy(fee: number): string {
   return fee > 0
-    ? `Untuk bid, Anda perlu akun dan saldo untuk biaya ikut ${formatPrice(fee)} (sekali per lelang).`
+    ? `Untuk bid, Anda perlu akun dan saldo untuk biaya ikut ${formatPrice(fee)} (per lot).`
     : 'Untuk bid, Anda perlu akun dan saldo.';
 }
 
 // US-099 AC2: the line beside the join button. A Rp0 fee has no fee or balance
 // line at all, so the caller hides this one too.
 export const JOIN_FEE_NOTE =
-  'Dipotong dari saldo, sekali untuk semua lot di lelang ini. Tidak dikembalikan jika kalah.';
+  'Dipotong dari saldo untuk lot ini. Tidak dikembalikan jika kalah.';
 
 export function joinConfirmLabel(fee: number): string {
-  return fee > 0 ? `Bayar ${formatPrice(fee)} & ikut` : 'Ikut lelang';
+  return fee > 0 ? `Bayar ${formatPrice(fee)} & ikut` : 'Ikut lot ini';
 }
 
 export function joinControlState(input: {
@@ -83,7 +84,7 @@ export function joinAvailable(input: {
 }
 
 export function joinFeeLabel(fee: number): string {
-  return fee > 0 ? `Ikut lelang · ${formatPrice(fee)}` : 'Ikut lelang';
+  return fee > 0 ? `Ikut lot ini · ${formatPrice(fee)}` : 'Ikut lot ini';
 }
 
 export type JoinFailure = {
@@ -102,17 +103,24 @@ export function joinFailureInfo(input: {
     return {
       message:
         input.fee > 0
-          ? `Biaya ikut lelang ini ${formatPrice(input.fee)}. Saldo Anda belum cukup.`
-          : 'Saldo Anda belum cukup untuk ikut lelang ini.',
+          ? `Biaya ikut lot ini ${formatPrice(input.fee)}. Saldo Anda belum cukup.`
+          : 'Saldo Anda belum cukup untuk ikut lot ini.',
       topUp: true,
       refresh: false
     };
   }
   if (input.code === 'own_auction') {
     return {
-      message: 'Anda tidak bisa ikut lelang ini karena lelang ini milik kebun Anda.',
+      message: 'Anda tidak bisa ikut lelang ini karena lelang ini milik farm Anda.',
       topUp: false,
       refresh: false
+    };
+  }
+  if (input.code === 'lot_not_joinable') {
+    return {
+      message: 'Lot ini sudah ditutup untuk peserta baru.',
+      topUp: false,
+      refresh: true
     };
   }
   if (input.code === 'auction_not_joinable') {
@@ -123,7 +131,7 @@ export function joinFailureInfo(input: {
     };
   }
   if (input.code === 'already_joined') {
-    return { message: 'Anda sudah ikut lelang ini.', topUp: false, refresh: true };
+    return { message: 'Anda sudah ikut lot ini.', topUp: false, refresh: true };
   }
   if (input.status === 409) {
     return {
@@ -133,7 +141,7 @@ export function joinFailureInfo(input: {
     };
   }
   return {
-    message: input.message || 'Gagal ikut lelang. Coba lagi.',
+    message: input.message || 'Gagal ikut lot ini. Coba lagi.',
     topUp: false,
     refresh: false
   };

@@ -1,13 +1,15 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useId, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button, Label } from '@koi/ui';
 import { cancelAuction, cancelLot } from '@/lib/data/live-auctions';
 import { cancelAuctionToast } from '@/lib/helpers/live-bid-format';
 import { formatRupiah } from '@/lib/helpers/topup-format';
+
+import { ConfirmDialog } from './ConfirmDialog';
 
 export type CancelActionProps = {
   kind: 'lot' | 'auction';
@@ -38,28 +40,34 @@ const COPY = {
 // cancels. D-055: the app shows the backend's 400/404 copy and writes its own
 // Indonesian copy for a 409, keyed on status.
 export function CancelAction({ kind, id, onCancelled }: CancelActionProps) {
-  const uid = useId();
+  /* Deterministic, not `useId`: same id in the server HTML and the client. A
+     lot and its auction are different kinds, so the kind keeps them apart. */
+  const uid = `cancel-${kind}-${id}`;
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const copy = COPY[kind];
 
-  async function submit(event: React.FormEvent) {
+  function submit(event: React.FormEvent) {
     event.preventDefault();
     if (!reason.trim()) {
       setError('Masukkan alasan pembatalan');
       return;
     }
-    if (!confirm(copy.confirm)) return;
+    setConfirmOpen(true);
+  }
 
+  async function confirmCancel() {
     setBusy(true);
     setError(null);
 
     if (kind === 'lot') {
       const result = await cancelLot(id, reason);
       setBusy(false);
+      setConfirmOpen(false);
       if (!result.success) {
         refuse(result.error, result.refresh);
         return;
@@ -68,6 +76,7 @@ export function CancelAction({ kind, id, onCancelled }: CancelActionProps) {
     } else {
       const result = await cancelAuction(id, reason);
       setBusy(false);
+      setConfirmOpen(false);
       if (!result.success) {
         refuse(result.error, result.refresh);
         return;
@@ -131,6 +140,17 @@ export function CancelAction({ kind, id, onCancelled }: CancelActionProps) {
           Batal
         </Button>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={kind === 'lot' ? 'Batalkan lot?' : 'Batalkan lelang?'}
+        description={copy.confirm}
+        confirmLabel={copy.submit}
+        busyLabel={copy.busy}
+        destructive
+        onConfirm={confirmCancel}
+      />
     </form>
   );
 }

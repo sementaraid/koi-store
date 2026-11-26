@@ -20,7 +20,6 @@ import {
 
 import type { Badge } from "@koi/ui"
 import type {
-  AuctionStatus,
   Availability,
   BidHighlight,
   ListingInfo,
@@ -37,13 +36,6 @@ export type PillSpec = {
 }
 
 export type StateSpec = PillSpec & { pulse: boolean }
-
-export const AUCTION_STATUS = {
-  live: { label: "Live", variant: "live", pulse: true },
-  upcoming: { label: "Upcoming", variant: "neutral", pulse: false },
-  ended: { label: "Ended", variant: "muted", pulse: false },
-  cancelled: { label: "Dibatalkan", variant: "muted", pulse: false },
-} as const satisfies Record<AuctionStatus, StateSpec>
 
 export const AVAILABILITY = {
   available: { label: "Tersedia", variant: "live", pulse: true },
@@ -62,37 +54,37 @@ export const STOCK = {
 } as const satisfies Record<StockLevel, PillSpec>
 
 export const BID_HIGHLIGHTS = {
-  "top-bid": { label: "Top bid", variant: "attention", Icon: TrendingUp },
-  popular: { label: "Popular", variant: "attention", Icon: Flame },
-  "reserve-met": { label: "Reserve met", variant: "neutral" },
-  "no-bids": { label: "No bids yet", variant: "muted" },
-  "top-breeder": { label: "Top Breeder", variant: "attention", Icon: Crown },
+  "top-bid": { label: "Bid tertinggi", variant: "attention", Icon: TrendingUp },
+  popular: { label: "Populer", variant: "attention", Icon: Flame },
+  "reserve-met": { label: "Harga awal tercapai", variant: "neutral" },
+  "no-bids": { label: "Belum ada bid", variant: "muted" },
+  "top-breeder": { label: "Breeder teratas", variant: "attention", Icon: Crown },
   "verified-breeder": {
-    label: "Verified breeder",
+    label: "Breeder terverifikasi",
     variant: "attention",
     Icon: BadgeCheck,
   },
 } as const satisfies Record<BidHighlight, PillSpec>
 
 export const TRUST_STAMPS = {
-  "top-breeder": { label: "Top Breeder", variant: "attention", Icon: Crown },
+  "top-breeder": { label: "Breeder teratas", variant: "attention", Icon: Crown },
   "verified-breeder": {
-    label: "Verified breeder",
+    label: "Breeder terverifikasi",
     variant: "attention",
     Icon: BadgeCheck,
   },
-  certificate: { label: "Certificate", variant: "attention", Icon: FileBadge },
+  certificate: { label: "Bersertifikat", variant: "attention", Icon: FileBadge },
   "video-verified": {
-    label: "Video verified",
+    label: "Video terverifikasi",
     variant: "attention",
     Icon: Video,
   },
 } as const satisfies Record<TrustStamp, PillSpec>
 
 export const INFO = {
-  "new-arrival": { label: "New arrival", variant: "info", Icon: Sparkles },
-  "imported-japan": { label: "Imported Japan", variant: "info", Icon: Ship },
-  female: { label: "Female", variant: "info", Icon: Venus },
+  "new-arrival": { label: "Baru", variant: "info", Icon: Sparkles },
+  "imported-japan": { label: "Impor Jepang", variant: "info", Icon: Ship },
+  female: { label: "Betina", variant: "info", Icon: Venus },
   "fresh-stock": { label: "Stok baru", variant: "info", Icon: Boxes },
   "bpkp-quarantine": {
     label: "Karantina BBKP",

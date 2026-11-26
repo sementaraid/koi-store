@@ -15,7 +15,7 @@ export function SpecCell({ label, value, className }: SpecCellProps) {
   if (!value) return null
 
   return (
-    <div className={cn("rounded-xl bg-muted/60 px-4 py-3.5", className)}>
+    <div className={cn("rounded-control bg-muted/60 px-4 py-3.5", className)}>
       <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd className="font-heading text-xs font-bold text-pretty tabular-nums">
         {value}
@@ -48,7 +48,7 @@ export function SpecSheet({
 
       <RenderIf when={listing?.awards}>
         {(awards) => (
-          <div className="flex items-center gap-3 rounded-xl bg-[oklch(0.84_0.14_85)]/25 px-4 py-3.5">
+          <div className="flex items-center gap-3 rounded-control bg-warning/10 px-4 py-3.5">
             <Award aria-hidden className="size-5 shrink-0 text-gold-ink" />
             <p className="text-xs font-bold text-pretty">{awards}</p>
           </div>
@@ -59,13 +59,13 @@ export function SpecSheet({
         <SpecCell label="Varietas" value={listing?.category} />
         <SpecCell label="Ukuran" value={listing?.spec} />
         <SpecCell
-          label="Kelamin"
+          label="Jenis kelamin"
           value={info?.includes("female") ? "Betina" : undefined}
         />
         <SpecCell label="Umur" value={listing?.age} />
         <SpecCell
           className="sm:col-span-2"
-          label="Bloodline"
+          label="Garis keturunan"
           value={listing?.bloodline}
         />
       </dl>

@@ -5,6 +5,18 @@ const nextConfig: NextConfig = {
   trailingSlash: false,
   reactStrictMode: true,
   allowedDevOrigins: ['koi-dev.sunar.dev'],
+  // US-102 AC9: both old wallet pages now live on one page. Config redirects
+  // answer 307 before React renders (a page-level redirect inside the account
+  // loading boundary streams a 200 instead) and pass `?amount=` through.
+  // US-106 AC1 / D-064: the live room is gone, so old links land on the lot page.
+  // Permanent because the room will never come back.
+  async redirects() {
+    return [
+      { source: '/akun/saldo', destination: '/akun/saldo-topup', permanent: false },
+      { source: '/akun/topup', destination: '/akun/saldo-topup', permanent: false },
+      { source: '/lelang/:id/live', destination: '/lelang/:id', permanent: true }
+    ];
+  },
   logging: {
     fetches: {
       fullUrl: true

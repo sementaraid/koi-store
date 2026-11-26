@@ -94,7 +94,7 @@ export function BidHistory({
               )}
               <RenderIf when={top}>
                 {() => (
-                  <Badge variant="success">
+                  <Badge variant="muted">
                     <Crown aria-hidden />
                     Tertinggi
                   </Badge>

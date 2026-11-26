@@ -6,11 +6,12 @@ import { RegisterSkeleton } from '@/components/sections/LoadingPages/AuthLoading
 
 import { RegisterPage } from '@/components/sections';
 import { ROUTES } from '@/const/routes';
+import { SITE_NAME } from '@/const/site';
 import { getSession } from '@/lib/data/session';
 
 export const metadata: Metadata = {
   title: 'Daftar',
-  description: 'Buat akun Indokoi untuk menawar dan membeli koi.'
+  description: `Buat akun ${SITE_NAME} untuk menawar dan membeli koi.`
 };
 
 export default async function DaftarRoute() {

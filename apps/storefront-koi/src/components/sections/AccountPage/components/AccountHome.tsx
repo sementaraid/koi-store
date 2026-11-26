@@ -1,5 +1,5 @@
 import type { HttpTypes } from '@medusajs/types';
-import { AlarmClock, LayoutDashboard, MapPin, Package, UserRound } from 'lucide-react';
+import { AlarmClock, MapPin, Package, UserRound } from 'lucide-react';
 
 import { Button, Card, RenderIf } from "@koi/ui";
 import { Link } from '@/components/atoms/Link/Link';
@@ -7,6 +7,7 @@ import { EmptyFeed } from '@/components/cells/EmptyFeed/EmptyFeed';
 import { OrderRow } from '@/components/cells/OrderRow/OrderRow';
 import { StatCard } from '@/components/cells/StatCard/StatCard';
 import { ROUTES, orderHref } from '@/const/routes';
+import type { AccountIdentity } from '@/lib/helpers/account-identity';
 import type { OrderGroup } from '@/lib/helpers/order-groups';
 import { formatPrice } from '@/lib/helpers/format-price';
 import { orderStatus } from '@/lib/helpers/order-status';
@@ -20,10 +21,10 @@ const RECENT = 3;
 export type AccountHomeProps = {
   customer: HttpTypes.StoreCustomer;
   groups: OrderGroup<AccountOrder>[];
+  identity?: AccountIdentity;
 };
 
-export function AccountHome({ customer, groups }: AccountHomeProps) {
-  const name = customer.first_name || customer.email;
+export function AccountHome({ customer, groups, identity }: AccountHomeProps) {
   const unpaid = groups.filter((group) => group.orders.some((o) => orderStatus(o).unpaid));
   const recent = groups.slice(0, RECENT);
   const address =
@@ -31,20 +32,9 @@ export function AccountHome({ customer, groups }: AccountHomeProps) {
 
   return (
     <AccountFrame
-      title="Beranda akun"
+      title="Ringkasan"
       openOrders={unpaid.length}
-      eyebrow={
-        <>
-          <LayoutDashboard
-            aria-hidden
-            className="size-3.5"
-          />
-          Beranda akun
-        </>
-      }
-      heading={`Selamat datang ${name}`}
-      description="Akun Anda, pesanan yang sedang berjalan, dan alamat pengiriman — semuanya di satu halaman."
-      identity={{ name, email: customer.email }}
+      identity={identity}
       showMenuOnMobile
     >
       <RenderIf when={unpaid.at(-1)}>
@@ -119,7 +109,7 @@ export function AccountHome({ customer, groups }: AccountHomeProps) {
               icon={<Package aria-hidden />}
               narrowing={false}
               noMatchTitle="Belum ada pesanan"
-              noMatchBody="Koi yang Anda menangkan di lelang dan barang yang Anda beli muncul di sini."
+              noMatchBody="Lot yang Anda menangkan di lelang dan barang yang Anda beli muncul di sini."
               action={
                 <Button
                   render={<Link href={ROUTES.catalogs} />}

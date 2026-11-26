@@ -4,9 +4,10 @@ import type {
   MedusaResponse,
 } from "@medusajs/framework/http"
 import type { RemoteQueryFunction } from "@medusajs/framework/types"
-import type { LotStatus } from "../../../modules/auction/models/lot"
-import { maskAccountNumber, maskName } from "../../../utils/mask"
-import { decryptPii } from "../../../utils/pii-crypto"
+import type {
+  LotStatus,
+  PaymentProofStatus,
+} from "../../../modules/auction/models/lot"
 import { PAY_WINDOW_MS } from "../../../utils/pay-window"
 import { readClaimWindowHours } from "../../../workflows/steps/claim"
 import type { StoreGetWonLotsParamsType } from "./validators"
@@ -42,13 +43,11 @@ export type WonLotRating = {
   created_at: string
 }
 
-// US-051 T-051.1a (D-052, D-059): the farmer's payout account, always masked
-// here. The full number and holder name only leave the server through the
-// winner's logged reveal (T-051.3a). No phone field, selected or returned.
-export type WonLotSellerBank = {
-  bank_name: string | null
-  holder_name: string | null
-  account_number: string | null
+// US-110 T-110.1 (AC2, D-018): the arrival proof state only. The private file
+// key stays on the server; the winner gets whether one exists and its time.
+export type WonLotArrivalProof = {
+  has_file: boolean
+  uploaded_at: string | null
 }
 
 // Per-row values the shared mapper can't get from the lot row alone.
@@ -58,9 +57,18 @@ export type WonLotExtras = {
   claim: WonLotClaim | null
   // US-057 T-057.1: the caller's rating on this lot, or null.
   rating: WonLotRating | null
-  // null when the seller has no payment_details row. Internal to the mapper:
-  // the row exposes it as `seller.payment_details`, never at the top level.
-  seller_bank: WonLotSellerBank | null
+  // US-110 T-110.1: the winner's arrival proof, no key or URL.
+  arrival_proof: WonLotArrivalProof
+}
+
+// US-109 T-109.1 (AC2, D-077): the caller's transfer-proof state. Never the
+// private file key or a URL (D-018) — only whether an image exists.
+export type WonLotPaymentProof = {
+  status: PaymentProofStatus
+  has_image: boolean
+  // The admin's rejection reason, or null.
+  reason: string | null
+  uploaded_at: string | null
 }
 
 export type WonLot = {
@@ -68,17 +76,28 @@ export type WonLot = {
   status: string
   final_price: number | null
   closed_at: string | null
+  // D-072: set when an admin confirms the winner's transfer; null before.
+  paid_at: string | null
   // D-058: closed_at + 24 h, ISO. null when the lot has no closed_at.
   pay_by: string | null
   tracking_number: string | null
+  // D-072: saved when the farmer ships and when the winner marks it
+  // delivered; null until each step is reached.
+  shipped_at: string | null
   delivered_at: string | null
   claim_window_ends_at: string | null
   claim: WonLotClaim | null
   // US-057 T-057.1 AC1: null until the winner rates this lot.
   rating: WonLotRating | null
+  // US-109 T-109.1: the transfer proof state, no key or URL (D-018).
+  proof: WonLotPaymentProof
+  // US-110 T-110.1: the "arrived healthy" proof state, no key or URL (D-018).
+  arrival_proof: WonLotArrivalProof
   auction: { id: string; delivery_method: string }
   product: { title: string | null; thumbnail: string | null }
-  seller: { id: string; name: string; payment_details: WonLotSellerBank | null }
+  // US-108 (D-068): the winner pays the company account, so no farmer bank
+  // field, masked or full.
+  seller: { id: string; name: string }
 }
 
 export type StoreWonLotsResponse = {
@@ -96,15 +115,22 @@ export type StoreWonLotResponse = {
 
 // The caller's own lots only, so `winner_customer_id` is used as a filter, not
 // selectable. `auction.seller.*` is the farm name shown on the row — never
-// `.phone` or `.payment_details` (the payout account is a separate batched read
-// below, so only the masked row leaves the mapper).
+// `.phone` or `.payment_details` (D-052, D-068).
 export const WON_LOT_FIELDS = [
   "id",
   "status",
   "final_price",
   "closed_at",
+  "paid_at",
   "tracking_number",
+  "shipped_at",
   "delivered_at",
+  // US-109: selected server-side only; `toWonLot` emits `has_image`, never the
+  // key itself (D-018).
+  "payment_proof_file_key",
+  "payment_proof_status",
+  "payment_proof_reason",
+  "payment_proof_uploaded_at",
   "auction.id",
   "auction.delivery_method",
   "auction.seller.id",
@@ -125,6 +151,17 @@ export const WON_LOT_STATUSES = [
 const iso = (value: unknown): string | null =>
   value ? new Date(value as string).toISOString() : null
 
+// US-109 T-109.1 (D-018, D-077): proof state only. The file key stays on the
+// server.
+export const toWonLotPaymentProof = (
+  row: Record<string, unknown>
+): WonLotPaymentProof => ({
+  status: (row.payment_proof_status as PaymentProofStatus) ?? "none",
+  has_image: !!row.payment_proof_file_key,
+  reason: (row.payment_proof_reason as string | null) ?? null,
+  uploaded_at: iso(row.payment_proof_uploaded_at),
+})
+
 export const toWonLot = (
   row: Record<string, unknown>,
   extras: WonLotExtras
@@ -138,18 +175,20 @@ export const toWonLot = (
     | { title?: string | null; thumbnail?: string | null }
     | null
     | undefined
-  const { seller_bank: _bank, ...rest } = extras
   return {
     id: row.id as string,
     status: row.status as string,
     final_price: (row.final_price as number | null) ?? null,
     closed_at: iso(row.closed_at),
+    paid_at: iso(row.paid_at),
     pay_by: row.closed_at
       ? new Date(new Date(row.closed_at as string).getTime() + PAY_WINDOW_MS)
           .toISOString()
       : null,
     tracking_number: (row.tracking_number as string | null) ?? null,
+    shipped_at: iso(row.shipped_at),
     delivered_at: iso(row.delivered_at),
+    proof: toWonLotPaymentProof(row),
     auction: {
       id: auction.id as string,
       delivery_method: auction.delivery_method as string,
@@ -161,57 +200,9 @@ export const toWonLot = (
     seller: {
       id: seller?.id as string,
       name: (seller?.name ?? "") as string,
-      payment_details: extras.seller_bank,
     },
-    ...rest,
+    ...extras,
   }
-}
-
-// US-051 T-051.1a (D-044, D-052, D-059): the farmer's payout account, one
-// batched read per page, masked before it leaves the mapper. Read where the
-// seller's bank data lives today: `seller.payment_details`
-// (`*payment_details` in Mercur's vendor seller query config). Never `phone`.
-const maskBank = (
-  details: {
-    bank_name?: string | null
-    holder_name?: string | null
-    account_number?: string | null
-  } | null
-): WonLotSellerBank | null =>
-  details
-    ? {
-        bank_name: details.bank_name ?? null,
-        holder_name: maskName(decryptPii(details.holder_name)) ?? null,
-        account_number: maskAccountNumber(decryptPii(details.account_number)) ?? null,
-      }
-    : null
-
-export const readSellerBanks = async (
-  query: Query,
-  sellerIds: string[]
-): Promise<Map<string, WonLotSellerBank | null>> => {
-  const ids = [...new Set(sellerIds)]
-  if (!ids.length) return new Map()
-  const { data } = await query.graph({
-    entity: "seller",
-    fields: [
-      "id",
-      "payment_details.bank_name",
-      "payment_details.holder_name",
-      "payment_details.account_number",
-    ],
-    filters: { id: ids },
-  })
-  return new Map(
-    (data as {
-      id: string
-      payment_details?: {
-        bank_name?: string | null
-        holder_name?: string | null
-        account_number?: string | null
-      } | null
-    }[]).map((seller) => [seller.id, maskBank(seller.payment_details ?? null)])
-  )
 }
 
 // US-057 T-057.1: the caller's own rating for a whole page in one query, never
@@ -224,28 +215,35 @@ export const readWonLotExtras = async (
   const ids = rows.map((row) => row.id as string)
   if (!ids.length) return new Map()
 
-  const [windowHours, sellerBanks, { data: claims }, { data: ratings }] =
-    await Promise.all([
-      readClaimWindowHours(query),
-      readSellerBanks(
-        query,
-        rows.map(
-          (row) =>
-            ((row.auction ?? {}) as { seller?: { id?: string } }).seller
-              ?.id as string
-        )
-      ),
-      query.graph({
-        entity: "claim",
-        fields: ["id", "lot_id", "status", "remedy", "created_at", "video_deleted_at"],
-        filters: { lot_id: ids, customer_id: customerId },
-      }),
-      query.graph({
-        entity: "farmer_rating",
-        fields: ["id", "lot_id", "stars", "comment", "created_at"],
-        filters: { lot_id: ids, customer_id: customerId },
-      }),
-    ])
+  const [
+    windowHours,
+    { data: claims },
+    { data: ratings },
+    { data: payouts },
+  ] = await Promise.all([
+    readClaimWindowHours(query),
+    query.graph({
+      entity: "claim",
+      fields: ["id", "lot_id", "status", "remedy", "created_at", "video_deleted_at"],
+      filters: { lot_id: ids, customer_id: customerId },
+    }),
+    query.graph({
+      entity: "farmer_rating",
+      fields: ["id", "lot_id", "stars", "comment", "created_at"],
+      filters: { lot_id: ids, customer_id: customerId },
+    }),
+    // US-110 T-110.1 (AC2): proof state only; the key is never selected.
+    query.graph({
+      entity: "lot_payout",
+      fields: [
+        "id",
+        "lot_id",
+        "arrival_proof_file_key",
+        "arrival_proof_uploaded_at",
+      ],
+      filters: { lot_id: ids },
+    }),
+  ])
 
   const claimByLot = new Map<string, WonLotClaim>()
   for (const claim of claims as {
@@ -283,6 +281,17 @@ export const readWonLotExtras = async (
   }
 
   const byId = new Map<string, WonLotExtras>()
+  const payoutByLot = new Map<string, WonLotArrivalProof>()
+  for (const payout of payouts as {
+    lot_id: string
+    arrival_proof_file_key: string | null
+    arrival_proof_uploaded_at: Date | string | null
+  }[]) {
+    payoutByLot.set(payout.lot_id, {
+      has_file: !!payout.arrival_proof_file_key,
+      uploaded_at: iso(payout.arrival_proof_uploaded_at),
+    })
+  }
   for (const row of rows) {
     const deliveredAt = iso(row.delivered_at)
     const endsAt =
@@ -295,12 +304,10 @@ export const readWonLotExtras = async (
       claim_window_ends_at: endsAt,
       claim: claimByLot.get(row.id as string) ?? null,
       rating: ratingByLot.get(row.id as string) ?? null,
-      seller_bank:
-        sellerBanks.get(
-          (
-            (row.auction ?? {}) as { seller?: { id?: string } }
-          ).seller?.id as string
-        ) ?? null,
+      arrival_proof: payoutByLot.get(row.id as string) ?? {
+        has_file: false,
+        uploaded_at: null,
+      },
     })
   }
   return byId
@@ -360,7 +367,7 @@ export const GET = async (
           claim_window_ends_at: null,
           claim: null,
           rating: null,
-          seller_bank: null,
+          arrival_proof: { has_file: false, uploaded_at: null },
         }
       )
     ),

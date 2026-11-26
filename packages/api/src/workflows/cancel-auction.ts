@@ -1,7 +1,7 @@
 import { createWorkflow, transform, WorkflowResponse } from "@medusajs/framework/workflows-sdk"
 import { acquireLockStep, releaseLockStep } from "@medusajs/medusa/core-flows"
 import { getCancellableAuctionStep, setAuctionFieldsStep } from "./steps/auction"
-import { getJoinFeeRefundsStep, refundJoinFeesStep } from "./steps/join-fee"
+import { getAuctionJoinFeeRefundsStep, refundJoinFeesStep } from "./steps/join-fee"
 import { validateSellerOpenStep } from "./steps/validate-seller-open"
 
 export type CancelAuctionWorkflowInput = {
@@ -34,7 +34,7 @@ export const cancelAuctionWorkflow = createWorkflow(
       seller_id: input.seller_id,
     })
 
-    const refunds = getJoinFeeRefundsStep({ auction_id: input.auction_id })
+    const refunds = getAuctionJoinFeeRefundsStep({ auction_id: input.auction_id })
 
     const auction = setAuctionFieldsStep(
       transform({ input }, ({ input }) => ({

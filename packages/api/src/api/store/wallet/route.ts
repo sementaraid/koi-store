@@ -11,7 +11,72 @@ export type StoreWalletTransaction = {
   type: string
   amount: number
   reference: string | null
+  // Human-readable subject for the history's "Keterangan" column. `reference`
+  // is already text for manual_topup (bank reference) and adjustment (reason);
+  // for the auction-referencing types it is an internal auction id, so this is
+  // the auction's first lot title instead. null when none can be resolved —
+  // never an internal id.
+  description: string | null
   created_at: string
+}
+
+// plan.md "Transaction types": these three store an auction OR lot id in
+// `reference`. Before US-111 a join fee is charged once per auction (reference
+// = auction id) and no lot is recorded, so the first lot (created_at, then id —
+// the US-096 AC1 order) stands in for the auction name. From US-111 a join fee
+// and a single-lot refund reference the lot directly (D-070, D-076). Both are
+// resolved here; a lot id never collides with an auction id.
+const AUCTION_REFERENCE_TYPES = new Set(["join_fee", "listing_fee", "refund"])
+
+type AuctionRow = {
+  id: string
+  lots?: {
+    id: string
+    created_at: string | Date
+    product?: { title?: string | null } | null
+  }[]
+}
+
+type LotTitleRow = {
+  id: string
+  product?: { title?: string | null } | null
+}
+
+// One batched read per page, never per row.
+const referenceDescriptions = async (
+  scope: MedusaContainer,
+  ids: string[]
+): Promise<Map<string, string>> => {
+  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
+  const { data: auctions } = await query.graph({
+    entity: "auction",
+    fields: ["id", "lots.id", "lots.created_at", "lots.product.title"],
+    filters: { id: ids },
+  })
+  const { data: lots } = await query.graph({
+    entity: "lot",
+    fields: ["id", "product.title"],
+    filters: { id: ids },
+  })
+  const descriptions = new Map<string, string>()
+  for (const auction of auctions as AuctionRow[]) {
+    const first = [...(auction.lots ?? [])].sort(
+      (a, b) =>
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime() ||
+        (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+    )[0]
+    const title = first?.product?.title
+    if (title) {
+      descriptions.set(auction.id, title)
+    }
+  }
+  for (const lot of lots as LotTitleRow[]) {
+    const title = lot.product?.title
+    if (title) {
+      descriptions.set(lot.id, title)
+    }
+  }
+  return descriptions
 }
 
 export type StoreWalletResponse = {
@@ -67,6 +132,19 @@ export const getCustomerWallet = async (
     pagination: { skip: offset, take: limit, order: { created_at: "DESC" } },
   })
 
+  const auctionIds = [
+    ...new Set(
+      page
+        .filter(
+          (t) => AUCTION_REFERENCE_TYPES.has(t.type as string) && t.reference
+        )
+        .map((t) => t.reference as string)
+    ),
+  ]
+  const auctionLabels = auctionIds.length
+    ? await referenceDescriptions(scope, auctionIds)
+    : new Map<string, string>()
+
   return {
     balance: await walletBalance(scope, walletId),
     transactions: page.map((t) => ({
@@ -74,6 +152,9 @@ export const getCustomerWallet = async (
       type: t.type,
       amount: Number(t.amount),
       reference: t.reference ?? null,
+      description: AUCTION_REFERENCE_TYPES.has(t.type as string)
+        ? (auctionLabels.get(t.reference as string) ?? null)
+        : (t.reference ?? null),
       created_at: new Date(t.created_at).toISOString(),
     })),
     count: metadata?.count ?? 0,

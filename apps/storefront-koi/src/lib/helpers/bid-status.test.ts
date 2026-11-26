@@ -62,7 +62,7 @@ test('a later end time raises the extend notice in WIB (AC10)', () => {
     extendWindowMinutes: 2
   });
   assert.deepEqual(notice, {
-    title: 'Waktu diperpanjang.',
+    title: 'Waktu ditambah 2 menit.',
     text: 'Ada bid baru di 2 menit terakhir. Lelang sekarang berakhir 20.06 WIB.'
   });
 });

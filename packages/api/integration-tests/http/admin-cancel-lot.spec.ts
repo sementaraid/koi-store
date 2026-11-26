@@ -11,6 +11,8 @@ import {
 } from "@medusajs/framework/workflows-sdk"
 import { AUCTION_MODULE } from "../../src/modules/auction"
 import type AuctionModuleService from "../../src/modules/auction/service"
+import { WALLET_MODULE } from "../../src/modules/wallet"
+import type WalletModuleService from "../../src/modules/wallet/service"
 import { closeLotWorkflow } from "../../src/workflows/close-lot"
 import { setLotFieldsStep } from "../../src/workflows/steps/lot"
 
@@ -93,6 +95,8 @@ medusaIntegrationTestRunner({
 
     const auctions = () =>
       getContainer().resolve<AuctionModuleService>(AUCTION_MODULE)
+    const wallets = () =>
+      getContainer().resolve<WalletModuleService>(WALLET_MODULE)
 
     const customer = async () => {
       const [row] = await getContainer()
@@ -285,6 +289,51 @@ medusaIntegrationTestRunner({
         status: "cancelled",
         auction_id: event.id,
       })
+    })
+
+    it("refunds every join fee paid on the cancelled lot, and only that lot (AC4, D-076)", async () => {
+      const event = await auction()
+      const seeded = await lot(event.id)
+      const other = await lot(event.id)
+      const [first] = await wallets().createWallets([{}])
+      const [second] = await wallets().createWallets([{}])
+      await auctions().createLotParticipants([
+        { lot_id: seeded.id, customer_id: "cus_a", paid_join_fee: 100_000 },
+        { lot_id: seeded.id, customer_id: "cus_b", paid_join_fee: 100_000 },
+        // Rp0: no charge row, so no refund.
+        { lot_id: seeded.id, customer_id: "cus_c", paid_join_fee: 0 },
+        // Another lot: never refunded by this cancel.
+        { lot_id: other.id, customer_id: "cus_d", paid_join_fee: 100_000 },
+      ])
+      await wallets().createWalletTransactions([
+        {
+          wallet_id: first.id,
+          type: "join_fee",
+          amount: -100_000,
+          reference: seeded.id,
+          created_by: "cus_a",
+        },
+        {
+          wallet_id: second.id,
+          type: "join_fee",
+          amount: -100_000,
+          reference: seeded.id,
+          created_by: "cus_b",
+        },
+      ])
+
+      expect((await cancel(seeded.id)).status).toEqual(200)
+
+      const refunds = (await wallets().listWalletTransactions()).filter(
+        (t) => t.type === "refund"
+      )
+      expect(refunds).toHaveLength(2)
+      expect(refunds.map((r) => Number(r.amount)).sort()).toEqual([100_000, 100_000])
+      expect(refunds.map((r) => r.wallet_id).sort()).toEqual(
+        [first.id, second.id].sort()
+      )
+      expect(refunds.every((r) => r.reference === seeded.id)).toBe(true)
+      expect(refunds.every((r) => r.created_by === "refund")).toBe(true)
     })
 
     it("409s every status but open and writes nothing (AC1, D-035)", async () => {

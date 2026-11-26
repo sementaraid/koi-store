@@ -43,8 +43,8 @@ test('joinable only while scheduled or live and not cancelled or closed (D-048, 
 });
 
 test('the label carries the fee, and Rp0 stays a real fee', () => {
-  assert.equal(joinFeeLabel(50_000), `Ikut lelang · ${formatPrice(50_000)}`);
-  assert.equal(joinFeeLabel(0), 'Ikut lelang');
+  assert.equal(joinFeeLabel(50_000), `Ikut lot ini · ${formatPrice(50_000)}`);
+  assert.equal(joinFeeLabel(0), 'Ikut lot ini');
 });
 
 test('the lot page picks the panel state from sign-in, ownership, join and balance (AC1–AC3, AC12)', () => {
@@ -82,11 +82,11 @@ test('the balance after joining never goes below zero', () => {
 test('guest and confirm copy name the real fee, and a Rp0 fee has no fee line', () => {
   assert.equal(
     joinGuestCopy(100_000),
-    `Untuk bid, Anda perlu akun dan saldo untuk biaya ikut ${formatPrice(100_000)} (sekali per lelang).`
+    `Untuk bid, Anda perlu akun dan saldo untuk biaya ikut ${formatPrice(100_000)} (per lot).`
   );
   assert.equal(joinGuestCopy(0), 'Untuk bid, Anda perlu akun dan saldo.');
   assert.equal(joinConfirmLabel(100_000), `Bayar ${formatPrice(100_000)} & ikut`);
-  assert.equal(joinConfirmLabel(0), 'Ikut lelang');
+  assert.equal(joinConfirmLabel(0), 'Ikut lot ini');
 });
 
 test('a short balance offers the top-up prompt in Indonesian, naming the fee (AC2)', () => {
@@ -97,7 +97,7 @@ test('a short balance offers the top-up prompt in Indonesian, naming the fee (AC
     fee: 100_000
   });
   assert.deepEqual(info, {
-    message: `Biaya ikut lelang ini ${formatPrice(100_000)}. Saldo Anda belum cukup.`,
+    message: `Biaya ikut lot ini ${formatPrice(100_000)}. Saldo Anda belum cukup.`,
     topUp: true,
     refresh: false
   });
@@ -107,12 +107,12 @@ test('an owner refusal reads in Indonesian and offers no top-up (AC4)', () => {
   const info = joinFailureInfo({
     code: 'own_auction',
     status: 403,
-    message: 'Anda tidak bisa ikut lelang ini karena lelang ini milik kebun Anda.',
+    message: 'Anda tidak bisa ikut lelang ini karena lelang ini milik farm Anda.',
     fee: 50_000
   });
   assert.equal(info.topUp, false);
   assert.equal(info.refresh, false);
-  assert.match(info.message, /milik kebun Anda/);
+  assert.match(info.message, /milik farm Anda/);
 });
 
 test('a rewritten 409 is keyed on its status and asks for a refresh', () => {
@@ -134,10 +134,30 @@ test('an untouched already_joined code asks for a refresh', () => {
     fee: 50_000
   });
   assert.deepEqual(info, {
-    message: 'Anda sudah ikut lelang ini.',
+    message: 'Anda sudah ikut lot ini.',
     topUp: false,
     refresh: true
   });
+});
+
+test('a per-lot 409 names the lot or the auction it belongs to', () => {
+  const lot = joinFailureInfo({
+    code: 'lot_not_joinable',
+    status: 409,
+    message: 'This lot is not open for new participants.',
+    fee: 50_000
+  });
+  assert.equal(lot.message, 'Lot ini sudah ditutup untuk peserta baru.');
+  assert.equal(lot.refresh, true);
+
+  const auction = joinFailureInfo({
+    code: 'auction_not_joinable',
+    status: 409,
+    message: 'This auction is not open for new participants.',
+    fee: 50_000
+  });
+  assert.equal(auction.message, 'Lelang ini sudah ditutup untuk peserta baru.');
+  assert.equal(auction.refresh, true);
 });
 
 test('any other refusal falls back to the server message, then a generic one', () => {
@@ -147,7 +167,7 @@ test('any other refusal falls back to the server message, then a generic one', (
   );
   assert.equal(
     joinFailureInfo({ message: '', fee: 0 }).message,
-    'Gagal ikut lelang. Coba lagi.'
+    'Gagal ikut lot ini. Coba lagi.'
   );
 });
 

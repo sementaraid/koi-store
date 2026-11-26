@@ -29,6 +29,8 @@ export type CatalogsProps = ComponentProps<"div"> &
       lede: string
     }
     searching?: boolean
+    // The product read failed: show the retry state instead of "no koi".
+    failed?: boolean
     attributes?: AttributeFacet[]
     selected?: AttributeSelection
     onAttributesChange?: (selected: AttributeSelection) => void

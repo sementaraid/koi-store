@@ -26,11 +26,11 @@ import { formatPrice } from '@/lib/helpers/format-price';
 import { remedyLabel } from '@/lib/helpers/claim';
 import { farmerClaimStatus, formatClaimOpenedAt } from '@/lib/helpers/farm-claim';
 import { farmStatusInfo, soldLotsOpen } from '@/lib/helpers/farm-status';
-import { soldLotStatusLabel } from '@/lib/helpers/sold-lot';
+import { soldLotPayoutLabel, soldLotStatusLabel, soldLotStepDates } from '@/lib/helpers/sold-lot';
 import {
-  canReportUnpaid,
   shippedTrackingLabel,
-  soldLotAction
+  soldLotAction,
+  soldLotUnpaidNotice
 } from '@/lib/helpers/sold-lot-actions';
 import { getAccountIdentity } from '@/lib/shell';
 
@@ -40,8 +40,6 @@ import { AccountFrame } from './components/AccountFrame';
 import { ClaimDecision } from './components/ClaimDecision';
 import { ClaimResolution } from './components/ClaimResolution';
 import { ClaimVideo } from './components/ClaimVideo';
-import { MarkPaid } from './components/MarkPaid';
-import { ReportUnpaid } from './components/ReportUnpaid';
 import { RevealAddress } from './components/RevealAddress';
 import { ShipLot } from './components/ShipLot';
 
@@ -116,7 +114,7 @@ export async function SoldLotsPage({ page: raw }: SoldLotsPageProps) {
   const page = Math.min(requested, pageCount);
 
   const body = failed ? (
-    <ErrorCard title="Gagal memuat status kebun" />
+    <ErrorCard title="Gagal memuat status farm" />
   ) : open ? (
     <SoldLots
       lots={lots}
@@ -134,13 +132,6 @@ export async function SoldLotsPage({ page: raw }: SoldLotsPageProps) {
   return (
     <AccountFrame
       title="Lot terjual"
-      eyebrow={
-        <>
-          <Sprout aria-hidden className="size-3.5" />
-          Kebun
-        </>
-      }
-      description="Lot Anda yang sudah terjual, lengkap dengan nama pemenang dan alamat kirimnya."
       openOrders={countOpen(groups)}
       identity={identity}
     >
@@ -216,7 +207,7 @@ function SoldLots({
           <div className="flex items-start gap-2 rounded-md border border-destructive-ink/30 bg-destructive/8 px-3 py-2">
             <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0 text-destructive-ink" />
             <p className="text-sm text-foreground">
-              Kebun Anda ditangguhkan; Anda tetap bisa menyelesaikan lot yang sudah
+              Farm Anda ditangguhkan; Anda tetap bisa menyelesaikan lot yang sudah
               terjual.
             </p>
           </div>
@@ -236,13 +227,17 @@ function SoldLots({
           <>
             <Card className="px-5 py-1">
               {list.map((lot) => {
-                const status = soldLotStatusLabel(lot.status);
+                const status = soldLotStatusLabel(lot.status, 'farmer');
+                // US-112 AC2/AC4 (D-072): every reached step with its saved date.
+                const stepDates = soldLotStepDates(lot);
+                // US-110 AC5 (D-078): the payout line, null while `won`.
+                const payout = soldLotPayoutLabel(lot.payout);
                 const action = soldLotAction(lot.status);
                 const tracking = shippedTrackingLabel(lot.status, lot.tracking_number);
-                const report = canReportUnpaid({
+                // D-079: read-only, past the pay window; the admin gives the strike.
+                const unpaidNotice = soldLotUnpaidNotice({
                   status: lot.status,
                   payBy: lot.pay_by,
-                  reportedAt: lot.unpaid?.reported_at ?? null,
                   now
                 });
                 const claim = claimsByLot.get(lot.id);
@@ -272,7 +267,7 @@ function SoldLots({
                         <RenderIf when={lot.closed_at}>
                           {(closedAt) => (
                             <p className="mt-0.5 text-xs text-muted-foreground">
-                              Selesai {formatDeadline(closedAt)}
+                              Selesai {formatDeadline(closedAt)} WIB
                             </p>
                           )}
                         </RenderIf>
@@ -290,6 +285,24 @@ function SoldLots({
                           )}
                         </RenderIf>
                       </div>
+                      {stepDates.length ? (
+                        <ul className="grid gap-0.5 text-xs text-muted-foreground tabular-nums">
+                          {stepDates.map((step) => (
+                            <li key={step.key}>
+                              {step.date
+                                ? `${step.label} ${formatDeadline(step.date)} WIB`
+                                : step.label}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                      <RenderIf when={payout}>
+                        {(text) => (
+                          <p className="text-xs font-medium break-words text-foreground">
+                            {text}
+                          </p>
+                        )}
+                      </RenderIf>
                       <RevealAddress
                         lotId={lot.id}
                         address={lot.winner.address}
@@ -297,15 +310,9 @@ function SoldLots({
                       {tracking ? (
                         <p className="text-xs text-muted-foreground">{tracking}</p>
                       ) : null}
-                      {action === 'pay' ? <MarkPaid lotId={lot.id} /> : null}
-                      <RenderIf when={lot.unpaid}>
-                        {(unpaid) => (
-                          <p className="text-xs text-muted-foreground">
-                            Dilaporkan {formatClaimOpenedAt(unpaid.reported_at)}
-                          </p>
-                        )}
-                      </RenderIf>
-                      {report.show ? <ReportUnpaid lotId={lot.id} /> : null}
+                      {unpaidNotice ? (
+                        <p className="text-xs font-medium text-foreground">{unpaidNotice}</p>
+                      ) : null}
                       {action === 'ship' ? (
                         <ShipLot
                           lotId={lot.id}
@@ -350,10 +357,10 @@ function Closed({ seller }: { seller: FarmSeller | null }): ReactNode {
         <CardHeader className="px-0 pt-0">
           <CardTitle className="flex items-center gap-2 text-base">
             <LockKeyhole aria-hidden className="size-4 text-muted-foreground" />
-            Area petani belum terbuka
+            Area peternak belum terbuka
           </CardTitle>
           <CardDescription>
-            Akun ini belum punya kebun. Daftarkan kebun dulu; area petani terbuka setelah admin
+            Akun ini belum punya farm. Daftarkan farm dulu; area peternak terbuka setelah admin
             menyetujuinya.
           </CardDescription>
         </CardHeader>
@@ -363,7 +370,7 @@ function Closed({ seller }: { seller: FarmSeller | null }): ReactNode {
             nativeButton={false}
           >
             <Sprout aria-hidden />
-            Daftarkan kebun
+            Daftarkan farm
           </Button>
         </CardContent>
       </Card>
@@ -387,7 +394,7 @@ function Closed({ seller }: { seller: FarmSeller | null }): ReactNode {
           render={<Link href={ROUTES.farm} />}
           nativeButton={false}
         >
-          Lihat status kebun
+          Lihat status farm
         </Button>
       </CardContent>
     </Card>

@@ -2,7 +2,6 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
-import { useId } from 'react';
 import { toast } from 'sonner';
 
 import { Button, Label, RenderIf } from "@koi/ui";
@@ -31,7 +30,12 @@ export type ReviewFormProps = {
 };
 
 export function ReviewForm({ open, onOpenChange, target }: ReviewFormProps) {
-  const id = useId();
+  // Derived from the review target: the order page can mount one form per
+  // seller and koi in the group, and a `useId` here replays differently on the
+  // server and the client under Next's bundled React.
+  const id = target
+    ? `review-${target.orderId}-${target.reference}-${target.referenceId}`
+    : 'review-form';
   const ratingErrorId = `${id}-rating-error`;
   const noteErrorId = `${id}-note-error`;
 

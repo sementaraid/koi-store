@@ -104,4 +104,34 @@ describe("wonSteps", () => {
       ["Menang", "Dibayar", "Dikirim", "Diterima"]
     )
   })
+
+  it("carries each saved step date, and leaves a missing one null", () => {
+    const steps = wonSteps("shipped", {
+      closed_at: "2026-11-18T13:00:00.000Z",
+      paid_at: "2026-11-19T03:00:00.000Z",
+      // A lot paid before US-108 has no paid_at; the step stays dateless.
+      shipped_at: "2026-11-22T04:00:00.000Z",
+      delivered_at: null,
+      tracking_number: "KAH-2411-12",
+    })
+
+    assert.deepEqual(
+      steps.map((step) => step.date),
+      [
+        "2026-11-18T13:00:00.000Z",
+        "2026-11-19T03:00:00.000Z",
+        "2026-11-22T04:00:00.000Z",
+        null,
+      ]
+    )
+    assert.equal(steps[2].tracking, "KAH-2411-12")
+    assert.equal(steps[1].tracking, null)
+  })
+
+  it("never guesses a date for a step that has none", () => {
+    const paid = wonSteps("paid", { closed_at: "2026-11-18T13:00:00.000Z" })
+
+    assert.equal(paid[1].state, "current")
+    assert.equal(paid[1].date, null)
+  })
 })

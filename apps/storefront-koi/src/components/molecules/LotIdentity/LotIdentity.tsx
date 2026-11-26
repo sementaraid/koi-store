@@ -5,7 +5,8 @@ import { Badge, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
 import { LotChip } from "@/components/cells/LotChip/LotChip"
 import { BID_HIGHLIGHTS, TRUST_STAMPS, SELLER_KIND, type PillSpec } from "@/const/stamps"
-import { partnerHref } from "@/const/routes"
+import { partnerHref, lotHref } from "@/const/routes"
+import { ShareButton } from "@/components/cells/ShareButton/ShareButton"
 import { formatLotNumber, type Chip } from "@/lib/helpers/lot-card"
 import type { AuctionProduct, ListingBase } from "@/types/product"
 
@@ -30,17 +31,31 @@ export type LotIdentityProps = {
   }
   chip?: Chip
   className?: string
+  /* US-105 AC5: the koi's age and sex under the title, e.g.
+     "Sansai (3 tahun) · Betina". Absent on an old lot, so no empty line. */
+  subtitle?: string
+  /* The lot page carries share in the phone's own header (board 03), so the
+     identity row keeps it from `lg` up. The product page has no such header
+     and shows it in the identity row at every width. */
+  shareOnMobile?: boolean
 }
 
-export function LotIdentity({ lot, chip, className }: LotIdentityProps) {
+export function LotIdentity({
+  lot,
+  chip,
+  className,
+  subtitle,
+  shareOnMobile,
+}: LotIdentityProps) {
   const { title, listing, highlights, stamps, auction } = lot
   const badges = [...(highlights ?? []), ...(stamps ?? [])]
   const lookup = { ...BID_HIGHLIGHTS, ...TRUST_STAMPS }
   const { Icon: SellerIcon } = SELLER_KIND[listing?.sellerKind ?? "shop"]
+  // An SKU is not a label: never fall back to `listing.ref` (owner 2026-11-25).
   const lotLabel =
     auction?.lotNumber !== undefined
       ? formatLotNumber(auction.lotNumber)
-      : listing?.ref
+      : undefined
   const sellerKind =
     listing?.sellerKind === "farm" ? "Breeder terdaftar" : "Penjual terdaftar"
 
@@ -57,7 +72,7 @@ export function LotIdentity({ lot, chip, className }: LotIdentityProps) {
         {initials(listing?.seller)}
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="flex items-center gap-1 text-base font-semibold">
+        <span className="flex items-center gap-1 text-[15px] font-semibold">
           <span className="truncate">{listing?.seller}</span>
           <BadgeCheck
             role="img"
@@ -113,11 +128,26 @@ export function LotIdentity({ lot, chip, className }: LotIdentityProps) {
               </Badge>
             )
           })}
+
+          {/* US-098 AC11: one share action in the lot header, no heart (D-066).
+              Board 03 puts it in the phone's own top bar (LotPage), so the
+              identity row keeps it from `lg` up only. */}
+          <ShareButton
+            title={title}
+            url={lotHref(lot.id)}
+            className={cn("ms-auto", !shareOnMobile && "max-lg:hidden")}
+          />
         </div>
 
-        <h1 className="font-heading text-xl leading-[34px] font-bold text-balance lg:text-2xl lg:leading-10 lg:font-semibold lg:tracking-[-0.01em]">
+        <h1 className="font-heading text-xl leading-8 font-bold tracking-[-0.01em] text-balance lg:text-2xl lg:leading-[30px]">
           {title}
         </h1>
+
+        <RenderIf when={subtitle}>
+          {(text) => (
+            <p className="text-sm text-muted-foreground">{text}</p>
+          )}
+        </RenderIf>
 
         <RenderIf when={listing?.seller}>
           {() =>

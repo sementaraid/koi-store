@@ -15,12 +15,13 @@ export function CatalogsFeed({
   basePath,
   trail,
   searching,
+  failed,
   attributes
 }: {
   koi: SimpleProduct[];
 } & Pick<
   CatalogsProps,
-  'heading' | 'basePath' | 'trail' | 'searching' | 'attributes'
+  'heading' | 'basePath' | 'trail' | 'searching' | 'failed' | 'attributes'
 >) {
   const handles = useMemo(() => facetHandles(attributes ?? []), [attributes]);
 
@@ -33,6 +34,7 @@ export function CatalogsFeed({
       {...(basePath ? { basePath } : {})}
       {...(trail ? { trail } : {})}
       {...(searching ? { searching } : {})}
+      {...(failed ? { failed } : {})}
       {...(attributes ? { attributes } : {})}
       {...state}
     />

@@ -29,7 +29,7 @@ test("ignores query and hash and returns undefined with no match", () => {
 // The US-107 T-107.1 baseline: the bottom tab and header link each route marked
 // before the shell moved into the layouts. Same literals as the nav's constants.
 const bottom = ["/", "/lelang", "/katalog", "/akun/bid", "/akun"]
-const header = ["/lelang", "/katalog", "/toko"]
+const header = ["/lelang", "/katalog", "/toko", "/mitra"]
 const aliases = { "/katalog": ["/kategori", "/produk"] }
 
 const baseline: [string, string | undefined, string | undefined][] = [
@@ -41,8 +41,8 @@ const baseline: [string, string | undefined, string | undefined][] = [
   ["/keranjang", undefined, undefined],
   ["/lelang", "/lelang", "/lelang"],
   ["/lelang/lot_01M7YRQP9J4VRF8KT6S286TCAX", "/lelang", "/lelang"],
-  ["/mitra", undefined, undefined],
-  ["/mitra/aquatic-pro-shop", undefined, undefined],
+  ["/mitra", undefined, "/mitra"],
+  ["/mitra/aquatic-pro-shop", undefined, "/mitra"],
   ["/produk/asagi-konjo-tua", undefined, "/katalog"],
   ["/toko", undefined, "/toko"],
   ["/panduan", undefined, undefined],
@@ -61,14 +61,13 @@ const baseline: [string, string | undefined, string | undefined][] = [
   ["/akun/kebun/terjual", "/akun", undefined],
   ["/akun/menang", "/akun", undefined],
   ["/akun/pengaturan", "/akun", undefined],
-  ["/akun/pesan", "/akun", undefined],
   ["/akun/pesanan", "/akun", undefined],
   ["/akun/pesanan/order_x", "/akun", undefined],
   ["/akun/saldo", "/akun", undefined],
   ["/akun/topup", "/akun", undefined],
   ["/akun/ulasan", "/akun", undefined],
   ["/tidak-ada", undefined, undefined],
-  ["/mitra/tidak-ada", undefined, undefined]
+  ["/mitra/tidak-ada", undefined, "/mitra"]
 ];
 
 for (const [path, tab, link] of baseline) {

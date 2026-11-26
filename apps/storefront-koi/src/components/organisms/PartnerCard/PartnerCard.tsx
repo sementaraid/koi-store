@@ -53,7 +53,7 @@ export function PartnerCard({
             <CardTitle className="flex items-center gap-1.5">
               <Link
                 href={href}
-                className="truncate rounded-sm transition-colors hover:text-accent-ink hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                className="truncate rounded-sm transition-colors hover:text-accent-ink hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50 max-md:-my-3 max-md:py-3"
               >
                 {name}
               </Link>
@@ -112,7 +112,7 @@ export function PartnerCard({
           variant="soft"
           render={<Link href={href} />}
           nativeButton={false}
-          className="shrink-0"
+          className="shrink-0 max-md:after:-inset-y-2"
         >
           Kunjungi Kolam
         </Button>

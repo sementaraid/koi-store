@@ -1,17 +1,17 @@
 # Koi Store — MVP Plan
 
-Nov 13, 2026 · @Herlina Sunaryanto · updated 2026-11-15 with the owner's answers (D-020 – D-044) · 2026-11-16: D-056, D-057, D-044 on hold · 2026-11-20: D-044 hold re-confirmed, D-063 (bid-removal reason cap), US-093 in MVP scope, bot hold stays (web-only MVP)
+Nov 13, 2026 · @Herlina Sunaryanto · updated 2026-11-15 with the owner's answers (D-020 – D-044) · 2026-11-16: D-056, D-057, D-044 on hold · 2026-11-20: D-044 hold re-confirmed, D-063 (bid-removal reason cap), US-093 in MVP scope, bot hold stays (web-only MVP) · 2026-11-25: winner pays the company account, admin pays the farmer (D-068, D-069), join fee per lot (D-070), koi fields return (D-071) · 2026-11-25 (second set): payout held while a claim is open (D-074), claim money (D-075), single-lot cancel refunds (D-076), winner's transfer proof (D-077), per-payout transfer fee (D-078), admin raises non-payment (D-079), joins made before the per-lot rule (D-080), koi field formats (D-081)
 
 ## Summary
 
-The MVP is a koi auction platform where farmers run auctions and registered customers bid from the website or WhatsApp. The platform earns only from fees paid out of a prepaid store-credit balance; the winning price is paid directly to the farmer.
+The MVP is a koi auction platform where farmers run auctions and registered customers bid from the website (or WhatsApp, held). The platform earns only from fees paid out of a prepaid store-credit balance. The winning price moves outside the app: the winner transfers it to the company bank account and an admin pays the farmer (D-068, D-069).
 
-- **Customers** top up store credit by transfer to the admin, spend it on auction join fees, then bid.
+- **Customers** top up store credit by transfer to the admin, spend it on the join fee of each lot they bid on, then bid.
 - **Farmers** start as customers, register a farm, top up, and spend credit on listing fees to create auctions.
-- **Winners** pay the farmer; how is open: the owner is recalculating the payment model (D-044 on hold, re-confirmed 2026-11-20), and the winner sees no farmer contact at all. No phone either way (D-052). The farmer handles shipping, to the winner's saved address (D-056).
+- **Winners** transfer the winning price to the company bank account within 1×24 h and an admin confirms it; the farmer is paid by an admin once the koi arrives healthy or 3 days after shipping (D-068, D-069). The winner sees no farmer contact or bank details. No phone either way (D-052). The farmer handles shipping, to the winner's saved address (D-056).
 - **Built on Mercur** (the existing `koi-store` repo), used as the backend only. Every screen (storefront, Farmer area, admin app) is custom-built on one shared design system; auction and wallet are custom modules.
 
-**Out of scope for the MVP:** online payment gateway, refunds (except when a farmer or an admin cancels an auction, D-034), fixed-price marketplace and cart, payment held by the platform, proxy bidding, buy-it-now, live video.
+**Out of scope for the MVP:** online payment gateway (no online invoice, webhook or xenPlatform payout), fixed-price marketplace and cart, escrow (money held automatically and released by software), proxy bidding, buy-it-now, live video. Refunds are in scope only on a cancel (D-034, D-076), on an approved refund claim, and on a paid lot the farmer never ships (D-075). The winner's transfer to the company account and the farmer's manual payout (D-068, D-069) are in scope.
 
 ## Users and roles
 
@@ -20,7 +20,7 @@ There are three roles; every farmer is also a customer with the same login.
 | Role | Can do | Where |
 | --- | --- | --- |
 | Customer | Register (phone required; it is the account's WhatsApp number, D-008), see balance and history, join auctions, bid, see won lots and farmer contact | Storefront, WhatsApp |
-| Farmer | Everything a customer can, plus register a farm, create auctions and lots, see bidders and winners, mark lots paid and shipped | Farmer area in the storefront |
+| Farmer | Everything a customer can, plus register a farm, create auctions and lots, see bidders and winners, ship sold lots (an admin confirms the winner's payment and pays the farmer) | Farmer area in the storefront |
 | Admin | Approve farms and auctions, approve top-ups, adjust balances, edit the fee table and settings (extend window, limits, claim window, platform bank account), moderate bids, issue strikes and bans | Custom admin app |
 
 **Becoming a farmer:** a logged-in customer submits a farm registration: farm name, location, ID card (KTP photo and 16-digit NIK, stored privately and never public, D-017), farm photos, and a bank account in their own name for winners to pay into. The farm's WhatsApp number is the registration phone, copied to the seller and not editable (D-016). Admin approves it, and the account gains farmer access. Admin may instead reject it with a reason the farmer sees; rejection is final, with no resubmission (D-015).
@@ -32,9 +32,9 @@ Added 2026-11-15 by the owner (D-039, D-040).
 - Every customer's personal data is **encrypted at rest**: KTP/NIK, bank account details, phone numbers and similar PII.
 - API results and the frontend show only a **small part** of each value (masked), never the full value, except the owner's own full values on their own record (D-045). This covers the farm registration (US-020), the admin farm queue (US-021), the wallet and top-up tables (US-010 – US-012), contact details (US-051), ratings (US-057), admin screens generally (US-070, US-091) and the new story US-092.
 - KTP photos and transfer screenshots stay private files (D-017, D-018). One exception to "no key on a store route": the KTP upload may return its private file **key** to the customer who uploaded it, for their own registration only. Never a URL, never another user (D-040; exception to `packages/api/CLAUDE.md`).
-- **Settled:** admins see masked PII everywhere and the full value only through a logged reveal (D-042); encryption is column-level on top of disk encryption and includes the wallet/top-up tables (D-043); the winner sees the full bank account for their own won lot through the same logged reveal (D-044, **on hold; re-confirmed by the owner 2026-11-20**); the farmer reveals the winner's full saved address the same way (D-056).
+- **Settled:** admins see masked PII everywhere and the full value only through a logged reveal (D-042); encryption is column-level on top of disk encryption and includes the wallet/top-up tables (D-043); the winner never sees the farmer's bank account (D-068, supersedes D-044); the farmer reveals the winner's full saved address the same way (D-056).
 - **Self-view (D-045):** a person sees their **own** full phone and own bank details on their **own** record — the storefront account screen (`/store/customers/me`) and the farmer's own `/vendor/sellers*` record. Every other caller gets the mask, admins included; PII about anyone else on those screens stays masked.
-- **Contact between winner and farmer (D-052, supersedes the D-044 confirmation of 2026-11-15):** no phone either way. No `wa.me` link. The farmer gets the winner's name and the winner's default shipping address: masked (city + province only) on the sold lot, full only through a logged reveal (D-056). The winner gets **no farmer contact at all**: the bank-account reveal (D-044) is on hold, re-confirmed by the owner 2026-11-20; if it returns, it covers number and holder name (D-057).
+- **Contact between winner and farmer (D-052, D-068):** no phone either way. No `wa.me` link. The farmer gets the winner's name and the winner's default shipping address: masked (city + province only) on the sold lot, full only through a logged reveal (D-056). The winner gets **no farmer contact and no farmer bank details**: they pay the company account (D-068), which replaces D-044/D-057/D-059.
 - **Open, not lost:** `/admin/sellers*` still returns unmasked `payout_account.data`, whose free-form JSON can hold a bank number or phone — masked by US-092 T-092.9. `professional_details` (`corporate_name`, `registration_number`, `tax_id`) stays unmasked deliberately, out of scope unless the owner says otherwise. Column-level encryption (US-092 AC1/AC2, T-092.1, T-092.6) is **not built**; masking lands while encryption remains open, so US-092 isn't complete until then.
 
 ## Store credit wallet
@@ -46,7 +46,7 @@ Every customer has one rupiah wallet, created when their profile is complete (D-
 1. User transfers any amount (no minimum) to the platform's bank account. The account is an admin setting stored in the settings table and shown on the top-up page (D-009, D-010).
 2. User uploads the transfer screenshot on the site, which creates a pending top-up request, and also sends it to admin on WhatsApp.
 3. Admin checks the bank statement and approves the request (or rejects it with a reason). Approval records the top-up.
-4. Joining an auction (customer) checks the balance and records a `join_fee`. If the balance is short, joining is blocked with a "top up" prompt.
+4. Joining a lot (customer) checks the balance and records a `join_fee`. If the balance is short, joining is blocked with a "top up" prompt.
 5. A farmer submits an auction for approval (`draft → pending_approval`, D-031). Submit recomputes the fees from the current fee table (D-032), saves the farmer's `customer_id` from the member token on the auction (D-033), and checks the balance: if it is below the listing fee, submission is refused with a "top up" prompt. The `listing_fee` is recorded on that customer's wallet when the admin approves the auction, using the final fee (after any admin change). Approval checks the balance again and fails if it has dropped below the fee (D-020).
 
 **Transaction types**
@@ -54,17 +54,17 @@ Every customer has one rupiah wallet, created when their profile is complete (D-
 | Type | Sign | Reference |
 | --- | --- | --- |
 | `manual_topup` | + | Admin who recorded it, bank reference |
-| `join_fee` | − | Auction joined |
+| `join_fee` | − | Lot joined (D-070; before D-070: auction joined) |
 | `listing_fee` | − | Auction approved (D-020) |
 | `adjustment` | + or − | Admin, reason (corrections only) |
-| `refund` | + | Auction cancelled by its farmer or an admin (join fees only, D-034) |
+| `refund` | + | Auction or single lot cancelled by its farmer or an admin (join fees only, D-034, D-076) |
 
 **Rules**
 
 - Money is stored as whole rupiah in integer columns. `wallet_transaction.amount` has no practical size cap (exact `numeric`, whole rupiah, D-012).
 - Transactions are never edited or deleted; a mistake is fixed with an `adjustment`.
 - Credit can only pay platform fees. It cannot pay farmers, be withdrawn, or be moved between users. This keeps it closed-loop, the lower-risk case under Bank Indonesia rules (to confirm with someone local).
-- **Refunds in the MVP:** only when a farmer or an admin cancels an auction (D-034). Every customer who joined gets a `refund` of their join fee. No refund when a customer leaves an auction, and the farmer's listing fee is not refunded. The listing fee is charged only on approval, so a rejected auction or a lowered fee never needs a refund (D-020).
+- **Refunds in the MVP:** a cancel (D-034, D-076), an approved refund claim, and a paid lot the farmer never ships (D-075). On a cancel, every customer who joined gets a `refund` of their join fee: the whole auction on a farmer cancel or an admin cancel of a live auction, one lot's fees on a single-lot admin cancel (D-076). No refund when a customer leaves an auction, and the farmer's listing fee is not refunded. The listing fee is charged only on approval, so a rejected auction or a lowered fee never needs a refund (D-020). The two D-075 refunds are paid by the company account as a manual bank transfer an admin records, not as saldo; the winning price never touches the wallet.
 
 ### Fees
 
@@ -72,13 +72,13 @@ The platform sets every fee from a fee table that admins can edit; farmers and c
 
 - Each **auction has one category**, and every lot in it belongs to that category. The farmer picks it; admin checks it when approving. Mixed fish go in separate auctions, so a buyer never pays a premium fee for a cheap fish.
 - **Listing fee (farmer)** = the category's listing fee × the number of lots.
-- **Join fee (customer)** = the category's join fee, paid once per auction.
+- **Join fee (customer)** = the category's join fee, paid once per lot the customer wants to bid on (D-070).
 - Admin can change either fee on a single auction when approving it, with a written reason that is saved. Typical reasons: a promotion for a new farm, or a goodwill discount after a problem. Rejecting the auction clears the override; the admin applies it again at approval if it's still wanted (D-032).
 - An auction's fees are recomputed from the current fee table every time the farmer submits it (D-032). A fee-table change never alters an auction that is already `scheduled` or later.
 
 **Starting fee table (approved; admins can edit)**
 
-| Category | Example | Listing fee per lot (Rp) | Join fee per auction (Rp) |
+| Category | Example | Listing fee per lot (Rp) | Join fee per lot (Rp) |
 | --- | --- | --- | --- |
 | Lokal, no certificate | Indonesian-bred, no papers | 50.000 | 100.000 |
 | Lokal, with certificate | Indonesian-bred with breeder or show certificate | 100.000 | 250.000 |
@@ -94,11 +94,16 @@ The rules follow the conventions Indonesian koi buyers already use in Facebook a
 ```
 Open for bids --(timer ends)--> Any bids?
   |  (bid in last 5 min: extend)     |-- no  --> Unsold
-                                     '-- yes --> Won --> Paid --> Shipped --> Delivered
-                                                  |                              |
-                                     Not paid in 1x24 h            dead or sick: claim with video in 4 h
-                                                  |
-                                     Strike, offer to 2nd bidder
+                                     '-- yes --> Won --(winner transfers to the company account,
+                                                         admin confirms, D-068)--> Paid
+                                                  |              |
+                                     Not paid in 1x24 h           --> Shipped --(admin pays the farmer once
+                                                  |                          arrived healthy, after the 4 h
+                                                  |                          claim window, or 3 days after
+                                                  |                          shipped, D-069, D-074)
+                                     Strike, offer to 2nd bidder   --> Delivered
+                                                                         |
+                                                  dead or sick: claim with video in 4 h
 ```
 
 An admin can cancel an open lot (`open → cancelled`, reason saved, no winner, D-035). Each late bid restarts the extend timer (5 minutes by default); a winner who misses the 1×24 hour deadline gets a strike; a winner whose fish arrives dead or sick can claim within 4 hours.
@@ -109,9 +114,14 @@ An admin can cancel an open lot (`open → cancelled`, reason saved, no winner, 
 - Every auction needs **admin approval** before it is scheduled. Admin checks the category, photos and fees. Approval is refused once the auction's start time has passed; the admin rejects it so the farmer picks new dates (D-049).
 - Submitting an auction moves it to `pending_approval`; the admin queue lists only those (D-031).
 - If the admin **rejects** an auction, it goes from `pending_approval` back to `draft` with a written reason the farmer sees. The farmer fixes it and resubmits. There is no rejected status (D-031).
-- The join fee is paid once per auction and covers all its lots (fees come from the fee table above).
+- The join fee is paid once per lot: a customer joins each koi they want to bid on and pays that lot's join fee (the auction's join fee snapshot, D-070); they can bid only on lots they joined. Fees come from the fee table above.
+- Customers who joined an auction under the earlier once-per-auction rule keep access to every lot of that auction until it closes; the per-lot rule applies to auctions approved after US-111 ships. No refund and no extra charge (D-080).
 - Customers can join at any time until the auction ends, including after bidding has started: while the auction is `scheduled` or `live`, including while a lot runs past `end_at` on extends (D-048).
 - Public pages (`/lelang`, lot pages) show auctions that are `scheduled`, `live` or `closed`. A closed lot shows its final price and whether it sold, never the winner's identity, id or any winner field (D-046); its bid history is shown in full with masked names, so the top row shows the winner's masked name (D-051). A cancelled lot inside a public auction stays visible, labelled "Dibatalkan", with no price, no final price, no winner and no bids (D-050).
+
+**Koi details per lot (set by the farmer, D-071)**
+
+- Variety, size (cm), age, sex, certificate, pond origin, breeder notes and a YouTube video link, plus photos. Shown on cards and the lot page, filterable on `/lelang`. **Formats (D-081):** variety and size are required; everything else is optional. Variety is a fixed list (the koi variety categories `/katalog` uses, plus `Lainnya`); size is whole cm, 1 to 150; age is `Tosai (1 tahun)`, `Nisai (2 tahun)`, `Sansai (3 tahun)`, `Yonsai (4 tahun)` or `Gosai+ (5 tahun atau lebih)`; sex is `Jantan`, `Betina` or `Belum diketahui`; certificate is yes/no plus an optional issuer (`Tidak ada (koi lokal)` when no); pond origin is free text (city, province); breeder notes are free text up to 1000 characters; the video is one YouTube link.
 
 **Pricing per lot (set by the farmer)**
 
@@ -141,21 +151,22 @@ An admin can cancel an open lot (`open → cancelled`, reason saved, no winner, 
 
 - When a lot's end time passes, the system closes it. Highest bid wins; a lot with no bids closes as unsold.
 - Winner, final price and close time are saved on the lot.
-- The winner sees no farmer contact at all (D-044 on hold, re-confirmed by the owner 2026-11-20). The farmer sees the winner's name and masked address, full address through a logged reveal (D-056). No phone or WhatsApp number either way, and no `wa.me` link (D-052).
-- The winner must pay the farmer within **1×24 hours**. The farmer marks the lot paid, then shipped. *(Payment model under review, 2026-11-16: with D-044 on hold the winner has no in-app way to get payment details; the owner's planned direction is Xendit escrow, not yet a decision. See `stories.md` status.)*
+- The winner sees no farmer contact and no farmer bank details (D-068). The farmer sees the winner's name and masked address, full address through a logged reveal (D-056). No phone or WhatsApp number either way, and no `wa.me` link (D-052).
+- The winner transfers the winning price to the **company bank account** (the platform bank account setting, D-009) within **1×24 hours**. The winner uploads one transfer proof image (JPG, PNG or WEBP, at most 5 MB, a private file); the admin confirms the payment or rejects the proof with a written reason the winner sees, and the winner may upload again while the lot is `won` (D-077). A rejected proof alone gives no strike. An admin confirms the transfer and the lot moves `won → paid`, with the date saved (D-068, D-072). No payment gateway.
+- Once the lot is paid, an admin pays the farmer: the winning price minus only the bank transfer fee, due when the winner uploads a photo or video of the koi arrived healthy or 3 days after `shipped_at` if the winner sends nothing (D-069). The arrival photo makes the payout due only once the 4-hour claim window has passed with no claim, and the payout waits while a claim is open (D-074). An approved refund claim means the winner is refunded and the farmer is not paid; an approved replacement pays the farmer once the replacement arrives healthy (D-075). The admin types the actual bank transfer fee on each payout; there is no global fee setting (D-078). The admin records the payout and its date.
 
 **Winner doesn't pay**
 
-- The farmer reports it. Admin checks and gives the winner a strike.
-- The farmer may offer the lot to the second-highest bidder at that bidder's price, arranged between them fully off-platform. The platform records nothing about the offer and never reassigns the lot (D-026).
+- The admin raises it: `apps/admin-koi` lists `won` lots past the 1×24 hour deadline with no confirmed payment, and the admin gives the winner a strike from that list (D-079). The farmer no longer reports it.
+- The farmer may offer the lot to the second-highest bidder at that bidder's price, arranged between them fully off-platform. The platform records nothing about the offer and never reassigns the lot (D-026, kept by D-079).
 
 **Strikes (winners and farmers)**
 
-- **Winners** get a strike for not paying within 1×24 hours.
+- **Winners** get a strike for not paying the company account within 1×24 hours. The admin sees the overdue `won` lots in admin-koi and gives the strike after checking (D-079).
 - **Farmers** get a strike for not shipping a paid lot, or for refusing an approved dead-on-arrival claim.
 - Admin gives every strike after checking the report. **2 active strikes = ban**: a banned winner can't join or bid; a banned farmer can't create auctions. The ban check on join and bid lands with strikes (US-059), not with join or bid (D-047).
 - Every ban or suspend needs a written reason, the same rule as a farm rejection (D-041). This covers Mercur's `POST /admin/sellers/:id/suspend` and every customer ban.
-- A farm suspended after approval may still mark its already-sold lots paid and shipped; it can't create auctions or lots. A terminated farm can't (D-054).
+- A farm suspended after approval may still ship its already-sold lots (marking paid is the admin's since D-068); it can't create auctions or lots. A terminated farm can't (D-054).
 - Strikes expire after **6 months**. Admin can remove a strike if there was a good reason.
 
 **Delivery**
@@ -170,17 +181,17 @@ An admin can cancel an open lot (`open → cancelled`, reason saved, no winner, 
 1. Within **4 hours** of marking it delivered, the winner can open a claim if the fish is dead, sick or badly stressed. Admin can change the window.
 2. The claim needs an **unboxing video** uploaded to the site (up to **100 MB**, about 2 minutes) and the winner's choice of remedy: **full refund** or **replacement fish**.
 3. The farmer and admin are notified on the site only (the Farmer area and the admin-koi claim queue; no WhatsApp in the MVP, D-025) and both review the video. The farmer can accept (the claim is then approved at once) or dispute; on a dispute, admin approves or rejects (D-038).
-4. If the claim is approved, the farmer has **3 days** from approval (on both paths, D-038) to refund the winner directly or ship a replacement, then marks it done. The winner confirms. If the winner doesn't confirm within **3 days** of it being marked done, the claim confirms automatically (D-027).
+4. If the claim is approved, the farmer has **3 days** from approval (on both paths, D-038) to ship a replacement, then marks it done. On a refund remedy an admin refunds the winner from the company account and the farmer is not paid for that lot; on a replacement the farmer's payout becomes due once the replacement arrives healthy (D-075). The winner confirms. If the winner doesn't confirm within **3 days** of it being marked done, the claim confirms automatically (D-027).
 5. A farmer who misses the 3 days or refuses an approved claim gets a strike and can be rated badly.
 6. **Courier problems:** the farmer stays responsible to the winner even when a courier caused the death, and claims from the courier themselves.
 7. Videos are deleted 30 days after the claim is closed. Closed means status `confirmed` or `rejected` (D-027).
 
 **Cancellations (MVP)**
 
-- Customer leaves an auction: no refund.
-- Farmer cancels an auction: allowed only before it starts (status `draft`, `pending_approval` or `scheduled`, D-031). Every customer who joined gets their join fee back as a `refund`. The farmer's listing fee is not refunded (D-022).
+- Customer leaves an auction or loses a lot: no refund of the join fee.
+- Farmer cancels an auction: allowed only before it starts (status `draft`, `pending_approval` or `scheduled`, D-031). Every join fee paid on its lots is refunded as a `refund` (D-070). The farmer's listing fee is not refunded (D-022).
 - Once an auction is `live`, only the admin can cancel it (D-022). Every participant gets their join fee back as a `refund`; the listing fee is not refunded (D-034).
-- A lot with bids can only be cancelled by admin: `open → cancelled`, with a saved reason and no winner (D-035).
+- A lot with bids can only be cancelled by admin: `open → cancelled`, with a saved reason and no winner (D-035). Every join fee paid on that lot is refunded (D-076).
 
 **Ratings**
 
@@ -196,7 +207,7 @@ One bot number serves every auction; each message names the lot, so there's no n
 - **Bids:** `BID <lot> <amount>` goes through the same rules as a web bid. The bot replies accepted, or rejected with the current price.
 - **Outbid alert:** "You've been outbid on A3. Current price Rp 5.200.000. Reply `BID A3 5300000`."
 - **Info:** `STATUS A3` returns current price and time left.
-- **Win:** sends the farmer's WhatsApp and bank details and the 1×24 hour deadline. *(Conflicts with D-052 (no farmer phone to the winner), D-044 (full bank account only through the logged reveal, on hold) and D-056 (farmer gets the winner's address); open as `mvp-Q38`.)*
+- **Win:** sends the farmer's WhatsApp and bank details and the 1×24 hour deadline. *(Conflicts with D-052 (no farmer phone to the winner), D-068 (the winner pays the company account and gets no farmer bank details) and D-056 (farmer gets the winner's address); open as `mvp-Q38`.)*
 
 **Identity:** a WhatsApp number is linked to one account. It is the phone number given at registration, which is required (D-008). Bids from unknown numbers get a registration link.
 
@@ -234,17 +245,21 @@ Mercur's vendor dashboard (`apps/vendor`) is not used in the MVP.
 | Module | Tables | Links to Mercur |
 | --- | --- | --- |
 | Wallet | `wallet` (one per customer, created when the profile is complete, D-011), `wallet_transaction` (type, uncapped whole-rupiah amount, reference, created by), topup\_request (amount, screenshot, status, reviewed by), fee\_category (name, listing fee, join fee) | Customer |
-| Auction | `auction` (farmer, start, end, join fee, listing fee, status, payer `customer_id` (D-033), fee override with reason (D-032), rejection reason (D-031)), `lot` (OB, KB, current price, end time, winner, final price, status, cancel reason (D-035)), `bid` (bidder, amount, source web or WhatsApp, time, removed with reason and admin (D-024)), `auction_participant` (customer, joined at) | Seller, customer, product |
+| Auction | `auction` (farmer, start, end, join fee, listing fee, status, payer `customer_id` (D-033), fee override with reason (D-032), rejection reason (D-031)), `lot` (OB, KB, current price, end time, winner, final price, status, cancel reason (D-035), paid date (D-068, D-072), shipped and delivered dates (D-072), koi fields: variety, size cm, age, sex, certificate, pond origin, breeder notes, YouTube video URL (D-071)), `bid` (bidder, amount, source web or WhatsApp, time, removed with reason and admin (D-024)), `lot_participant` (customer, lot, joined at, paid join fee, D-070) | Seller, customer, product |
+| Payout (new, D-069) | `lot_payout` (lot, seller, amount, bank transfer fee typed per payout (D-078), status pending/due/paid (D-074), due reason, arrival proof, paid date, transfer reference, admin); claim and never-shipped refunds are recorded as manual transfers on the claim or lot (amount, reference, date, admin, D-075) | Seller, customer |
 | Moderation | `strike` (user, lot, reason, admin), farmer\_rating (lot, winner, stars, comment), claim (lot, video, remedy, status, farmer and admin decisions) | Customer |
 
-**Settings:** every admin-editable platform value (extend window, max lots per auction, auction length, claim window, platform bank account) is stored in a settings table in the database, not in env vars or config (D-010).
+**Settings:** every admin-editable platform value (extend window, max lots per auction, auction length, claim window, platform bank account) is stored in a settings table in the database, not in env vars or config (D-010). The bank transfer fee is not a setting: the admin types the actual fee on each payout (D-078).
 
 **Key flows**
 
-- **Join auction:** one workflow checks balance, records `join_fee`, adds the participant. All or nothing.
+- **Join lot:** one workflow checks balance, records `join_fee` for that lot, adds the lot participant (D-070). All or nothing.
 - **Approve auction:** one workflow re-checks the balance of the `customer_id` saved on the auction, records `listing_fee` at the final fee, and moves the auction `pending_approval → scheduled`. All or nothing (D-020, D-031, D-033).
 - **Place bid:** locks the lot row, checks the bidder joined, amount ≥ OB for the first bid and ≥ current + KB after that (D-023), and not the farmer; saves the bid, updates current price, applies extend, emits an outbid event.
 - **Close lots:** a scheduled job every minute closes lots past their end time and saves winner and price.
+- **Confirm winner payment:** one workflow (admin) checks the lot is `won`, saves the paid date and moves it `won → paid` (D-068).
+- **Payout due:** a scheduled job marks a paid lot's payout due 3 days after `shipped_at` when the winner has not confirmed arrival; the winner's photo/video also makes it due, once the 4-hour claim window has passed with no claim, and an open claim holds it (D-074). An admin workflow records the payout, the typed transfer fee and its date (D-069, D-078).
+- **Claim money:** an admin workflow records a refund to the winner from the company account on an approved refund claim or a paid lot the farmer never ships; a replacement's payout becomes due when the replacement arrives healthy (D-075).
 - **Outbid and win alerts:** event subscribers send WhatsApp messages.
 - **Live updates:** the lot page polls every few seconds in the MVP; server-sent events can replace it later.
   - **Bidding on the lot page:** the lot page is the only bidding surface — one lot with its photo, current price, countdown, bid feed, and the join and bid actions (D-064). The separate live room (`/lelang/<lot>/live`, US-046) is removed; old links redirect to `/lelang/<lot>`. No video system is built; a farmer can add a YouTube or Instagram live link that is shown on the lot page.
@@ -305,6 +320,15 @@ Full text and options: `stories.md`, Open questions.
 - [x] Fees recomputed on every submit; override cleared on rejection (D-032, `mvp-Q18`).
 - [x] Admin cancel refunds every join fee (D-034, `mvp-Q19`).
 - [x] Payer `customer_id` saved on the auction at submit (D-033, `mvp-Q24`).
+- [x] Winner pays the company account, admin confirms; admin pays the farmer the price minus the bank transfer fee (D-068, D-069). Join fee per lot (D-070).
+- [x] Payout while a claim is open; claim window vs the arrival photo (D-074, `mvp-Q66`).
+- [x] Money on an approved refund or replacement claim, and on a paid lot the farmer never ships (D-075, `mvp-Q67`).
+- [x] Single-lot admin cancel refunds that lot's join fees (D-076, `mvp-Q68`).
+- [x] Winner's transfer proof upload and rejection (D-077, `mvp-Q69`).
+- [x] Bank transfer fee: the admin types it per payout, no global setting (D-078, `mvp-Q70`).
+- [x] The admin raises a winner's non-payment from an overdue list; the farmer's report route is removed; D-026's second-bidder offer stays (D-079, `mvp-Q71`).
+- [x] Per-auction joins keep every lot of that auction until it closes; per-lot applies to auctions approved after US-111 ships; no refund or extra charge (D-080, `mvp-Q72`).
+- [x] Koi field formats (D-081, `mvp-Q73`).
 
 **Auctions**
 
@@ -341,13 +365,14 @@ Full text and options: `stories.md`, Open questions.
 - [x] Encrypted at rest; API results and the frontend show masked values only (D-039).
 - [x] Column-level encryption for NIK, bank account and phone, on top of disk encryption; the wallet and top-up tables are included in US-092; plain values are migrated in place (D-043, `mvp-Q26`).
 - [x] Admins see masked PII everywhere, admin-only routes and UI included; the full value only through an explicit reveal action logged with who, when, record and field (D-042, `mvp-Q25`).
-- [x] Winner pays into the farmer's full bank account: visible only for the lot they won, through the same logged reveal (D-044, `mvp-Q27`). **On hold; owner re-confirmed the hold 2026-11-20** (the winner sees no farmer contact at all; US-051's built reveal stays shipped).
+- [x] Winner pays into the farmer's full bank account: visible only for the lot they won, through the same logged reveal (D-044, `mvp-Q27`). **Superseded by D-068 (2026-11-25):** the winner pays the company account and never sees farmer bank details; US-108 removes the winner's reveal.
 - [x] A person sees their own full phone and own bank details on their own record (`/store/customers/me`, own `/vendor/sellers*`); every other caller, admins included, gets the mask (D-045).
 - [x] No phone between winner and farmer: the farmer gets the winner's name and masked address, full address through a logged reveal (D-056); the winner's bank-account reveal (D-044) is on hold 2026-11-16; no `wa.me` link. Supersedes the 2026-11-15 "farmer reveals the winner's phone" confirmation (D-052, `mvp-Q34`).
 - [x] The farmer ships to the winner's default shipping address: masked (city + province) on the sold lot, full through a logged reveal; no address → "Alamat belum diisi" and a prompt for the winner (D-056, `mvp-Q37`).
-- [x] If the winner's bank reveal returns, it covers account number and holder name, one audit row (D-057, `mvp-Q39`; on hold with D-044).
+- [x] If the winner's bank reveal returns, it covers account number and holder name, one audit row (D-057, `mvp-Q39`). **Superseded with D-044 by D-068.**
 - [ ] What the WhatsApp win message (US-085) sends is open (`mvp-Q38`).
-- [ ] Payment model: with D-044 on hold the winner has no in-app way to pay. Owner's planned direction (not a decision): Xendit escrow (`docs/releases/README.md`).
+- [x] Payment flow: the winner transfers to the company bank account within 1×24 h, an admin confirms and the lot is `paid`; an admin pays the farmer after the koi arrives or 3 days after shipping (D-068, D-069). Remaining details settled by D-074 – D-080.
+- [ ] Online payment gateway and escrow stay out of the MVP; Xendit is the planned beta direction (`docs/releases/README.md`).
 - [ ] `/admin/sellers*` masks `payout_account.data` (free-form JSON can hold a bank number or phone) — US-092 T-092.9. `professional_details` stays unmasked, out of scope unless the owner says otherwise.
 - [ ] Column-level encryption (US-092 AC1/AC2, T-092.1, T-092.6) is still not built; masking is done while encryption is not.
 

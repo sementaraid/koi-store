@@ -30,10 +30,10 @@ export function farmFileError(file: { type: string; size: number }): string | nu
 
 export function farmPhotosError(count: number): string | null {
   if (count < 1) {
-    return 'Unggah minimal satu foto kebun.';
+    return 'Unggah minimal satu foto farm.';
   }
   if (count > MAX_FARM_PHOTOS) {
-    return `Maksimal ${MAX_FARM_PHOTOS} foto kebun.`;
+    return `Maksimal ${MAX_FARM_PHOTOS} foto farm.`;
   }
   return null;
 }

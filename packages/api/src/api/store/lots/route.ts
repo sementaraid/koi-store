@@ -1,4 +1,7 @@
-import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import {
+  ContainerRegistrationKeys,
+  MedusaError,
+} from "@medusajs/framework/utils"
 import type { MedusaContainer } from "@medusajs/framework/types"
 import type {
   AuthenticatedMedusaRequest,
@@ -9,6 +12,7 @@ import {
   type StoreGetLotsParamsType,
 } from "./validators"
 import { maskBidder } from "../../../utils/mask"
+import { NO_CERTIFICATE_ISSUER } from "../../../utils/koi-lot-fields"
 
 // US-040 AC3 (D-046, D-050). The storefront is lot-centric: `/lelang` lists
 // lots and `/lelang/[id]` takes a lot id, so these are the public reads. No
@@ -35,6 +39,18 @@ export type StoreLot = {
   cancelled: boolean
   // US-044 (D-051): computed from the rows on every read, never stored.
   bid_count: number
+  // US-105 (D-081): the koi's fields. null on a lot created before the story
+  // or when the farmer left the field empty (AC6). `certificate_issuer` is
+  // D-081's "no certificate" label when `has_certificate` is false.
+  variety: string | null
+  size_cm: number | null
+  age: string | null
+  sex: string | null
+  has_certificate: boolean | null
+  certificate_issuer: string | null
+  pond_origin: string | null
+  breeder_notes: string | null
+  video_url: string | null
   auction: {
     id: string
     status: string
@@ -54,8 +70,13 @@ export type StoreLot = {
   }
 }
 
+// US-111 T-111.6 (D-070, D-080): the list adds whether *this viewer* joined
+// the lot. A per-auction join made before US-111 counts for every lot of that
+// auction. The detail keeps the plain StoreLot; only the list carries it.
+export type StoreLotListItem = StoreLot & { joined: boolean }
+
 export type StoreLotsResponse = {
-  lots: StoreLot[]
+  lots: StoreLotListItem[]
   count: number
   limit: number
   offset: number
@@ -86,6 +107,16 @@ export const STORE_LOT_FIELDS = [
   "end_time",
   "final_price",
   "status",
+  // US-105 AC4 (D-081).
+  "variety",
+  "size_cm",
+  "age",
+  "sex",
+  "has_certificate",
+  "certificate_issuer",
+  "pond_origin",
+  "breeder_notes",
+  "video_url",
   "auction.id",
   "auction.status",
   "auction.start_at",
@@ -154,6 +185,19 @@ const toStoreLot = (
     bid_count: cancelled
       ? 0
       : bids.filter((bid) => bid.removed_at == null).length,
+    // US-105 AC1/AC6 (D-081): D-081's label when there is no certificate.
+    variety: (row.variety as string | null) ?? null,
+    size_cm: (row.size_cm as number | null) ?? null,
+    age: (row.age as string | null) ?? null,
+    sex: (row.sex as string | null) ?? null,
+    has_certificate: (row.has_certificate as boolean | null) ?? null,
+    certificate_issuer:
+      row.has_certificate === false
+        ? NO_CERTIFICATE_ISSUER
+        : ((row.certificate_issuer as string | null) ?? null),
+    pond_origin: (row.pond_origin as string | null) ?? null,
+    breeder_notes: (row.breeder_notes as string | null) ?? null,
+    video_url: (row.video_url as string | null) ?? null,
     auction: {
       id: auction.id as string,
       status: auction.status as string,
@@ -203,7 +247,7 @@ export const toStoreLots = async (
 // added or removed only while the auction is `draft` (D-032) and only
 // scheduled/live/closed lots are public (D-046), so the set is fixed before
 // anyone sees a number. Don't change this rule or the ordering keys.
-const lotNumbers = async (
+export const lotNumbers = async (
   scope: MedusaContainer,
   rows: StoreLotRow[]
 ): Promise<Map<string, number>> => {
@@ -257,6 +301,83 @@ export const getPublicLots = async (
   }
 }
 
+// US-111 T-111.6 (D-080): every lot this customer can already join, directly
+// (`lot_participant`) or through a pre-US-111 auction-wide row. Filtering on
+// this id set inside the page query keeps `count`/`limit`/`offset` correct.
+const joinedLotIds = async (
+  scope: MedusaContainer,
+  customerId: string
+): Promise<string[]> => {
+  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
+  const [{ data: lotRows }, { data: auctionRows }] = await Promise.all([
+    query.graph({
+      entity: "lot_participant",
+      fields: ["lot_id"],
+      filters: { customer_id: customerId },
+    }),
+    query.graph({
+      entity: "auction_participant",
+      fields: ["auction_id"],
+      filters: { customer_id: customerId },
+    }),
+  ])
+  const auctionIds = [
+    ...new Set(
+      (auctionRows as { auction_id: string }[]).map((row) => row.auction_id)
+    ),
+  ]
+  const { data: legacyLots } = auctionIds.length
+    ? await query.graph({
+        entity: "lot",
+        fields: ["id"],
+        filters: { auction: { id: auctionIds } },
+      })
+    : { data: [] }
+  return [
+    ...new Set([
+      ...(lotRows as { lot_id: string }[]).map((row) => row.lot_id),
+      ...(legacyLots as { id: string }[]).map((row) => row.id),
+    ]),
+  ]
+}
+
+// Two batched reads per page, never one per lot. Guests get `false` with no
+// query. `joined` is the D-080 carry-over: a lot row or its auction's row.
+const withJoined = async (
+  scope: MedusaContainer,
+  lots: StoreLot[],
+  customerId: string | undefined
+): Promise<StoreLotListItem[]> => {
+  if (!customerId) return lots.map((lot) => ({ ...lot, joined: false }))
+  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
+  const lotIds = lots.map((lot) => lot.id)
+  const auctionIds = [...new Set(lots.map((lot) => lot.auction.id))]
+  const [{ data: lotRows }, { data: auctionRows }] = lotIds.length
+    ? await Promise.all([
+        query.graph({
+          entity: "lot_participant",
+          fields: ["lot_id"],
+          filters: { lot_id: lotIds, customer_id: customerId },
+        }),
+        query.graph({
+          entity: "auction_participant",
+          fields: ["auction_id"],
+          filters: { auction_id: auctionIds, customer_id: customerId },
+        }),
+      ])
+    : [{ data: [] }, { data: [] }]
+  const joinedLots = new Set(
+    (lotRows as { lot_id: string }[]).map((row) => row.lot_id)
+  )
+  const joinedAuctions = new Set(
+    (auctionRows as { auction_id: string }[]).map((row) => row.auction_id)
+  )
+  return lots.map((lot) => ({
+    ...lot,
+    joined: joinedLots.has(lot.id) || joinedAuctions.has(lot.auction.id),
+  }))
+}
+
 // US-044 (D-051). One batched read of the bidders' first names (soft reference,
 // no link), then mask. The customer row never leaves the server.
 // ponytail: no cap or pagination — fine for an MVP lot's few hundred bids; add a
@@ -308,15 +429,60 @@ export const GET = async (
   req: AuthenticatedMedusaRequest<unknown, StoreGetLotsParamsType>,
   res: MedusaResponse<StoreLotsResponse>
 ) => {
-  const { limit = 20, offset = 0, status } = req.validatedQuery
+  const {
+    limit = 20,
+    offset = 0,
+    status,
+    variety,
+    size_min,
+    size_max,
+    certificate,
+    has_video,
+    joined,
+  } = req.validatedQuery
   const openStatuses = PUBLIC_AUCTION_STATUSES.filter((s) => s !== "closed")
+  // The store auth middleware is `allowUnauthenticated`, so a customer token
+  // is optional: present means the viewer is signed in, absent means guest.
+  const customerId = req.auth_context?.actor_id as string | undefined
+
+  // US-105 AC4 (D-081). Old lots with a null column match none of the koi
+  // filters; with no filter they still list (AC6).
+  const filters: Record<string, unknown> = {
+    auction: { status: status ?? openStatuses },
+  }
+  if (variety?.length) filters.variety = variety
+  if (size_min !== undefined || size_max !== undefined) {
+    filters.size_cm = {
+      ...(size_min !== undefined ? { $gte: size_min } : {}),
+      ...(size_max !== undefined ? { $lte: size_max } : {}),
+    }
+  }
+  if (certificate !== undefined) filters.has_certificate = certificate === "true"
+  if (has_video !== undefined) {
+    filters.video_url = has_video === "true" ? { $ne: null } : null
+  }
+
+  // US-111 T-111.6 (D-080): `joined=true` is the viewer's own lots. A guest
+  // can't have joined anything, so it is a 401, not an empty page.
+  if (joined === "true") {
+    if (!customerId) {
+      throw new MedusaError(MedusaError.Types.UNAUTHORIZED, "Unauthorized")
+    }
+    filters.id = { $in: await joinedLotIds(req.scope, customerId) }
+  }
+
   const { lots, count } = await getPublicLots(
     req.scope,
-    { auction: { status: status ?? openStatuses } },
+    filters,
     limit,
     offset,
     status === "closed" ? "DESC" : "ASC"
   )
 
-  res.json({ lots, count, limit, offset })
+  res.json({
+    lots: await withJoined(req.scope, lots, customerId),
+    count,
+    limit,
+    offset,
+  })
 }

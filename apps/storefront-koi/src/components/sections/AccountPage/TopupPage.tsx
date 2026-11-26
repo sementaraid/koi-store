@@ -2,14 +2,14 @@ import { ClientError } from '@mercurjs/client';
 import { redirect } from 'next/navigation';
 
 import { BalanceSync } from '@/components/organisms/AppShell/BalanceSync';
-import { ROUTES } from '@/const/routes';
+import { ROUTES, saldoTopupHref } from '@/const/routes';
 import {
   getPlatformBankAccount,
   getTopupRequests,
   type PlatformBankAccount,
   type TopupRequestsPage
 } from '@/lib/data/topups';
-import { getWallet } from '@/lib/data/wallet';
+import { getWallet, type WalletPage as WalletPageData } from '@/lib/data/wallet';
 import { requireCustomer } from '@/lib/guard';
 import { getAccountIdentity } from '@/lib/shell';
 
@@ -17,50 +17,63 @@ import { listOrderGroups } from './AccountPage';
 import { countOpen } from './components/Orders';
 import { Topup } from './components/Topup';
 
-const PER_PAGE = 20;
+// One page of each source, merged into one table. Older rows are out of scope
+// until the page grows pagination (US-102 AC9/AC10 do not ask for it).
+const HISTORY_LIMIT = 20;
 
-export async function TopupPage() {
-  // The page shows no balance, but the header chip must still be right here
-  // (US-107 AC8), so the wallet is read to compare with it.
-  const [, identity, wallet] = await Promise.all([
-    requireCustomer(ROUTES.topup),
+/** `Saldo & top-up`: balance, the numbered top-up steps and one merged history. */
+export async function TopupPage({
+  initialAmount,
+  initialTitle
+}: {
+  initialAmount?: number;
+  initialTitle?: string;
+}) {
+  const from = saldoTopupHref(initialAmount, initialTitle);
+  const [, identity, groups] = await Promise.all([
+    requireCustomer(from),
     getAccountIdentity(),
-    getWallet(1, 0).catch(() => null)
+    listOrderGroups()
   ]);
-  const groups = await listOrderGroups();
 
-  let requests: TopupRequestsPage;
-  let failed = false;
-
-  try {
-    requests = await getTopupRequests(PER_PAGE, 0);
-  } catch (err) {
+  const rethrowUnauthorized = (err: unknown) => {
     if (err instanceof ClientError && err.status === 401) {
-      redirect(`${ROUTES.login}?sessionExpired=true&redirect=${encodeURIComponent(ROUTES.topup)}`);
+      redirect(`${ROUTES.login}?sessionExpired=true&redirect=${encodeURIComponent(from)}`);
     }
-    requests = { requests: [], count: 0, limit: PER_PAGE, offset: 0 };
-    failed = true;
+  };
+
+  let wallet: WalletPageData | null = null;
+  try {
+    wallet = await getWallet(HISTORY_LIMIT, 0);
+  } catch (err) {
+    rethrowUnauthorized(err);
   }
 
-  let bankAccount: PlatformBankAccount | null;
+  let requests: TopupRequestsPage | null = null;
+  try {
+    requests = await getTopupRequests(HISTORY_LIMIT, 0);
+  } catch (err) {
+    rethrowUnauthorized(err);
+  }
+
+  let bankAccount: PlatformBankAccount | null = null;
   try {
     bankAccount = await getPlatformBankAccount();
   } catch (err) {
-    if (err instanceof ClientError && err.status === 401) {
-      redirect(`${ROUTES.login}?sessionExpired=true&redirect=${encodeURIComponent(ROUTES.topup)}`);
-    }
-    bankAccount = null;
+    rethrowUnauthorized(err);
   }
 
   return (
     <>
       <BalanceSync balance={wallet?.balance} />
       <Topup
+        wallet={wallet}
         requests={requests}
         bankAccount={bankAccount}
-        failed={failed}
         openOrders={countOpen(groups)}
         identity={identity}
+        initialAmount={initialAmount}
+        initialTitle={initialTitle}
       />
     </>
   );

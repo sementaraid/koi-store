@@ -4,8 +4,11 @@ import { test } from 'node:test';
 import {
   fullAddressLines,
   maskedAddressLabel,
+  soldLotPayoutLabel,
   soldLotStatusLabel,
-  type FullAddress
+  soldLotStepDates,
+  type FullAddress,
+  type SoldLotPayout
 } from './sold-lot.ts';
 
 test('every sold status gets the house label and tone', () => {
@@ -13,8 +16,17 @@ test('every sold status gets the house label and tone', () => {
     label: 'Menunggu pembayaran',
     tone: 'attention'
   });
+  assert.deepEqual(soldLotStatusLabel('paid'), { label: 'Dibayar', tone: 'info' });
   assert.deepEqual(soldLotStatusLabel('shipped'), { label: 'Dikirim', tone: 'info' });
   assert.deepEqual(soldLotStatusLabel('claimed'), { label: 'Klaim', tone: 'urgent' });
+});
+
+test('the farmer sees who the payment waits for', () => {
+  assert.deepEqual(soldLotStatusLabel('won', 'farmer'), {
+    label: 'Menunggu pembayaran pemenang',
+    tone: 'attention'
+  });
+  assert.deepEqual(soldLotStatusLabel('paid', 'farmer'), { label: 'Dibayar', tone: 'info' });
 });
 
 test('an unknown status still reads, rather than throwing', () => {
@@ -22,6 +34,48 @@ test('an unknown status still reads, rather than throwing', () => {
     label: 'something_new',
     tone: 'neutral'
   });
+});
+
+const steps = (status: string) =>
+  soldLotStepDates({
+    status,
+    paid_at: '2026-11-18T13:00:00.000Z',
+    shipped_at: '2026-11-20T04:00:00.000Z',
+    delivered_at: '2026-11-22T06:00:00.000Z'
+  });
+
+test('each reached sold step brings its saved date (US-112 AC2)', () => {
+  assert.deepEqual(steps('paid'), [
+    { key: 'paid', label: 'Dibayar', date: '2026-11-18T13:00:00.000Z' }
+  ]);
+  assert.deepEqual(
+    steps('shipped').map((step) => step.key),
+    ['paid', 'shipped']
+  );
+  assert.deepEqual(
+    steps('delivered').map((step) => step.key),
+    ['paid', 'shipped', 'delivered']
+  );
+  assert.deepEqual(
+    steps('claimed').map((step) => step.key),
+    ['paid', 'shipped', 'delivered']
+  );
+});
+
+test('a lot waiting for payment shows no reached step yet', () => {
+  assert.deepEqual(steps('won'), []);
+});
+
+test('a lot paid before US-108 keeps the step with no guessed date (AC4)', () => {
+  assert.deepEqual(
+    soldLotStepDates({
+      status: 'paid',
+      paid_at: null,
+      shipped_at: null,
+      delivered_at: null
+    }),
+    [{ key: 'paid', label: 'Dibayar', date: null }]
+  );
 });
 
 test('the masked address is city and province only', () => {
@@ -32,6 +86,52 @@ test('the masked address is city and province only', () => {
 test('no address reads "Alamat belum diisi", never a dangling comma', () => {
   assert.equal(maskedAddressLabel(null), 'Alamat belum diisi');
   assert.equal(maskedAddressLabel({ city: null, province: null }), 'Alamat belum diisi');
+});
+
+const payout = (overrides: Partial<SoldLotPayout>): SoldLotPayout => ({
+  status: 'pending',
+  gross_amount: 1_000_000,
+  bank_fee: null,
+  net_amount: null,
+  paid_at: null,
+  ...overrides
+});
+
+test('a lot waiting for payment shows no payout line (US-110 AC5)', () => {
+  assert.equal(soldLotPayoutLabel(null), null);
+});
+
+test('each payout state gets its house line (US-110 AC5)', () => {
+  assert.equal(soldLotPayoutLabel(payout({ status: 'pending' })), 'Dana menunggu koi diterima');
+  assert.equal(soldLotPayoutLabel(payout({ status: 'due' })), 'Dana siap ditransfer admin');
+  assert.equal(
+    soldLotPayoutLabel(payout({ status: 'cancelled' })),
+    'Dana dikembalikan ke pemenang; lot ini tidak dibayar'
+  );
+});
+
+test('a paid payout shows the transfer time and the gross-fee-net sum (D-078)', () => {
+  assert.equal(
+    soldLotPayoutLabel(
+      payout({
+        status: 'paid',
+        gross_amount: 1_000_000,
+        bank_fee: 6_500,
+        net_amount: 993_500,
+        paid_at: '2026-11-25T07:30:00.000Z'
+      })
+    ),
+    'Dana ditransfer 25 Nov, 14.30 WIB: Rp 1.000.000 − biaya transfer Rp 6.500 = Rp 993.500'
+  );
+});
+
+test('a paid payout missing its fee still reads, never NaN', () => {
+  assert.equal(
+    soldLotPayoutLabel(
+      payout({ status: 'paid', gross_amount: 500_000, bank_fee: null, net_amount: null })
+    ),
+    'Dana ditransfer: Rp 500.000'
+  );
 });
 
 const full: FullAddress = {

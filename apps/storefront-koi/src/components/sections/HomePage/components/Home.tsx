@@ -4,11 +4,8 @@ import { Badge, Button, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
 import { CONTAINER } from "@/const/layout"
 import { ROUTES, auctionsTabHref, lotHref } from "@/const/routes"
-import {
-  DEFAULT_HOME_CLAIMS,
-  DEFAULT_HOME_PARTNERS,
-  DEFAULT_HOME_STATS,
-} from "@/const/home"
+import { SITE_NAME } from "@/const/site"
+import { DEFAULT_HOME_CLAIMS } from "@/const/home"
 import { Eyebrow } from "@/components/atoms/Eyebrow/Eyebrow"
 import { FeedGrid } from "@/components/atoms/FeedGrid/FeedGrid"
 import { PartnerCard } from "@/components/organisms/PartnerCard/PartnerCard"
@@ -16,7 +13,7 @@ import { PulseIcon } from "@/components/atoms/PulseIcon/PulseIcon"
 import { AuctionProductCard } from "@/components/organisms/ProductCard/AuctionProductCard"
 import type { HomeProps } from "@/types/home"
 
-export type { HomeClaim, HomeProps, HomeStat } from "@/types/home"
+export type { HomeClaim, HomeProps } from "@/types/home"
 export type {
   PartnerCardProps,
   PartnerFact,
@@ -27,9 +24,8 @@ export function Home({
   featured,
   lots = [],
   lotsFailed = false,
-  stats = DEFAULT_HOME_STATS,
   claims = DEFAULT_HOME_CLAIMS,
-  partners = DEFAULT_HOME_PARTNERS,
+  partners,
   now,
   className,
   ...props
@@ -69,24 +65,9 @@ export function Home({
                 render={<Link href={ROUTES.guide} />}
                 nativeButton={false}
               >
-                Cara Bidding
+                Cara bid
               </Button>
             </div>
-
-            <RenderIf when={stats.length ? stats : null}>
-              {(figures) => (
-                <dl className="mt-2 flex flex-wrap gap-x-8 gap-y-4">
-                  {figures.map(({ value, label }) => (
-                    <div key={label}>
-                      <dt className="text-xs text-muted-foreground">{label}</dt>
-                      <dd className="text-xl font-bold text-accent-ink tabular-nums">
-                        {value}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              )}
-            </RenderIf>
           </div>
 
           <div className="w-full max-w-md justify-self-start lg:justify-self-end">
@@ -135,7 +116,7 @@ export function Home({
                 </div>
                 <Link
                   href={ROUTES.auctions}
-                  className="text-sm font-medium text-accent-ink underline-offset-4 hover:underline"
+                  className="rounded-sm text-sm font-medium text-accent-ink underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring max-md:-my-3 max-md:py-3"
                 >
                   Lihat semua lot
                 </Link>
@@ -156,7 +137,7 @@ export function Home({
         )}
       </RenderIf>
 
-      <RenderIf when={partners.length ? partners : null}>
+      <RenderIf when={partners?.length ? partners : null}>
         {(farms) => (
           <section className="border-t border-border bg-muted/40">
             <div className={`${CONTAINER} py-10 lg:py-14`}>
@@ -164,22 +145,17 @@ export function Home({
                 <div className="flex flex-col gap-1">
                   <Eyebrow>
                     <BadgeCheck aria-hidden className="size-3.5" />
-                    Sentra Budidaya Resmi Terverifikasi
+                    Mitra terverifikasi
                   </Eyebrow>
                   <h2 className="font-heading text-2xl font-bold">
-                    Mitra breeder Niigata, Blitar &amp; Sukabumi
+                    Mitra breeder
                   </h2>
-                  <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground">
-                    Semua kolam mitra melewati inspeksi parameter air,
-                    biosecurity karantina BBKP, dan akurasi riwayat silsilah
-                    indukan F0.
-                  </p>
                 </div>
                 <Link
                   href={ROUTES.partners}
                   className="text-sm font-medium text-accent-ink underline-offset-4 hover:underline"
                 >
-                  Lihat semua 24 mitra kolam
+                  Lihat semua mitra
                 </Link>
               </div>
 
@@ -199,7 +175,7 @@ export function Home({
             <div className="mb-6 flex flex-col gap-1">
               <Eyebrow>Jaminan Kami</Eyebrow>
               <h2 className="font-heading text-2xl font-bold">
-                Kenapa lelang di Mafia Koi Jogja
+                Kenapa lelang di {SITE_NAME}
               </h2>
             </div>
 

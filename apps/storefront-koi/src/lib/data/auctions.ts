@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 
 import { farmAuctionHref, ROUTES } from '@/const/routes';
 import type { AuctionStatus } from '@/lib/helpers/auction-status';
+import { KOI_AGES, KOI_SEXES, KOI_VARIETIES } from '@/lib/helpers/auction-schema';
 
 import { sdk } from '../client';
 import { vendorHeaders } from './vendor';
@@ -110,12 +111,28 @@ export const getMyAuction = async (id: string): Promise<AuctionDetail | null> =>
     });
 };
 
+export type KoiVariety = (typeof KOI_VARIETIES)[number];
+export type KoiAge = (typeof KOI_AGES)[number];
+export type KoiSex = (typeof KOI_SEXES)[number];
+
+// US-105 (D-081): variety and size are required; the rest are optional.
 export type CreateAuctionLot = {
   title: string;
   description?: string;
   photos: string[];
   ob: number;
   kb: number;
+  variety: KoiVariety;
+  size_cm: number;
+  age?: KoiAge;
+  sex?: KoiSex;
+  has_certificate?: boolean;
+  // The backend's optional-text fields are transformed, so the generated
+  // request type always carries the key, with undefined when unset.
+  certificate_issuer: string | undefined;
+  pond_origin: string | undefined;
+  breeder_notes: string | undefined;
+  video_url: string | undefined;
 };
 
 export type CreateAuctionInput = {

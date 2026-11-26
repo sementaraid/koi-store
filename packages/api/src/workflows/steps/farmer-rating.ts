@@ -60,7 +60,7 @@ export type CreateFarmerRatingInput = {
 // a lost race is still the friendly 409). Compensation deletes the row, so a
 // later failure leaves no rating behind. Medusa's db error mapper turns a
 // 23505 into an INVALID_DATA "… already exists." before it reaches here, so
-// both shapes count (createLotReportStep, steps/lot-report.ts).
+// both shapes count.
 export const createFarmerRatingStep = createStep(
   "create-farmer-rating",
   async (input: CreateFarmerRatingInput, { container }) => {

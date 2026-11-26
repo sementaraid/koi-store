@@ -5,10 +5,12 @@ import { lotHref } from '@/const/routes';
 import { toAuctionProduct, toAuctionProducts } from '@/lib/adapters/lot';
 import { getMyFarm } from '@/lib/data/farm';
 import { getJoinState, getLot, getWonLot, listLots, listMyBids } from '@/lib/data/lots';
+import { getPlatformBankAccount } from '@/lib/data/topups';
 import { getWallet } from '@/lib/data/wallet';
 import { standingForLot } from '@/lib/helpers/bid-status';
 import { joinAvailable, joinControlState, type JoinControl } from '@/lib/helpers/join-auction';
 import { bidControlState, type BidControl } from '@/lib/helpers/place-bid';
+import { youtubeVideoId } from '@/lib/helpers/youtube';
 import type { MediaItem } from '@/types/lot';
 
 import { LotDossier } from './components/LotDossier';
@@ -25,7 +27,15 @@ export async function LotDetailsPage({ id }: { id: string }) {
 
   const lot = toAuctionProduct(storeLot);
   const lots = toAuctionProducts(open.lots);
-  const media: MediaItem[] = storeLot.photos.map((src) => ({ src, kind: 'image' }));
+  // US-098 AC12 / US-105 AC5: a YouTube link becomes the gallery's video tile,
+  // after the photos. A lot without a usable link keeps photos only.
+  const videoId = storeLot.video_url ? youtubeVideoId(storeLot.video_url) : null;
+  const media: MediaItem[] = [
+    ...storeLot.photos.map((src) => ({ src, kind: 'image' as const })),
+    ...(videoId && storeLot.video_url
+      ? [{ src: storeLot.video_url, kind: 'video' as const, youtubeId: videoId }]
+      : [])
+  ];
   const ownBids = myBids.lots[0]?.my_bids;
 
   const { join, bid } = await getLotControls(storeLot, id);
@@ -36,6 +46,10 @@ export async function LotDetailsPage({ id }: { id: string }) {
   const now = Date.now();
 
   const mine = storeLot.sold ? await getWonLot(id) : null;
+  // US-108 AC1 (D-068): the company account, only needed while the payment is
+  // still open. A failed read shows the "not configured" state.
+  const wonBank =
+    mine?.lot.status === 'won' ? await getPlatformBankAccount().catch(() => null) : null;
   const wonLot = mine
     ? {
         id: mine.lot.id,
@@ -43,6 +57,11 @@ export async function LotDetailsPage({ id }: { id: string }) {
         hasShippingAddress: mine.has_shipping_address,
         claimWindowEndsAt: mine.lot.claim_window_ends_at,
         claim: mine.lot.claim,
+        finalPrice: mine.lot.final_price,
+        payBy: mine.lot.pay_by,
+        bank: wonBank,
+        proof: mine.lot.proof,
+        arrivalProof: mine.lot.arrival_proof,
         now
       }
     : undefined;
@@ -55,6 +74,7 @@ export async function LotDetailsPage({ id }: { id: string }) {
       join={join}
       bid={bid}
       position={standingForLot(myBids.lots, id)}
+      myBidPosition={myBids.lots[0]?.position}
       wonLot={wonLot}
       ownBids={ownBids}
       referenceNow={now}
@@ -77,7 +97,7 @@ export async function getLotControls(
     return {};
   }
 
-  const joinState = await getJoinState(auction.id);
+  const joinState = await getJoinState(lotId);
   const signedIn = joinState !== null;
 
   // getMyFarm returns null for "no member session", an expired one or a 401,
@@ -98,6 +118,9 @@ export async function getLotControls(
   const isOwner = !!farm?.id && farm.id === auction.seller?.id;
   const balance = wallet ? wallet.balance : null;
   const joined = joinState?.joined ?? false;
+  // US-111 AC1/AC6: the state read returns the final fee (override when set,
+  // D-032). Fall back to the lot payload only when the read gave no fee.
+  const fee = joinState?.join_fee ?? auction.join_fee;
 
   const bidMode = bidControlState({
     joined: !isOwner && !farmUnknown && joined,
@@ -106,8 +129,8 @@ export async function getLotControls(
 
   return {
     join: {
-      auctionId: auction.id,
-      fee: auction.join_fee,
+      lotId,
+      fee,
       returnPath: lotHref(lotId),
       balance,
       mode: joinControlState({ signedIn, isOwner, joined, farmUnknown }),

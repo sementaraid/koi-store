@@ -150,7 +150,7 @@ export async function registerFarm(
     for (let i = nextUploads.farm_photo_urls!.length; i < farmPhotos.length; i++) {
       const result = await uploadFarmFile('farm', farmPhotos[i], customerHeaders);
       if (!result.url) {
-        throw new Error('Foto kebun tidak mendapat tautan dari server.');
+        throw new Error('Foto farm tidak mendapat tautan dari server.');
       }
       nextUploads.farm_photo_urls!.push(result.url);
     }
@@ -210,7 +210,7 @@ export async function registerFarm(
       ok: false,
       step: 'member',
       message:
-        'Pendaftaran tersimpan, tetapi sesi petani belum aktif. Masuk ulang dengan akun yang sama, lalu buka status pendaftaran.',
+        'Pendaftaran tersimpan, tetapi sesi peternak belum aktif. Masuk ulang dengan akun yang sama, lalu buka status pendaftaran.',
       uploads: nextUploads
     };
   }

@@ -14,14 +14,54 @@ are defined in `docs/product/overview.md`.
 
 ---
 
-## Status as of 2026-11-25
+## Status as of 2026-11-26
+
+**Progress (2026-11-26):** 58/66 stories `done` (88%), 0 `in progress`, 0 `todo`, 7 `blocked`, 1 `parked`; 293/334 tasks done (88%), 41 open (3 of them parked). Done: US-095, US-096, US-097, US-098, US-099, US-100, US-101, US-102, US-103, US-105, US-106, US-107, US-108, US-109, US-110, US-111, US-112. `in progress`: none. `parked`: US-104. `todo`: none. `blocked`: Epic 7 ×6 and US-090 (`mvp-Q12`). US-109 accepted 2026-11-26: AC1–AC3 are covered by 30 integration tests and by browser checks of the winner control on a `won` lot and of the admin queue without a pending proof; the winner-side pending/rejected/confirmed renders, a real admin thumbnail/time/reject dialog and a real upload→reject→resubmit→confirm round-trip are data-gated in follow-up T-109.5 because the shared DB holds no lot with a transfer proof. US-105 accepted 2026-11-25: AC1–AC4 and AC6 are integration-spec, unit-test and browser verified, and AC5's code is built and unit-tested; the populated koi data paths (counts/filters, card subtitle, spec rows, video dialog, upcoming session varieties) are data-gated in follow-up T-105.5 because no seeded lot carries a koi field and there is no scheduled auction. US-112 accepted 2026-11-25: AC1/AC4 are integration-spec verified and AC2/AC3 unit-test verified, but no `paid`/`shipped`/`delivered` row exists to browser-check the reached-step dates (data-gated in T-101.6). US-100 accepted 2026-11-25: the earlier gap-analysis misses (AC3 poll errors, the won panel's next-step line) are built and qa-verified; the `paid`/`shipped`/`delivered` next-step sentences are unit-test-only in follow-up T-100.5. US-099 accepted 2026-11-25 with the data-gated post-submit states in follow-up T-099.9. US-106 accepted 2026-11-25 with AC3's browser render data-gated in follow-up T-106.4. US-103 accepted 2026-11-25 with AC5 (footer) deferred by the owner to T-103.9; its dev on-screen brand still reads "Indokoi" until the owner updates the uncommitted `.env`, and T-103.10 covers the review-dialog focus. US-107 accepted 2026-11-25: qa T-107.8 PASS on a freshly restarted storefront; the AC7 clauses that need a shared-DB mutation and the AC8 join dialog stay data-gated in the story's open-verification note, and AC6/AC7/AC9/AC12 were reconciled with the accepted US-103 on 2026-11-25. US-111 accepted 2026-11-26: qa PASS on AC1–AC6; the money, refund and race paths are spec-verified, multi-process locks are unproven (one API process) and the Rp0 route path is code-read, as recorded in the story. US-110 accepted 2026-11-26: qa PASS on AC1–AC6 after one LOW compensation bug was fixed (the due step's compensation now restores `status`, `due_reason` and `due_at`); payout creation, the two due paths, the claim hold/refund/replacement rules, the admin queue, the recorded transfer and the farmer labels are covered by 53 integration tests and browser checks, with the shared-DB scenarios data-gated in follow-up T-110.8 and the observations in Unplanned.
+
+**Owner decisions 2026-11-25, second set (new design export, answers relayed by
+the main session from `ui_ux/gap-analysis.md`):** **D-068** the winner transfers
+the winning price to the company bank account (the platform bank setting) within
+1×24 h and an admin confirms it (`won → paid`); the farmer no longer marks paid
+and the winner never sees farmer bank details (supersedes D-058, D-044, D-057).
+**D-069** an admin pays the farmer manually, price minus the bank transfer fee
+only, due on the winner's arrival photo/video or 3 days after shipped.
+**D-070** join fee per lot at the category amount (supersedes D-065's fee half).
+**D-071** koi fields return (supersedes D-067; US-105 unparked, now `todo`
+with formats D-081). **D-072** paid/shipped/delivered dates stored and shown.
+**D-073** brand "Koi Auction House"; top-up check "biasanya kurang dari 60
+menit" (`mvp-Q60`, `mvp-Q61` answered). New [Epic 10](#epic-10-money-through-the-company-account-per-lot-join-fee-and-koi-details-owner-2026-11-25):
+US-108 `done (AC1–AC6; T-108.7 is todo per D-079)` (winner pays the company account, admin confirms), US-109
+`done (accepted 2026-11-26)` (transfer proof), US-110 `done (accepted 2026-11-26)`
+(farmer payout), US-111 `done (accepted 2026-11-26)` (per-lot join), US-112 `done (accepted 2026-11-25)`
+(step dates). **Owner answers 2026-11-25, third set (all recommended):** D-074 – D-081 settle
+`mvp-Q66` – `mvp-Q73`, and the four stories blocked on them are now `todo`.
+`mvp-Q74` (the cart's placement) stays open and non-blocking, raised by the US-107 AC reconciliation. Footer redesign is out of scope for now (US-103 AC5 deferred to T-103.9; US-103 accepted 2026-11-25).
+
+**Reconciliation 2026-11-25 (product-owner, from `git log` and the code):** the
+statuses below were stale. US-096 (backend `1008b7c`, storefront helpers
+`c8b31ff`), US-097 – US-101, US-103 and US-106 (`c8b31ff`, follow-ups `0056c2c`,
+`992b1ea`, `bf44fdf`, `a9e1c5f`, `c530957`) and US-107 (`8dbe711`, "chore: update
+ui": 32 `loading.tsx`, `PageShell` gone) were **built without a qa run or
+acceptance**. They move from `todo` to `in progress`; none is `done` and no task
+is ticked until qa reports PASS. US-102 (top-up) was not built at that point
+(only a prop change in `8dbe711`); it was built later, went through a qa FAIL
+and a fix, and was accepted 2026-11-25 (T-102.10 follow-up open). US-107's T-107.1 "baseline before any
+build" can no longer be taken before the build. The new export's gaps
+(`ui_ux/gap-analysis.md`) are added to these stories as ACs marked *(new export
+2026-11-25)*, not as duplicate stories. **Next: the remaining qa passes on
+what is built (T-100.3, T-103.4, T-106.2).** US-096, US-097, US-098
+and US-099 were accepted 2026-11-25, then US-101, US-102, US-107 and US-108. US-099's
+post-submit and ready-join states have no data to exercise, so they sit in
+follow-up T-099.9 and do not hold the story open. The counts table below was recounted on 2026-11-25 (see
+**Progress** above).
 
 **Owner decisions 2026-11-25:** the four held redesign questions are answered.
 **D-065** — the redesign keeps the join fee once per auction from the fee table,
 refunded on cancel (`mvp-Q55` (a)), and the one extend window
 `extend_window_minutes` (`mvp-Q56` (a)). **D-066** — no watch list in the MVP
 (`mvp-Q59` (a)); US-104 `parked`. **D-067** — no new koi fields in the MVP
-(`mvp-Q58`); US-105 `parked`. Epic 9 has no blocked story left; the design drops
+(`mvp-Q58`); US-105 `parked`. At this point Epic 9 had no blocked story left
+(D-071 later unparked US-105, now `todo` with formats D-081); the design drops
 the heart, `Dipantau` tab, "Ingatkan saya", the koi spec rows and the
 variety/size/certificate filters.
 
@@ -61,14 +101,15 @@ Bid rules are unchanged: D-058, the join fee and the extend window stay as they
 are, and the held-balance, auto-pay and escrow items stay rejected. US-106 moves
 from `blocked` to `todo`.
 
-**Last accepted story: US-095 (design tokens and primitives), qa PASS on
-AC1–AC9, accepted 2026-11-24.** T-095.1 – T-095.5 `[x]`; two non-blocking
+**Last accepted stories: US-107 (shell in the layouts, loading skeletons), US-099 (join and bid from the lot page), US-108 (winner
+pays the company account) and US-101 (Bid Saya), all 2026-11-25; before them
+US-096, US-097 and US-098 (2026-11-25).**
+US-095 (design tokens and primitives), qa PASS on AC1–AC9, accepted 2026-11-24. T-095.1 – T-095.5 `[x]`; two non-blocking
 follow-ups, T-095.6 (four remaining 6 px boxes) and T-095.7 (first-caller
 keyboard check for Dialog/Accordion/Alert, which have no caller yet). Before it:
 US-093 (orphan KTP cleanup), qa PASS, accepted 2026-11-21; both tasks `[x]`,
 2 suites / 15 tests pass. The owner pulled it
-into the MVP on 2026-11-20. **No build story is `in progress`; US-090 the pilot
-is `blocked (mvp-Q12)`.** Before it: US-092 (the PII shipping gate), qa PASS,
+into the MVP on 2026-11-20. **No story is `in progress`; US-100, US-103, US-106 and US-107 are `done` (2026-11-25); US-090 the pilot is `blocked (mvp-Q12)`.** Before it: US-092 (the PII shipping gate), qa PASS,
 accepted 2026-11-20, 14 of 14 tasks; its D-062 snapshot-phone gap is closed by
 `pii-address-snapshots.spec.ts` 6/6, plus `pii-encryption` 4/4 and `pii-leaks`
 7/7. Before it: US-071 and
@@ -97,28 +138,33 @@ US-043, US-050, then US-040, US-041, US-042 (Epic 4). T-030.8, T-032.6, T-032.7
 and T-020.10 (seed fix) were accepted earlier. The `bid` model and the bid/join
 code are committed (`d67d3c8`).
 
-**Counts** (computed from this file, 2026-11-25; D-058, D-060, D-061, D-063 – D-067 in force; D-059 superseded; D-062 drafted pending approval):
+**Counts** (recounted from the story headers and task checkboxes in this file, 2026-11-26; D-058, D-060, D-061, D-063 – D-081 in force; D-059 superseded; D-062 drafted pending approval):
 
 | Epic | Stories done | In progress | Todo | Parked | Blocked | Tasks done | Tasks open | Tasks parked |
 |---|---|---|---|---|---|---|---|---|
 | 0 Foundations | 3 | 0 | 0 | 0 | 0 | 9 | 0 | 0 |
 | 1 Wallet | 6 | 0 | 0 | 0 | 0 | 22 | 0 | 0 |
-| 2 Becoming a farmer | 2 | 0 | 0 | 0 | 0 | 12 | 4 | 0 |
+| 2 Becoming a farmer | 2 | 0 | 0 | 0 | 0 | 16 | 0 | 0 |
 | 3 Auctions for farmers | 4 | 0 | 0 | 0 | 0 | 23 | 0 | 0 |
 | 4 Joining and bidding | 7 | 0 | 0 | 0 | 0 | 27 | 0 | 0 |
 | 5 Closing and after-sale | 12 | 0 | 0 | 0 | 0 | 59 | 1 | 0 |
 | 6 Admin operations | 6 | 0 | 0 | 0 | 0 | 37 | 0 | 0 |
 | 7 WhatsApp bot | 0 | 0 | 0 | 0 | 6 | 0 | 12 | 0 |
 | 8 Pilot | 0 | 0 | 0 | 0 | 1 | 0 | 6 | 0 |
-| 9 UI redesign phase 1 | 1 | 0 | 10 | 2 | 0 | 5 | 43 | 7 |
+| 9 UI redesign phase 1 | 12 | 0 | 0 | 1 | 0 | 70 | 15 | 3 |
+| 10 Company account, per-lot join fee, koi details | 5 | 0 | 0 | 0 | 0 | 29 | 4 | 0 |
 | Unplanned | 1 | 0 | 0 | 0 | 0 | 1 | 0 | 0 |
-| **Total** | **42** | **0** | **10** | **2** | **7** | **195** | **66** | **7** |
+| **Total** | **58** | **0** | **0** | **1** | **7** | **293** | **41** | **3** |
 
-Stories: 42 done of 61 (69%), none in progress, 10 todo (US-096 – US-103,
-US-106, US-107), 9 blocked (Epic 7 ×6 and US-090 by `mvp-Q12`; US-104 `mvp-Q59`, US-105
-`mvp-Q58`), none parked.
-Tasks: 195 done of 268 (73%), 73 open (Epic 9: 41 in todo stories, 2 US-095
-follow-ups, 7 in blocked stories), none parked.
+Stories: 58 done of 66 (88%), none in progress, no todo,
+7 blocked (Epic 7 ×6 and US-090 by `mvp-Q12`), 1 parked (US-104, D-066).
+Tasks: 293 done of 334 (88%), 41 open (Epic 9: 15; Epic 10: 4; Epic 7: 12;
+Epic 8: 6; Epic 5: the T-055.5 follow-up), 3 parked (US-104). The open count
+used to read 92 although the checkboxes summed to 87; recounted 2026-11-25 at
+US-099 acceptance. T-105.5 (the data-gated koi-data check) is new at US-105
+acceptance; T-109.5 (the data-gated proof round-trip) is new at US-109
+acceptance; T-110.8 (the data-gated payout browser pass) is new at US-110
+acceptance; the other unblocked tasks were already open.
 
 **Payment model decided (2026-11-17, D-058).** The MVP pays off-platform: the
 winner pays the farmer directly within 1×24 h, the farmer marks the lot paid
@@ -143,8 +189,11 @@ response carries at most a mask (last 4), never the full number", with a
 correction note. No rule changed: the mask on the row and the logged reveal
 were already what the story required.
 
-**Blocked by a question: none new. mvp-Q12 is PARKED by a deliberate owner hold,
-not an unanswered question (owner re-confirmed 2026-11-20).** US-080 – US-085 and
+**Blocked by a question: Epic 7 ×6 and US-090 (`mvp-Q12`, the owner's deliberate
+hold). The four money and koi questions are answered (D-074 – D-081) and US-110
+joined US-105, US-109 and US-111 as `done` (accepted 2026-11-26), so no story is
+`todo`; Epic 10 is complete except T-108.7.** mvp-Q12 is PARKED by a deliberate owner hold,
+not an unanswered question (owner re-confirmed 2026-11-20). US-080 – US-085 and
 US-090 stay `blocked (mvp-Q12)`; no task under Epic 7
 (T-080.* – T-085.*) may start until the owner lifts the hold. Treat Epic 7 as
 absent from the milestone plan, not as a queued next step. **The MVP ships
@@ -172,12 +221,14 @@ web-only unless the owner reverses this.**
 6. **`docs/releases/README.md`** — D-062, D-063 and US-093's scope change are not
    listed there; add when the owner approves the D-062 wording.
 
-**Stands between the MVP and shipping:** Epic 9 (US-095 – US-103 and US-106;
-US-104 – US-105 if the owner answers their questions in the MVP's favour), the
-owner's `mvp-Q12` hold, then
-US-090 (pilot) and its six ops tasks. Every functional story in Milestones 1–6
-is `done`, US-092 and US-093 included, and **the MVP ships web-only unless the
-owner reverses the bot hold**. No build story is `in progress`.
+**Stands between the MVP and shipping:** US-103's deferred footer (AC5, T-103.9)
+and Epic 10's T-108.7 (D-079), the owner's
+`mvp-Q12` hold, then US-090
+(pilot) and its six ops tasks. US-105 shipped (accepted 2026-11-25; koi data
+gated in T-105.5); US-110 shipped (accepted 2026-11-26; shared-DB payout
+scenarios gated in T-110.8). Every functional story in Milestones 1–6 is `done`, US-092 and
+US-093 included, and **the MVP ships web-only unless the owner reverses the bot
+hold**.
 
 **Docs out of date (owner edit needed, not edited here):**
 - `apps/storefront-koi/CLAUDE.md:97-98` still says the farmer's WhatsApp and
@@ -197,7 +248,7 @@ US-061 included after qa PASS on 2026-11-18. **M6 is complete: 4 of 4 stories
 0 bugs, all 2026-11-20. (Earlier figures of 10 and 11 of 12 are superseded:
 US-057 and US-060 were accepted in that round, then US-061.)
 
-**Next in milestone order:**
+**Next in milestone order (as of 2026-11-21; superseded by Progress above):**
 1. **US-093 (orphan KTP cleanup) — `done` (accepted 2026-11-21).** T-093.1 and
    T-093.2 are `[x]`; 2 suites / 15 tests pass. Nothing buildable is next:
    US-090 stays `blocked (mvp-Q12)`.
@@ -4246,7 +4297,7 @@ replacement, exactly as AC1 says. No escrow, no platform refund, no ledger row;
 the platform records only the claim's state.
 As a **winner**, I want an approved claim settled within 3 days so that I'm made
 whole. *(Plan: Dead-on-arrival claims 4–6; D-027, D-038, D-058)*
-- AC1: The farmer has 3 days to refund directly or ship a replacement, then marks it done (`approved → resolved`). The winner confirms (`resolved → confirmed`). The 3 days start when the claim becomes `approved`, on both paths (D-038).
+- AC1: The farmer has 3 days to refund directly or ship a replacement, then marks it done (`approved → resolved`). The winner confirms (`resolved → confirmed`). The 3 days start when the claim becomes `approved`, on both paths (D-038). **Money path superseded by D-075 (2026-11-25):** on a refund remedy an admin refunds the winner from the company account and the farmer is not paid for that lot; on a replacement the farmer's payout becomes due when the replacement arrives healthy (US-110 T-110.7). The farmer no longer hands the refund over directly; the claim states above are unchanged.
 - AC2: Missing the 3 days, or refusing an approved claim, makes the farmer eligible for a strike (US-059).
 - AC3: The farmer stays responsible even if a courier caused the death.
 - AC4: If the winner doesn't confirm within 3 days of `resolved`, the existing scheduled job sets the claim to `confirmed` (D-027).
@@ -5035,6 +5086,12 @@ within 1×24 h of the lot closing, so the deadline is `closed_at` + 24 h (the sa
 once that deadline passes.
 As a **farmer**, I want to report a winner who didn't pay within 1×24 h so that
 admin can act. *(Plan: Winner doesn't pay; D-026, D-058)*
+**Superseded in part by D-079 (2026-11-25).** The farmer can no longer create a
+report: the admin raises non-payment from the overdue `won` list in admin-koi and
+gives the strike there. The route and the Farm area control are removed by
+US-108 T-108.7; existing `lot_report` rows stay (append-only). AC1 below records
+what this story built; AC2 stands. The report's own gates and specs are unchanged
+until T-108.7 removes the route.
 - AC1: The farmer can report after the deadline. The admin reviews it and may give a strike.
 - AC2: Any offer to the second-highest bidder is fully off-platform. The platform records nothing about it and never reassigns the lot; winner and final price stay as saved at close (D-026).
 - [x] T-058.1 [backend] `lot_report` model (one per lot) + `reportUnpaidLotWorkflow` + `POST /vendor/sold-lots/:id/report` + `pay_by`/`unpaid` on the sold-lot row
@@ -7831,21 +7888,24 @@ the coverage matrix). Rules that apply to every story here:
   automatic payment from the wallet into escrow/rekber ("dibayar otomatis dari
   saldo", "Di rekber", "Lunas dari saldo"). The design is being revised to drop
   both. **No story may build a held-balance display, a "Di rekber" amount, or an
-  auto-pay-from-wallet flow.** The wallet pays platform fees only; the winner pays
-  the farmer off-platform within 1×24 h and the farmer marks the lot paid (D-058).
-- **Held as open questions:** per-lot join fee (`mvp-Q55`), 2-minute extend
-  trigger (`mvp-Q56`), new koi data fields (`mvp-Q58`). Removing the live room
-  is answered by D-064 (`mvp-Q57`); US-106 does it. Stories that need the open
-  ones are `blocked`; ACs below don't depend on them.
+  auto-pay-from-wallet flow.** The wallet pays platform fees only; the winner
+  transfers the winning price to the company bank account within 1×24 h and an
+  admin confirms it (D-068, supersedes D-058 on 2026-11-25).
+- **Rules changed 2026-11-25:** the join fee is per lot (D-070, built by
+  US-111) and koi fields return (D-071, US-105). The extend rule stays
+  `extend_window_minutes` (D-065). US-111 replaced the once-per-auction copy
+  with per-lot copy (accepted 2026-11-26). Koi rows, card subtitle and koi
+  filters appear when US-105 ships. Removing the live room is D-064 (US-106).
 - **Also not built:** the board's quarantine stage and "Karantina" timeline step
   (no lot status for it), "Garansi hidup 24 jam" (the plan's claim window is 4 h
   after delivered, admin-editable), "tanpa ongkir tambahan" (not a plan rule),
   "Chat farm" on a won lot (D-052), outbid notifications (the bot is held,
-  `mvp-Q12`; no web notification exists), search box and notification bell (no
-  feature behind them), "Ingatkan saya" and the watch heart (`mvp-Q59`).
-- **Winner payment details:** D-044 is on hold, so a won lot has no source for
-  "how to pay" data. No story here shows farmer bank or payment details; that work
-  stays where it is today (US-051, D-044 hold).
+  `mvp-Q12`; no web notification exists), search box and notification bell
+  (owner 2026-11-25: left out), "Ingatkan saya" and the watch heart (D-066), and
+  the footer redesign (owner 2026-11-25: out of scope for now).
+- **Winner payment details (D-068):** a won lot shows the **company** bank
+  account (`GET /store/platform-bank-account`), the amount and the 1×24 h
+  deadline (US-108). No screen shows the farmer's bank or payment details.
 - **Components:** shadcn is not added as a dependency. The board's shadcn
   components map onto `@koi/ui` (D-005), built on `@base-ui/react` like the
   existing `sheet`, `tabs` and `dropdown-menu` primitives.
@@ -7855,11 +7915,20 @@ the coverage matrix). Rules that apply to every story here:
   errors from the backend shown verbatim (D-055); money via `formatPrice()`
   (`id-ID`), times in `Asia/Jakarta` labelled `WIB`.
 
-**Order:** US-095 is done. T-096.1 and T-096.2 (backend) come next; they have no
-shared files and run in parallel. Then US-097 and US-098, then
-US-099, US-100, US-101. US-102 needs only US-095. US-103 last (it sweeps copy
-across the redesigned screens). US-107 (shell in the layouts, loading skeletons)
-after US-099, US-103 and US-106 are accepted.
+**Order (updated 2026-11-25):** most of US-096 – US-101, US-103, US-106 and
+US-107 is built; US-103, US-106 and US-107 are now accepted (2026-11-25) as are
+US-096, US-097, US-098 and US-099. First the remaining qa pass on what is built
+(T-100.3), with
+the small fixes T-102.6 (top-up `?amount`, done 2026-11-25), T-103.7 (brand) and T-106.3
+(dead `BidTerminal`) alongside. Then the new-export tasks in this order:
+T-103.5 (header) → T-097.5 – T-097.7 (`/lelang`) → T-099.6, T-099.7
+(lot page; both done 2026-11-25, data-gated states in T-099.9) → T-100.2 (disconnected) → T-101.3, T-101.4 (won card, done 2026-11-25; data-gated states in T-101.6) → T-102.8 (Saldo & top-up, done 2026-11-25) → T-103.6 (account menu, last,
+once the merged pages exist). Koi-dependent tasks (T-098.6, T-105.3) follow
+US-105, with the US-098 follow-up T-098.8. Original order, kept for history: US-095 is done. T-096.1 and T-096.2
+(backend) come next; they have no shared files and run in parallel. Then US-097 and US-098, then
+US-099, US-100, US-101. US-102 is done (accepted 2026-11-25). US-103 is done (accepted 2026-11-25; its
+AC5 footer is deferred to T-103.9). US-107 (shell in the layouts, loading
+skeletons) is done (accepted 2026-11-25).
 
 ### US-095 Design tokens and primitives · `done (evidence: packages/ui/src/styles.css:17-60 defines every AC1 token (--primary #3730a3, --price-panel #1e1b4b, --accent #eef2ff, --foreground #090909, --muted-foreground #404040, --input #8a8a8a, --border #d4d4d4, --divider #e5e5e5, --surface #f5f5f5, --signal #d52d25, --success #15803d, --warning #b45309); :141-144 radius badge 4 / control 8 / dialog 12 / sheet 16; QA computed --primary #3730a3, --price-panel #1e1b4b, --signal #d52d25, --success #15803d and --warning #b45309 on both apps; Button.tsx:14,33-40 48 px mobile, 40 md, 32 sm, 48 lg, flat, with 44 px mobile hit areas on xs/sm/icon via after:; Badge.tsx:23-24,47,49 h-6, 12 px bold, 4 px radius, 14 px icon, required label, icon slot and signal/success/warning/neutral; Card primitives/card.tsx:14, Dialog primitives/dialog.tsx:59 and Sheet sheet.tsx:45,56 are 1 px edge, 8/12/16 px radius, no box-shadow (QA computed box-shadow: none on Card, the admin sign-in card, the storefront header and home panels); Accordion primitives/accordion.tsx:41,50 has min-h-12, a focus-visible ring, aria-expanded from Base UI and a 20 px icon; Alert primitives/alert.tsx:9-18 carries icon + title + text, 20 px icon, tone not colour-only and role passed by the caller; Dialog, Skeleton, Accordion and Alert exported at index.ts:6-7,20-27,33; Instrument Sans in storefront-koi/src/app/layout.tsx:2,13-15 and admin-koi/src/app/layout.tsx:2,6-8, Geist removed from both package.json; QA measured all text pairs >=4.5:1 in light and dark, buttons 48/40, badge 24 and bottom sheet 16; packages/ui tsc clean, storefront check 258/258, admin check 62/62, no new dependency. Not verified at runtime: Dialog/Accordion/Alert have no caller yet, so keyboard and focus behaviour is code-reviewed only (T-095.7); tabular-nums spot-checked on BidTerminal, LotPage, AuctionProductCard and Wallet, not every price/time site; icon sizes audited in badge/alert/accordion, not everywhere)`
 As a **customer, farmer or admin**, I want every Koi screen to share one calm,
@@ -7882,7 +7951,7 @@ review page 01, "Sistem" and "Spesifikasi komponen". D-005.)*
 - [ ] T-095.6 [storefront] Replace the four remaining `rounded-md` (6 px) boxes with the 8 px control radius: `Farm.tsx:134,183,518` and `CreateAuction.tsx:211` (AC3) *(new 2026-11-24 at US-095 acceptance; non-blocking, every other redesigned surface is 8 px)*
 - [ ] T-095.7 [qa] First-caller runtime check for AC6: when US-098/US-099 wire `Dialog`, `Accordion` and `Alert`, verify in a browser that focus moves in, is trapped and returns to the trigger, Esc and the close button cancel, the accordion is keyboard operable with `aria-expanded`, and `role="status"` announces *(new 2026-11-24 at US-095 acceptance; the primitives have no caller yet, so only the code path was reviewed)*
 
-### US-096 Lot numbers, extend window and the viewer's bid position in the API · `todo`
+### US-096 Lot numbers, extend window and the viewer's bid position in the API · `done (qa PASS 2026-11-25 on AC1–AC6; per-AC evidence below)`
 As a **customer**, I want a short lot number and to see where my bid stands so
 that I never read an internal id and always know if I am winning. *(Design: review
 findings "ID internal lot_01M7…" and "Status bid"; boards 03, 05, 10, 13.)*
@@ -7892,12 +7961,21 @@ findings "ID internal lot_01M7…" and "Status bid"; boards 03, 05, 10, 13.)*
 - AC4: New customer-only `GET /store/my-bids` (optional `lot_id` filter, several allowed) returns, for each lot where the customer has a non-removed bid: `lot_id`, the customer's highest non-removed bid, the customer's own non-removed bids (amount, time) so the history can label them "Anda", and `position`: `highest` (lot `open`, the customer holds the top non-removed bid), `outbid` (lot `open`, someone else does), `won` (the lot's saved `winner_customer_id` is the customer), `lost` (the lot closed with another winner) or `cancelled` (lot `cancelled`). `won`/`lost` read the saved result on the lot, never recompute from bids. Identity from the token; 401 without one; no other customer's name or id in the body.
 - AC5: Reads only (`query.graph`), no workflow, no migration; `bun run codegen` run so the storefront client is typed.
 - AC6: Storefront helpers (each with a `*.test.ts`): lot label (`Lot #07`); absolute end time `Sel 24 Nov, 20.00 WIB` (short) and `Selasa, 24 Nov 2026, 20.00 WIB` (long), always `Asia/Jakarta`; relative time `38 menit lagi`, `1 hari 15 jam lagi`, `3 hari lagi`; bid count `1 bid` / `3 bid` (never `bids`).
-- [ ] T-096.1 [backend] `lot_number` and `extend_window_minutes` on both store lot routes + spec cases (ordering, stable across calls, cancelled lot keeps its number) (AC1, AC3, AC5)
-- [ ] T-096.2 [backend] `GET /store/my-bids` route + spec: each `position`, removed bids ignored, 401 anonymous, no other bidder's identity, `lot_id` filter (AC4, AC5)
-- [ ] T-096.3 [storefront] Fetchers and adapters for the new fields and route; lot label, WIB end-time, relative-time and bid-count helpers with tests (AC2, AC6)
-- [ ] T-096.4 [qa] Verify AC1–AC6, including a grep for rendered `lot_` ids on `/lelang` and a lot page
+- [x] T-096.1 [backend] `lot_number` and `extend_window_minutes` on both store lot routes + spec cases (ordering, stable across calls, cancelled lot keeps its number) (AC1, AC3, AC5) *(qa PASS 2026-11-25; `1008b7c`, `store/lots/route.ts:200-233`, `store-lots.spec.ts:660,742`)*
+- [x] T-096.2 [backend] `GET /store/my-bids` route + spec: each `position`, removed bids ignored, 401 anonymous, no other bidder's identity, `lot_id` filter (AC4, AC5) *(qa PASS 2026-11-25; `1008b7c`, `store/my-bids/route.ts`, `my-bids.spec.ts:236-328`)*
+- [x] T-096.3 [storefront] Fetchers and adapters for the new fields and route; lot label, WIB end-time, relative-time and bid-count helpers with tests (AC2, AC6) *(qa PASS 2026-11-25; `c8b31ff`, `lib/helpers/wib.ts`, `lot-card.ts`, `adapters/my-bids.ts` with tests)*
+- [x] T-096.4 [qa] Verify AC1–AC6, including a grep for rendered `lot_` ids on `/lelang` and a lot page *(qa PASS 2026-11-25, no bugs; 400/400 storefront tests; signed-in `/akun/bid` and lot page checked in the browser; no rendered `lot_` id found)*
 
-### US-097 Auction list and lot cards · `todo`
+**Accepted 2026-11-25.** qa PASS on AC1–AC6, no bugs. Evidence:
+- AC1: `lotNumbers` derives the 1-based position from every sibling lot, cancelled included, sorted `created_at` then `id`, and never sorts by status (`packages/api/src/api/store/lots/route.ts:200-233`). Both the feed and `GET /store/lots/:id` map through `toStoreLots` → `toStoreLot` (`route.ts:111,135,176`, `[id]/route.ts:8,22`). Spec covers `1..N` per auction, stability across calls and pages, and a cancelled lot keeping its number (`packages/api/integration-tests/http/store-lots.spec.ts:660`).
+- AC2: `formatLotNumber` pads to two digits (`apps/storefront-koi/src/lib/helpers/lot-card.ts:6`), asserted in `lot-card.test.ts:18`. Grep across `apps/storefront-koi/src` for `lot_` as rendered text returns none; the only `lot` text is the legitimate `{auction.lot_count} lot` (`FarmHomePage.tsx:277`). qa checked `/lelang`, a lot page, `/` and `/akun/bid` in the browser.
+- AC3: `extend_window_minutes` is read from `auction.extend_window_minutes` on both routes (`route.ts:47,95,163`); spec proves both routes (`store-lots.spec.ts:742`). qa drove the extend line with auction windows of 7 and 12 minutes against a live auction's 5, so no hard-coded value.
+- AC4: `GET /store/my-bids` takes identity from `req.auth_context.actor_id` (`packages/api/src/api/store/my-bids/route.ts:75`) behind customer auth (`packages/api/src/api/middlewares.ts:451-458`). `positionOf` reads saved data: `cancelled` → `won` from `winner_customer_id` → `highest`/`outbid` while `open` → `lost` (`route.ts:55-68`); removed bids are excluded from the query, the top-bid and the history (`route.ts:43-52,79-88`). `validators.ts:8-14` accepts one or several `lot_id`. Spec covers positions with removed bids, isolation between customers, the filter, the empty list and 401 (`my-bids.spec.ts:236,278,305,322,328`). qa verified signed in on the lot page and `/akun/bid`: `Anda tertinggi` and `Bid Anda tersalip · Rp 3.750.000`.
+- AC5: Both routes read only through `query.graph` (`lots/route.ts:45,82`; `my-bids/route.ts:79,109`); no workflow and no migration in `1008b7c`. Codegen updated `.mercur/routes.d.ts:707` with `myBids`, and the storefront calls the typed client at `apps/storefront-koi/src/lib/data/lots.ts:92`.
+- AC6: `formatLotNumber`, `formatEndTime`, `formatTimeLeft` and `formatBidCount` live in `lib/helpers/lot-card.ts:6-26` with Jakarta parts from `lib/helpers/wib.ts`. Tests assert `Lot #07`, `Sel 24 Nov, 20.00 WIB`, `Selasa, 24 Nov 2026, 20.00 WIB`, `38 menit lagi`, `1 hari 15 jam lagi`, `2 hari lagi`/`1 hari lagi` (same path as `3 hari lagi`), and `1 bid`/`3 bid` (`lot-card.test.ts:18,24,25,31,43,71,74,76,77`). qa saw `2 hari 19 jam lagi` in the browser, `1 bid` and `3 bid`, the short and long WIB forms, 400/400 tests, no overflow, and 3:2 card images.
+- Not proven: one attribute-only hydration warning appeared once during a dev-server restart and did not recur in the next 27 loads; the console diff was not captured. Not an AC and not reproducible, but run the render-check again if it recurs. qa also flagged a non-blocking `as never` + `as unknown as` cast in `lib/data/lots.ts:53-61`, recorded under Unplanned.
+
+### US-097 Auction list and lot cards · `done (qa PASS 2026-11-25 on AC1–AC18; per-AC evidence below)`
 As a **customer**, I want to scan auctions by price and time left so that I can
 pick a lot quickly. *(Design: boards 02, 09, 06 state 1, 15 state 1; review findings
 "Kartu lot, daftar lelang", "Kartu lot", "Beranda, kartu hero".)* Depends on US-095,
@@ -7912,13 +7990,47 @@ T-096.1, T-096.2, T-096.3.
 - AC8: Loading shows skeleton cards shaped like the card (photo, title, price, time) while header and tabs stay usable; an empty tab says why and links to another tab; a fetch error shows an Indonesian message with "Coba lagi".
 - AC9: Card images have `alt` = the lot title.
 - AC10: The home page hero features only an `open` lot. A closed, sold or cancelled lot is never shown with a "Pasang Bid" action (fixes `apps/storefront-koi/src/components/sections/HomePage/components/Home.tsx:101-113`).
-- AC11: Variety, size and certificate filters (board 09) are not built (`mvp-Q58`); no heart or watch control (`mvp-Q59`).
-- [ ] T-097.1 [storefront] Redesigned lot card (`AuctionProductCard`): whole-card link, chips, price and time block, viewer position, cancelled/closed variants (AC2–AC5, AC9)
-- [ ] T-097.2 [storefront] `/lelang` tabs, live/upcoming/ended grouping, info strip, skeleton/empty/error states (AC1, AC6–AC8, AC11)
-- [ ] T-097.3 [storefront] Home hero shows only an open lot; no bid action on closed lots (AC10)
-- [ ] T-097.4 [qa] Verify AC1–AC11 at 390 px and 1440 px, keyboard pass over the cards, render-check `/` and `/lelang`
+- AC11: No heart or watch control (D-066). *(Changed 2026-11-25: koi filters are no longer excluded; D-071 brings them back and US-105 T-105.3 builds them.)*
+- AC12 *(new export 2026-11-25, boards 01, 08)*: a grey (`--surface`) hero band with the eyebrow `KATALOG LELANG`, the page title and a signal-coloured `Lelang live` button that selects the Live tab. On desktop the tabs sit right-aligned on the title row.
+- AC13 *(new export)*: at 1024 px and wider, a left sidebar holds `Urutkan` (a select; `Berakhir paling cepat` is the default) and, for a signed-in customer, the toggle `Yang saya ikuti` (lots they joined; lands with US-111 T-111.6); the lot grid has 3 columns. At 1440 px the content is 1216 px wide (112 px edges, US-103 AC9). The koi filters (`Varietas` with counts, `Ukuran (cm)` min/max, `Bersertifikat`, `Ada video`) join the sidebar with US-105.
+- AC14 *(new export)*: lot card photo is 3:2; the `Live` chip has a dot plus text; the card's second line reads `{umur} · {jenis kelamin} · {farm}` once US-105 ships (farm only until then). With per-lot join (US-111) a card the viewer has not joined may show `Belum ikut · biaya ikut Rp X` (board 08), replacing AC5's "no join-fee line".
+- AC15 *(new export)*: the active tab carries a signal dot plus its text (not colour only); the guide strip (AC7) uses the accent tint `--accent` with a 1 px border.
+- AC16 *(new export, board 01)*: on phones a horizontally scrollable chip row `Filter` · `Varietas` · `Ukuran` · `Berakhir duluan`; `Filter` opens the bottom sheet with every sidebar control; `Varietas` and `Ukuran` appear with US-105. Chips are at least 44 px tall (hit area) and keyboard operable.
+- AC17 *(new export)*: on the Live tab, a section `Akan datang` with up to 2 session cards and `Lihat semua` (opens the `Akan datang` tab): a date tile (month + day), `Sesi {farm}`, `{n} lot · {start, WIB}` and, once US-105 ships, the session's varieties. No "Ingatkan saya" (D-066).
+- AC18 *(new export)*: the guide strip (AC7) states the rules in force: per-lot join fee once US-111 ships, refunded only if the auction is cancelled (D-034); a late bid extends that lot by `extend_window_minutes`; the winner transfers to the Koi Auction House account within 1×24 h (D-068). Never "2 menit", "dibayar otomatis dari saldo", "rekber" or "karantina".
+- [x] T-097.1 [storefront] Redesigned lot card (`AuctionProductCard`): whole-card link, chips, price and time block, viewer position, cancelled/closed variants (AC2–AC5, AC9)
+- [x] T-097.2 [storefront] `/lelang` tabs, live/upcoming/ended grouping, info strip, skeleton/empty/error states (AC1, AC6–AC8, AC11)
+- [x] T-097.3 [storefront] Home hero shows only an open lot; no bid action on closed lots (AC10)
+- [x] T-097.4 [qa] Verify AC1–AC11 at 390 px and 1440 px, keyboard pass over the cards, render-check `/` and `/lelang`: qa PASS 2026-11-25; AC6 and parts of AC3/AC4/AC8 code and test verified only (T-097.9)
+- [x] T-097.5 [storefront] Hero band, eyebrow, `Lelang live` button, right-aligned desktop tabs, active-tab dot, accent guide strip with the AC18 copy (AC12, AC15, AC18) (`AuctionsPage/components/Auctions.tsx:177-210`, `AuctionTabs.tsx`, `GuideStrip.tsx`)
+- [x] T-097.6 [storefront] Desktop sidebar with `Urutkan`, 3-column grid (`atoms/FeedGrid/FeedGrid.tsx`), phone chip row with the Filter sheet (reuse the `FacetSidebar` bottom-sheet pattern from `992b1ea`) (AC13, AC16). Checked: `GET /store/lots` takes no sort, so the select shows the one order the route returns (`Berakhir paling cepat`), which is what AC13 requires; no [backend] subtask opened
+- [x] T-097.7 [storefront] Card photo 3:2, `Live` chip with dot, upcoming session cards with `Lihat semua` (AC14, AC17) (`organisms/ProductCard/AuctionProductCard.tsx`, `UpcomingAuctionCard.tsx`)
+- [x] T-097.8 [qa] Verify AC12–AC18 at 390 px and 1440 px against boards 01 and 08; keyboard pass over chips and sidebar; render-check `/lelang`: qa PASS 2026-11-25
+- [ ] T-097.9 [qa] **Follow-up after acceptance; it does not change US-097's status.** When the database holds a sold lot, a cancelled lot, a lot under 60 minutes and a scheduled session, re-verify in the browser at 390 px: AC3 (sold/unsold/cancelled card), AC4 (`Berakhir < 1 jam`), AC6 (upcoming card) and AC8 (fetch error). Today those paths are code and unit-test verified only.
 
-### US-098 Lot page layout, specification, history and rules summary · `todo`
+**Accepted 2026-11-25.** qa PASS on AC1–AC18. Checks: `cd apps/storefront-koi && bun run test` gives 400 pass, 0 fail; `/` and `/lelang` checked in the browser at 390, 1024 and 1440 px with zero hydration errors. AC1–AC11:
+- AC1: tabs `Live · n`, `Akan datang · n`, `Selesai` from `AUCTION_TABS`/`tabLabel`, `apps/storefront-koi/src/components/sections/AuctionsPage/components/AuctionTabs.tsx:12-52`; qa PASS.
+- AC2: one link per card through the `after:absolute after:inset-0` overlay, `apps/storefront-koi/src/components/organisms/ProductCard/AuctionProductCard.tsx:86-92`; qa keyboard pass saw one tab stop and a visible focus ring.
+- AC3: status chip, title, `Lot #NN`, farm, `Bid tertinggi · N bid`/`Harga awal (OB)`, price and time block, `AuctionProductCard.tsx:57-160` and `src/lib/helpers/lot-card.ts:119-134`; closed and cancelled labels from `lotClosedLabel` (`lot-card.ts:119-122`) and `Dibatalkan` (`AuctionProductCard.tsx:143-145`). **Partly data-gated:** the sold, unsold and cancelled cards have no row to render today, so they are code and unit-test verified only (`closed-lot-label.test.ts:10-21`, `lot-card.test.ts:114-116`); see T-097.9.
+- AC4: `lotStatusChip` (`lot-card.ts:89-102`) gives each chip an icon and text: `Live` (live), `Berakhir < 1 jam` (clock), `Akan datang` (calendar), `Selesai` (done), `Dibatalkan` (cancelled). The `< 1 jam` case is test-verified (`lot-card.test.ts:85`), not seen in the browser today.
+- AC5: `Anda tertinggi` / `Bid Anda tersalip · Rp X` from `viewerPositionChip` (`lot-card.ts:106-113`), fed by `GET /store/my-bids` (`src/lib/adapters/my-bids.ts:4-14`) and rendered at `AuctionProductCard.tsx:113-120`; qa PASS, guests and customers without a bid see neither.
+- AC6: `UpcomingAuctionCard.tsx:19-44` with dashed border, `Sesi {farm}`, `{n} lot · {start, WIB}`, no "Ingatkan saya". **Data-gated:** no scheduled session in the database, so code and unit-test verified only (T-097.9).
+- AC7: `GuideStrip.tsx:9-31` links to `/panduan` and states top up, join once per auction, bid, late bid extends; no per-lot fee, no 2-minute rule, no held balance, no auto-pay; qa PASS.
+- AC8: skeleton `AuctionsSkeleton.tsx`, empty tab copy with a link to another tab, error `EmptyFeed` with `Coba lagi` (`Auctions.tsx:70-80`); loading and empty seen in the browser, the error state **data-gated** (no failing request to force it today), so code-verified (T-097.9).
+- AC9: `alt={title || lotLabel}`, `AuctionProductCard.tsx:70`; qa PASS.
+- AC10: `src/components/sections/HomePage/HomePage.tsx:13-17` queries `status: 'live'` and `pickHome` keeps only open lots, so no closed lot reaches a bid action; qa PASS on `/`.
+- AC11: no heart or watch control in the cards, the sidebar or the tab bar; qa PASS.
+
+AC12–AC18:
+- AC12: hero band `bg-surface` with `Eyebrow` `Katalog Lelang` (uppercased by `atoms/Eyebrow/Eyebrow.tsx:13`), signal `Lelang live` button and tabs right-aligned on desktop, `Auctions.tsx:177-210`; browser-verified at 1024 and 1440, stacked at 390.
+- AC13: sidebar `Urutkan` with `Berakhir paling cepat` as the only order and the default (`AuctionFilters.tsx:15-39`), static `Baru selesai` on Selesai (`:43-55`), 3-column grid (`Auctions.tsx:130`), 1216 px content at 1440 px (`src/const/layout.ts:4`: 1280 px box minus 2×32 px padding, centred, measured); qa PASS. `GET /store/lots` has no sort param (`packages/api/src/api/store/lots/route.ts`), so the select names the one order the API returns; AC13 only requires that default. **Partly delivered:** `Yang saya ikuti` was delivered by US-111 T-111.6 (accepted 2026-11-26); `Varietas`, `Ukuran (cm)`, `Bersertifikat` and `Ada video` wait on US-105 (T-105.3).
+- AC14: 3:2 photo (`AuctionProductCard.tsx:72,75`), `Live` chip with dot, dashed upcoming card; qa measured. **Partly delivered:** the second line is farm only (`AuctionProductCard.tsx:105-110`); the `{umur} · {jenis kelamin}` part waits on US-105. `Belum ikut · biaya ikut Rp X` was delivered by US-111 (accepted 2026-11-26).
+- AC15: active tab carries a dot plus its text (`AuctionTabs.tsx:48-51`); guide strip uses `bg-accent` with a 1 px `border-accent-foreground/25` (`GuideStrip.tsx:13`); qa PASS.
+- AC16: phone chips are `min-h-11` = 44 px (`AuctionFilters.tsx:25`), `Filter` opens the sheet holding every sidebar control, focus returns on close; qa PASS, no horizontal overflow at 390. **Partly delivered:** `Varietas` and `Ukuran` chips wait on US-105 (T-105.3).
+- AC17: the `Akan datang` section is drawn only when `tab === 'live' && upcoming.length > 0` (`Auctions.tsx:83-105`), so it is hidden at 0 sessions; date tile, `Sesi {farm}`, `{n} lot · {start, WIB}` and `Lihat semua` in `UpcomingAuctionCard.tsx:19-44`. The hidden case is browser-verified; the populated case is code and unit-test verified only (T-097.9). **Partly delivered:** session varieties wait on US-105.
+- AC18: `GuideStrip.tsx:16-28` states the rules in force (join fee per lot, refunded only if the auction is cancelled, a late bid extends that lot, the winner transfers to the Koi Auction House account within 1×24 h). Grep for "2 menit", "dibayar otomatis", "rekber" and "karantina" in `src/components/sections/AuctionsPage` and `src/components/organisms/ProductCard` returns no hit. **Delivered:** the per-lot join-fee wording shipped with US-111 (accepted 2026-11-26).
+
+### US-098 Lot page layout, specification, history and rules summary · `done (qa PASS 2026-11-25 on AC1–AC13; AC14 and the AC12 video half land with US-105 and do not gate this story; AC7/AC12 multi-photo and AC8 cancelled paths are code-verified only, follow-up T-098.8)`
 As a **customer**, I want the lot's price, time, details and rules on one clear
 page so that I know what I am bidding on and under which rules. *(Design: boards
 03, 10; review findings "Detail lot, ponsel", "Detail lot, sebelum bid pertama",
@@ -7926,18 +8038,43 @@ page so that I know what I am bidding on and under which rules. *(Design: boards
 - AC1: Breadcrumb `Lelang / {farm name} / Lot #NN · {title}`; the page header shows `Lot #NN`. No internal id as text (US-096 AC2).
 - AC2: Price panel (price-panel colour): `Bid tertinggi · N bid` and the current price, or `Harga awal (OB)` with OB when there is no bid; the price sits on its own line in tabular numerals and is never clipped at 390 px; `Sisa waktu` as `mm:ss` under one hour, otherwise days or hours; `Berakhir Selasa, 24 Nov 2026, 20.00 WIB` (desktop) / `Berakhir Sel 24 Nov 2026, 20.00 WIB` (mobile); rows `Harga awal (OB)`, `Kelipatan (KB)` and `Bid berikutnya minimal` (OB with no bid, else current price + KB, D-023).
 - AC3: Desktop (1440 px): two columns; gallery and tabs (`Spesifikasi`, `Riwayat bid · N`, `Tentang farm`) on the left, the bid panel on the right, sticky while the page scrolls. Mobile (390 px): one column with a sticky bottom bar holding the price, time left and the primary action (the action itself is US-099).
-- AC4: `Spesifikasi` shows only data that exists: `Kategori` (the auction's fee category; the row is labelled `Kategori`, never `Varietas`), farm (links to the farm page), delivery method (self-delivery or courier, plan "Delivery") and the lot description as `Catatan farm`. Variety, size, age, sex and certificate rows are hidden until `mvp-Q58` is answered; no empty `Varietas` row (fixes `apps/storefront-koi/src/components/cells/SpecSheet/SpecSheet.tsx:59`).
+- AC4: `Spesifikasi` shows only data that exists: `Kategori` (the auction's fee category; the row is labelled `Kategori`, never `Varietas`), farm (links to the farm page), delivery method (self-delivery or courier, plan "Delivery") and the lot description as `Catatan farm`. Variety, size, age, sex and certificate rows are hidden until US-105 ships (D-071, then AC14); no empty `Varietas` row (fixes `apps/storefront-koi/src/components/cells/SpecSheet/SpecSheet.tsx:59`).
 - AC5: Bid history: masked bidder (D-051), amount, relative time; the top row carries a `Tertinggi` label (icon + text); a signed-in viewer's own rows read `Anda` instead of their mask (US-096 AC4). Mobile shows the latest 3 rows with `Lihat semua` opening the full history; desktop shows it in the `Riwayat bid` tab.
-- AC6: Rules summary `Aturan lot ini` beside the bid panel (desktop) / below the history (mobile), current rules only: join fee Rp X, paid once from the balance and covering every lot in this auction; not refunded when you lose or leave, refunded only if the farmer or an admin cancels the auction (plan "Store credit wallet", D-034); next minimum and KB; a bid in the last `extend_window_minutes` minutes moves this lot's end to that many minutes after the bid, each lot on its own (plan "Extend"); bids can't be withdrawn (plan "Bidding"); the winner pays the farmer directly within 1×24 h, outside the app, and the farmer marks the lot paid and then ships (D-058). Link `Baca aturan lengkap` to `/panduan`. It never mentions held balance, auto-pay, rekber, a per-lot fee, a 2-minute trigger, quarantine or a 24-hour live guarantee.
+- AC6: Rules summary `Aturan lot ini` beside the bid panel (desktop) / below the history (mobile), current rules only: join fee Rp X, paid once per lot from the balance (US-111; the original auction-wide wording was replaced); not refunded when you lose or leave, refunded only if the farmer or an admin cancels the auction (plan "Store credit wallet", D-034); next minimum and KB; a bid in the last `extend_window_minutes` minutes moves this lot's end to that many minutes after the bid, each lot on its own (plan "Extend"); bids can't be withdrawn (plan "Bidding"); the winner transfers the winning price to the Koi Auction House bank account within 1×24 h, an admin confirms it and the farmer then ships (D-068; changed 2026-11-25 from D-058's "pays the farmer directly", copy change in T-108.5). The join-fee line changed to per lot with US-111 (accepted 2026-11-26). Link `Baca aturan lengkap` to `/panduan`. It never mentions held balance, auto-pay, rekber, a per-lot fee, a 2-minute trigger, quarantine or a 24-hour live guarantee.
 - AC7: Gallery images have `alt` = `{title}, foto n dari m`; a counter `1 / 4`; previous/next controls at least 44 px.
 - AC8: Closed (D-046, D-051) and cancelled (D-050) lots keep their current rules: final price and sold state, never the winner's identity; a cancelled lot shows `Dibatalkan` with no price and no bids.
 - AC9: Loading shows a skeleton of the panel and gallery; an unknown lot keeps the real 404 (US-040).
-- [ ] T-098.1 [storefront] Header, breadcrumb, price panel with OB/KB/next minimum, no clipping at 390 px (AC1, AC2, AC8, AC9)
-- [ ] T-098.2 [storefront] Desktop two-column layout with sticky panel and tabs; specification rows; bid history with `Tertinggi`/`Anda` labels and `Lihat semua` (AC3, AC4, AC5, AC7)
-- [ ] T-098.3 [storefront] Rules summary from live data (join fee, KB, extend window) and the mobile sticky bottom bar shell (AC3, AC6)
-- [ ] T-098.4 [qa] Verify AC1–AC9 on an open, closed, cancelled and no-bid lot at 390 px and 1440 px; grep the rendered rules text for "ditahan", "rekber", "otomatis", "2 menit"; render-check
+- [x] T-098.1 [storefront] Header, breadcrumb, price panel with OB/KB/next minimum, no clipping at 390 px (AC1, AC2, AC8, AC9) *qa PASS 2026-11-25*
+- [x] T-098.2 [storefront] Desktop two-column layout with sticky panel and tabs; specification rows; bid history with `Tertinggi`/`Anda` labels and `Lihat semua` (AC3, AC4, AC5, AC7) *qa PASS 2026-11-25*
+- [x] T-098.3 [storefront] Rules summary from live data (join fee, KB, extend window) and the mobile sticky bottom bar shell (AC3, AC6) *qa PASS 2026-11-25*
+- AC10 *(new export 2026-11-25, board 09)*: desktop breadcrumb `Lelang / Sesi {farm}, {start}–{end} / Lot #NN · {title}` with `/` separators at 14 px (dates as `22–29 Nov`); replaces AC1's middle crumb.
+- AC11 *(new export, boards 02, 09)*: the lot header has a share button (labelled `Bagikan`) that opens the device share sheet where supported, otherwise copies the lot URL and announces `Tautan disalin` (`role="status"`). No heart (D-066).
+- AC12 *(new export)*: gallery with thumbnails (current one marked, not colour only), `Perbesar` opening the photo in a Dialog (Esc closes, focus returns), previous/next arrows at least 44 px, and, when the lot has a YouTube link (US-105), a `Video` tile that plays it in the gallery through a `youtube-nocookie.com` embed. A lot without a video shows no video tile.
+- AC13 *(new export, boards 09, 12)*: on desktop the bid panel is a bordered card; status alerts render inside it; the OB and KB boxes sit outside the dark price panel on the accent tint; the `Aturan lot ini` list (AC6) sits under the card.
+- AC14 *(new export, D-071; lands with US-105)*: `Spesifikasi` adds `Varietas`, `Ukuran`, `Umur`, `Jenis kelamin`, `Sertifikat`, `Asal kolam` and a `Catatan breeder` paragraph; an empty optional field shows no row. `Kategori` stays.
+- [x] T-098.4 [qa] Verify AC1–AC9 on an open, closed, cancelled and no-bid lot at 390 px and 1440 px; grep the rendered rules text for "ditahan", "rekber", "otomatis", "2 menit"; render-check *qa PASS 2026-11-25 on open, closed sold/unsold and no-bid lots; the database holds no cancelled lot, so that case is code-verified only (T-098.8)*
+- [x] T-098.5 [storefront] Breadcrumb, share button, gallery thumbnails/zoom/arrows, bordered desktop bid card with OB/KB boxes outside the price panel (AC10–AC13) (`cells/MediaGallery/MediaGallery.tsx`, `molecules/LotIdentity/LotIdentity.tsx`, `LotDetailsPage/components/LotPage.tsx`) *qa PASS 2026-11-25*
+- [x] T-098.6 [storefront] Video tile and koi specification rows, after US-105 T-105.1 (AC12 video part, AC14) (`LotDetailsPage/components/LotSpec.tsx`) *waits on US-105 (D-081); does not gate US-098* *(built with US-105 2026-11-25: spec rows `LotSpec.tsx:56-61,76`, video tile and `youtube-nocookie` dialog `MediaGallery.tsx:230-331`; populated render data-gated in T-098.8/T-105.5)*
+- [x] T-098.7 [qa] Verify AC10–AC13 at 390 px and 1440 px against boards 02 and 09; Dialog keyboard check for `Perbesar` (also closes T-095.7 for `Dialog`); AC14 moves to T-098.8 *qa PASS 2026-11-25*
+- [ ] T-098.8 [qa] **Follow-up after acceptance; it does not change US-098's status.** When the database holds a cancelled lot, a lot with more than one photo and a lot with a YouTube link, re-verify at 390 px: AC7 arrows (44 px, keyboard), AC8 cancelled (`Dibatalkan`, no price, no bids), AC12 thumbnails with the active mark and previous/next, AC14 koi spec rows and the video tile. Today those paths are code-verified only *(added at US-098 acceptance 2026-11-25)*
 
-### US-099 Join and bid from the lot page with clear status · `todo`
+**Accepted 2026-11-25.** qa PASS on AC1–AC13. Checks: `cd apps/storefront-koi && bun run test` gives 400 pass, 0 fail; qa browser run over 35 loads at 390 and 1440 px, zero hydration errors, no console errors besides the dev HMR socket.
+- AC1: `PageTrail` with `separator="/"` and `text-sm` (14 px), `apps/storefront-koi/src/components/sections/LotDetailsPage/components/LotPage.tsx:369-378`, hidden on phone (`max-lg:hidden`); the phone header shows `Lot #NN` (`:351-367`); no `lot_` id rendered as text in the lot components (grep); qa PASS.
+- AC2: price panel with `Sisa waktu` (`LotPage.tsx:519`), `Harga awal (OB)` / `Kelipatan (KB)` (`:564`, `:570`) and `Bid berikutnya minimal` (`:581`); qa measured no clipping at 390 px, the `mm:ss` / day-hour split, both end-time lines and the no-bid case.
+- AC3: one column on phone; `lg:grid-cols-12` desktop with the bid column `lg:sticky lg:top-20` (`LotPage.tsx:385`, `:453`); tabs `Spesifikasi`, `Riwayat bid · N`, `Tentang farm` (`:403-422`); the phone sticky bar shell is built (`LotPriceBar.tsx`); qa PASS.
+- AC4: `LotSpec.tsx:11-60` shows Farm (link), Kategori, Pengiriman and `Catatan farm` only, with no empty `Varietas` row; qa PASS.
+- AC5: masked bidders and relative time, `Tertinggi` label (`components/molecules/BidHistory/BidHistory.tsx:99`), own rows read `Anda` (`:89`), phone shows the latest 3 with `Lihat semua` (`LotPage.tsx:111-142`); qa PASS.
+- AC6: `lib/helpers/lot-rules.ts:19-84` builds the rules from live values: join fee once per auction with the D-034 refund-on-cancel line, KB/next minimum, extend using the auction's `extendWindowMinutes` (`LotPage.tsx:244`), no withdrawal, and the D-068 company-account payment line; `Baca aturan lengkap` links to `/panduan` (`LotRules.tsx:38-45`); qa's grep of the rendered text found none of "ditahan", "rekber", "otomatis", "2 menit".
+- AC7: `alt` = `{title}, foto n dari m` (`components/cells/MediaGallery/MediaGallery.tsx:72`), counter `1 / 4` (`:138-140`), arrows `size="icon-md"` = 48 px on phone and `md:size-11` = 44 px (`:114-133`). Alt and counter qa PASS; stepping is not exercisable while every lot has one photo (T-098.8).
+- AC8: closed sold/unsold keeps the final price and sold state, never the winner (`LotPage.tsx:508`), qa PASS. A cancelled lot hides the bid panel and shows the `Dibatalkan` chip (`:456-464`, `const/stamps.ts:45`); no cancelled lot exists in the data, so that path is code-verified only (T-098.8).
+- AC9: skeleton of gallery and panel (`apps/storefront-koi/src/app/(main)/lelang/[id]/loading.tsx`); an unknown lot keeps the real 404 via `notFound()` (`components/sections/LotDetailsPage/LotDetailsPage.tsx:25`); qa saw both.
+- AC10: breadcrumb `Lelang / Sesi {farm}, {start}–{end} / Lot #NN · {title}` at 14 px with `/` separators (`LotPage.tsx:369-378`); qa PASS.
+- AC11: `components/cells/ShareButton/ShareButton.tsx:26-91` uses `navigator.share` when available, otherwise copies the URL and announces `Tautan disalin` in a `role="status"` span; phone header action at `LotPage.tsx:364`; no heart; qa saw the copied announcement.
+- AC12: thumbnails carry `aria-current` plus an icon mark (`MediaGallery.tsx:202`, `:234`); `Perbesar` opens a Dialog (`:150-183`) that Esc closes and focus returns from (qa PASS, also closes T-095.7 for `Dialog`); arrows per AC7. The video tile is not built: it ships with US-105 (`T-098.6`), and a lot without a link shows none today.
+- AC13: on desktop the bid panel is one bordered card (`LotPage.tsx:470`), status alerts render inside it, OB/KB boxes sit outside the dark price block on the accent tint (`:591-615`), and `Aturan lot ini` renders under the card (`:669`, `:696`); qa measured the 20 px radius and the tint.
+- AC14: **with US-105.** The koi rows stay hidden behind AC4 until T-105.1 ships (D-081); T-098.6 builds them and T-098.8 verifies them then.
+
+### US-099 Join and bid from the lot page with clear status · `done (accepted 2026-11-25: qa PASS on AC1, AC3–AC5, AC8, AC11–AC15 and AC16 where reachable, browser-verified at 390 px and 1440 px; fix round 1 closed the two AC16 defects and AC2's Rp0 clause, 399 tests, no hydration errors. AC2's ready join dialog, AC6 pending, AC7 accepted, AC9 rejected, AC10 extended, AC15's desktop pending-after-confirm and AC16's fee-row label and checkbox are spec/code-only: submitting a bid charges live saldo and no seeded customer reaches the ready state. Follow-up T-099.9. The per-auction charge quoted in this note is history: US-111 (accepted 2026-11-26) replaced `workflows/join-auction.ts` with `workflows/join-lot.ts` and per-lot copy, keeping D-080's carry-over for old joins)
 As a **customer**, I want to join, bid and see my position on the lot page so
 that I never switch screens and never wonder whether my bid went through.
 *(Design: boards 04, 05, 13 states 1–5, 14; review finding "Status bid".)*
@@ -7947,8 +8084,9 @@ balance short of the join fee, quick amount chips, confirmation sheet, the
 "Mengirim bid…" pending state, the highest/outbid/rejected/extended states, and
 the sticky mobile action bar. US-106 removes the separate live room.
 Not built: held balance, auto-pay from the wallet, escrow/rekber, a per-lot join
-fee (`mvp-Q55`), a 2-minute trigger (`mvp-Q56`); the plan's current rules apply
-(D-058, join fee once per auction, `extend_window_minutes`).
+fee (D-070; built by US-111), a 2-minute trigger (`mvp-Q56`); at build time the
+rules were the join fee once per auction (D-058, now D-070) and
+`extend_window_minutes`. **Changed 2026-11-25:** D-068 replaces D-058 (AC5's "langsung ke farm" line becomes the company-account line, T-108.5) and D-070 makes the join per lot (AC1–AC3's "sekali per lelang" wording changes with US-111 T-111.5). qa verifies against the rule live at the time of the run.
 - AC1: Guest: price and rules stay visible; one primary `Masuk untuk ikut lelang` (sign-in, returning to this lot) and a secondary `Daftar gratis`; text "Untuk bid, Anda perlu akun dan saldo untuk biaya ikut Rp X (sekali per lelang)."
 - AC2: Signed in, not joined: `Ikut lelang · Rp X` with `Saldo tersedia Rp Y` beside it and the line "Dipotong dari saldo, sekali untuk semua lot di lelang ini. Tidak dikembalikan jika kalah." It opens a Dialog (desktop) / bottom Sheet (mobile) listing the rules of US-098 AC6, `Biaya ikut Rp X`, `Saldo setelah ikut Rp Y−X`, a required checkbox "Saya paham aturan lelang ini.", primary `Bayar Rp X & ikut` and `Batal`. Confirming calls the existing join (US-041). When the auction's join fee is Rp0, no fee or balance line is shown.
 - AC3: Balance below the join fee: the dialog shows "Saldo belum cukup", `Biaya ikut`, `Saldo tersedia`, `Kurang Rp Z`, the auction's end time, primary `Top-up Rp Z` (opens the top-up page with Z prefilled, US-102 AC2) and `Kembali ke lot`. No time estimate for the top-up check (`mvp-Q61`).
@@ -7961,25 +8099,37 @@ fee (`mvp-Q55`), a 2-minute trigger (`mvp-Q56`); the plan's current rules apply
 - AC10: When a poll returns a later end time on an open lot, the panel shows "Waktu diperpanjang. Ada bid baru di {extend_window_minutes} menit terakhir. Lelang sekarang berakhir HH.MM WIB." without flashing or animation.
 - AC11: Mobile: the sticky bar's primary action is the state's action (`Masuk untuk ikut lelang`, `Ikut lelang · Rp X` or `Pasang Bid`); bid controls open in a bottom Sheet; a focused amount input is never hidden under the on-screen keyboard.
 - AC12: A farmer viewing their own auction sees no join or bid controls (plan "Fair play").
-- [ ] T-099.1 [storefront] Guest, not-joined, join Dialog/Sheet with checkbox, join shortfall dialog with prefilled top-up link (AC1–AC3, AC12)
-- [ ] T-099.2 [storefront] Amount chips, formatted typed input, confirmation Dialog/Sheet, pending state with single submit (AC4–AC6)
-- [ ] T-099.3 [storefront] Accepted, outbid, rejected and extended states from the place-bid response, polling and `GET /store/my-bids` (AC7–AC10)
-- [ ] T-099.4 [storefront] Mobile sticky bar actions and bottom Sheet, keyboard-safe input (AC11)
-- [ ] T-099.5 [qa] Verify AC1–AC12: guest, not joined, short balance, joined, double click, outbid by a second customer, late bid extend, rejected bid, own-auction farmer; Esc and focus return on each dialog
+- [x] T-099.1 [storefront] Guest, not-joined, join Dialog/Sheet with checkbox, join shortfall dialog with prefilled top-up link (AC1–AC3, AC12) *built; qa 2026-11-25 browser-verified AC1, AC3 and AC12 at 390 px and 1440 px; AC2's ready join dialog and the Rp0 case are source-only (T-099.9)*
+- [x] T-099.2 [storefront] Amount chips, formatted typed input, confirmation Dialog/Sheet, pending state with single submit (AC4–AC6) *built; qa browser-verified AC4 and AC5; AC6's pending state is spec/code-only because a submit charges live saldo (T-099.9)*
+- [x] T-099.3 [storefront] Accepted, outbid, rejected and extended states from the place-bid response, polling and `GET /store/my-bids` (AC7–AC10) *built; qa browser-verified AC8 (outbid live); AC7, AC9 and AC10 are spec/code-only (T-099.9)*
+- [x] T-099.4 [storefront] Mobile sticky bar actions and bottom Sheet, keyboard-safe input (AC11) *built; qa browser-verified AC11 at 390 px (bar focus and scroll, keyboard-safe input)*
+- AC13 *(new export 2026-11-25, boards 02, 04)*: phone, joined: the sticky bar reads `Pilih nominal bid · Saldo tersedia Rp Y`, shows the three amount chips plus an edit control (opens the typed input), and `Pasang Bid Rp X` opens the confirmation Sheet directly. The intermediate "Pasang bid" sheet is gone (one step fewer than `LotPriceBar.tsx:42-82` → `PlaceBid.tsx:408-434` today).
+- AC14 *(new export, board 03)*: phone guest: one sticky footer with the AC1 copy, `Masuk untuk ikut lelang` and `Daftar gratis`; no inline duplicate of the sign-in button and no bottom nav on the lot page (an exception to US-103 AC2; the footer reserves its height so it covers nothing).
+- AC15 *(new export, boards 12, 13)*: the confirmation shows `Jika menang, Anda bayar Rp X` as a labelled row (with the D-068 company-account wording); on desktop, confirming closes the Dialog and the panel shows the pending state disabled; `Saldo tersedia Rp Y` sits under the `Anda tertinggi` chip; the extend alert's title reads `Waktu ditambah {extend_window_minutes} menit.`
+- AC16 *(new export, boards 03, 13)*: the join Dialog/Sheet checkbox reads "Saya paham aturan lelang ini dan biaya ikut tidak dikembalikan jika kalah." and the fee row is labelled `Biaya ikut (tidak dikembalikan jika kalah)`; the refund-on-cancel line of US-098 AC6 stays (D-034, so never an unqualified "tidak dikembalikan"). The not-joined panel shows a `Belum ikut` row and `Saldo tersedia Rp Y`.
+- [x] T-099.5 [qa] Verify AC1–AC12: guest, not joined, short balance, joined, double click, outbid by a second customer, late bid extend, rejected bid, own-auction farmer; Esc and focus return on each dialog *(qa 2026-11-25: PASS on AC1, AC3–AC5, AC8, AC11 and AC12 at 390 px and 1440 px; AC2, AC6, AC7, AC9 and AC10 spec/code-only. Round 1 FAILed on AC16 and AC2's Rp0 clause; both passed in the focused re-check. 399 tests, no hydration errors. The keyboard pass covered the lot page's Dialog and Sheet)*
+- [x] T-099.6 [storefront] Phone sticky bar with chips and direct confirm, single guest footer, no bottom nav on the lot page (AC13, AC14) (`LotDetailsPage/components/LotPriceBar.tsx`, `PlaceBid.tsx`, `JoinAuction.tsx`) *built; qa browser-verified AC13 and AC14 at 390 px (chips, direct confirm, single guest footer, no bottom nav, reserved footer height)*
+- [x] T-099.7 [storefront] Confirmation row, desktop pending behaviour, balance under the highest chip, extend title, join-sheet checkbox and labels, not-joined rows (AC15, AC16) *built; qa browser-verified the payment row, Esc/focus, `Saldo tersedia` under the highest chip, the extend title, and AC16's `Belum ikut` row and refund-on-cancel line; the join fee-row label, the longer checkbox and the desktop pending-after-confirm state are source-only (T-099.9)*
+- [x] T-099.8 [qa] Verify AC13–AC16 at 390 px and 1440 px against boards 02–04, 12, 13; keyboard pass on the phone bar *qa 2026-11-25: PASS on AC13–AC15 and on AC16 where reachable; the data-gated states move to T-099.9*
+- [ ] T-099.9 [qa] **Follow-up after acceptance; it does not change US-099's status.** When mutation is allowed and the database holds a not-joined customer with enough saldo, an Rp0 auction, and pending, accepted, rejected and extended bid responses: re-verify AC2's ready join dialog and Rp0 gate, AC6 pending, AC7 accepted, AC9 rejected, AC10 extended, AC15's desktop pending-after-confirm and AC16's fee-row label and checkbox. Today those paths are spec and unit-test verified only, because submitting a bid charges live saldo. *(added at US-099 acceptance 2026-11-25; same pattern as T-097.9, T-098.8, T-101.6 and T-102.10)*
 
-### US-100 Finished, disconnected and error states on the lot page · `todo`
+**Rule in force vs code (recorded at US-099 acceptance 2026-11-25; closed at US-111 acceptance 2026-11-26):** at US-099 acceptance the backend still charged the join fee once per auction while D-070 set it per lot; US-111 replaced that workflow (`workflows/join-lot.ts`, route `api/store/lots/[id]/join/route.ts`) and the once-per-auction copy, and keeps D-080's auction-wide carry-over in the join, bid and refund paths. The older note is kept for the record.
+
+### US-100 Finished, disconnected and error states on the lot page · `done (accepted 2026-11-25: AC1–AC4 PASS. AC1 qa browser-verified at 390 px and 1440 px on budi: `Menang` chip with icon, "Anda menang dengan bid Rp 1.550.000", "Lelang selesai Minggu, 22 Nov 2026, 04.59 WIB · 1 bid" (count matches the history), the `Berikutnya:` payment line, `Lacak pesanan` → `/akun/bid?tab=menang` landing with the Menang tab active, and no farmer bank/rekber/chat/quarantine copy. AC2 PASS: `Selesai`, "Harga akhir · 3 bid" Rp 2.450.000, `Bid Anda Rp 2.100.000`, end time, "Biaya ikut Rp 100.000 tidak dikembalikan.", `Lihat lot lain yang masih dibuka` → `/lelang`, no "dana kembali ke saldo". AC3 PASS in the browser and AC4 PASS with the backend stopped: banner, stale price label, `±` countdown, last-updated line, disabled `Menunggu koneksi…`, auto-recovery; in-page "Lot tidak dapat dimuat" + `Coba lagi` and recovery. Guest view unchanged (`Terjual`, no Bid Anda). 405 tests, no hydration/console errors; "karantina" only in the pre-existing global footer (US-103 AC5 scope). The earlier gap-analysis misses (AC3 poll errors, the won panel's next-step line) are now built and verified. The `paid`/`shipped`/`delivered` `Berikutnya:` sentences are unit-test-only (`won-lot.test.ts:132-145`) because no such rows exist: follow-up T-100.5)`
 As a **customer**, I want a clear final result and to know when the data might be
 stale so that I never bid on an old price. *(Design: board 06 states 3–5, board 13
 states 6–8.)* Depends on US-098, US-099 (T-099.3).
-- AC1: Won (closed lot, viewer is the saved winner): `Menang` chip (icon + text), "Anda menang dengan bid Rp X", "Lelang selesai {long end time} · N bid", and a link to the won lot in the account (`/akun/menang`). No payment details, no "dibayar dari saldo", no rekber, no quarantine timeline, no chat (D-058, D-044 hold, D-052). The existing after-sale panel (US-051–US-055) keeps working.
-- AC2: Lost: `Selesai` chip, `Harga akhir · N bid` with the final price, `Bid Anda Rp X`, the end time, "Biaya ikut Rp X tidak dikembalikan." (plan "Cancellations": no refund when a customer loses), and a link to the live lots on `/lelang`. No "dana kembali ke saldo" line.
+- AC1: Won (closed lot, viewer is the saved winner): `Menang` chip (icon + text), "Anda menang dengan bid Rp X", "Lelang selesai {long end time} · N bid", a line `Berikutnya: {next step}` (while `won`: "Transfer Rp X ke rekening Koi Auction House sebelum {deadline WIB}", D-068; later steps from the lot status) and `Lacak pesanan` linking to the lot's card in Bid Saya → Menang (US-101 AC8). No farmer bank details, no "dibayar dari saldo", no rekber, no quarantine timeline, no chat (D-068, D-052). The existing after-sale panel (US-051–US-055) keeps working. *(Changed 2026-11-25, new export board 05 and D-068.)*
+- AC2: Lost: `Selesai` chip, `Harga akhir · N bid` with the final price, `Bid Anda Rp X`, the end time, "Biaya ikut Rp X tidak dikembalikan." (plan "Cancellations": no refund when a customer loses), and a link `Lihat lot lain yang masih dibuka` to the Live tab of `/lelang`. No "dana kembali ke saldo" line.
 - AC3: Disconnected: when the latest poll failed, a banner "Koneksi terputus. Menyambung ulang…" with `Coba lagi`; the price label reads `Bid tertinggi (mungkin usang)`; time left is shown approximately (`±37 mnt`); "Terakhir diperbarui HH.MM WIB"; the bid button is disabled and reads `Menunggu koneksi…`; it re-enables only after a successful poll (uses the backoff in `apps/storefront-koi/src/lib/helpers/poll.ts`).
 - AC4: A failed lot load that isn't a 404 shows an Indonesian error with `Coba lagi`.
-- [ ] T-100.1 [storefront] Won and lost result panels (AC1, AC2)
-- [ ] T-100.2 [storefront] Disconnected banner, stale labels, disabled bid until a fresh poll; load error state (AC3, AC4)
-- [ ] T-100.3 [qa] Verify AC1–AC4: won and lost lots for two customers, backend stopped mid-poll then restarted, render-check
+- [x] T-100.1 [storefront] Won and lost result panels (AC1, AC2) *built: `WonLotPanel.tsx:162-198` (result, end time and bid count, next step), `LostLotPanel.tsx:31-72`; qa browser-verified AC1 and AC2 at 390 px and 1440 px 2026-11-25*
+- [x] T-100.2 [storefront] Disconnected banner, stale labels, disabled bid until a fresh poll; load error state (AC3, AC4) *built: `use-lot-poll.ts:10-19,83-123` (`disconnected`, `lastUpdated`, `retry`, offline/online), `LotPage.tsx:304-308,517-537,637-642`, `PlaceBid.tsx:319,341,500`, `poll.ts:10-26`, `error.tsx:10-36`; qa browser-verified AC3 offline and AC4 with the backend stopped 2026-11-25*
+- [x] T-100.3 [qa] Verify AC1–AC4: won and lost lots for two customers, backend stopped mid-poll then restarted, render-check *qa 2026-11-25: AC1 and AC2 PASS on budi at 390 px and 1440 px, AC3 PASS offline, AC4 PASS with the backend stopped, guest view unchanged, render checks clean, 405 tests*
+- [x] T-100.4 [storefront] *(new 2026-11-25)* Won panel `Berikutnya:` line and `Lacak pesanan`, after T-108.4 (payment step) and US-101 T-101.4 (target) (AC1) *built: `wonResultNextStep` (`won-lot.ts:43-63`) rendered at `WonLotPanel.tsx:184-188`, `Lacak pesanan` at :285-291; qa browser-verified the `won` line and the link at 390 px and 1440 px. The `paid`/`shipped`/`delivered` sentences are unit-test-only (`won-lot.test.ts:132-145`; T-100.5)*
+- [ ] T-100.5 [qa] **Follow-up after acceptance; it does not change US-100's status.** When the database holds won lots in `paid`, `shipped` and `delivered`, open each lot page and verify AC1's status chip and `Berikutnya:` sentence at 390 px ("Pembayaran diterima…", "Paket sedang dikirim…", "Koi sudah diterima…"). Today those sentences are unit-test verified only, because no such rows exist. *(added at US-100 acceptance 2026-11-25; same pattern as T-099.9, T-101.6 and T-102.10)*
 
-### US-101 Bid Saya: my active, won and lost lots · `todo`
+### US-101 Bid Saya: my active, won and lost lots · `done (accepted 2026-11-25: AC1–AC5 qa browser-verified at 390 px and 1440 px; the won-state parts of AC7–AC9 verified (card, badge, next action, timeline date, `/akun/menang` redirect, dead claim action gone). AC6's error branch, the AC7 shipped/delivered/claim-window actions, AC8 shipped/delivered dates and tracking, and AC9's claim status/confirm/rating/address prompt are code and unit-test verified only: follow-up T-101.6)`
 As a **customer**, I want one page with every lot I bid on so that I can follow my
 position across auctions. *(Design: boards 06 state 2, 07, 11, 15 state 2.)*
 Depends on US-095, T-096.2, T-096.3. The bottom-nav entry is US-103.
@@ -7989,10 +8139,17 @@ Depends on US-095, T-096.2, T-096.3. The bottom-nav entry is US-103.
 - AC4: `Kalah` lists lots with position `lost`: final price, the viewer's bid, end time.
 - AC5: Empty `Aktif`: 32 px icon, "Belum ada bid aktif", "Lot yang Anda ikuti muncul di sini, lengkap dengan posisi bid dan sisa waktunya.", primary `Lihat N lelang live` (or `Lihat lelang` when none is live), secondary `Cara ikut lelang` to `/panduan`.
 - AC6: Loading skeleton; a fetch error shows an Indonesian message with `Coba lagi`.
-- [ ] T-101.1 [storefront] Bid Saya route, tabs, active/won/lost lists, empty, loading and error states (AC1–AC6)
-- [ ] T-101.2 [qa] Verify AC1–AC6 with a customer who is highest on one lot, outbid on one, won one and lost one; anonymous redirect
+- [x] T-101.1 [storefront] Bid Saya route, tabs, active/won/lost lists, empty, loading and error states (AC1–AC6) *built in `c8b31ff`; qa browser-verified AC1–AC5, the empty state and the loading skeleton 2026-11-25; the error branch (`BidSayaError`, `BidSayaPage.tsx:564-576`) is code-verified only (T-101.6)*
+- AC7 *(new export 2026-11-25, boards 06, 10)*: each `Menang` card shows title, `Lot #NN · menang {date}`, farm, the price, a `Perlu tindakan` badge (warning, icon + text) when the winner has an action, a next-action line, and the actions that apply: while `won`, the payment instructions of US-108 AC2; while `shipped`, `Konfirmasi koi diterima` (the existing delivered action, US-053, and the arrival photo/video of US-110, built and accepted 2026-11-26); within the claim window, `Laporkan` opening the existing claim form (US-054). No `Chat farm` (D-052), no "Lunas dari saldo", no rekber, no karantina or BBKP step, no "Garansi hidup 24 jam".
+- AC8 *(new export)*: a vertical timeline `Menang` → `Dibayar` → `Dikirim` → `Diterima`, icon + text per step, each done step with its date in WIB (D-072, from US-112), the shipped step with the courier tracking number when there is one. Replaces AC3's horizontal list (`BidSayaPage.tsx:207-276`).
+- AC9 *(new export)*: `/akun/menang` no longer duplicates the `Menang` tab: it redirects to Bid Saya with the `Menang` tab selected (old links keep working), and everything the old page did moves onto the card: claim status and `Konfirmasi` of a resolved claim, rating, the add-address prompt. The farmer bank reveal is not moved (removed by US-108). Fixes the dead `Ajukan klaim` `<span>` (`WonLotsPage.tsx:192`): the claim action is a real button or link.
+- [x] T-101.2 [qa] Verify AC1–AC6 with a customer who is highest on one lot, outbid on one, won one and lost one; anonymous redirect *qa 2026-11-25 at 390 px and 1440 px on budi and dewi: AC1 guard/route/tabs, AC2 active cards (whole-card link), AC3 Menang links and four step labels, AC4 Kalah, AC5 exact empty copy and actions, masked bidders, no hydration errors, 400 tests pass; AC6's loading skeleton seen, the error branch has no failing request to force and moves to T-101.6*
+- [x] T-101.3 [storefront] Won card with badge, next action, actions and vertical timeline with dates (AC7, AC8), after T-108.4 and T-112.2 *built; qa 2026-11-25 verified the `won` card at 390 px and 1440 px (title, `Lot #03 · menang 22 Nov, 05.00 WIB`, farm, price, `Perlu tindakan`, next-action line, US-108 payment block, no bank/chat/rekber/karantina copy) and the vertical timeline with the Menang date; `paid`/`shipped`/`delivered`/claim-window actions and the shipped date/tracking are data-gated (T-101.6)*
+- [x] T-101.4 [storefront] Redirect `/akun/menang` to the `Menang` tab; move claim, claim confirm, rating and address prompt onto the card; working claim action (AC9) (`sections/AccountPage/WonLotsPage.tsx`, `BidSayaPage.tsx`) *built; qa 2026-11-25 verified `/akun/menang` redirects to the `Menang` tab and no dead `Ajukan klaim` remains; claim status/confirm, rating and the add-address prompt are data-gated (T-101.6)*
+- [ ] T-101.5 [qa] Verify AC7–AC9 with won lots in `won`, `paid`, `shipped`, `delivered` (inside and outside the claim window) and `claimed`; old `/akun/menang` link lands on the tab *qa FAIL 2026-11-25 for verification incompleteness, not a defect: no `paid`/`shipped`/`delivered`/`claimed` row exists and mutation is forbidden; the `won` card, timeline, redirect and removed dead claim passed. Folded into T-101.6*
+- [ ] T-101.6 [qa] **Follow-up after acceptance; it does not change US-101's status.** When the database holds won lots in `paid`, `shipped` (with a tracking number) and `delivered`, a lot inside and outside the claim window and a `claimed` lot, re-verify at 390 px: AC6 error branch (force a failing request), AC7 shipped/delivered/claim-window actions and the payment block, AC8 shipped/delivered dates and tracking, AC9 claim status and `Konfirmasi`, rating and the add-address prompt (the shipped/delivered step dates also wait on T-112.2; at US-112 acceptance on 2026-11-25 also re-check the farmer's sold-lot reached-step dates, AC2, and the winner timeline's paid/shipped/delivered dates, AC3, plus AC4's paid-before-US-108 lot). Today those paths are code and unit-test verified only. *(added at US-101 acceptance 2026-11-25; T-112 fold-in added at US-112 acceptance 2026-11-25)*
 
-### US-102 Top-up page with bank details, upload and status · `todo`
+### US-102 Top-up page with bank details, upload and status · `done (accepted 2026-11-25: qa re-check PASS — all three reported defects fixed, no new bugs, render checks clean at 390 px and 1440 px, 399 tests pass. AC1, AC5, AC8, AC9 and AC11 browser-verified; AC2, AC3, AC4, AC6, AC7 and AC10 verified by code and unit tests. The configured-bank Salin buttons (AC3) and a rejected request row (AC7) have no data in the shared DB: follow-up T-102.10)`
 As a **customer**, I want complete transfer details and a clear upload so that my
 top-up is approved without back and forth. *(Design: boards 08, 12; review findings
 "Top-up, ponsel & desktop" (severity 4) and "Top-up, form".)* Depends on US-095.
@@ -8001,16 +8158,24 @@ top-up is approved without back and forth. *(Design: boards 08, 12; review findi
 - AC3: Step 2 `Transfer ke rekening ini`: bank, account number and holder from `GET /store/platform-bank-account` (D-009, D-010), plus the transfer amount; `Salin` buttons on the account number and the amount, confirming `Tersalin` to screen readers; "Transfer tepat sesuai nominal agar cepat dicocokkan admin." If any of the three bank values is empty (the defaults are empty strings, `packages/api/src/modules/platform-settings/defaults.ts:8-10`), the step shows "Rekening tujuan belum diatur. Hubungi admin." and submit stays disabled.
 - AC4: Step 3 `Unggah bukti transfer`: a drop area with a `Pilih file` button (no browser "Choose File" text visible), preview thumbnail with file name and size (`1,2 MB`), replace and remove; guidance "Foto atau tangkapan layar. JPG, PNG, atau WEBP, maksimal 5 MB." A wrong type or a file over 5 MB is refused with an Indonesian message before upload (the server check in `packages/api/src/api/store/topup-requests/validators.ts:34-35` stays).
 - AC5: When submit is disabled, the first unmet reason shows under the button: "Isi nominal top-up dulu.", "Unggah bukti transfer dulu untuk mengirim." or "Rekening tujuan belum diatur."
-- AC6: After submit: a confirmation and "Menunggu dicek admin. Saldo bertambah setelah admin mencocokkan transfer Anda." No time estimate (`mvp-Q61`) and no notification promise.
+- AC6: After submit: a confirmation and "Menunggu dicek admin, biasanya kurang dari 60 menit. Saldo bertambah setelah admin mencocokkan transfer Anda." (D-073, `mvp-Q61` answered 2026-11-25). No notification promise.
 - AC7: History: amount, date and time in WIB, status chip (icon + text) `Menunggu`, `Masuk ke saldo` or `Ditolak`; a rejected row shows the admin's reason (US-012) and `Kirim ulang bukti`, which opens the form prefilled with that amount (a new request; the rejected one is unchanged).
 - AC8: Mobile: one column, steps 1-2-3 in order. Desktop: account menu on the left, steps 1 and 3 in one column and step 2 in the other (board 12).
-- [ ] T-102.1 [storefront] Balance card, nominal chips and formatted input, prefill from the shortfall link (AC1, AC2, AC8)
-- [ ] T-102.2 [storefront] Bank details with copy buttons and the empty-setting state (AC3)
-- [ ] T-102.3 [storefront] Upload area with preview, type/size guidance, disabled reasons, submitted status (AC4–AC6)
-- [ ] T-102.4 [storefront] Top-up history rows with status chips, rejection reason and resend (AC7)
-- [ ] T-102.5 [qa] Verify AC1–AC8: empty and filled bank settings, 6 MB and PDF uploads refused, copy buttons, rejected request resend, 390 px and 1440 px
+- [x] T-102.1 [storefront] Balance card, nominal chips and formatted input, prefill from the shortfall link (AC1, AC2, AC8) *built; qa 2026-11-25 at 390 px and 1440 px: balance card copy (`Topup.tsx:226-233`), chips and formatted input; the prefill hint names the lot (`Topup.tsx:359`), amount and `judul` survive both redirects, validated with a fallback when `judul` is absent*
+- [x] T-102.2 [storefront] Bank details with copy buttons and the empty-setting state (AC3) *built: `CopyValue` (`cells/CopyValue/CopyValue.tsx:36`, used at `Topup.tsx:667`), empty state `Topup.tsx:401`, route `packages/api/src/api/store/platform-bank-account`; qa browser-verified the empty-setting state; the configured-bank `Salin` buttons are code-only because the shared DB has no bank set (T-102.10)*
+- [x] T-102.3 [storefront] Upload area with preview, type/size guidance, disabled reasons, submitted status (AC4–AC6) *built; qa verified in the browser that remove clears preview, file name and input value (`Topup.tsx:458-490`); type/size refusal covered by unit tests and the server validator (`topup-requests/validators.ts:34-35`); the post-submit confirmation is code-verified (`Topup.tsx:236-250`)*
+- [x] T-102.4 [storefront] Top-up history rows with status chips, rejection reason and resend (AC7) *built: status chips `Topup.tsx:680-707`, reason and `Kirim ulang bukti` `Topup.tsx:582-596` → `resend` `:179`; qa browser-verified the merged table; a rejected row is code and unit-test verified only, no rejected request is seeded (T-102.10)*
+- AC9 *(new export 2026-11-25, boards 07, 11)*: Saldo and top-up are **one page** `Saldo & top-up`: balance card on top, then steps 1-2-3, then one history table. `/akun/saldo` and `/akun/topup` both reach it (one redirects to the other, `?amount=` kept).
+- AC10 *(new export)*: one history table `Tanggal` / `Keterangan` / `Status` / `Jumlah` merging wallet transactions and top-up requests, newest first: a join fee reads `Biaya ikut lelang · {lot title}, Lot #NN` (per lot since US-111; the auction title before), a refund names its auction, a top-up reads `Top-up via {bank}`; amounts signed (`+ Rp` / `− Rp`); a rejected top-up shows the admin's reason and `Kirim ulang bukti` (AC7). Status icon + text.
+- AC11 *(bug, gap analysis)*: the shortfall link `Top-up Rp X` (`topupHref`, `const/routes.ts:44-45`) prefills the amount: the page reads `searchParams.amount` (today `app/(account)/akun/topup/page.tsx` reads none and the form starts at `amount: ''`, `Topup.tsx:51`).
+- [ ] T-102.5 [qa] Verify AC1–AC8: empty and filled bank settings, 6 MB and PDF uploads refused, copy buttons, rejected request resend, 390 px and 1440 px *qa 2026-11-25 re-check PASS for the empty bank setting, 390/1440 render and the fixed defects; the filled-bank copy buttons and a rejected request row could not run (no data in the shared DB). Not ticked: folded into T-102.10*
+- [x] T-102.6 [storefront] Read `?amount` into the form (AC2, AC11). Small; can go first *built; `saldo-topup/page.tsx:13-21` parses `amount` and `judul` into `initialAmount`/`initialTitle`; qa confirmed the amount and lot title through both redirects, unit-tested in `topup-request.test.ts`*
+- [x] T-102.7 [backend] Check what `wallet_transaction.reference` holds for `join_fee` and `refund` rows (not verified); if the lot/auction title can't be resolved, return it from the wallet history route via `query.graph` (no migration) (AC10) *built; `packages/api/src/api/store/wallet/route.ts:24-60` resolves join_fee/listing_fee/refund auction titles through `query.graph` and returns a `description` (`:138-141`); no migration; `integration-tests/http/wallet.spec.ts` updated*
+- [x] T-102.8 [storefront] Merge `Wallet.tsx` and `Topup.tsx` into one page with the redirect and the merged history table (AC9, AC10) *built; `/akun/saldo` and `/akun/topup` redirect to `/akun/saldo-topup` (`next.config.ts:15-16`, query kept), `Wallet.tsx`/`WalletPage.tsx` removed, one table `Tanggal`/`Keterangan`/`Status`/`Jumlah` (`Topup.tsx:555-564`) from `mergeWalletHistory` (`wallet-history.ts:50`); the approved top-up reads `Top-up via {bank}`/`{reference}`/`Top-up saldo` (`wallet-history.ts:42,63`)*
+- [x] T-102.9 [qa] Verify AC9–AC11 at 390 px and 1440 px against boards 07 and 11 *qa 2026-11-25 PASS: one page and merged table at 390 px and 1440 px, both redirects keep the query, no render errors*
+- [ ] T-102.10 [qa] **Follow-up after acceptance; it does not change US-102's status.** When an admin sets the platform bank (`platform-settings`) and the DB holds a rejected top-up request: verify at 390 px and 1440 px the transfer step's account number, holder and amount with the `Salin` buttons (`Tersalin` announced) and the no-bank state gone, and a rejected history row with the admin's reason and `Kirim ulang bukti` prefilling that amount as a new request. Today those paths are code and unit-test verified only. *(added at US-102 acceptance 2026-11-25)*
 
-### US-103 Navigation, account layout, footer, brand and copy · `todo`
+### US-103 Navigation, account layout, footer, brand and copy · `done (accepted 2026-11-25: qa re-check PASS, narrow round 2 after two fix rounds. AC1 Header.tsx:56 h-14 (56 px, 57 with border) on mobile and lg:h-16 on desktop; BrandMark.tsx:8-11 44×44 target; balance chip Header.tsx:125-138 uses formatPriceCompact and links ROUTES.saldoTopup (routes.ts:18, /akun/saldo-topup, page exists). AC2 BottomNav.tsx:11-17 five items, :39 h-16 (64 px), :48 aria-current, :56-62 non-colour top bar, :42 guest goes through signInHref (routes.ts:34-35, sessionRequired=true and redirect=). AC3 header 64 px, nav plus Bid Saya (Header.tsx:85-91) and account menu (:94-96), no search or bell. AC4 AccountFrame.tsx:80 aside hidden on mobile, :117-132 menu below content only when showMenuOnMobile (AccountHome.tsx:38); (account)/layout.tsx renders no menu. AC6 const/site.ts:2 default and both .env.template read "Koi Auction House"; grep Indokoi|Mafia Koi over both apps' src → 0; the dev runtime still shows "Indokoi" from the uncommitted dev .env, which is the owner's action below. AC7 grep Ended|bids|left|Choose File|Lihat detail under src/components → code identifiers and comments only, no user copy; cards are whole-card links. AC8 qa browser sweep: focus rings on plain links, buttons and card ::after, inset nav rings, 44 px tap targets (qa measured 99×44, 113×45, 135×48), no overflow at 390/1440, no double rings, no layout shift; Esc is handled by the Base UI Dialog primitive (packages/ui/src/primitives/dialog.tsx:4) and CONTAINER is fluid at 200%. AC9 wordmark Header.tsx:65-71, nav const/header.ts:12-17, active underline and aria-current NavLinks.tsx:44-52, CONTAINER max-w-1280 px-8 = 1216 px at 1440. AC10 menu order and labels AccountFrame.tsx:30-39, farmer "Kebun saya" or else "Daftar jadi farm" then "Keluar" after a divider :56-61 (AccountNav.tsx:74-77), "Pembeli · {city}" :92-95, h1 in the content column :106-113. AC5 is deferred by the owner 2026-11-25 → T-103.9; the footer still links /rekber through ROUTES.escrow (footer.ts:23), so AC5 is not claimed. T-103.10 covers the review/rating dialog focus once a delivered order exists)`
 As a **customer**, I want to reach auctions, my bids, my balance and my account
 from anywhere so that the main content starts at the top of every screen. *(Design:
 boards 02, 06, 09, 11, 12; review findings "Halaman akun, ponsel", "Footer, ponsel",
@@ -8019,14 +8184,22 @@ boards 02, 06, 09, 11, 12; review findings "Halaman akun, ponsel", "Footer, pons
 - AC2: Mobile bottom nav with 5 items `Beranda`, `Lelang`, `Katalog`, `Bid Saya`, `Akun`; 24 px icon + text; the current item has `aria-current="page"` and a non-colour marker; at least 44 px; a guest tapping `Bid Saya` or `Akun` goes to sign-in and returns there.
 - AC3: Desktop header 64 px: the existing nav links, the balance chip, a `Bid Saya` link and the account menu. No search box and no notification bell.
 - AC4: Account pages on mobile start with their content; the account menu is a list on `/akun`, not stacked above every page. On desktop the menu sits in a left column with the customer's name.
-- AC5: Footer: on mobile the link groups collapse in an `Accordion` (keyboard operable); with every group collapsed the footer is shorter than one 390×844 viewport. Links point only to pages that exist. No footer or nav link points to `/rekber`, whose copy says the platform holds the buyer's money (`apps/storefront-koi/src/const/info.ts:72-75`), contradicting D-058 (`mvp-Q62`).
-- AC6: One brand name everywhere (header, footer, `<title>`, metadata), read from `NEXT_PUBLIC_SITE_NAME`; no other hard-coded brand name in storefront components (`mvp-Q60`).
+- AC5 *(deferred: footer redesign out of scope for now, owner 2026-11-25; not verified in this story)*: Footer: on mobile the link groups collapse in an `Accordion` (keyboard operable); with every group collapsed the footer is shorter than one 390×844 viewport. Links point only to pages that exist. No footer or nav link points to `/rekber`, whose copy says the platform holds the buyer's money (`apps/storefront-koi/src/const/info.ts:72-75`), contradicting D-058 (`mvp-Q62`).
+- AC6: One brand name everywhere (header, footer, `<title>`, metadata), read from `NEXT_PUBLIC_SITE_NAME`, whose value and code default are **Koi Auction House** (D-073, `mvp-Q60` answered 2026-11-25); no other hard-coded brand name in storefront or admin-koi components. Today: `app/layout.tsx:21-22`, `(auth)/masuk|daftar|atur-sandi/page.tsx` metadata and `AuthPage/components/RegisterForm.tsx:54,62` say "Indokoi"; `const/footer.ts:54` and `HomePage/components/Home.tsx:202` say "Mafia Koi Jogja".
 - AC7: No English on customer screens touched by this epic: `Ended`, `bids`, `left`, `Choose File`, `Lihat detail` on cards are gone (`Live` stays, as on the boards). A grep for those strings in user-facing JSX under `apps/storefront-koi/src/components` returns no hit outside demo constants.
 - AC8: Accessibility sweep across every Epic 9 screen: image `alt` text, tap targets at least 44 px on mobile, visible focus, no colour-only status, Esc closes every dialog, no horizontal scroll at 390 px, text readable at 200% zoom.
-- [ ] T-103.1 [storefront] Mobile header with balance chip and bottom nav; desktop header with Bid Saya link (AC1–AC3)
-- [ ] T-103.2 [storefront] Account layout: content first on mobile, menu list on `/akun`, left menu on desktop (AC4)
-- [ ] T-103.3 [storefront] Footer accordion and link audit, brand from `NEXT_PUBLIC_SITE_NAME`, English copy sweep (AC5–AC7)
-- [ ] T-103.4 [qa] Verify AC1–AC8 at 390 px and 1440 px across `/`, `/lelang`, a lot page, Bid Saya, top-up and `/akun`; keyboard-only pass; render-check every route
+- [x] T-103.1 [storefront] Mobile header with balance chip and bottom nav; desktop header with Bid Saya link (AC1–AC3) *built: Header.tsx:56,125-138, BottomNav.tsx:11-17,39,48,56-62; qa PASS AC1–AC3 (T-103.4)*
+- [x] T-103.2 [storefront] Account layout: content first on mobile, menu list on `/akun`, left menu on desktop (AC4) *built: AccountFrame.tsx:80,117-132, AccountHome.tsx:38; qa PASS AC4 (T-103.4)*
+- [ ] T-103.3 [storefront] Footer accordion and link audit, brand from `NEXT_PUBLIC_SITE_NAME`, English copy sweep (AC5–AC7) *partial: the brand sweep (T-103.7) and the English sweep (AC7) are built and qa-verified; the footer accordion and the `/rekber` unlink are AC5, deferred by the owner 2026-11-25 → T-103.9, so this task stays open*
+- AC9 *(new export 2026-11-25, boards 08–11)*: desktop header: text wordmark `Koi Auction House.` linking home; nav `Lelang` · `Katalog` · `Perlengkapan` · `Farm` (14–15 px; the current item underlined plus `aria-current`; `Farm` goes to `/mitra`); for a signed-in customer the balance pill, `Bid Saya` and an avatar with initials that opens the account menu. Page content is 1216 px wide at 1440 px. Replaces AC3's "existing nav links" (`organisms/Header/Header.tsx`, `const/header.ts`). No search box, no bell.
+- AC10 *(new export, boards 10, 11)*: account pages: a small h1 inside the content column, inline with the page's tabs, instead of the breadcrumb and full-width hero h1 (`AccountFrame.tsx:71-94`). Menu, in order: `Ringkasan`, `Bid Saya`, `Pesanan katalog`, `Saldo & top-up`, `Alamat`, `Pesan`, `Ulasan`, `Pengaturan`, then a divider, `Daftar jadi farm` (a farmer sees their farm area link instead) and `Keluar`. Under the name: `Pembeli · {city of the default address}` (just `Pembeli` with no address). Replaces the labels and order in `AccountFrame.tsx:35-51`; `Lot dimenangkan`, `Saldo` and `Top-up` go (US-101 AC9, US-102 AC9).
+- [x] T-103.4 [qa] Verify AC1–AC4 and AC6–AC8 at 390 px and 1440 px across `/`, `/lelang`, a lot page, Bid Saya, top-up and `/akun`; keyboard-only pass; render-check every route *(AC5 deferred)* *qa 2026-11-25 re-check PASS: AC1–AC4 and AC6–AC8 verified, render checks clean at 390/1440, no defects; AC5 deferred*
+- [x] T-103.5 [storefront] Desktop header: wordmark, nav labels and `Farm`, underline active, avatar menu, 1216 px container (AC9) *built: Header.tsx:65-71, const/header.ts:12-17, NavLinks.tsx:44-52, CONTAINER; qa PASS AC9 (T-103.8)*
+- [x] T-103.6 [storefront] Account layout and menu (AC10), after US-101 T-101.4 and US-102 T-102.8 so no menu item points to a removed page *built: AccountFrame.tsx:30-39,56-61,92-95,106-113, AccountNav.tsx:74-77; qa PASS AC10 (T-103.8)*
+- [x] T-103.7 [storefront] [admin] Brand sweep: default `NEXT_PUBLIC_SITE_NAME` to `Koi Auction House` (and `.env.template`), replace every hard-coded "Indokoi" / "Mafia Koi Jogja" in storefront-koi and admin-koi (AC6). Small; can go first *built: const/site.ts:2 in both apps and both `.env.template`; grep Indokoi|Mafia Koi → 0. The dev on-screen value waits on the owner's uncommitted `.env`*
+- [x] T-103.8 [qa] Verify AC6, AC9, AC10 at 1440 px and 390 px against boards 08–11; grep for "Indokoi" and "Mafia Koi" returns no hit *qa 2026-11-25 PASS: AC6 source and templates clean, AC9 and AC10 match boards 08–11 at 390/1440; the dev runtime brand value is the owner's `.env`*
+- [ ] T-103.9 [storefront] **Follow-up (AC5), deferred by the owner 2026-11-25; build when the owner asks for the footer redesign.** Mobile footer: collapsible link groups in an `Accordion` (keyboard operable), shorter than one 390×844 viewport when all are collapsed; audit every footer and nav link, and remove the `/rekber` link (`ROUTES.escrow`, `footer.ts:23`) whose copy contradicts D-058 (`mvp-Q62`)
+- [ ] T-103.10 [qa] **Follow-up after acceptance; it does not change US-103's status.** Once a delivered order exists, open the review and rating dialogs: focus moves in, Tab stays inside, Esc closes, focus returns to the trigger, and the fields are reachable at 390 px (AC8's dialog clause, data-gated)
 
 ### US-104 Watch a lot (heart, "Dipantau") · `parked (not in the MVP, D-066, 2026-11-25)`
 As a **customer**, I want to watch a lot so that I can find it again. *(Design:
@@ -8037,17 +8210,60 @@ is answered.
 - [ ] T-104.2 [storefront] Labelled heart on cards and lot page, `Dipantau` tab in Bid Saya
 - [ ] T-104.3 [qa] Verify the ACs written after `mvp-Q59`
 
-### US-105 Koi details: variety, size, age, sex, certificate · `parked (not in the MVP, D-067, 2026-11-25)`
-As a **customer**, I want the koi's variety, size, age, sex and certificate so that
-I can compare lots. *(Design: review finding "Varietas di kartu & spesifikasi",
-boards 02, 03, 09, 10 spec rows and filters.)* Needs new data in the farm form and
-API. Write the ACs when `mvp-Q58` is answered.
-- [ ] T-105.1 [backend] New lot/product fields, validation and store/vendor responses (per `mvp-Q58`)
-- [ ] T-105.2 [storefront] Farm area auction form gains the fields
-- [ ] T-105.3 [storefront] Card subtitle, specification rows and the variety/size/certificate filters on `/lelang`
-- [ ] T-105.4 [qa] Verify the ACs written after `mvp-Q58`
+### US-105 Koi details: variety, size, age, sex, certificate, pond origin, notes, video · `done (accepted 2026-11-25; AC1–AC4 and AC6 integration/unit/browser verified, AC5 code- and unit-tested, populated paths data-gated in T-105.5)`
+*(Unparked 2026-11-25 by D-071, which supersedes D-067; field formats settled by
+D-081.)*
+As a **customer**, I want each koi's variety, size, age, sex, certificate, pond
+origin, the breeder's notes and a video so that I can compare lots; as a
+**farmer**, I want to enter them when I add a lot. *(Design: boards 01, 02, 08,
+09 card subtitle, spec rows, filters, gallery. D-071, D-081.)*
+- AC1: A lot stores variety, size in whole cm, age, sex, certificate, pond origin, breeder notes and a YouTube video URL, in the formats D-081 sets: variety and size required; variety a fixed list (the `/katalog` koi variety categories plus `Lainnya`); size whole cm 1–150; age `Tosai (1 tahun)`, `Nisai (2 tahun)`, `Sansai (3 tahun)`, `Yonsai (4 tahun)` or `Gosai+ (5 tahun atau lebih)`; sex `Jantan`, `Betina` or `Belum diketahui`; certificate yes/no plus an optional issuer (`Tidak ada (koi lokal)` when no); pond origin free text (city, province); breeder notes free text up to 1000 characters; video one YouTube link. The backend reads `node_modules/@mercurjs/docs` on product attributes before choosing lot columns or Mercur attributes, and says which in its report.
+- AC2: The video URL accepts only YouTube watch, `youtu.be` and Shorts links (the YouTube half of D-061's allow-list); anything else is refused with an Indonesian message (D-055).
+- AC3: The farmer's lot form in the Farm area (`akun/kebun/lelang/baru`, `akun/kebun/lelang/[id]`) has the fields, while the auction is `draft` (lots are editable only then, D-032), with Indonesian labels and validation messages.
+- AC4: `GET /store/lots` and `GET /store/lots/:id` return the fields; `GET /store/lots` filters by variety (several), size min/max, certificate and has-video; `/vendor/*` lot reads and writes carry them.
+- AC5: Storefront: card subtitle (US-097 AC14), session varieties (US-097 AC17), sidebar and chip filters with counts per variety (US-097 AC13, AC16), spec rows (US-098 AC14) and the gallery video tile (US-098 AC12).
+- AC6: Lots created before this story show no empty rows and stay filterable as "no value".
+- [x] T-105.1 [backend] Fields per D-081, migration (ask the owner before running it, shared database), validation, store and vendor responses, store filters + spec (AC1, AC2, AC4, AC6) *★ migration: owner's go-ahead first* *(done 2026-11-25: 9 nullable columns `lot.ts:74-82`, migration `Migration20261125175906.ts:6`, validators `utils/koi-lot-fields.ts`, store fields/filters `store/lots/route.ts:188-197,436-462`; 34 integration tests across `farmer-auctions.spec.ts`/`store-lots.spec.ts`, 3 unit in `koi-lot-fields.unit.spec.ts`)*
+- [x] T-105.2 [storefront] Farm area lot form fields (AC3) *(done 2026-11-25: both forms, `CreateAuction.tsx:308-402` and `EditAuction.tsx:366-460`; qa browser 390/1440)*
+- [x] T-105.3 [storefront] `/lelang` koi filters in the sidebar, phone chips and Filter sheet; card subtitle; session varieties (AC5; with US-097 T-097.6, T-097.7) *(done 2026-11-25: `AuctionFilters.tsx`, subtitle `AuctionProductCard.tsx:54-55,111+`, session varieties `auction-list.ts:125-152`/`UpcomingAuctionCard.tsx:42`; populated render data-gated in T-105.5)*
+- [x] T-105.4 [qa] Verify AC1–AC6: farmer creates a lot with every field and with only the required ones, an invalid video URL, filters combined, an old lot with no fields *(qa PASS 2026-11-25: 34 integration + 3 unit tests, both lot forms, filters combined, legacy lots null and listed, render checks 390/1440; populated koi values data-gated — see T-105.5)*
+- [ ] T-105.5 [qa] **Follow-up after acceptance; it does not change US-105's status.** Populate demo koi data (needs the owner's approval: shared database) by updating `packages/api/src/scripts/seed-lots.ts` and re-running the seed: set every koi field on 3 of the 4 live lots (`Kohaku Sansai · 48 cm`, `Sanke Yonsai · 55 cm`, `Showa Nisai · 40 cm`), leave `Hi Utsuri Gosai · 62 cm` with all fields null, include one lot with a valid YouTube link and one with no certificate, and add one scheduled auction whose two lots carry two different varieties. Then verify in the browser at 390 and 1440 px: sidebar variety counts, the combined filters, the `{umur} · {jenis kelamin} · {farm}` card subtitle, both new and legacy lot pages (koi spec rows vs no empty rows), the `Video` tile and `youtube-nocookie` dialog, and the `Akan datang` session varieties. Today these are code- and unit-test verified only. *(added at US-105 acceptance 2026-11-25; same pattern as T-099.9 and T-106.4)*
 
-### US-106 Remove the live room and redirect its links · `todo`
+**Accepted 2026-11-25 (qa T-105.4 PASS with a data-gated caveat).** AC1: the nine
+nullable koi columns are `packages/api/src/modules/auction/models/lot.ts:74-82`,
+added by `Migration20261125175906.ts:6`; D-081's lists and formats are enforced by
+`packages/api/src/utils/koi-lot-fields.ts` (variety, size 1–150, age, sex, the
+`Tidak ada (koi lokal)` certificate label, 1000-char notes), and the store
+response returns every field and defaults the no-certificate issuer
+(`src/api/store/lots/route.ts:188-197`). AC2: `isYouTubeVideoUrl` and its
+Indonesian refusal message are unit-tested 3/3 and browser-checked in the farmer
+form. AC3: both lot forms carry the fields, the certificate toggle and the video
+error (`CreateAuction.tsx:308-402`, `EditAuction.tsx:366-460`); qa rendered them
+at 390 and 1440 px. AC4: `GET /store/lots` maps variety (several), size min/max,
+certificate and has-video (`route.ts:436-462`); the detail and vendor reads carry
+the fields; 34 integration tests pass across `farmer-auctions.spec.ts` and
+`store-lots.spec.ts`. AC5: the sidebar/chip/sheet filters and counts
+(`AuctionFilters.tsx`), card subtitle (`AuctionProductCard.tsx:54-55,111+`),
+session varieties (`auction-list.ts:125-152`, `UpcomingAuctionCard.tsx:42`), spec
+rows (`LotSpec.tsx:56-61,76`) and the gallery video tile/dialog
+(`MediaGallery.tsx:230-331`) are built; the hidden/zero-count cases are
+browser-verified and the populated cases are unit-tested. AC6: legacy lots return
+null and stay listed, and the legacy lot page shows only Farm/Kategori/Pengiriman
+with no empty rows (qa browser). Storefront `bun run check` 432/432, tsc and lint
+clean. **Data-gated, not browser-verified:** populated variety counts and
+filters, the `{umur} · {jenis kelamin} · {farm}` subtitle, the koi spec rows, the
+YouTube dialog and the `Akan datang` session varieties — no seeded lot has a koi
+field and there is no scheduled auction. T-105.5 names the exact data that closes
+this; populating it changes the shared database and needs the owner's approval.
+The AC1 process clause (the backend names the Mercur doc page it read before
+choosing lot columns) is not in qa's evidence; the code chose per-lot columns in
+the auction module, and the functional half of AC1 is verified above.
+
+**Order (US-105):** T-105.1 (backend; ★ migration, owner's go-ahead, then
+`bun run codegen`) → T-105.2 and T-105.3 (storefront, parallel after the API
+contract lands; T-098.6 rides on T-105.1) → T-105.4 (qa).
+
+### US-106 Remove the live room and redirect its links · `done (accepted 2026-11-25: AC1–AC2 PASS from qa; AC3 code/unit-verified and browser render data-gated. AC1: permanent redirect at `apps/storefront-koi/next.config.ts:17`; no live route directory under `src/app`; qa saw 308 with the query preserved, with a trailing slash, and 404 for an unknown id. AC2: the room page `src/app/(main)/lelang/[id]/live/page.tsx` was deleted in `c8b31ff`; no `/lelang/<lot>/live` link or nav entry remains (`Lelang live` on `/lelang` is a status filter, not a room). AC3: outbound link at `apps/storefront-koi/src/components/sections/LotDetailsPage/components/LotPage.tsx:661-681`, gated by `auction.live_stream_url && isLiveStreamUrl` (`src/lib/helpers/live-stream-url.ts`), `target="_blank"`, no iframe; `live-stream-url.test.ts` + `lot.test.ts` 17/17 and `bun run check` 401/401 pass, lint clean. Not browser-verified with a real link because no auction row has a valid URL: the seeds store markers in `live_stream_url` (Unplanned). Follow-up T-106.4. Render-check clean at 390/1440)`
 As a **customer**, I want one lot page that is always live so that I never switch
 screens to bid. *(Design: review finding "Detail lot + Ruang bidding", boards 03, 10,
 13.)* Depends on US-099, which builds the full bid surface on the lot page. D-064
@@ -8056,10 +8272,12 @@ removes it and redirects its old links.
 - AC1: `/lelang/<lot>/live` redirects to `/lelang/<lot>`; no live-room page is served.
 - AC2: No live-room entry point remains: the lot page and `/lelang` carry no link or button to `/lelang/<lot>/live`, and the room's page and components are removed.
 - AC3: The farmer's live link (D-061, `auction.live_stream_url`) renders on the lot page as an outbound link, as it did in the room; no iframe or embedded player.
-- [ ] T-106.1 [storefront] Redirect `/lelang/[id]/live` → `/lelang/[id]`, remove the room's page and components, remove the lot page's live-room entry link, move the farmer's live link (D-061) onto the lot page (AC1–AC3) (ordered after US-099)
-- [ ] T-106.2 [qa] Verify AC1–AC3: an old `/live` URL lands on the lot page, no live-room link remains on the lot page or `/lelang`, the live link renders; render-check
+- [x] T-106.1 [storefront] Redirect `/lelang/[id]/live` → `/lelang/[id]`, remove the room's page and components, remove the lot page's live-room entry link, move the farmer's live link (D-061) onto the lot page (AC1–AC3) (ordered after US-099) *built in `c8b31ff`: redirect `next.config.ts:17`, room page deleted, no room link on the lot page or `/lelang`, live link at `LotPage.tsx:661-681`; qa PASS AC1–AC2, AC3 code/unit-only (T-106.4)*
+- [x] T-106.2 [qa] Verify AC1–AC3: an old `/live` URL lands on the lot page, no live-room link remains on the lot page or `/lelang`, the live link renders; render-check *qa 2026-11-25: AC1 PASS (308, query preserved, trailing slash, unknown id 404, no live route dir), AC2 PASS (room page and components gone, no references, no nav entry), AC3 not browser-verified because no seeded auction has a valid URL; link code and 17/17 unit tests pass. 401 tests, render checks clean at 390/1440. No defects*
+- [x] T-106.3 [storefront] *(new 2026-11-25, gap analysis)* Delete the dead `organisms/BidTerminal` (imported nowhere; only re-exported at `organisms/index.ts:2`; its copy still says "dana ditahan rekber", `BidTerminal.tsx:172`). Storefront `bun run check` passes *deleted; grep for `BidTerminal` under `apps/storefront-koi/src` → 0 matches; `bun run check` 401/401, lint clean (2026-11-25)*
+- [ ] T-106.4 [qa] **Follow-up after acceptance; it does not change US-106's status.** Once an auction row holds a valid YouTube/Instagram `live_stream_url` (after the Unplanned seed fix and the owner-approved one-row update), load `/lelang/<lot>` at 390 px and 1440 px and confirm `Tonton siaran farm` renders as an outbound link that opens in a new tab, with no iframe or embedded player. Covers AC3's data gap. *(added at US-106 acceptance 2026-11-25; same pattern as T-099.9)*
 
-### US-107 Header, footer and bottom nav in the layouts; loading skeletons on every route · `todo`
+### US-107 Header, footer and bottom nav in the layouts; loading skeletons on every route · `done (accepted 2026-11-25; qa T-107.8 PASS on a freshly restarted storefront. Evidence: AC1/AC2 the shell renders only in `(main)`, `(account)` and `(auth)` layouts plus `app/not-found.tsx` (`AppShell.tsx:29-56`), no page or section renders `PageShell`/`Header`/`Footer`/`BottomNav`, and `getShell()` appears only at those four sites; AC3/AC12 19 routes × 390/1440 with exactly one header, footer, bottom nav and `main#konten` (38/38), skip link to `#konten`, 8/8 clean reloads on `/` and `/tidak-ada`; AC4/AC5/AC6 active state from `usePathname()`, lot page header and bid-bar markers at 390, trail breadcrumbs kept and account pages without one per US-103 AC10; AC7 sign-in and sign-out update the chip and menu with no document reload, no header cart count per `mvp-Q74`; AC8 chip equals `/akun/saldo-topup` at both widths, old routes 307; AC9/AC10 skeletons on client navigation and every `<Suspense>` has a fallback, `/lelang`'s page fallback accepted; AC11 CLS 0.0000/0.0316/0.0000/0.0318 and hard loads ≤0.0317, chrome does not move; AC13 `bun run check` 405 tests, tsc and lint clean. T-107.1 baseline was not taken before the build; qa compared against the boards and the pre-`8dbe711` commit. Data-gated browser checks and the open-question links: "Accepted" below)`
 As a **customer or farmer**, I want the header and tab bar to stay put while a
 page loads, and to see the shape of what is coming, so that the site feels fast
 and never goes blank. *(Owner request 2026-11-24. Engineering and UI only: no
@@ -8092,22 +8310,171 @@ catch-all files for every route).
 - AC3: Auth pages and not-found keep today's chrome (header, breadcrumb `Beranda › {title}`, footer, bottom nav; `mvp-Q64` may change auth): `app/(auth)/layout.tsx` renders the shell for `/masuk`, `/daftar`, `/lupa-sandi` and `/atur-sandi`, and `app/not-found.tsx` renders it itself. An unmatched URL (`/tidak-ada`) and a missing record (`/lelang/<unknown id>`, `/produk/<unknown handle>`, `/mitra/<unknown handle>`) show the 404 card with exactly one header, one footer and one bottom nav.
 - AC4: The current nav item in the header and the bottom nav (`aria-current="page"` plus the non-colour marker, US-103 AC2) is derived from the pathname (`usePathname()`); no page passes `activeHref`. Every route marks the same item as before the change (checked against the T-107.1 baseline).
 - AC5: Lot page variants keep working through the `:has()` mechanism above: below 1024 px the lot page shows the back button `Kembali ke Lelang` and the `Lot #NN` title in place of the brand row and shows no breadcrumb (board 03); at 1440 px it shows the normal header and its breadcrumb. While the mobile bid bar shows, the page reserves its extra bottom space so neither the bar nor the tab bar covers the footer; a closed or cancelled lot reserves only the tab bar. The first server-rendered HTML already has the right header (no switch after hydration).
-- AC6: Every page that passed a `trail` renders the same breadcrumb itself at the top of its content: same text, links, position and spacing (compared with the T-107.1 baseline at 1440 px). The `bar`, `back`, `mobileTitle`, `trail`, `account`, `cart` and `activeHref` page-to-shell props are gone (`bar` has no caller today).
-- AC7: The header balance chip and cart count update without a full page reload (no `window.location` reload) after each of these mutations: sign in (`login`, `src/lib/data/customer.ts:103`) and register (`signup`, `:51`): the account menu and balance chip appear, the cart count carries over (`transferCart`, `:140`); sign out (`signout`, `:130`, via `/keluar`): the chip and account menu go, the count shows the guest cart; join an auction (`joinAuction`, `src/lib/data/lots.ts:123`): the chip drops by the join fee, no change for a Rp0 fee; add to cart (`addToCart`, `src/lib/data/cart.ts:108`), change a quantity and remove a line: the count equals the cart's quantity sum. A top-up request (`createTopupRequest`, `src/lib/data/topups.ts:58`) does not change the balance (credit is added when the admin approves, US-012), so the chip stays the same at submit. The update is made by revalidating the layout or refreshing the router after the mutation succeeds; a failed mutation changes nothing.
-- AC8: The chip never disagrees with the page: after a client navigation to `/akun/saldo`, `/akun/topup` or a lot page (`Saldo tersedia` in the join dialog), the header chip shows the same amount as the page. When the chip refreshes on other pages after a balance change the customer didn't make (admin approves a top-up, an admin adjustment, a cancel refund) is `mvp-Q63`.
-- AC9: Every route under `(main)`, `(account)` and `(auth)` shows a content-area skeleton while it loads after a client navigation, from its own `loading.tsx` or the nearest parent segment's. The header and bottom nav stay visible and don't move. The loading region has `aria-busy="true"` and an Indonesian screen-reader status (`Memuat…`).
+- AC6: Every page that passed a `trail` renders the same breadcrumb itself at the top of its content: same text, links, position and spacing (compared with the pre-`8dbe711` commit at 1440 px; the T-107.1 baseline was not taken). **Account pages under `(account)` are excluded and show no breadcrumb**: US-103 AC10 (accepted 2026-11-25, boards 10–11) deliberately replaced the account breadcrumb and full-width hero with a small inline h1 in the content column (`AccountFrame.tsx:106-113`), and that accepted design stands. The `bar`, `back`, `mobileTitle`, `trail`, `account`, `cart` and `activeHref` page-to-shell props are gone (`bar` has no caller today).
+- AC7: The header balance chip updates without a full page reload (no `window.location` reload) after each of these mutations: sign in (`login`, `src/lib/data/customer.ts:103`) and register (`signup`, `:51`): the account menu and balance chip appear and the cart carries over (`transferCart`, `:140`); sign out (`signout`, `:130`, via `/keluar`): the chip and account menu go and `/keranjang` shows the guest cart; join an auction (`joinAuction`, `src/lib/data/lots.ts:123`): the chip drops by the join fee, no change for a Rp0 fee; add to cart (`addToCart`, `src/lib/data/cart.ts:108`), change a quantity and remove a line: the cart itself changes and `/keranjang` shows the new lines. **No cart count appears in the header**: US-103 AC9 (accepted 2026-11-25) deliberately removed the cart icon from the desktop header, the cart is reachable from the account menu (`const/header.ts:31-36`) and `/keranjang`, and the owner's placement decision is `mvp-Q74` (open, non-blocking; if it restores a header count, this clause reopens). A top-up request (`createTopupRequest`, `src/lib/data/topups.ts:58`) does not change the balance (credit is added when the admin approves, US-012), so the chip stays the same at submit. The update is made by revalidating the layout or refreshing the router after the mutation succeeds; a failed mutation changes nothing.
+- AC8: The chip never disagrees with the page: after a client navigation to `/akun/saldo-topup` (the merged `Saldo & top-up` page; `/akun/saldo` and `/akun/topup` 307-redirect there, US-102 AC9) or to a lot page, the header chip shows the same amount as the page, refreshed through `useBalanceSync` (`BalanceSync.tsx:26`) when the page's own read disagrees with the chip. The lot-page clause is the `Saldo tersedia` line in the join dialog (`JoinAuction.tsx:220`, `:331`), and it is data-gated: no seeded customer can open the ready join dialog without joining (US-099, T-099.9), so it is verified by code and unit tests only. When the chip refreshes on other pages after a balance change the customer didn't make (admin approves a top-up, an admin adjustment, a cancel refund) is `mvp-Q63`.
+- AC9: Every route under `(main)`, `(account)` and `(auth)` shows a content-area skeleton while it loads after a client navigation, from its own `loading.tsx`, the nearest parent segment's, or, where neither exists, the page's own `<Suspense>` fallback that renders the same content-frame skeleton. `/lelang` is the one such route: its fallback is `AuctionsLayout` plus `AuctionsSkeleton` (`(main)/lelang/page.tsx:25-34`, `AuctionsSkeleton.tsx:9-24`), which keeps the header and tabs in place, and it satisfies this AC. The header and bottom nav stay visible and don't move. The loading region has `aria-busy="true"` and an Indonesian screen-reader status (`Memuat…`; `/lelang` reads `Memuat lot`).
 - AC10: Every `<Suspense>` in `apps/storefront-koi/src` has a skeleton `fallback`: a grep for `<Suspense` without `fallback=` returns no hit (today: home, katalog, toko, mitra, kategori, keranjang, akun/menang, the farm area under `akun/kebun`, masuk, daftar).
 - AC11: Skeleton shapes match the content: card grids show card skeletons in the loaded page's column count at 390 and 1440 px (lots reuse `LotCardSkeleton`), lists show row skeletons, forms show label and field blocks, detail pages show their main blocks (lot page: gallery and bid panel, as `lelang/[id]/loading.tsx` does). Skeletons use `Skeleton` from `@koi/ui`, whose pulse stops under `prefers-reduced-motion`; no new skeleton primitive. When content replaces a skeleton the header, bottom nav and footer don't move, and the page's cumulative layout shift is at most 0.1 (`mvp-Q65`).
-- AC12: Nothing else changes: every route looks and behaves as in the T-107.1 baseline at 390 and 1440 px, loading states aside. Each route has exactly one `header`, one `footer`, one bottom nav and one `main#konten`; the skip link reaches `#konten`; the browser console shows no hydration warning or error.
+- AC12: Nothing else changes: every route looks and behaves as in the pre-`8dbe711` commit at 390 and 1440 px, loading states aside, except where US-103 AC9/AC10 (accepted 2026-11-25) changed the header and account pages, which stand. Each route has exactly one `header`, one `footer`, one bottom nav and one `main#konten`; the skip link reaches `#konten`; the browser console shows no hydration warning or error.
 - AC13: Storefront `bun run check` passes; no new dependency.
-- [ ] T-107.1 [qa] Baseline before any build: screenshot every route (the 33 pages under `app/`, plus `/tidak-ada` and a missing lot) at 390 and 1440 px, record each route's current nav item, breadcrumb and header/footer/nav count, and the lot page's mobile header and bottom space with and without the bid bar. Save the paths for T-107.8 (AC4, AC6, AC12)
-- [ ] T-107.2 [storefront] Layout shell: `(main)`, `(account)` and `(auth)` layouts render the shell once with `getShell()`; `app/not-found.tsx` renders it itself; nav item from `usePathname()`; the shell's `has-[…]` rules for the lot page's mobile header marker and bid-bar marker; drop the page props of AC6 (AC1–AC5). Run T-107.3 straight after: until then pages render the shell twice
-- [ ] T-107.3 [storefront] Remove `PageShell` from the 15 page callers (Info, Home, Partner, AccountFrame, Categories, CartPage, Auctions, Marketplace, LotPage, Partners, AuthFrame, Catalogs, ShippingPage, ProductPage; not-found is T-107.2); each page renders its breadcrumb; the lot page renders its mobile back/title header and bid-bar marker (AC1, AC5, AC6)
-- [ ] T-107.4 [storefront] Freshness: after each AC7 mutation succeeds, revalidate the layout or refresh the router; the balance pages of AC8 agree with the chip (AC7, AC8)
-- [ ] T-107.5 [storefront] Loading for `(main)`: `loading.tsx` with matching skeletons for home, `katalog`, `kategori`, `kategori/[category]`, `toko`, `mitra`, `mitra/[handle]`, `produk/[handle]`, `keranjang`, `pengiriman`, `[slug]` (`lelang` and `lelang/[id]` exist); fallbacks for those pages' `<Suspense>` (AC9–AC11)
-- [ ] T-107.6 [storefront] Loading for the customer account pages: `akun`, `alamat`, `menang`, `pengaturan`, `pesan`, `pesanan`, `pesanan/[id]`, `saldo`, `topup`, `ulasan` (`bid` exists); fallbacks for their `<Suspense>` (AC9–AC11)
-- [ ] T-107.7 [storefront] Loading for the farm area (`akun/kebun`, `beranda`, `lelang/[id]`, `lelang/baru`, `terjual`) and the auth pages (`masuk`, `daftar`, `lupa-sandi`, `atur-sandi`); fallbacks for their `<Suspense>` (AC9–AC11)
-- [ ] T-107.8 [qa] Verify AC1–AC13 at 390 and 1440 px: render-check every route and the 404s against the T-107.1 baseline; count header/footer/nav/main per route; throttled network to see each route's skeleton with the header and tab bar in place; the AC7 mutations without a reload; AC8 pages; reduced motion stops the pulse; layout shift measured with a `layout-shift` PerformanceObserver; no hydration message in the console; the greps of AC1 and AC10; `bun run check`
+
+**Rulings 2026-11-25 (docs-only reconciliation, product-owner, from qa T-107.8).** Three findings were US-107's AC text conflicting with work US-103 accepted later (2026-11-25), not code defects. No code change follows from any of them; the AC text above is amended instead.
+1. **AC6 vs US-103 AC10 (account breadcrumbs): US-103 AC10 wins.** US-103 AC10 (accepted 2026-11-25, the owner's boards 10–11) deliberately replaced the account breadcrumb and full-width hero h1 with a small inline h1 in the content column (`AccountFrame.tsx:106-113`), and qa verified that state. AC6 was written 2026-11-24 against the pre-redesign baseline and its baseline (T-107.1) was never taken. The later accepted design stands, so AC6 now covers only pages that still show a breadcrumb and excludes account pages.
+2. **AC7 vs US-103 AC9 (header cart count): US-103 AC9 wins.** US-103 AC9 (accepted 2026-11-25) deliberately removed the cart and chat icons from the desktop header; the header has no cart control today (`Header.tsx`, `const/header.ts`), and the owner has not decided where the cart should live. AC7 no longer requires a header cart count; the cart stays reachable from the account menu (`const/header.ts:31-36`) and `/keranjang`. The placement is the owner's call and is recorded as `mvp-Q74`.
+3. **AC9 vs the `/lelang` real-404 fix: a page-level Suspense fallback satisfies AC9.** `/lelang` has no own or parent `loading.tsx` (removed with the real-404 fix), so it cannot meet "own or nearest parent `loading.tsx`". Its page-level `<Suspense>` fallback renders the same content-frame skeleton (`AuctionsLayout` + `AuctionsSkeleton`), keeps the header and tabs in place, carries `role="status"`, `aria-busy="true"` and the Indonesian status `Memuat lot`, and was verified at 390 and 1440 px. AC9 now accepts such a fallback.
+4. **`/tidak-ada` hydration warning: stale dev chunks, not a defect.** The warning qa saw came from stale `.next` dev chunks and disappeared after restarting the storefront dev server (verified); no code fix. A stale `.next` can hide or fake a hydration result, so qa restarts the storefront before any hydration check. The T-107.8 re-run must confirm AC12's "no hydration warning" on a fresh server. **Confirmed 2026-11-25: 8/8 clean reloads on `/` and `/tidak-ada`, no hydration message.**
+5. **AC8 vs US-102 AC9 (merged balance page): the merged route wins.** AC8 was written 2026-11-24, before US-102 (accepted 2026-11-25) merged saldo and top-up into one `/akun/saldo-topup` page; the old paths 307-redirect there (`apps/storefront-koi/next.config.ts:15-16`, `const/routes.ts:18`), and qa's AC8 check on the merged route read `Rp 500.000` in both the chip and the page. AC8 now names the merged route, and its lot-page join-dialog clause stays data-gated (no seeded customer reaches the ready join dialog without joining, US-099/T-099.9). **AC8's wording was reconciled with US-102 on 2026-11-25; no code change.**
+
+**Accepted 2026-11-25 (qa T-107.8 PASS on a freshly restarted storefront).** The three code fixes that gated acceptance are verified: sign-out updates the chip and menu with no document reload (`hooks/use-sign-out.ts:15-27`; AC7); `/akun/bid` and the 2-bid lot page measure CLS 0.0316/0.0318, under the 0.1 bar, with the header, bottom nav and footer still at the skeleton→content swap (AC11); and every one of the 38 route/width combinations shows exactly one header (AC3/AC12), so `/panduan`'s double header is gone. **Trade-off recorded (AC11):** on short lists the footer sits below the fold when the skeleton swaps to content; the chrome itself never moves, so this is accepted rather than fixed. **Data-gated (recorded, not browser-verified):** (a) the lot page's `Saldo tersedia` line in the ready join dialog (AC8) cannot be opened by a seeded customer without joining (US-099, T-099.9), so it is code- and unit-test-only; (b) register, join, add-to-cart, quantity change, remove-line and top-up submit (AC7) were not exercised in the browser because they write to the shared database. Their refresh mechanism is the same `revalidatePath('/', 'layout')` / `router.refresh()` path proven by sign-in and sign-out (`lib/data/customer.ts:51,103,130`; `lib/data/cart.ts:168,195,220`; `lib/data/lots.ts:130`). Re-run both on a disposable environment or with the owner's go-ahead. **Open questions linked to US-107, all open and non-blocking:** `mvp-Q63` (balance changes the customer didn't make; the build takes option (a)), `mvp-Q64` (auth-page chrome; the build takes option (a)), `mvp-Q65` (the 0.1 CLS bar; the build tests option (a)), `mvp-Q74` (cart placement; the build keeps the cart in the account menu with no header count). None blocks the story; picking another option reopens the named AC.
+
+- [x] T-107.1 [qa] Baseline before any build: screenshot every route (the 33 pages under `app/`, plus `/tidak-ada` and a missing lot) at 390 and 1440 px, record each route's current nav item, breadcrumb and header/footer/nav count, and the lot page's mobile header and bottom space with and without the bid bar. Save the paths for T-107.8 (AC4, AC6, AC12) *(not taken before the build, impossible once `8dbe711` landed; T-107.8 compared against the boards and the pre-`8dbe711` commit instead, per the ruling above)*
+- [x] T-107.2 [storefront] Layout shell: `(main)`, `(account)` and `(auth)` layouts render the shell once with `getShell()`; `app/not-found.tsx` renders it itself; nav item from `usePathname()`; the shell's `has-[…]` rules for the lot page's mobile header marker and bid-bar marker; drop the page props of AC6 (AC1–AC5). Run T-107.3 straight after: until then pages render the shell twice
+- [x] T-107.3 [storefront] Remove `PageShell` from the 15 page callers (Info, Home, Partner, AccountFrame, Categories, CartPage, Auctions, Marketplace, LotPage, Partners, AuthFrame, Catalogs, ShippingPage, ProductPage; not-found is T-107.2); each non-account page renders its breadcrumb, and account pages keep US-103 AC10's inline h1 with no breadcrumb; the lot page renders its mobile back/title header and bid-bar marker (AC1, AC5, AC6)
+- [x] T-107.4 [storefront] Freshness: after each AC7 mutation succeeds, revalidate the layout or refresh the router; the balance pages of AC8 agree with the chip (AC7, AC8)
+- [x] T-107.5 [storefront] Loading for `(main)`: `loading.tsx` with matching skeletons for home, `katalog`, `kategori`, `kategori/[category]`, `toko`, `mitra`, `mitra/[handle]`, `produk/[handle]`, `keranjang`, `pengiriman`, `[slug]` (`lelang/[id]` exists; `/lelang` keeps its page-level Suspense fallback, AC9); fallbacks for those pages' `<Suspense>` (AC9–AC11)
+- [x] T-107.6 [storefront] Loading for the customer account pages: `akun`, `alamat`, `menang`, `pengaturan`, `pesan`, `pesanan`, `pesanan/[id]`, `saldo-topup`, `ulasan` (`bid` exists); fallbacks for their `<Suspense>` (AC9–AC11)
+- [x] T-107.7 [storefront] Loading for the farm area (`akun/kebun`, `beranda`, `lelang/[id]`, `lelang/baru`, `terjual`) and the auth pages (`masuk`, `daftar`, `lupa-sandi`, `atur-sandi`); fallbacks for their `<Suspense>` (AC9–AC11)
+- [x] T-107.8 [qa] Verify AC1–AC13 at 390 and 1440 px: render-check every route and the 404s against the T-107.1 baseline; count header/footer/nav/main per route; throttled network to see each route's skeleton with the header and tab bar in place; the AC7 mutations without a reload; AC8 pages; reduced motion stops the pulse; layout shift measured with a `layout-shift` PerformanceObserver; no hydration message in the console; the greps of AC1 and AC10; `bun run check`
+
+---
+
+## Epic 10: Money through the company account, per-lot join fee and koi details (owner 2026-11-25)
+
+**Source:** owner's answers of 2026-11-25 to the new design export
+(`ui_ux/gap-analysis.md`, "Owner answers"), recorded as D-068 – D-073, with the
+follow-up answers as D-074 – D-081; plan
+sections "Closing and winners", "Fees", "Structure", "Koi details per lot",
+"Strikes", "Cancellations" updated the same day. Rules for every story here:
+- Money is whole rupiah, formatted `id-ID` (`formatPrice()`); dates in WIB.
+- The winning price never touches saldo: no held bid balance, no auto-pay, no
+  wallet transaction for the winning price or the payout (D-068). Saldo pays
+  platform fees only.
+- No payment gateway (D-068). Every money movement here is a manual bank
+  transfer recorded by an admin in `apps/admin-koi` (D-002), through a workflow.
+- The winner never sees the farmer's bank or payment details (D-068).
+- Migrations touch the shared dev/prod database: the backend asks the owner
+  before running one (CLAUDE.md §5).
+
+**Order:** US-108 first (T-108.1, T-108.2 in parallel; then T-108.3, T-108.4,
+T-108.5), then T-108.7 and T-108.7a (D-079). US-112 after T-108.1 (done 2026-11-25). US-111 done 2026-11-26 (per-lot charge and copy);
+then US-110 (US-109 done 2026-11-26). US-105 (Epic 9) has no
+blocker now and can run in parallel with Epic 10 once a backend agent is free.
+Backend first in every story; the migration-bearing tasks are named below and
+wait for the owner's go-ahead before they run (shared dev/prod database).
+
+### US-108 Winner pays the company account; an admin confirms the payment · `done (evidence: AC1 apps/storefront-koi/src/components/molecules/PaymentInstructions/PaymentInstructions.tsx:20-105 (amount, bank rows and holder each with Salin, Tersalin live region, overdue alert, empty-bank fallback), lib/helpers/won-payment.ts:24-51, used by WonLotPanel.tsx:159 and WonLotsPage.tsx:207; AC2 packages/api/src/api/store/won-lots/[id] has no reveal route, no payment_details at integration-tests/http/won-lots.spec.ts:382 and reveal 404/no audit at :406-419, grep RevealBank → 0; AC3 api/admin/lots/[id]/confirm-payment/route.ts:26-56, workflows/confirm-lot-payment.ts:24-88 (lock + setLotFieldsStep compensation), integration-tests/http/admin-confirm-lot-payment.spec.ts:153-247 (paid_at/admin id, second confirm 409, every other status 409, 404, 401 customer/member, compensation); AC4 no vendor sold-lots paid route, spec :584-599 404, sold-lot.ts:23 and SoldLotsPage.tsx:243 copy, grep MarkPaid → 0; AC5 apps/admin-koi/src/app/(app)/pembayaran/page.tsx + components/PaymentQueue.tsx:53-215 (deadline order, Lewat batas icon+text, overdue filter, confirm Dialog, empty state), admin-lots-payment-queue.spec.ts:160-256, browser check qa T-108.6; AC6 grep 'langsung ke farm|Tandai dibayar' → only the negative assertion lot-rules.test.ts:98-99, const/info.ts:52,86,114, lot-rules.ts:80, GuideStrip.tsx:13; storefront-koi test 369/369, admin-koi test 67/67; qa PASS T-108.6. AC7 was outside the accepted evidence; its follow-up T-108.7 is `todo` per D-079)`
+As a **winner**, I want exact transfer instructions for my won lot, and as an
+**admin**, I want to confirm the transfer, so that the farmer ships only paid koi
+and nobody sees the farmer's bank account. *(D-068, D-072; plan "Closing and
+winners". Replaces US-052's farmer "mark paid" and US-051's winner bank reveal.)*
+- AC1: On a lot in `won`, the winner's won-lot views (Bid Saya → Menang card, US-101 AC7, and the lot page won panel, US-100 AC1) show "Transfer Rp {final_price} ke rekening Koi Auction House sebelum {closed_at + 24 jam, WIB}", the bank name, account number and holder from `GET /store/platform-bank-account` (D-009), and the amount, each with `Salin` (announces `Tersalin`), plus "Transfer tepat sesuai nominal." If any of the three bank values is empty: "Rekening tujuan belum diatur. Hubungi admin." Past the deadline while still `won`: "Batas pembayaran sudah lewat {time WIB}." No strike wording on the storefront.
+- AC2: The winner's farmer-bank reveal is gone: the store won-lot reveal route for `bank_account` (`packages/api/src/api/store/won-lots/[id]/reveal`) no longer serves it, and store won-lot responses carry no `seller.payment_details` or any farmer bank field (masked or full). `RevealBank` is removed (`WonLotsPage.tsx:27,206`). Existing `pii_reveal_audit` rows stay (append-only).
+- AC3: New admin-only route confirms a winner's payment: the lot must be `won` (otherwise 409 with an Indonesian message, D-055); one workflow saves `paid_at` (server time) and the confirming admin's id on the lot and moves it `won → paid`, with compensation. A second confirm gets the 409. Identity from `req.auth_context`.
+- AC4: The farmer can no longer mark a lot paid: `POST /vendor/sold-lots/:id/paid` is removed (404), and the Farm area's `MarkPaid` control (`AccountPage/components/MarkPaid.tsx`, `lib/data/sold-lots.ts:69`) is gone. The farmer's sold lot reads `Menunggu pembayaran pemenang` while `won` and `Dibayar {paid date}` once paid; shipping stays allowed only from `paid` (US-052), including for a suspended farm (D-054).
+- AC5: admin-koi page `Pembayaran pemenang` lists lots in `won`, oldest deadline first: `Lot #NN` and title, farm, winner (masked, D-042), amount, closed at, deadline, and `Lewat batas` (icon + text) once past it; a filter for overdue only. `Konfirmasi diterima` opens a Dialog "Transfer Rp X untuk {title} sudah masuk ke rekening perusahaan?" with `Batal` and `Konfirmasi`; on success the row leaves the list. Loading, empty ("Tidak ada pembayaran yang menunggu") and error states.
+- AC6: Copy: no customer or farmer screen says the winner pays the farmer directly or that the farmer marks the lot paid. The lot rules summary (US-098 AC6), the bid confirmation (US-099 AC5: "Jika menang, Anda transfer Rp X ke rekening Koi Auction House dalam 1×24 jam."), the guide strip (US-097 AC18), `/panduan` and the Farm area say the D-068 flow. A grep of `apps/storefront-koi/src` for "langsung ke farm" and "Tandai dibayar" returns no hit.
+- AC7: Non-payment past 1×24 h keeps today's strike rule (admin gives it after checking, US-059). `apps/admin-koi` lists `won` lots past the deadline with no confirmed payment, the admin gives the strike from that list, and the farmer's report route and Farm area control are removed; existing `lot_report` rows stay. D-026's second-bidder offer is unchanged (D-079, T-108.7).
+- [x] T-108.1 [backend] `paid_at` and confirming-admin columns on `lot` (migration, owner OK first), confirm-payment admin route + workflow + spec: happy path, wrong status 409, double confirm, non-admin 401/403 (AC3)
+- [x] T-108.2 [backend] Remove `POST /vendor/sold-lots/:id/paid` and the winner's bank reveal; drop `seller.payment_details` from store won-lot responses; update the US-051/US-052 specs that assert them (AC2, AC4). `bun run codegen`
+- [x] T-108.3 [admin] `Pembayaran pemenang` queue with overdue filter and the confirm Dialog (AC5), on the API of T-108.1
+- [x] T-108.3a [backend] `GET /admin/lots` for the queue: `status` filter (default `won`), `overdue=true`, oldest deadline first, lot number and title, farm, masked winner (D-042, no customer id), `final_price`, `closed_at`, derived `pay_by`, pagination; spec (AC5) *(new 2026-11-25, gap found while planning T-108.3; reads only, does not select the pending T-108.1 `paid_at`/`paid_confirmed_by` columns)*
+- [x] T-108.4 [storefront] Winner payment instructions with copy buttons and the empty-setting and past-deadline states; remove `RevealBank` and `MarkPaid`; farmer sold-lot payment status (AC1, AC2, AC4)
+- [x] T-108.4a [backend] Return `paid_at` (ISO, null before payment) from `GET /vendor/sold-lots` and `GET /store/won-lots` (+ `/:id`) and assert null/after-confirm in their specs; `paid_confirmed_by` stays in the admin confirm response only (AC4, D-072) *(new 2026-11-25, gap found in T-108.4; built, awaiting qa)*
+- [x] T-108.5 [storefront] Copy sweep for the D-068 flow (AC6) (`lib/helpers/lot-rules.ts`, `PlaceBid.tsx`, `GuideStrip.tsx`, `const/info.ts`, `/panduan`)
+- [x] T-108.6 [qa] Verify AC1–AC6: a won lot with filled and empty bank settings, past deadline, admin confirms (and a second confirm), farmer paid route 404, no `payment_details` in the won-lot JSON, the copy grep; render-check the won card, the farmer sold lot and the admin queue
+- [ ] T-108.7 [backend] [admin] Non-payment queue: `GET /admin/lots` overdue `won` filter (or T-108.3a's `overdue=true` reused), the strike action from the row (US-059), and removal of `POST /vendor/sold-lots/:id/report`; spec; keep existing `lot_report` rows readable (AC7, D-079). No migration. *Follow-up to US-108, `todo` 2026-11-25*
+- [ ] T-108.7a [storefront] Remove the Farm area "Laporkan belum dibayar" control and its client helper (`lib/data/sold-lots.ts`), after T-108.7's route is gone (AC7, D-079) *new 2026-11-25: the storefront half, split from T-108.7 so one agent owns one workspace*
+
+**Open verification (US-108, needs a mutation on the shared DB):** two
+behaviours are proven only by specs, not in a browser, because the no-mutation
+rule blocked them on the shared database. Run them when a disposable env or the
+owner's go-ahead exists:
+1. **After an admin confirms.** The admin row leaves `Pembayaran pemenang`, and
+   the winner's card and the farmer's sold lot switch to paid (`Dibayar {date}`,
+   `paid_at` non-null). Proven in `admin-confirm-lot-payment.spec.ts` and the
+   `paid_at` specs only; the post-confirm browser state is unchecked.
+2. **The confirm Dialog interaction.** Open, read the question
+   "Transfer Rp X untuk {title} sudah masuk ke rekening perusahaan?", `Batal`
+   closes it, `Konfirmasi` submits. Only the rendered trigger and dialog markup
+   were checked headless; no click was made (qa classifier).
+Also unobservable headless: the `Tersalin` live-region text after a clipboard
+write (`navigator.clipboard` needs a permissioned browser).
+
+
+### US-109 Winner uploads the transfer proof · `done (accepted 2026-11-26: AC1 route packages/api/src/api/store/won-lots/[id]/proof/route.ts; the multer rule (JPEG/PNG/WebP, 5 MB) at src/api/middlewares.ts:163-183,550-559; private via uploadFilesStep access "private" in workflows/submit-lot-payment-proof.ts:41-46; winner-only, won-only guard steps/lot.ts:160-194; the response src/api/store/won-lots/route.ts:154-163 carries no key. AC2 admin queue fields src/api/admin/lots/route.ts:37-38,82-85,136; admin-only stream src/api/admin/lots/[id]/payment-proof/route.ts with "private, no-store" at src/api/utils/private-image.ts:42-45; reject route and validator; the reason renders in apps/storefront-koi/src/components/molecules/PaymentProof/PaymentProof.tsx:91-140 (used at WonLotPanel.tsx:212) and the admin proof, time and reject dialog at apps/admin-koi/src/components/PaymentQueue.tsx:176,197-208,331-418. AC3 workflows/reject-lot-payment-proof.ts:19-37 writes rejected plus the reason and no strike. 30 integration tests counted across lot-payment-proof (8), admin-lots-payment-queue (6), won-lots (10), admin-confirm-lot-payment (6); qa PASS T-109.4; 77 admin and 437 storefront tests pass. Data-gated in T-109.5: the winner-side pending/rejected/confirmed renders, the admin thumbnail/time/reject dialog for a real proof, and a real upload→reject→resubmit→confirm browser round-trip, because the shared DB holds no lot with a transfer proof)`
+As a **winner**, I want to send my transfer proof so that the admin can match my
+payment quickly. *(D-068, D-077. The upload, the reject-with-reason step and the
+no-strike-on-rejection rule are settled by D-077.)*
+- AC1: On a `won` lot the winner uploads one proof image (JPG, PNG or WEBP, at most 5 MB, the top-up proof rule, US-102 AC4) as a private file (D-018, D-040); the server checks type and size.
+- AC2: The admin queue (US-108 AC5) shows the proof and its upload time; the admin confirms (US-108 AC3) or rejects with a written reason; the winner sees the reason and may upload again while the lot is `won`.
+- AC3: A rejected proof alone gives no strike; the strike rule stays the 1×24 h deadline (D-068, D-079), per D-077.
+- [x] T-109.1 [backend] Proof upload, reject-with-reason workflow, spec (AC1–AC3) *built: migration `modules/auction/migrations/Migration20261125203000.ts` (owner-approved before running); routes and workflows as in the acceptance note; specs `integration-tests/http/lot-payment-proof.spec.ts:202-418` and `admin-lots-payment-queue.spec.ts`; `bun run codegen`; qa PASS*
+- [x] T-109.2 [storefront] Upload on the won card with preview and rejected state (AC1–AC3) *built: `apps/storefront-koi/src/components/molecules/PaymentProof/PaymentProof.tsx:77-140`, rendered at `WonLotPanel.tsx:212`; upload through `lib/data/lots.ts:299`; qa PASS*
+- [x] T-109.3 [admin] Proof view and reject action in the queue (AC2) *built: `apps/admin-koi/src/components/PaymentQueue.tsx:120,176,197-208,331-418`, client `lib/data/lot-payments.ts:100`; qa PASS*
+- [x] T-109.4 [qa] Verify AC1–AC3 *qa PASS 2026-11-26: 30 integration tests (upload, 404/401/409/400, no key in responses, reject-with-reason and no strike, resubmit, confirm with and without a proof, admin queue and admin-only stream); browser 390/1440 on a `won` lot (upload control, picker, preview, no overflow, zero hydration/console errors) and the admin queue without a pending proof; 77 admin + 437 storefront tests pass; data-gated list recorded in T-109.5*
+- [ ] T-109.5 [qa] Close the data-gated list from T-109.4 on one owner-approved dev lot: upload a real proof, confirm the winner sees pending, admin rejects with a reason, the winner sees the reason and resubmits, admin confirms; capture the admin thumbnail, upload time and reject dialog. Needs a shared-DB mutation (create or use one `won` lot), so ask the owner first
+
+**Order (US-109):** T-109.1 (backend; ★ migration, owner's go-ahead) → T-109.2
+and T-109.3 (storefront and admin, parallel after the route contract) → T-109.4
+(qa).
+
+### US-110 Farmer payout: arrival proof, due date, admin records the payout · `done (accepted 2026-11-26: qa PASS on AC1–AC6 after one LOW compensation bug was fixed. AC1: unique `(lot_id)` index `packages/api/src/modules/payout/models/lot-payout.ts:67`, migration `Migration20261125213000.ts`; `createLotPayoutStep` in `confirm-lot-payment.ts:107` creates the payout `pending` with gross = `final_price`, net is derived on read, and pay moves `due → paid` with the typed fee and `paid_by`; specs `lot-payout.spec.ts`, `admin-confirm-lot-payment.spec.ts`. AC2: private proof via `api/store/won-lots/[id]/arrival-proof/route.ts`, 5 MB image / 100 MB video, second upload 409. AC3: hourly job `jobs/mark-payouts-due.ts` (`0 * * * *`) runs `mark-payout-due.ts` + `applyPayoutDueStep`, 3 days after `shipped_at`, with the claim hold and a no-op second run (`lot-payout.spec.ts:444`). AC4: `/pembayaran-farm` queue due/pending/paid with farm, lot, gross, due reason, masked winner, `refund_eligible`, proof viewer and farm bank reveal; pay with fee → net and `paid_by`. AC5: farmer labels verified in the browser (`Menunggu pembayaran pemenang`, `Dana menunggu koi diterima`); helper `lib/helpers/sold-lot.ts:25,80,82`. AC6: refund one-shot, paid cannot be refunded, an approved refund claim cancels the payout, and a replacement pays only after its arrival proof (D-075); spec. LOW bug fixed: `applyPayoutDueStep` compensation now restores `status`, `due_reason` and `due_at`, spec `lot-payout.spec.ts:470`; 18 lot-payout tests pass. Reported: 53 integration tests across lot-payout/won-lots/vendor-sold-lots/admin-confirm-lot-payment, 437 storefront + 77 admin tests, tsc clean. Data-gated in T-110.8: a due row, the paid row with fee→net and the Catat transfer dialog, the arrival-proof viewer, the ArrivalProof upload UI (no shipped/delivered won lot), a recorded refund, a cancelled payout (no admin cancelled tab; only `?status=cancelled`) and a real scheduler tick. Not re-run in this acceptance pass: the reported suites were not executed; the cited files and specs were read.)`
+As a **farmer**, I want to be paid once my koi arrives, and as an **admin**, I
+want a list of payouts that are due, so that every farmer is paid the right
+amount on time. *(D-069, D-074, D-075, D-078; plan "Closing and winners".)*
+- AC1: Each paid lot has one payout record (unique per lot) with status `pending → due → paid`: `pending` when the admin confirms the winner's payment (US-108), `due` when the winner uploads the arrival photo or video (AC2) or 3 days after `shipped_at` with nothing uploaded (AC3), `paid` when an admin records the transfer (AC4). Amounts whole rupiah: gross = `final_price`, the bank transfer fee the admin types on this payout (D-078), net = gross − fee, never below 0. A recorded payout is never edited. An open claim holds the payout; an approved claim follows AC6 and D-075 (D-074).
+- AC2: On a `shipped` or `delivered` lot, the winner uploads one photo or video showing the koi arrived healthy (photo: the top-up proof types and 5 MB cap; video: the claim video types and 100 MB cap, US-054), stored as a private file (D-018, D-040), with its time saved. Uploading it does not mark the lot delivered and does not end the claim right; the payout becomes due only once the 4-hour claim window has passed with no claim (D-074).
+- AC3: A scheduled job moves `pending → due` 3 days after `shipped_at` (counted like D-027's 3-day auto-confirm) when no arrival proof exists and no claim on the lot is open (D-074). Idempotent; a run twice changes nothing; batched.
+- AC4: admin-koi page `Pembayaran ke farm` lists `due` payouts, oldest first: farm, `Lot #NN` and title, gross, why it is due (`Foto/video diterima` or `3 hari setelah dikirim`), due since; the arrival proof opens in a viewer; the farm's bank account comes through the existing logged admin reveal (`/admin/farms/:id/reveal`, D-042). `Catat transfer` records the transfer fee the admin types for this payout (whole rupiah, 0 or more, D-078), the bank reference and the transfer date; one workflow moves it to `paid` with the admin's id. Loading, empty and error states.
+- AC5: The farmer's sold lot shows the payout state: `Menunggu pembayaran pemenang` (lot `won`), `Dana menunggu koi diterima` (`pending`), `Dana siap ditransfer admin` (`due`), `Dana ditransfer {date}: Rp gross − biaya transfer Rp fee = Rp net` (`paid`).
+- AC6: Claim and never-shipped money (D-075): on an approved refund claim an admin refunds the winning price to the winner from the company account as a recorded manual transfer (amount, reference, date, admin), and the lot's payout is never paid; on an approved replacement claim the payout becomes due when the replacement arrives healthy (D-069, D-074); on a paid lot the farmer never ships, an admin refunds the winner the same way. A record is never edited. The farmer's strike rules are unchanged (US-059). Loading, empty and error states on the admin screen.
+- [x] T-110.1 [backend] Payout model and status enum, created by US-108's confirm workflow (one more step with compensation), arrival-proof upload route, spec (AC1, AC2) *built: `modules/payout/models/lot-payout.ts` (unique `(lot_id)` at :67), migration `Migration20261125213000.ts`, `createLotPayoutStep` at `confirm-lot-payment.ts:107`, proof route `api/store/won-lots/[id]/arrival-proof/route.ts`; spec `lot-payout.spec.ts`; qa PASS*
+- [x] T-110.2 [backend] Due job with the claim hold and the 4-hour claim window (AC3, D-074) *built: `jobs/mark-payouts-due.ts` (`0 * * * *`), `workflows/mark-payout-due.ts`, `applyPayoutDueStep` at `workflows/steps/payout.ts:207`; specs `lot-payout.spec.ts:444,470`; qa PASS*
+- [x] T-110.3 [backend] Record-payout admin route + workflow with the typed transfer fee and reference, spec (AC1, AC4, D-078) *built: `api/admin/payouts/route.ts`, `api/admin/payouts/[id]/pay/route.ts`, `workflows/pay-lot-payout.ts`, validator `AdminPayPayout`; spec `lot-payout.spec.ts`; qa PASS*
+- [x] T-110.4 [admin] `Pembayaran ke farm` queue, proof viewer, bank reveal, record Dialog (AC4) *built: `apps/admin-koi/src/app/(app)/pembayaran-farm/page.tsx`, `components/FarmPayoutQueue.tsx`, `lib/data/farm-payouts.ts`; qa browser PASS; the data-gated rows are in T-110.8*
+- [x] T-110.5 [storefront] Arrival photo/video upload on the won card (with US-101 T-101.3); farmer payout status on the sold lot (AC2, AC5) *built: `components/molecules/ArrivalProof/ArrivalProof.tsx`, helper `lib/helpers/arrival-proof.ts`, farmer labels `lib/helpers/sold-lot.ts:25,80,82`; tests `sold-lot.test.ts:26,105-106`; qa browser PASS; the upload UI is data-gated in T-110.8*
+- [x] T-110.6 [qa] Verify AC1–AC6: proof path, 3-day path (clock moved in a spec), job run twice, open claim holds, record payout, claim refund and replacement path, farmer view of each state *qa PASS 2026-11-26: 53 integration tests across the four payout-related specs, 437 storefront + 77 admin tests, tsc clean; one LOW compensation bug fixed and re-verified (18 lot-payout tests); data-gated rows in T-110.8*
+- [x] T-110.7 [backend] [admin] Claim and never-shipped refund records and the replacement payout trigger, spec (AC6, D-075) *built: `workflows/refund-lot-payout.ts`, `api/admin/payouts/[id]/refund/route.ts`, replacement due reason in `applyPayoutDueStep`; spec `lot-payout.spec.ts:525-583`; qa PASS*
+- [ ] T-110.8 [qa] Data-gated browser pass (AC4–AC6) once the shared DB has the rows: a shipped lot ≥3 days old plus an arrival proof, or the 3-day path → a `due` row; record a transfer fee 25.000 → the `paid` row with net 1.525.000 and the Catat transfer dialog; a recorded refund; the arrival-proof viewer; a cancelled payout via `?status=cancelled`; a real scheduler tick. Also check the 72rem table at 1440 and the `paid_at` semantics noted in Unplanned.
+
+**Order (US-110):** T-110.1 (backend; ★ migration, owner's go-ahead) → T-110.2,
+T-110.3 and T-110.7 (backend, parallel once the payout table exists; T-110.7
+folds its columns into T-110.1's migration when possible) → T-110.4 and T-110.5
+(admin and storefront, parallel after the routes land) → T-110.6 (qa) → T-110.8
+(qa, data-gated follow-up).
+
+### US-111 Join fee per lot · `done (accepted 2026-11-26: qa PASS on AC1–AC6; its report counted seven, the story defines six, and the extra item is the non-blocking hydration watch below. AC1: unique `(lot_id, customer_id)` index `Migration20261125174559.ts:10`, `join-lot.ts` workflow with auction/lot/join/wallet locks, route `store/lots/[id]/join/route.ts`; spec `join-lot.spec.ts` proves one charge per lot, two lots cost two fees, a second join is 409, two concurrent joins give one 201 + one 409 + one charge, short balance writes nothing, Rp0 writes no transaction, override fee, own-auction and status refusals. AC2: `steps/bid.ts:94-125` requires a `lot_participant` row (403 `not_participant`, Indonesian message) and accepts a pre-US-111 `auction_participant`; spec `join-lot.spec.ts:383`. AC3: `cancel-auction.ts:37-56` + `steps/join-fee.ts` refund one row per recorded `join_fee` charge, skip lots already refunded by a lot cancel and include legacy auction-wide rows; specs `admin-cancel-auction.spec.ts:225,297,324,356` and `vendor-cancel-auction.spec.ts:236,303,360`. AC4: `cancel-lot.ts:45-69` + `getLotJoinFeeRefundsStep`; spec `admin-cancel-lot.spec.ts:294` (only that lot). AC5: D-080 carry-over in joins, bids, refunds and the list read; specs `join-lot.spec.ts:404`, `store-lots.spec.ts:1002`. AC6: copy `join-auction.ts:59,87`, `JoinAuction.tsx:183-186`, `lot-rules.ts:43-48`, `GuideStrip.tsx:16-28`; card line `lot-card.ts:99-114`; filter `AuctionFilters.tsx:143-155`, `auction-list.ts:71-81`, `data/lots.ts:102-104`, `store/lots/route.ts:465-471`; qa browser-verified desktop sidebar and phone sheet, guest suppression and dropped `joined=1`, empty state and reset. 76 http + 22 store-lots + 6 module tests, 437 storefront tests, tsc and lint clean. Spec-only: the money, refund and race behaviours have no UI surface; multi-process locks are unproven because the API runs one process; Rp0 join through the route is code-read (the Rp0-no-transaction path is spec-tested at the workflow level). Non-blocking: the new video Dialog on the lot page still emits the upstream `useId` id-name hydration warning; a separate small fix is in progress and does not gate this story)`
+As a **customer**, I want to pay the join fee only for the koi I want to bid on.
+*(D-070, D-076, D-080; plan "Fees", "Structure", "Cancellations". Changes US-041's join.)*
+- AC1: A customer joins one lot: the lot is `open` and its auction `scheduled` or `live` (D-048 applied per lot); the balance must cover the auction's join fee (`fee_override_join_fee ?? join_fee`, D-032); one workflow records a `join_fee` transaction whose reference identifies the lot and adds the customer as that lot's participant, all or nothing. Joining the same lot twice is refused (unique in the database, friendly 409). A Rp0 fee joins without a transaction, as today. Ban check as today (US-059).
+- AC2: Placing a bid requires that the bidder joined **that lot**; otherwise the bid is refused with an Indonesian message (D-055).
+- AC3: A farmer cancel before start (US-060) and an admin cancel of a live auction (US-091) refund every `join_fee` paid on the auction's lots, one `refund` per join row, read from the recorded charges (never the auction's current fee). Losing or leaving never refunds.
+- AC4: A single-lot admin cancel (US-091, D-035): refund every join fee paid on that lot, one `refund` per join row, read from the recorded charges (D-076, T-111.4).
+- AC5: Joins made per auction before this story: a customer who joined an auction keeps access to every lot of that auction until it closes; the per-lot rule applies to auctions approved after this story ships; no refund, no extra charge, no data conversion (D-080, T-111.1).
+- AC6: Storefront: the join action, Dialog and shortfall (US-099 AC1–AC3, AC16) say `Ikut lot ini · Rp X` and "Dipotong dari saldo untuk lot ini."; the rules summary (US-098 AC6) and guide strip (US-097 AC18) say per lot; cards show `Belum ikut · biaya ikut Rp X` for a signed-in customer who has not joined (US-097 AC14); `/lelang` gets the `Yang saya ikuti` filter (US-097 AC13).
+- [x] T-111.1 [backend] Lot participant data, the auction-wide join carry-over per D-080, migration (owner OK before running), join-lot route + workflow, spec (AC1, AC5) *built: model `modules/auction/models/lot-participant.ts`, migration `Migration20261125174559.ts:10` (unique `(lot_id, customer_id)`), workflow `workflows/join-lot.ts`, steps `workflows/steps/join-fee.ts`, route `api/store/lots/[id]/join/route.ts`; specs `integration-tests/http/join-lot.spec.ts:151-404` and `modules/auction/__tests__/auction-participant.spec.ts:106-131`; qa PASS*
+- [x] T-111.2 [backend] Bid check per lot, spec (AC2) *built: `workflows/steps/bid.ts:94-125`; spec `join-lot.spec.ts:383`; qa PASS*
+- [x] T-111.3 [backend] Auction-cancel refunds per join row, spec (AC3) *built: `workflows/cancel-auction.ts:37-56` and `getAuctionJoinFeeRefundsStep` in `steps/join-fee.ts` (recorded charges, skips lots already refunded); specs `admin-cancel-auction.spec.ts:225,297,324,356`, `vendor-cancel-auction.spec.ts:236,303,360`; qa PASS*
+- [x] T-111.4 [backend] Single-lot cancel refund per D-076, spec (AC4) *built: `workflows/cancel-lot.ts:45-69` and `getLotJoinFeeRefundsStep`; spec `admin-cancel-lot.spec.ts:294`; qa PASS*
+- [x] T-111.5 [storefront] Per-lot join flow and copy across the lot page, rules and guide strip (AC6) *built: `lib/helpers/join-auction.ts:59,87`, `LotDetailsPage/components/JoinAuction.tsx:183-186`, `lib/helpers/lot-rules.ts:43-48`, `GuideStrip.tsx:16-28`; unit tests `join-auction.test.ts:46,89`, `lot-rules.test.ts:26-40`; qa PASS*
+- [x] T-111.6 [storefront] `Belum ikut` card line and `Yang saya ikuti` filter (AC6); a [backend] read for "lots I joined" if `GET /store/lots` can't filter by it *built: backend `joined` flag and `joined=true` filter `api/store/lots/route.ts:307-377,465-471`, validator `validators.ts:34-36`; card `lib/helpers/lot-card.ts:99-114`; toggle `AuctionFilters.tsx:143-155` (desktop sidebar and phone sheet), `auction-list.ts:71-81` (`?joined=1`), `data/lots.ts:102-104`; specs `store-lots.spec.ts:945-1056`, unit tests `lot-card.test.ts:118-153`, `auction-list.test.ts:158-162`, `lot.test.ts:123-128`; qa PASS*
+- [x] T-111.7 [qa] Verify AC1–AC6: join two lots of one auction (two charges), bid on an unjoined lot refused, auction cancel refunds both, single-lot cancel refunds that lot only, an auction-wide join still reaches every lot, short balance, double join *qa PASS 2026-11-26: every listed behaviour verified; refund-exclusion in both cancel orders and the farmer-cancel variant too; 76 http + 22 store-lots + 6 module tests, 437 storefront tests, tsc and lint clean; spec-only caveats and the video-Dialog hydration warning are recorded in the story acceptance note*
+
+**Order (US-111):** T-111.1 (backend; ★ migration, owner's go-ahead) → T-111.2,
+T-111.3 and T-111.4 (backend, parallel) → T-111.5 and T-111.6 (storefront,
+parallel; copy and charge change together) → T-111.7 (qa).
+
+### US-112 Step dates on won and sold lots · `done (accepted 2026-11-25: AC1 and AC4 integration-spec verified on the store list, store detail and vendor sold-lot reads; AC2 and AC3 unit-test verified with the render paths read. No paid/shipped/delivered row exists in the seed, so the reached-step dates were not browser-checked and a live /store/won-lots call was not made (no publishable key): data-gated in T-101.6)`
+As a **winner or farmer**, I want to see when each step happened. *(D-072.)*
+Depends on T-108.1 (`paid_at`).
+- AC1: `GET /store/won-lots`, `GET /store/won-lots/:id` and the vendor sold-lot reads return `closed_at`, `paid_at`, `shipped_at` and `delivered_at` (null until reached). Reads only (`query.graph`); `bun run codegen`.
+- AC2: The farmer's sold lot shows each reached step with its date in WIB (`18 Nov, 20.00 WIB`).
+- AC3: The winner's timeline shows the same dates (US-101 AC8).
+- AC4: A lot marked paid by the farmer before US-108 has no paid date (none was saved); its `Dibayar` step shows without a date, never a guessed one.
+- [x] T-112.1 [backend] Dates on the store won-lot and vendor sold-lot responses + spec (AC1, AC4) *built: `WON_LOT_FIELDS` and the mapper in `packages/api/src/api/store/won-lots/route.ts:97-147` (detail reuses them, `[id]/route.ts:32`); vendor mapper `api/vendor/sold-lots/route.ts:61-65,181-194`. Specs: `integration-tests/http/won-lots.spec.ts:252-329` (paid_at null → ISO, paid before US-108, delivered), `vendor-sold-lots.spec.ts:279-354` (all four, null until reached; paid before US-108); qa T-112.3 PASS*
+- [x] T-112.2 [storefront] Dates on the farmer's sold lot; data for the winner timeline (AC2, AC3) *built: `soldLotStepDates` in `lib/helpers/sold-lot.ts:45` (tests `sold-lot.test.ts:38-78`), rendered at `SoldLotsPage.tsx:233,287-297` with `formatDeadline(...) WIB`; `wonSteps`/`stepDate` in `lib/helpers/my-bids.ts:60-105` (tests `my-bids.test.ts:86-140`), fed from `extra.closed_at/paid_at/shipped_at/delivered_at` at `BidSayaPage.tsx:305-310` and printed at `BidSayaPage.tsx:428-431`; qa T-112.3 PASS*
+- [x] T-112.3 [qa] Verify AC1–AC4 on a lot in each status and one paid before US-108 *qa PASS 2026-11-25: AC1 both store reads and the vendor list return the four fields null-until-reached; AC2 farmer step dates via helper tests; AC3 winner timeline Menang → Dibayar → Dikirim → Diterima with Menang 22 Nov, 05.00 WIB and the rest undated; AC4 `paid` without `paid_at` shows the step undated, no guessed date; 30 backend and 405 storefront tests pass, zero hydration/console errors. Not browser-verified: reached-step rows (`paid`/`shipped`/`delivered` absent from seed) and a live `/store/won-lots` call (no publishable key) — folded into T-101.6*
 
 ---
 
@@ -8115,9 +8482,70 @@ catch-all files for every route).
 
 Fixes and small changes made during this release that aren't in the plan.
 
+**Unplanned behavior (no story, US-109 acceptance 2026-11-26, non-blocking):**
+the API accepts a re-upload while a proof is still `pending`
+(`getProofUploadableLotStep` in `packages/api/src/workflows/steps/lot.ts:164-194`
+checks the winner and the `won` status only; the storefront hides the control at
+`PaymentProof.tsx:100-117`). D-077 requires a re-upload after a rejection but
+does not forbid one while pending; the new upload replaces the file and resets
+`uploaded_at`. If the owner wants it refused, add a 409 in that guard and a spec
+case in `lot-payment-proof.spec.ts`.
+
+**Observations (US-110 acceptance 2026-11-26, non-blocking):** (1) the
+`Pembayaran ke farm` table is `72rem` wide, so its last column needs horizontal
+scroll at 1440; the page itself does not overflow. (2) `paid_at` is the server's
+recording time, not an admin-typed bank date; AC4's recorded transfer date is
+that timestamp. If the owner wants the bank's own date typed, that is a new rule
+and needs a decision. (3) admin-koi has no cancelled/refunded tab in the payout
+queue; a cancelled payout is reachable only with `?status=cancelled`. The
+data-gated browser rows are in T-110.8.
+
+**Pending (no story, US-101 acceptance 2026-11-25):** the won-lot detail fetch
+uses `limit: 100` (`apps/storefront-koi/src/components/sections/AccountPage/BidSayaPage.tsx:101`)
+while the `my-bids` route has no pagination, so a customer with more than 100 won
+lots gets the older cards without their detail (no actions, timeline or claim
+block). Only matters above 100 won lots. Add pagination or a narrower detail
+request when the won list can grow.
+
 **Pending cleanup (no story):** `apps/admin-koi/src/app/layout.tsx` has a
 formatting-only diff (import order, a split `robots` object) that isn't part of
 any story. Revert it when the owner approves; the classifier blocked the attempt.
+
+**Resolved at US-111 acceptance (2026-11-26):** the once-per-auction join copy
+is gone. `apps/storefront-koi/src/lib/helpers/lot-rules.ts:43-48` reads "Berlaku
+untuk lot ini saja" and
+`apps/storefront-koi/src/components/sections/AuctionsPage/components/GuideStrip.tsx:16-28`
+says the join fee is paid per lot, matching the backend. A grep for "sekali per
+lelang", "satu biaya ikut per lelang" and "Satu biaya untuk semua lot" hits only
+the banned-phrase assertions in `lot-rules.test.ts:26,96`.
+
+**Pending cleanup (revisit with US-096 follow-up, no story):** qa flagged a
+double cast in `apps/storefront-koi/src/lib/data/lots.ts:53-61` (`as never` on
+the `sdk.store.lots.query` argument, then `as unknown as Promise<StoreLotsPage>`
+on the result). It works and is non-blocking; replace it with the route's real
+query/response types so a backend field change still surfaces as a type error.
+Not needed before shipping.
+
+**Pending backend cleanup (US-106 acceptance 2026-11-25, no story):** the seeds
+store a text marker in `auction.live_stream_url` for idempotency instead of a
+real URL, so no seeded auction exercises the lot page's live link:
+`packages/api/src/scripts/seed-lots.ts:26,92,195` (`SEED_AUCTION_MARKER =
+"Seed · Lelang Minggu Ini"`) and `packages/api/src/scripts/seed-test-auction.ts:34,82,176`
+(`TEST_AUCTION_MARKER = "UJI QA · jangan dipakai"`). Code-only fix: key
+idempotency on data that is not user-facing (or look the row up by title and
+start time) and seed a valid YouTube/Instagram sample URL, so the helper accepts
+it (`apps/storefront-koi/src/lib/helpers/live-stream-url.test.ts:33` already
+asserts the current markers are rejected). Do not reseed: rows already in the
+shared database keep the marker until the owner approves a one-row
+`live_stream_url` update; T-106.4 waits on that update.
+
+**Pending storefront cleanup (US-106 acceptance 2026-11-25, no story):**
+`apps/storefront-koi/src/components/cells/LiveBand/LiveBand.tsx` and
+`apps/storefront-koi/src/const/live.ts` are dead after the live room was
+removed: `LiveBand` is only re-exported at `src/components/cells/index.ts:19`,
+and `LIVE_TINT` is used only inside `LiveBand.tsx:4,25`. No page or section
+imports either. Delete both files and the re-export when the next storefront
+task touches `cells/index.ts`.
 
 ### US-094 Shared tab, separator and scroll-area orientation variants · `done (evidence: packages/ui/src/primitives/tabs.tsx:17,26,60,63; separator.tsx:14; scroll-area.tsx:38; grep -rn 'data-horizontal\|data-vertical' packages/ui/src apps/*/src → 0 matches; /klaim tab list 264×36 horizontal with the panel below, /saldo/topup 272×36, /katalog line underline 2 px on the selected tab, lot-sheet separator 383×1; packages/ui + storefront-koi + admin-koi tsc clean; storefront check 202/202; admin-koi check 36/36)`
 Found by qa while verifying US-055: the `/klaim` tab strip rendered as a
@@ -8144,31 +8572,34 @@ table complete.
 | Plan section | Stories |
 |---|---|
 | Users and roles | US-002, US-020, US-021, US-070 |
-| Personal data protection (column encryption on top of disk; masked everywhere incl. admin; logged reveal; self-view; no phone between winner and farmer; farmer gets the winner's saved address; D-039, D-042, D-043, D-044 (on hold, re-confirmed 2026-11-20), D-045, D-052, D-056, D-057, D-062 (Medusa address snapshots; drafted, pending approval)) | US-092 (T-092.1–T-092.14; D-062 adds T-092.10 – T-092.14), US-020, US-021, US-010 – US-013, US-051, US-052, US-057, US-070, US-091 |
+| Personal data protection (column encryption on top of disk; masked everywhere incl. admin; logged reveal; self-view; no phone between winner and farmer; farmer gets the winner's saved address; D-039, D-042, D-043, D-044 (superseded by D-068: no farmer bank to the winner), D-045, D-052, D-056, D-057, D-062 (Medusa address snapshots; drafted, pending approval)) | US-092 (T-092.1–T-092.14; D-062 adds T-092.10 – T-092.14), US-020, US-021, US-010 – US-013, US-051, US-052, US-057, US-070, US-091, US-108 (removes the winner's bank reveal) |
 | Orphan upload cleanup (owner follow-up) | US-093 |
 | Becoming a farmer | US-020, US-021 |
-| Store credit wallet: how credit moves (4 join, 5 submit/approve, D-020, D-031–D-033) | US-010, US-011, US-012, US-015, US-031, US-032, US-041 |
-| Transaction types (`manual_topup`, `join_fee`, `listing_fee`, `adjustment`, `refund`) | US-012, US-041, US-031, US-013, US-060, US-091 |
+| Store credit wallet: how credit moves (4 join, 5 submit/approve, D-020, D-031–D-033; join per lot, D-070) | US-010, US-011, US-012, US-015, US-031, US-032, US-041, US-111 |
+| Transaction types (`manual_topup`, `join_fee`, `listing_fee`, `adjustment`, `refund`; `join_fee` per lot, D-070) | US-012, US-041, US-031, US-013, US-060, US-091, US-111 |
 | Wallet rules (integer, append-only, closed loop) | Epic 1 rules, US-010, US-013 |
-| Refunds in the MVP (farmer or admin cancel, D-034; none on rejection or lowered fee, D-020) | US-060, US-091, US-031 |
-| Fees and fee table (recomputed at submit, override cleared on rejection, D-032) | US-014, US-030, US-031, US-032, US-041 |
-| Lot lifecycle and statuses (incl. `cancelled`, D-035; a cancelled lot stays public as "Dibatalkan", D-050; bidding ends when the timer ends, US-043 AC4) | US-033, US-043, US-050, US-052, US-053, US-054, US-091, US-040 |
+| Refunds in the MVP (farmer or admin cancel, D-034; none on rejection or lowered fee, D-020; per join row, D-070; single-lot cancel D-076; claim and never-shipped refunds D-075) | US-060, US-091, US-031, US-111, US-110 |
+| Fees and fee table (recomputed at submit, override cleared on rejection, D-032; join fee per lot, D-070) | US-014, US-030, US-031, US-032, US-041, US-111 |
+| Lot lifecycle and statuses (incl. `cancelled`, D-035; a cancelled lot stays public as "Dibatalkan", D-050; bidding ends when the timer ends, US-043 AC4; `won → paid` by an admin, D-068) | US-033, US-043, US-050, US-052, US-053, US-054, US-091, US-040, US-108 |
 | Auction statuses (`pending_approval`, rejection back to `draft`, D-031) | US-030, US-031, US-032, US-033, US-060 |
 | Claim statuses (D-027, D-038) | US-054, US-055, US-056, US-061 |
-| Structure (20 lots, 1–7 days, approval, rejection, approval refused after start D-049, join while scheduled or live D-048, public statuses D-046, cancelled lot public D-050) | US-015, US-030, US-032, US-040, US-041, US-091 |
+| Structure (20 lots, 1–7 days, approval, rejection, approval refused after start D-049, join while scheduled or live D-048, public statuses D-046, cancelled lot public D-050; join per lot D-070; joins made before it D-080) | US-015, US-030, US-032, US-040, US-041, US-091, US-111 |
+| Koi details per lot (D-071: variety, size, age, sex, certificate, pond origin, breeder notes, YouTube video; formats D-081; filters; photo + video gallery) | US-105 (done 2026-11-25; populated paths data-gated in T-105.5, D-081), US-097 (AC13, AC14, AC16, AC17), US-098 (AC12, AC14) |
 | Pricing per lot (OB, KB, first bid = OB, D-023) | US-030, US-042 |
 | Bidding (incl. bid removal and its 500-char reason cap, D-024, D-036, D-063; masked bidders and full history, D-051) | US-042, US-044, US-072 |
 | Extend (anti-sniping) | US-043, US-015, US-030 |
 | Fair play (incl. shill-bidding table, D-028, D-037; ban check on join and bid lands with strikes, D-047) | US-041, US-042, US-059, US-071 |
-| Closing and winners (no phone either way, D-052; farmer gets the winner's saved address, D-056; winner's bank reveal on hold, D-044) | US-050, US-051 |
-| Winner doesn't pay (second bidder off-platform, D-026) | US-058, US-059 |
+| Closing and winners (no phone either way, D-052; farmer gets the winner's saved address, D-056; winner pays the company account, admin confirms, no farmer bank to the winner, D-068 supersedes D-044; transfer proof D-077; step dates, D-072) | US-050, US-051, US-108, US-109, US-112 |
+| Farmer payout (D-069: price minus bank transfer fee; due on arrival proof or 3 days after shipped; an open claim holds it D-074; claim and never-shipped money D-075; fee typed per payout D-078) | US-110 |
+| Winner doesn't pay (second bidder off-platform, D-026; the admin raises it from the overdue list, D-079) | US-058, US-059, US-108 (T-108.7) |
 | Strikes (incl. ban check on join and bid, D-047; suspended farm finishes sold lots, D-054) | US-059, US-052 |
-| Delivery (shipping to the winner's saved address, D-056; never marked delivered → stays `shipped`, D-053) | US-030, US-052, US-053 |
-| Dead-on-arrival claims (on-site notices D-025, auto-confirm D-027) | US-054, US-055, US-056, US-061 |
-| Cancellations (farmer before start, admin once live, D-022, D-031, D-034, D-035; a cancelled lot stays public as "Dibatalkan", D-050) | US-060, US-091, US-040 |
+| Delivery (shipping to the winner's saved address, D-056; never marked delivered → stays `shipped`, D-053; arrival photo/video, D-069; dates, D-072) | US-030, US-052, US-053, US-110, US-112 |
+| Dead-on-arrival claims (on-site notices D-025, auto-confirm D-027; payout held while open D-074; claim money D-075) | US-054, US-055, US-056, US-061, US-110 |
+| Cancellations (farmer before start, admin once live, D-022, D-031, D-034, D-035; a cancelled lot stays public as "Dibatalkan", D-050; per-lot join refunds, D-070; single-lot cancel D-076) | US-060, US-091, US-040, US-111 |
 | Key flows: approve auction (D-033) | US-031, US-032 |
 | Key flows: place bid | US-042, US-043 |
 | Key flows: close lots (a job every minute; winner and price saved at close) | US-050 |
+| Key flows: join lot, confirm winner payment, payout due, claim money (D-068 – D-070, D-074, D-075, D-078) | US-111, US-108, US-110 |
 | Open questions: owner actions (Qontak quote, Meta verification, D-029) | US-080 (T-080.2, T-080.5) |
 | Ratings | US-057 |
 | WhatsApp bot | US-080 – US-085 |
@@ -8176,14 +8607,15 @@ table complete.
 | Key flows: live updates, bidding on the lot page (D-064; the separate live room is removed) | US-045, US-099, US-106 (US-046 built the removed room) |
 | Build milestones 1–8 | Epics 0–8 |
 | Design rules: user-facing error messages Indonesian, from the backend (D-055) | US-042 (follow-up), US-031, US-041; every new task via the task-brief checklist |
-| UI redesign phase 1 (owner 2026-11-24, in the MVP, scope B; **not yet in `plan.md`**, design review 01 + boards 02–15) | US-095 (done); US-096 – US-103, US-106 and US-107 (todo; US-107 is the owner's 2026-11-24 layout-shell and loading request); US-104 and US-105 parked (not in the MVP, D-066, D-067); per-lot fee and 2-minute extend not adopted (D-065) |
+| UI redesign phase 1 (owner 2026-11-24, in the MVP, scope B; **not yet in `plan.md`**, design review 01 + boards 02–15; new export 2026-11-25, `ui_ux/boards/` 00–14, gaps in `ui_ux/gap-analysis.md`) | US-095 (done); US-096 (done 2026-11-25); US-097 (done 2026-11-25; AC13/AC14/AC16/AC17 partly delivered with US-105, and the per-lot fee parts of AC13/AC14/AC18 with US-111); US-098 (done 2026-11-25; AC14 and the AC12 video half with US-105, T-098.6/T-098.8); US-101 (done 2026-11-25; AC6 and the data-gated parts of AC7–AC9 in T-101.6); US-099 (done 2026-11-25; the ready join dialog, AC6–AC7, AC9–AC10 and the desktop pending state in T-099.9; per-lot fee wording with US-111), US-106 (done 2026-11-25; AC3's browser render data-gated in T-106.4), US-103 (done 2026-11-25; AC5 footer deferred to T-103.9, the dev on-screen brand value pending the owner's `.env`, review-dialog focus in T-103.10), US-100 (done 2026-11-25; the `paid`/`shipped`/`delivered` next-step lines are unit-test-only in T-100.5), US-107 (done 2026-11-25; AC6/AC7/AC9 and AC12's baseline reconciled with the accepted US-103 AC9/AC10, cart placement `mvp-Q74`, data-gated browser checks in the story's acceptance note); US-102 (done 2026-11-25; configured-bank copy buttons and a rejected row in T-102.10); US-104 parked (D-066); US-105 (done 2026-11-25; populated koi data paths data-gated in T-105.5, `mvp-Q73` answered by D-081); brand and top-up estimate D-073; footer redesign out of scope for now (US-103 AC5 deferred) |
 
 ## Out of scope for the MVP (from the plan)
 
 Don't build these, and reject stories that need them: online payment gateway,
-refunds (except when a farmer or an admin cancels an auction, D-034), fixed-price marketplace and cart checkout,
-payment held by the platform, proxy bidding, buy-it-now, live video hosting,
-withdrawals or transfers of credit.
+refunds (except on a cancel, D-034, D-076, and the approved-claim and never-shipped cases of D-075),
+fixed-price marketplace and cart checkout,
+escrow released by software (the manual company-account flow of D-068/D-069 is in scope), proxy bidding, buy-it-now, live video hosting,
+withdrawals or transfers of credit, paying the winning price from saldo.
 
 ## Open questions
 
@@ -8249,12 +8681,21 @@ is built. Record the answer here, in `plan.md`, and as a decision in `docs/produ
 | mvp-Q55 | **Answered 2026-11-25 (D-065), option (a):** the join fee stays the auction category's fee, charged once per auction and refunded on cancel (D-007, D-034). The design's per-lot, never-refunded Rp100.000 fee is not adopted. *(Was: once per auction or per lot?)* | none |
 | mvp-Q56 | **Answered 2026-11-25 (D-065), option (a):** one extend window, `extend_window_minutes` (default 5). The design's 2-minute trigger with a 5-minute extension is not adopted. *(Was: one window or a split trigger and length?)* | none |
 | mvp-Q57 | **Answered 2026-11-24 (D-064), option (b):** the lot page (`/lelang/<lot>`) is the only bidding surface; the separate live room (`/lelang/<lot>/live`, US-046) is removed and old links redirect to `/lelang/<lot>`. D-061's live link moves to the lot page; bid rules (D-058, join fee, extend) are unchanged. Plan "Key flows" updated; US-106 unblocked and rescoped to removal + redirect. *(Was: keep the live room or merge it into the lot page?)* | none (was US-106) |
-| mvp-Q58 | **Answered 2026-11-25 (D-067):** no new koi fields in the MVP. A lot keeps title, description and photos; the storefront hides the spec rows and the variety/size/certificate filters and labels the category `Kategori`. US-105 parked. *(Was: which koi fields, required or optional, fixed lists or free text?)* | US-105 (parked) |
+| mvp-Q58 | **Superseded 2026-11-25 by D-071 (koi fields return; formats in D-081).** Earlier: **answered 2026-11-25 (D-067):** no new koi fields in the MVP. A lot keeps title, description and photos; the storefront hides the spec rows and the variety/size/certificate filters and labels the category `Kategori`. US-105 parked. *(Was: which koi fields, required or optional, fixed lists or free text?)* | US-105 (parked) |
 | mvp-Q59 | **Answered 2026-11-25 (D-066), option (a):** no watch list in the MVP; the heart, `Dipantau` tab and "Ingatkan saya" are dropped from the design. US-104 parked. *(Was: drop it, a watch list without alerts, or with reminders?)* | US-104 (parked) |
-| mvp-Q60 | **Open (2026-11-24, non-blocking).** Which brand name? The storefront defaults to "Indokoi" (`apps/storefront-koi/src/app/layout.tsx:14-15`), the design says "Koi Auction House", the docs say "Koi Store". US-103 AC6 reads `NEXT_PUBLIC_SITE_NAME` everywhere, so only the env value changes. Options: (a) Indokoi; (b) Koi Auction House; (c) another name. | none (US-103 ships with the env value) |
-| mvp-Q61 | **Open (2026-11-24, non-blocking).** The design promises "Top-up dicek admin, biasanya kurang dari 1 jam"; its own review lists this as an unconfirmed assumption, and no decision commits to a time. Phase 1 uses neutral wording (US-099 AC3, US-102 AC6). Options: (a) keep neutral wording; (b) the owner commits to a stated check time and hours, recorded as a decision, then the copy adds it. | none |
-| mvp-Q62 | **Open (2026-11-24, non-blocking).** The info page `/rekber` says "Uang pembeli ditahan rumah lelang sampai ikan diterima hidup" (`apps/storefront-koi/src/const/info.ts:72-75`), which contradicts D-058 (the platform holds no money). `/pembayaran`, `/garansi` and `/karantina` were not reviewed and may also state rules the plan doesn't have. Options: (a) unpublish `/rekber` until beta escrow, and the owner reviews the other three; (b) the owner supplies corrected copy. US-103 AC5 removes links to `/rekber` either way. | none (US-103 AC5 unlinks it) |
-| mvp-Q63 | **Open (2026-11-24, non-blocking).** Today every page re-reads the session, wallet and cart when it renders, so the header chip is as fresh as the page. A layout is not re-rendered on client navigation, so after US-107 the chip changes only when something refreshes it. US-107 AC7 covers the customer's own mutations and AC8 the pages that show the balance. Open: a balance change the customer didn't make (admin approves a top-up, US-012; admin adjustment, US-013; cancel refund, US-060/US-091) while they browse other pages. Options: (a) shown on the next full load, the next AC7 mutation or a visit to an AC8 page (US-107 builds this unless the owner picks b); (b) re-read the shell on every navigation, as today, which costs one session, wallet and cart read per navigation, the reads the layout move saves. | none (US-107 builds a; b adds one task) |
-| mvp-Q64 | **Open (2026-11-24, non-blocking).** What chrome do the auth pages show once the shell is in the layouts? US-107 AC3 keeps today's (full header, breadcrumb, footer, bottom nav). Options: (a) keep it; (b) a brand-only header with no footer and no bottom nav, so the form stands alone. Not-found keeps the full chrome either way. | none (US-107 AC3 builds a) |
-| mvp-Q65 | **Open (2026-11-24, non-blocking).** "No layout shift on load" is tested in US-107 AC11 as: header, bottom nav and footer don't move, and the page's cumulative layout shift is at most 0.1 (the Web Vitals "good" threshold). Options: (a) that; (b) strictly zero shift on every route, which may need fixed image and text heights the content doesn't have today. | none (US-107 AC11 tests a) |
-| — (payment model) | **Answered 2026-11-17 (D-058):** the MVP pays off-platform — the winner pays the farmer directly within 1×24 h, the farmer marks the lot paid (`won → paid`) then ships; the platform holds and pays out no money. Xendit escrow stays the planned beta direction, out of MVP scope. Un-parks US-056, US-058, US-059's payment strike and T-052.4; restores D-044/D-057 through D-059. *(Was: does the MVP pay in-app (Xendit escrow or wallet escrow), or off-platform?)* | none (was US-052 T-052.4, US-056, US-058, US-059) |
+| mvp-Q60 | **Answered 2026-11-25 (D-073): Koi Auction House**, everywhere (US-103 AC6, T-103.7). *(Was:* Which brand name? The storefront defaults to "Indokoi" (`apps/storefront-koi/src/app/layout.tsx:14-15`), the design says "Koi Auction House", the docs say "Koi Store". US-103 AC6 reads `NEXT_PUBLIC_SITE_NAME` everywhere, so only the env value changes. Options: (a) Indokoi; (b) Koi Auction House; (c) another name.)* | none |
+| mvp-Q61 | **Answered 2026-11-25 (D-073):** the top-up page says "biasanya kurang dari 60 menit" (US-102 AC6). *(Was:* The design promises "Top-up dicek admin, biasanya kurang dari 1 jam"; its own review lists this as an unconfirmed assumption, and no decision commits to a time. Phase 1 uses neutral wording (US-099 AC3, US-102 AC6). Options: (a) keep neutral wording; (b) the owner commits to a stated check time and hours, recorded as a decision, then the copy adds it.)* | none |
+| mvp-Q62 | **Open (2026-11-24, non-blocking).** *Re-read 2026-11-25: under D-068 the company account does hold the winning price until the farmer is paid, so `/rekber`'s claim is now close to true; the owner still reviews the exact copy, and the footer that links it is out of scope for now.* The info page `/rekber` says "Uang pembeli ditahan rumah lelang sampai ikan diterima hidup" (`apps/storefront-koi/src/const/info.ts:72-75`), which contradicts D-058 (the platform holds no money). `/pembayaran`, `/garansi` and `/karantina` were not reviewed and may also state rules the plan doesn't have. Options: (a) unpublish `/rekber` until beta escrow, and the owner reviews the other three; (b) the owner supplies corrected copy. US-103 AC5 removes links to `/rekber` either way. | none (US-103 AC5 unlinks it) |
+| mvp-Q63 | **Open (2026-11-24, non-blocking).** Today every page re-reads the session, wallet and cart when it renders, so the header chip is as fresh as the page. A layout is not re-rendered on client navigation, so after US-107 the chip changes only when something refreshes it. US-107 AC7 covers the customer's own mutations and AC8 the pages that show the balance. Open: a balance change the customer didn't make (admin approves a top-up, US-012; admin adjustment, US-013; cancel refund, US-060/US-091) while they browse other pages. Options: (a) shown on the next full load, the next AC7 mutation or a visit to an AC8 page (US-107 builds this unless the owner picks b); (b) re-read the shell on every navigation, as today, which costs one session, wallet and cart read per navigation, the reads the layout move saves. | none (US-107 built a and is done 2026-11-25; b adds one task) |
+| mvp-Q64 | **Open (2026-11-24, non-blocking).** What chrome do the auth pages show once the shell is in the layouts? US-107 AC3 keeps today's (full header, breadcrumb, footer, bottom nav). Options: (a) keep it; (b) a brand-only header with no footer and no bottom nav, so the form stands alone. Not-found keeps the full chrome either way. | none (US-107 AC3 built a and is done 2026-11-25; b reopens AC3) |
+| mvp-Q65 | **Open (2026-11-24, non-blocking).** "No layout shift on load" is tested in US-107 AC11 as: header, bottom nav and footer don't move, and the page's cumulative layout shift is at most 0.1 (the Web Vitals "good" threshold). Options: (a) that; (b) strictly zero shift on every route, which may need fixed image and text heights the content doesn't have today. | none (US-107 AC11 tested a and is done 2026-11-25; b reopens AC11) |
+| — (payment model) | **Superseded 2026-11-25 by D-068 and D-069** (winner pays the company account, admin confirms and pays the farmer). Earlier: **answered 2026-11-17 (D-058):** the MVP pays off-platform — the winner pays the farmer directly within 1×24 h, the farmer marks the lot paid (`won → paid`) then ships; the platform holds and pays out no money. Xendit escrow stays the planned beta direction, out of MVP scope. Un-parks US-056, US-058, US-059's payment strike and T-052.4; restores D-044/D-057 through D-059. *(Was: does the MVP pay in-app (Xendit escrow or wallet escrow), or off-platform?)* | none (was US-052 T-052.4, US-056, US-058, US-059) |
+| mvp-Q66 | **Answered 2026-11-25 (D-074), option (a):** the farmer payout is held while a claim is open; the winner's "arrived healthy" photo makes it due only after the 4-hour claim window passes with no claim, and does not end the claim right. *(Was: payout while a claim is open; claim window vs the arrival photo.)* | none (was US-110 T-110.1, T-110.2) |
+| mvp-Q67 | **Answered 2026-11-25 (D-075), option (a):** an approved refund claim is refunded by an admin from the company account and the farmer is unpaid for that lot; an approved replacement pays the farmer once the replacement arrives healthy; a paid lot the farmer never ships is refunded by an admin. All three are recorded manual transfers. *(Was: money on an approved refund or replacement claim, and on a paid lot the farmer never ships.)* | none (was US-110, US-056) |
+| mvp-Q68 | **Answered 2026-11-25 (D-076), option (a):** an admin cancel of one open lot refunds every join fee paid on that lot, one `refund` per join row. *(Was: does a single-lot cancel refund that lot's join fees?)* | none (was US-111 T-111.4) |
+| mvp-Q69 | **Answered 2026-11-25 (D-077), option (a):** the winner uploads one transfer proof image; the admin confirms or rejects with a written reason; a rejected proof alone gives no strike, the 1×24 h deadline still does. *(Was: does the winner upload a transfer proof?)* | none (was US-109) |
+| mvp-Q70 | **Answered 2026-11-25 (D-078), option (a):** the admin types the actual bank transfer fee (whole rupiah, 0 or more) when recording each payout; no global setting. *(Was: what amount, and who enters it?)* | none (was US-110 T-110.3) |
+| mvp-Q71 | **Answered 2026-11-25 (D-079), option (a):** admin-koi flags `won` lots past 1×24 h with no confirmed payment and the admin gives the strike there; the farmer's non-payment report route is removed; D-026's second-bidder offer stays. *(Was: who raises a winner's non-payment?)* | none (was US-108 T-108.7, US-058) |
+| mvp-Q72 | **Answered 2026-11-25 (D-080), option (a):** customers who joined under the per-auction rule keep access to every lot of that auction until it closes; the per-lot rule applies to auctions approved after US-111 ships; no refund, no extra charge. *(Was: how are joins made per auction handled?)* | none (was US-111) |
+| mvp-Q73 | **Answered 2026-11-25 (D-081), option (a):** variety (fixed list plus `Lainnya`) and size (whole cm) required; age a fixed list Tosai to Gosai+; sex Jantan/Betina/Belum diketahui; certificate yes/no plus issuer; pond origin, breeder notes and YouTube link free text. *(Was: koi field formats.)* | none (was US-105) |
+| mvp-Q74 | **Open (2026-11-25, non-blocking).** Where does the cart live? US-103 AC9 (accepted 2026-11-25) deliberately removed the cart and chat icons from the desktop header; today the cart is reachable from the account menu (`const/header.ts:31-36`) and `/keranjang`, and the header shows no cart count. US-107 AC7 now tests the balance chip only and no longer requires a header count. Options: (a) keep it there, no header count (current build, recommended); (b) restore a cart icon with count in the desktop header and a count on mobile; (c) add a cart item to the mobile bottom nav (a sixth item, or replacing one). | none (US-107 built a and is done 2026-11-25; AC7's cart-count clause reopens if the owner picks (b) or (c)) |

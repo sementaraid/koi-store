@@ -6,7 +6,7 @@ import { FarmSkeleton } from '@/components/sections/LoadingPages/AccountLoadingP
 import { FarmPage } from '@/components/sections';
 
 export const metadata: Metadata = {
-  title: 'Kebun saya'
+  title: 'Farm saya'
 };
 
 export default function Page() {

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 
+import { AdminPageHeader } from '@/components/AdminPageHeader';
 import { BalanceCorrection } from '@/components/BalanceCorrection';
 import { ROUTES } from '@/const/routes';
 import { requireAdmin } from '@/lib/guard';
@@ -13,12 +14,10 @@ export default async function BalanceCorrectionRoute() {
 
   return (
     <div className="grid gap-6">
-      <div className="grid gap-1">
-        <h1 className="text-xl font-medium tracking-tight">Koreksi saldo</h1>
-        <p className="text-sm text-muted-foreground">
-          Perbaiki kesalahan saldo pelanggan dengan transaksi penyesuaian beralasan.
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Koreksi saldo"
+        description="Perbaiki kesalahan saldo pelanggan dengan transaksi penyesuaian beralasan."
+      />
 
       <BalanceCorrection />
     </div>

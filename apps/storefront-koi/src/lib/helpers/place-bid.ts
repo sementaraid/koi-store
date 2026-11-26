@@ -107,12 +107,12 @@ export function bidFailureInfo(input: {
   }
   if (input.code === 'own_auction') {
     return {
-      message: 'Anda tidak bisa bid di lelang milik kebun Anda.',
+      message: 'Anda tidak bisa bid di lelang milik farm Anda.',
       refresh: false
     };
   }
   if (input.code === 'not_participant') {
-    return { message: 'Anda belum ikut lelang ini.', refresh: true };
+    return { message: 'Anda belum ikut lot ini.', refresh: true };
   }
   if (input.status === 409) {
     return {

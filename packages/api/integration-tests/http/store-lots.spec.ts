@@ -1,6 +1,7 @@
 import { medusaIntegrationTestRunner } from "@medusajs/test-utils"
 import {
   ContainerRegistrationKeys,
+  generateJwtToken,
   Modules,
 } from "@medusajs/framework/utils"
 import { MercurModules } from "@mercurjs/types"
@@ -93,6 +94,16 @@ medusaIntegrationTestRunner({
       winner_customer_id?: string | null
       cancel_reason?: string | null
       end_offset_ms?: number
+      // US-105 (D-081): omitted means a lot from before the story (all null).
+      variety?: string | null
+      size_cm?: number | null
+      age?: string | null
+      sex?: string | null
+      has_certificate?: boolean | null
+      certificate_issuer?: string | null
+      pond_origin?: string | null
+      breeder_notes?: string | null
+      video_url?: string | null
     }
 
     const seed = async (options: {
@@ -138,6 +149,16 @@ medusaIntegrationTestRunner({
           final_price: lot.final_price ?? null,
           winner_customer_id: lot.winner_customer_id ?? null,
           cancel_reason: lot.cancel_reason ?? null,
+          // US-105 (D-081).
+          variety: lot.variety ?? null,
+          size_cm: lot.size_cm ?? null,
+          age: lot.age ?? null,
+          sex: lot.sex ?? null,
+          has_certificate: lot.has_certificate ?? null,
+          certificate_issuer: lot.certificate_issuer ?? null,
+          pond_origin: lot.pond_origin ?? null,
+          breeder_notes: lot.breeder_notes ?? null,
+          video_url: lot.video_url ?? null,
         }))
       )
       return { auction, lots: created, products }
@@ -155,6 +176,28 @@ medusaIntegrationTestRunner({
           },
         ])
       return row as { id: string; first_name: string }
+    }
+
+    // A customer token plus the publishable key. The store auth middleware is
+    // `allowUnauthenticated`, so this is how a "signed-in viewer" reaches the
+    // otherwise public list.
+    const customerAuth = (customerId: string) => {
+      const { http } = getContainer().resolve(
+        ContainerRegistrationKeys.CONFIG_MODULE
+      ).projectConfig
+      return {
+        ...storeHeaders,
+        authorization: `Bearer ${generateJwtToken(
+          {
+            actor_id: customerId,
+            actor_type: "customer",
+            auth_identity_id: "",
+            app_metadata: {},
+            user_metadata: {},
+          },
+          { secret: http.jwtSecret, expiresIn: "1h" }
+        )}`,
+      }
     }
 
     const addBid = async (lotId: string, customerId: string, amount: number) => {
@@ -430,7 +473,11 @@ medusaIntegrationTestRunner({
         lots: [{}],
       })
 
-      const res = await api.get("/store/lots", { headers: storeHeaders })
+      // limit=100: the suite's earlier tests leave enough live lots that the
+      // default 20 can cut these two off.
+      const res = await api.get("/store/lots?limit=100", {
+        headers: storeHeaders,
+      })
       const byId = new Map(
         res.data.lots.map((l: { id: string; auction: { join_fee: number } }) => [
           l.id,
@@ -778,6 +825,262 @@ medusaIntegrationTestRunner({
         })
         expect(one.data.lot.auction.extend_window_minutes).toEqual(minutes)
       }
+    })
+
+    // US-105 AC4 (D-081): the store reads carry the koi's fields; a lot from
+    // before the story (AC6) answers with nulls and D-081's no-certificate
+    // label when it does carry `has_certificate: false`. One seed, so the
+    // filter assertions below cannot see another test's lots.
+    it("returns and filters the koi fields (AC4)", async () => {
+      const seller = await createSeller()
+      const category = await createCategory("koi")
+      const seeded = await seed({
+        status: "live",
+        seller,
+        category,
+        lots: [
+          // full
+          {
+            variety: "Sanke",
+            size_cm: 62,
+            age: "Nisai (2 tahun)",
+            sex: "Betina",
+            has_certificate: true,
+            certificate_issuer: "ZNA",
+            pond_origin: "Blitar, Jawa Timur",
+            breeder_notes: "Badan tebal, pola stabil.",
+            video_url: "https://youtu.be/abc123",
+          },
+          // no certificate
+          {
+            variety: "Kohaku",
+            size_cm: 40,
+            has_certificate: false,
+            video_url: "https://youtu.be/aaa111",
+          },
+          // a lot from before the story: every koi field null
+          {},
+          { variety: "Showa", size_cm: 60, has_certificate: false },
+          {
+            variety: "Bekko",
+            size_cm: 30,
+            has_certificate: true,
+            video_url: "https://youtu.be/bbb222",
+          },
+        ],
+      })
+
+      const fields = {
+        variety: "Sanke",
+        size_cm: 62,
+        age: "Nisai (2 tahun)",
+        sex: "Betina",
+        has_certificate: true,
+        certificate_issuer: "ZNA",
+        pond_origin: "Blitar, Jawa Timur",
+        breeder_notes: "Badan tebal, pola stabil.",
+        video_url: "https://youtu.be/abc123",
+      }
+      // limit=100: earlier tests leave live lots in the same feed.
+      const get = (query = "") =>
+        api.get(`/store/lots?limit=100&${query}`, { headers: storeHeaders })
+      const ids = (lots: { id: string }[]) => new Set(lots.map((lot) => lot.id))
+      const [full, noCert, old, showa, bekko] = seeded.lots.map((lot) => lot.id)
+
+      const list = await get()
+      const byId = new Map(
+        list.data.lots.map((lot: { id: string }) => [lot.id, lot])
+      )
+      expect(byId.get(full)).toMatchObject(fields)
+      expect(byId.get(noCert)).toMatchObject({
+        has_certificate: false,
+        certificate_issuer: "Tidak ada (koi lokal)",
+      })
+      // AC6: no values, no invented ones, and still listed.
+      expect(byId.get(old)).toMatchObject({
+        variety: null,
+        size_cm: null,
+        age: null,
+        sex: null,
+        has_certificate: null,
+        certificate_issuer: null,
+        pond_origin: null,
+        breeder_notes: null,
+        video_url: null,
+      })
+      const one = await api.get(`/store/lots/${full}`, {
+        headers: storeHeaders,
+      })
+      expect(one.data.lot).toMatchObject(fields)
+
+      // Several varieties in one request, and one on its own.
+      const both = await get("variety=Kohaku&variety=Showa")
+      expect(both.status).toEqual(200)
+      expect(ids(both.data.lots)).toEqual(new Set([noCert, showa]))
+
+      const single = await get("variety=Bekko")
+      expect(ids(single.data.lots)).toEqual(new Set([bekko]))
+
+      const sized = await get("size_min=50&size_max=70")
+      expect(ids(sized.data.lots)).toEqual(new Set([full, showa]))
+
+      const certified = await get("certificate=true")
+      expect(ids(certified.data.lots)).toEqual(new Set([full, bekko]))
+
+      const withVideo = await get("has_video=true")
+      expect(ids(withVideo.data.lots)).toEqual(new Set([full, noCert, bekko]))
+
+      // Combined: one variety, a video, a size range.
+      const combined = await get("variety=Kohaku&has_video=true&size_min=35")
+      expect(ids(combined.data.lots)).toEqual(new Set([noCert]))
+
+      // A value outside D-081's list is refused, not silently ignored.
+      expect(await statusOf(get("variety=Koi"))).toEqual(400)
+    })
+
+    // US-111 T-111.6 (D-070, D-080): a signed-in viewer sees whether they
+    // joined each lot, and can filter the feed to their own lots. Guests still
+    // get the public feed with `joined: false`.
+
+    it("gives a guest joined=false on every lot and no joined filter", async () => {
+      const seller = await createSeller()
+      const category = await createCategory("joined-guest")
+      await seed({ status: "live", seller, category, lots: [{}, {}] })
+
+      const res = await api.get("/store/lots?limit=100", {
+        headers: storeHeaders,
+      })
+      expect(res.status).toEqual(200)
+      expect(res.data.lots.length).toBeGreaterThan(0)
+      for (const lot of res.data.lots) {
+        expect(lot.joined).toEqual(false)
+      }
+      // joined=false is the unfiltered feed, never a 401.
+      const unfiltered = await api.get("/store/lots?joined=false&limit=100", {
+        headers: storeHeaders,
+      })
+      expect(unfiltered.status).toEqual(200)
+      expect(unfiltered.data.count).toEqual(res.data.count)
+    })
+
+    it("marks only the signed-in viewer's own lots as joined (AC6)", async () => {
+      const seller = await createSeller()
+      const category = await createCategory("joined-one")
+      const live = await seed({
+        status: "live",
+        seller,
+        category,
+        join_fee: 100_000,
+        lots: [{}, {}],
+      })
+      const [joinedLot, otherLot] = live.lots
+      const customer = await createCustomer("Ikut", "Satu")
+      await auctions().createLotParticipants([
+        {
+          lot_id: joinedLot.id,
+          customer_id: customer.id,
+          paid_join_fee: 100_000,
+        },
+      ])
+
+      const res = await api.get("/store/lots?limit=100", {
+        headers: customerAuth(customer.id),
+      })
+      expect(res.status).toEqual(200)
+      const byId = new Map(
+        res.data.lots.map((lot: { id: string; joined: boolean }) => [
+          lot.id,
+          lot.joined,
+        ])
+      )
+      expect(byId.get(joinedLot.id)).toEqual(true)
+      expect(byId.get(otherLot.id)).toEqual(false)
+      // The participant rows stay on the server.
+      expect(JSON.stringify(res.data)).not.toContain(customer.id)
+    })
+
+    it("counts a pre-US-111 auction-wide join as joined on every lot (D-080)", async () => {
+      const seller = await createSeller()
+      const category = await createCategory("joined-legacy")
+      const live = await seed({
+        status: "live",
+        seller,
+        category,
+        lots: [{}, {}],
+      })
+      const customer = await createCustomer("Ikut", "Lelang")
+      await auctions().createAuctionParticipants([
+        { auction_id: live.auction.id, customer_id: customer.id },
+      ])
+
+      const res = await api.get("/store/lots?limit=100", {
+        headers: customerAuth(customer.id),
+      })
+      expect(res.status).toEqual(200)
+      const byId = new Map(
+        res.data.lots.map((lot: { id: string; joined: boolean }) => [
+          lot.id,
+          lot.joined,
+        ])
+      )
+      for (const lot of live.lots) expect(byId.get(lot.id)).toEqual(true)
+    })
+
+    it("joined=true returns only joined lots with a correct count and pagination (AC6)", async () => {
+      const seller = await createSeller()
+      const category = await createCategory("joined-filter")
+      const live = await seed({
+        status: "live",
+        seller,
+        category,
+        lots: [{}, {}, {}],
+      })
+      const [first, second, third] = live.lots
+      const customer = await createCustomer("Saring", "Ikut")
+      await auctions().createLotParticipants([
+        { lot_id: first.id, customer_id: customer.id, paid_join_fee: 100_000 },
+        { lot_id: second.id, customer_id: customer.id, paid_join_fee: 100_000 },
+      ])
+      const auth = customerAuth(customer.id)
+
+      const page1 = await api.get("/store/lots?joined=true&limit=1&offset=0", {
+        headers: auth,
+      })
+      expect(page1.status).toEqual(200)
+      expect(page1.data.count).toEqual(2)
+      expect(page1.data.limit).toEqual(1)
+      expect(page1.data.offset).toEqual(0)
+      expect(page1.data.lots).toHaveLength(1)
+      expect(page1.data.lots[0].joined).toEqual(true)
+
+      const page2 = await api.get("/store/lots?joined=true&limit=1&offset=1", {
+        headers: auth,
+      })
+      expect(page2.status).toEqual(200)
+      expect(page2.data.count).toEqual(2)
+      expect(page2.data.lots).toHaveLength(1)
+      expect(page2.data.lots[0].joined).toEqual(true)
+
+      const ids = new Set([
+        page1.data.lots[0].id,
+        page2.data.lots[0].id,
+      ])
+      expect(ids).toEqual(new Set([first.id, second.id]))
+      expect(ids.has(third.id)).toEqual(false)
+
+      const past = await api.get("/store/lots?joined=true&limit=1&offset=2", {
+        headers: auth,
+      })
+      expect(past.data.count).toEqual(2)
+      expect(past.data.lots).toEqual([])
+    })
+
+    it("refuses joined=true without a customer token with 401", async () => {
+      expect(
+        await statusOf(
+          api.get("/store/lots?joined=true", { headers: storeHeaders })
+        )
+      ).toEqual(401)
     })
   },
 })

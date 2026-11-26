@@ -81,9 +81,10 @@ export function claimOverdue(approvedAt: string | null, now: string | Date): Cla
 }
 
 export function formatClaimDate(iso: string): string {
-  return new Intl.DateTimeFormat('id-ID', {
+  const formatted = new Intl.DateTimeFormat('id-ID', {
     dateStyle: 'medium',
     timeStyle: 'short',
     timeZone: 'Asia/Jakarta'
   }).format(new Date(iso));
+  return `${formatted} WIB`;
 }

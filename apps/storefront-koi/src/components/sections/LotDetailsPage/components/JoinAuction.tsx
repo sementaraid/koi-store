@@ -27,7 +27,7 @@ import { Link } from '@/components/atoms';
 import { useBalanceSync } from '@/components/organisms/AppShell/BalanceSync';
 import { signInHref, signUpHref, topupHref } from '@/const/routes';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { joinAuction } from '@/lib/data/lots';
+import { joinLot } from '@/lib/data/lots';
 import { formatPrice } from '@/lib/helpers/format-price';
 import {
   JOIN_FEE_NOTE,
@@ -67,10 +67,10 @@ function PriceRow({ label, value, tone }: { label: string; value: string; tone?:
 /* T-099.1: the lot page's join surface. A guest gets the sign-in and sign-up
    paths; a signed-in customer gets the fee, their balance, and a Dialog on a
    desktop or a bottom Sheet on a phone. A balance below the fee turns the same
-   dialog into the shortfall and top-up path. The join call itself is still the
-   US-041 action; this component never invents a second endpoint. */
+   dialog into the shortfall and top-up path. Since US-111 (D-070) the join is
+   charged per lot, so this component acts on the lot id. */
 export function JoinAuction({
-  auctionId,
+  lotId,
   fee,
   returnPath,
   balance,
@@ -106,12 +106,12 @@ export function JoinAuction({
   async function join() {
     setBusy(true);
     setFailure(null);
-    const result = await joinAuction(auctionId);
+    const result = await joinLot(lotId);
     setBusy(false);
 
     if (result.success) {
-      toast.success('Berhasil ikut lelang.');
-      // `joinAuction` already re-rendered the layout and page (US-107 AC7).
+      toast.success('Berhasil ikut lot ini.');
+      // `joinLot` already re-rendered the layout and page (US-107 AC7).
       handleOpenChange(false);
       return;
     }
@@ -133,14 +133,16 @@ export function JoinAuction({
   if (state === 'unknown') {
     return (
       <p role="status" className="text-sm text-muted-foreground">
-        Tidak bisa memuat status kebun. Coba muat ulang.
+        Tidak bisa memuat status farm. Coba muat ulang.
       </p>
     );
   }
 
   if (state === 'guest') {
+    // US-099 AC14: below `lg` the sticky footer carries this copy and both
+    // guest paths, so the inline prompt would be a second sign-in button.
     return (
-      <div className="grid gap-2">
+      <div className="hidden gap-2 lg:grid">
         <p className="text-sm text-muted-foreground">{joinGuestCopy(fee)}</p>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Button
@@ -171,17 +173,17 @@ export function JoinAuction({
         <Badge variant="muted" className="mx-auto">
           Sudah ikut
         </Badge>
-        <p className="text-xs text-muted-foreground">Anda terdaftar sebagai peserta lelang ini.</p>
+        <p className="text-xs text-muted-foreground">Anda terdaftar sebagai peserta lot ini.</p>
       </div>
     );
   }
 
   const shortfall = joinShortfall(fee, balance);
   const isShort = state === 'shortfall';
-  const heading = isShort ? 'Saldo belum cukup' : `Ikut lelang ${title}`;
+  const heading = isShort ? 'Saldo belum cukup' : `Ikut lot ini ${title}`;
   const description = isShort
     ? 'Top-up dulu, lalu kembali ke lot ini.'
-    : 'Baca aturan sebelum biaya dipotong.';
+    : 'Dipotong dari saldo untuk lot ini.';
   const closeLabel = isShort ? 'Kembali ke lot' : 'Batal';
 
   const headingNode = isMobile ? (
@@ -225,7 +227,7 @@ export function JoinAuction({
             {closeButton}
             <Button
               size="lg"
-              render={<Link href={topupHref(shortfall)} />}
+              render={<Link href={topupHref(shortfall, title)} />}
               nativeButton={false}
               className="w-full sm:w-auto"
             >
@@ -239,7 +241,10 @@ export function JoinAuction({
 
           {fee > 0 ? (
             <dl className="grid gap-2 rounded-control bg-surface p-3 text-sm">
-              <PriceRow label="Biaya ikut" value={formatPrice(fee)} />
+              <PriceRow
+                label="Biaya ikut (tidak dikembalikan jika kalah)"
+                value={formatPrice(fee)}
+              />
               {balance !== null ? (
                 <PriceRow
                   label="Saldo setelah ikut"
@@ -257,7 +262,9 @@ export function JoinAuction({
               className="mt-0.5 size-5 shrink-0 cursor-pointer accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               required
             />
-            <span>Saya paham aturan lelang ini.</span>
+            <span>
+              Saya paham aturan lelang ini dan biaya ikut tidak dikembalikan jika kalah.
+            </span>
           </label>
 
           {failure ? (
@@ -265,7 +272,7 @@ export function JoinAuction({
               <p className="font-medium">{failure.message}</p>
               {failure.topUp ? (
                 <Link
-                  href={topupHref(shortfall || undefined)}
+                  href={topupHref(shortfall || undefined, title)}
                   className="w-fit rounded-sm font-semibold text-accent-ink underline underline-offset-4 outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   Top-up saldo
@@ -292,25 +299,34 @@ export function JoinAuction({
 
   const modal = isMobile ? (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetTrigger render={<Button size="lg" className="w-full sm:w-auto" />}>
+      <SheetTrigger
+        id="lot-join-trigger-sheet"
+        render={<Button size="lg" className="w-full sm:w-auto" />}
+      >
         {joinFeeLabel(fee)}
       </SheetTrigger>
-      <SheetContent side="bottom">{body}</SheetContent>
+      <SheetContent id="lot-join-sheet" side="bottom">
+        {body}
+      </SheetContent>
     </Sheet>
   ) : (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger render={<Button size="lg" className="w-full sm:w-auto" />}>
+      <DialogTrigger
+        id="lot-join-trigger"
+        render={<Button size="lg" className="w-full sm:w-auto" />}
+      >
         {joinFeeLabel(fee)}
       </DialogTrigger>
-      <DialogContent>{body}</DialogContent>
+      <DialogContent id="lot-join-popup">{body}</DialogContent>
     </Dialog>
   );
 
   return (
     <div className="grid gap-2">
+      <p className="text-sm text-muted-foreground">Belum ikut</p>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         {modal}
-        {balance !== null ? (
+        {fee > 0 && balance !== null ? (
           <p className="text-sm text-muted-foreground">
             Saldo tersedia{' '}
             <span className="font-semibold text-foreground tabular-nums">

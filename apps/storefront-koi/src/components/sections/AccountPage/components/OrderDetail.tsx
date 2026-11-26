@@ -1,9 +1,6 @@
-import { Package } from 'lucide-react';
-
 import { Link } from '@/components/atoms/Link/Link';
 import { Badge, Card, RenderIf } from "@koi/ui";
 import { ROUTES } from '@/const/routes';
-import { formatAgo } from '@/lib/helpers/format-ago';
 import { formatPrice } from '@/lib/helpers/format-price';
 import { orderStatus } from '@/lib/helpers/order-status';
 import type { AccountIdentity } from './AccountFrame';
@@ -33,20 +30,6 @@ export function OrderDetail({ group, identity }: OrderDetailProps) {
     <AccountFrame
       title={`Pesanan #${group.display_id ?? group.id}`}
       identity={identity}
-      eyebrow={
-        <>
-          <Package
-            aria-hidden
-            className="size-3.5"
-          />
-          Transaksi
-        </>
-      }
-      description={
-        <RenderIf when={group.created_at}>
-          {(createdAt) => <>Dibuat {formatAgo(createdAt)}</>}
-        </RenderIf>
-      }
       action={
         <Link
           href={ROUTES.orders}

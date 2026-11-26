@@ -72,7 +72,22 @@ export function formatTimeLeft(ms: number) {
   const hours = Math.floor(minutes / 60)
   if (hours < 24) return `${hours} jam lagi`
 
-  return `${Math.floor(hours / 24)} hari lagi`
+  // US-096 AC6: far-off lots keep their hours, `1 hari 15 jam lagi`.
+  const days = Math.floor(hours / 24)
+  const restHours = hours % 24
+  return restHours ? `${days} hari ${restHours} jam lagi` : `${days} hari lagi`
+}
+
+// US-097 AC14 / US-105 AC5: `{umur} · {jenis kelamin} · {farm}`. Parts the
+// farmer left empty (or a legacy lot never had) drop out with their separators,
+// so a legacy card reads only the farm name.
+export function lotCardSubtitle(lot: {
+  age?: string
+  sex?: string
+  seller?: string
+}): string | undefined {
+  const line = [lot.age, lot.sex, lot.seller].filter((part): part is string => Boolean(part))
+  return line.length ? line.join(" · ") : undefined
 }
 
 export type ChipTone = "signal" | "warning" | "success" | "neutral"
@@ -80,6 +95,22 @@ export type ChipIcon = "live" | "clock" | "calendar" | "done" | "cancelled" | "h
 export type Chip = { label: string; tone: ChipTone; icon: ChipIcon }
 
 type LotStatus = "live" | "upcoming" | "ended" | "cancelled"
+
+// US-111 AC6 / US-097 AC14: only a signed-in viewer looking at an open lot
+// they have not joined sees the fee line. Guests get `joined: false` from the
+// API too, so `signedIn` is what tells them apart. A closed or cancelled lot
+// keeps its result line instead.
+export function lotJoinNote(
+  lot: { signedIn?: boolean; joined?: boolean; status?: LotStatus; joinFee?: number },
+  formatAmount: (n: number) => string
+): string | undefined {
+  if (!lot.signedIn || lot.joined !== false) return undefined
+  if (lot.status !== "live" && lot.status !== "upcoming") return undefined
+
+  return typeof lot.joinFee === "number" && Number.isFinite(lot.joinFee)
+    ? `Belum ikut · biaya ikut ${formatAmount(lot.joinFee)}`
+    : "Belum ikut"
+}
 
 // `remainingMs` is null until the client clock is known; the chip then reads
 // plain "Live" and turns to "Berakhir < 1 jam" after mount.
@@ -116,6 +147,12 @@ export type LotPriceLine = { label: string; amount: number } | null
 export function lotClosedLabel(a: { cancelled?: boolean; sold?: boolean }): string | null {
   if (a.cancelled) return null
   return closedLotLabel(a.sold)?.statusLabel ?? null
+}
+
+// US-100 AC2: the lost result names the final price and the bid count. The
+// card and the page's price panel keep their shorter "Harga akhir" label.
+export function closedPriceLabel(bidCount?: number) {
+  return `Harga akhir · ${formatBidCount(bidCount ?? 0)}`
 }
 
 // null = show no price (cancelled, or closed without a sale).

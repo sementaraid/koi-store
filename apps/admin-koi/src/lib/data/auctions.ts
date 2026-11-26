@@ -90,7 +90,7 @@ export async function approveAuctionWithOverride(
     return { success: false, error: 'Alasan wajib diisi saat mengubah biaya.' };
   }
   if (override.listing_fee === undefined && override.join_fee === undefined) {
-    return { success: false, error: 'Masukkan biaya listing atau biaya join yang baru.' };
+    return { success: false, error: 'Masukkan biaya listing atau biaya ikut yang baru.' };
   }
 
   return runApprove(id, { ...override, reason });

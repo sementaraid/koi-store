@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, FormField, RenderIf } from '@koi/ui';
+import { SITE_NAME } from '@/const/site';
 import { setAuctionLiveLink, type Auction } from '@/lib/data/auctions';
 import { isLiveStreamUrl } from '@/lib/helpers/live-stream-url';
 import { stripValidationPrefix } from '@/lib/helpers/validation-message';
@@ -90,8 +91,7 @@ export function LiveLinkForm({ auction, onSaved }: LiveLinkFormProps) {
           Tautan siaran
         </CardTitle>
         <CardDescription>
-          Tautan YouTube atau Instagram untuk siaran lelang. Tidak ada video yang diunggah ke
-          Koi Store.
+          Tautan YouTube atau Instagram untuk siaran lelang. Tidak ada video yang diunggah ke {SITE_NAME}.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4 px-0 pb-0 text-sm">

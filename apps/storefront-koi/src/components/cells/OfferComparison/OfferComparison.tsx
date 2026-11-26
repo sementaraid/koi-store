@@ -25,7 +25,7 @@ export function OfferComparison({
         Dijual oleh {offers.length} penjual
       </h2>
 
-      <div className="flex flex-col divide-y divide-border rounded-xl border border-border">
+      <div className="flex flex-col divide-y divide-divider rounded-control border border-card-edge">
         {offers.map((offer) => (
           <div
             key={offer.id}
@@ -90,7 +90,7 @@ export function OfferComparison({
 
       <p className="mt-2 flex items-center gap-1.5 text-2xs text-muted-foreground">
         <Store aria-hidden className="size-3" />
-        Harga di atas termasuk jaminan rekber dari setiap penjual.
+        Harga di atas ditetapkan masing-masing penjual.
       </p>
     </section>
   );

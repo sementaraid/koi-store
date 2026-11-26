@@ -21,8 +21,13 @@ import {
   formatAuctionDate,
   overrideFormError
 } from '@/lib/helpers/auction-format';
+import { SITE_NAME } from '@/const/site';
+import { feeCategoryLabel } from '@/lib/helpers/fee-category-label';
 import { isLiveStreamUrl } from '@/lib/helpers/live-stream-url';
 import { formatRupiah } from '@/lib/helpers/topup-format';
+
+import { AdminEmpty } from './AdminEmpty';
+import { ConfirmDialog } from './ConfirmDialog';
 
 export type AuctionQueueProps = {
   auctions: AdminAuction[];
@@ -46,7 +51,10 @@ export function AuctionQueue({ auctions, total }: AuctionQueueProps) {
           </p>
         ) : null}
         {auctions.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Tidak ada lelang yang menunggu persetujuan.</p>
+          <AdminEmpty
+            title="Tidak ada lelang yang menunggu persetujuan"
+            description="Lelang baru muncul di sini setelah petani mengirimnya."
+          />
         ) : (
           auctions.map((auction) => <AuctionRow key={auction.id} auction={auction} />)
         )}
@@ -64,7 +72,10 @@ function AuctionRow({ auction }: { auction: AdminAuction }) {
         <p className="text-base font-medium">{auction.seller?.name ?? '—'}</p>
         <div className="grid gap-0.5 text-sm">
           <p className="text-muted-foreground">
-            {auction.fee_category?.name ?? 'Kategori tidak ditemukan'} ·{' '}
+            {auction.fee_category
+              ? feeCategoryLabel(auction.fee_category.name)
+              : 'Kategori tidak ditemukan'}{' '}
+            ·{' '}
             {deliveryMethodLabel(auction.delivery_method)} · {auction.lots.length} lot
           </p>
           <p className="text-muted-foreground">
@@ -75,7 +86,7 @@ function AuctionRow({ auction }: { auction: AdminAuction }) {
 
       <div className="grid gap-1 rounded-md border border-border p-2 text-sm sm:grid-cols-3">
         <p>Biaya listing: {formatRupiah(auction.listing_fee)}</p>
-        <p>Biaya join: {formatRupiah(auction.join_fee)}</p>
+        <p>Biaya ikut per lot: {formatRupiah(auction.join_fee)}</p>
         <p className="font-medium">
           Total: {formatRupiah(auctionFeeTotal(auction.listing_fee, auction.join_fee))}
         </p>
@@ -161,19 +172,20 @@ function ApproveForm({
     resolver: zodResolver(approveSchema),
     defaultValues: { listing_fee: '', join_fee: '', reason: '' }
   });
+  const [pending, setPending] = useState<{ data: ApproveData; overriding: boolean } | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
-  async function submit(data: ApproveData) {
+  function submit(data: ApproveData) {
     const overriding = data.listing_fee !== '' || data.join_fee !== '';
-    const message = overriding
-      ? 'Setujui lelang ini dengan biaya yang diubah dan tagih biaya listing?'
-      : 'Setujui lelang ini dan tagih biaya listing sesuai tabel biaya?';
+    setPending({ data, overriding });
+    setConfirmOpen(true);
+  }
+
+  async function confirmApprove() {
+    if (!pending) return;
+    const { data, overriding } = pending;
 
     onBusyChange(true);
-    if (!confirm(message)) {
-      onBusyChange(false);
-      return;
-    }
-
     const result = overriding
       ? await approveAuctionWithOverride(auction.id, {
           ...(data.listing_fee !== '' ? { listing_fee: Number(data.listing_fee) } : {}),
@@ -182,6 +194,8 @@ function ApproveForm({
         })
       : await approveAuction(auction.id);
     onBusyChange(false);
+    setConfirmOpen(false);
+    setPending(null);
 
     if (!result.success) {
       toast.error(result.error);
@@ -200,6 +214,7 @@ function ApproveForm({
       </p>
       <div className="grid gap-2 sm:grid-cols-2">
         <FormField
+          id={`auction-${auction.id}-listing`}
           label={`Biaya listing baru (asal: ${formatRupiah(auction.listing_fee)})`}
           type="number"
           min={0}
@@ -208,7 +223,8 @@ function ApproveForm({
           {...register('listing_fee')}
         />
         <FormField
-          label={`Biaya join baru (asal: ${formatRupiah(auction.join_fee)})`}
+          id={`auction-${auction.id}-join`}
+          label={`Biaya ikut baru per lot (asal: ${formatRupiah(auction.join_fee)})`}
           type="number"
           min={0}
           step={1}
@@ -217,6 +233,7 @@ function ApproveForm({
         />
       </div>
       <FormField
+        id={`auction-${auction.id}-reason`}
         label="Alasan perubahan biaya"
         hint="Wajib diisi hanya jika mengubah salah satu biaya di atas."
         error={errors.reason?.message}
@@ -227,6 +244,20 @@ function ApproveForm({
           {isSubmitting ? 'Menyetujui…' : 'Setujui lelang'}
         </Button>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Setujui lelang?"
+        description={
+          pending?.overriding
+            ? 'Setujui lelang ini dengan biaya yang diubah dan tagih biaya listing?'
+            : 'Setujui lelang ini dan tagih biaya listing sesuai tabel biaya?'
+        }
+        confirmLabel="Setujui lelang"
+        busyLabel="Menyetujui…"
+        onConfirm={confirmApprove}
+      />
     </form>
   );
 }
@@ -295,11 +326,12 @@ function LiveLinkControl({ auction }: { auction: AdminAuction }) {
           noValidate
         >
           <FormField
+            id={`auction-${auction.id}-live-url`}
             label="Tautan YouTube atau Instagram"
             type="url"
             inputMode="url"
             placeholder="https://www.youtube.com/live/…"
-            hint="Hanya tautan YouTube atau Instagram (https). Tidak ada video yang diunggah ke Koi Store."
+            hint={`Hanya tautan YouTube atau Instagram (https). Tidak ada video yang diunggah ke ${SITE_NAME}.`}
             error={errors.live_stream_url?.message}
             {...register('live_stream_url')}
           />
@@ -349,16 +381,19 @@ function RejectForm({
     resolver: zodResolver(rejectSchema),
     defaultValues: { reason: '' }
   });
+  const [pendingReason, setPendingReason] = useState('');
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
-  async function submit(data: RejectData) {
+  function submit(data: RejectData) {
+    setPendingReason(data.reason);
+    setConfirmOpen(true);
+  }
+
+  async function confirmReject() {
     onBusyChange(true);
-    if (!confirm('Tolak lelang ini? Lelang kembali ke draft dan petani harus mengirim ulang.')) {
-      onBusyChange(false);
-      return;
-    }
-
-    const result = await rejectAuction(id, data.reason);
+    const result = await rejectAuction(id, pendingReason);
     onBusyChange(false);
+    setConfirmOpen(false);
 
     if (!result.success) {
       toast.error(result.error);
@@ -366,6 +401,7 @@ function RejectForm({
     }
 
     toast.success('Lelang ditolak.');
+    setPendingReason('');
     reset();
   }
 
@@ -373,6 +409,7 @@ function RejectForm({
     <form onSubmit={handleSubmit(submit)} className="grid gap-2 rounded-md border border-border p-3" noValidate>
       <h3 className="text-sm font-medium">Tolak</h3>
       <FormField
+        id={`auction-${id}-reject-reason`}
         label="Alasan penolakan"
         hint="Petani akan membaca alasan ini, memperbaiki, dan mengirim ulang."
         error={errors.reason?.message}
@@ -383,6 +420,17 @@ function RejectForm({
           {isSubmitting ? 'Menolak…' : 'Tolak lelang'}
         </Button>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Tolak lelang?"
+        description="Tolak lelang ini? Lelang kembali ke draft dan petani harus mengirim ulang."
+        confirmLabel="Tolak lelang"
+        busyLabel="Menolak…"
+        destructive
+        onConfirm={confirmReject}
+      />
     </form>
   );
 }

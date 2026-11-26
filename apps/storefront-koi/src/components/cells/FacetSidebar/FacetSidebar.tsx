@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { Check, SlidersHorizontal } from "lucide-react"
 import { cn } from "cn"
 
@@ -15,10 +15,15 @@ import {
 } from "@koi/ui/primitives/sheet"
 import { Facet, type FilterOption } from "@/components/cells/FilterBar/FilterBar"
 import { SECTION_LABEL } from "@/const/layout"
+import { facetLabel, facetValueLabel } from "@/lib/helpers/attribute-facets"
 import type { AttributeFacet, AttributeSelection } from "@/types/product"
 
 // The board lists "Semua varietas" plus four, then "Varietas lain".
 const LISTED = 4
+
+// The phone toolbar chip, at the 44 px touch target and the /lelang shape.
+const CHIP =
+  "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border border-border bg-background px-4 text-sm font-semibold whitespace-nowrap outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
 
 export type FacetSidebarProps = {
   scope: string
@@ -33,11 +38,15 @@ export type FacetSidebarProps = {
   attributes?: AttributeFacet[]
   selected?: AttributeSelection
   onAttributesChange?: (selected: AttributeSelection) => void
+  // Resets the whole feed (status too), as `Hapus filter` does on /lelang.
+  onReset?: () => void
+  hasFilters?: boolean
   className?: string
 }
 
 // Sort, category and attribute filters, laid out as the board's sidebar
-// (design `aside`): label over a filled select, the category as a list.
+// (design `aside`): label over a filled select, the category as a list. On a
+// phone the same fields live in one bottom sheet behind a chip row.
 export function FacetSidebar({
   scope,
   sorts,
@@ -51,6 +60,8 @@ export function FacetSidebar({
   attributes = [],
   selected = {},
   onAttributesChange,
+  onReset,
+  hasFilters,
   className,
 }: FacetSidebarProps) {
   const narrowed = Object.keys(selected).length > 0
@@ -60,15 +71,33 @@ export function FacetSidebar({
   const shown = category && !listed.includes(category) ? [...listed, category] : listed
 
   const [sheetOpen, setSheetOpen] = useState(false)
+  // The chip that opened the sheet gets focus back when it closes.
+  const opener = useRef<HTMLButtonElement | null>(null)
+
   // Filters in force besides the sort: the badge on the phone's Filter button.
   const active = Object.keys(selected).length + (category ? 1 : 0)
+  const dirty = hasFilters ?? active > 0
   const categoryOptions = [
     { value: "", label: allCategoriesLabel },
     ...categories.map((c) => ({ value: c, label: c })),
   ]
+  const currentSort = sorts.find((option) => option.value === sort)?.label ?? "Urutkan"
   const clearAll = () => {
     if (category) onCategoryChange("")
     if (narrowed) onAttributesChange?.({})
+  }
+  const reset = onReset ?? clearAll
+
+  const openSheet = (element: HTMLButtonElement) => {
+    opener.current = element
+    setSheetOpen(true)
+  }
+
+  const changeSheet = (next: boolean) => {
+    setSheetOpen(next)
+    // Base UI returns focus to the last focused element; make it explicit so
+    // the chip that opened the sheet is always the one focused on close.
+    if (!next) requestAnimationFrame(() => opener.current?.focus())
   }
 
   // Both layouts are in the DOM (one hidden), so each copy gets its own ids.
@@ -82,88 +111,120 @@ export function FacetSidebar({
     />
   )
 
+  const categoryField = (place: string) => (
+    <RenderIf when={categories.length > 0}>
+      {() => (
+        <Facet
+          id={`${scope}-category-${place}`}
+          label={categoryLabel}
+          value={category}
+          onChange={onCategoryChange}
+          options={categoryOptions}
+        />
+      )}
+    </RenderIf>
+  )
+
   const attributeFields = (place: string) =>
-    attributes.map((facet) => (
-    <Facet
-      key={facet.handle}
-      id={`facet-${facet.handle}-${place}`}
-      label={facet.label}
-      value={selected[facet.handle] ?? ""}
-      onChange={(value) =>
-        onAttributesChange?.(
-          value
-            ? { ...selected, [facet.handle]: value }
-            : Object.fromEntries(
-                Object.entries(selected).filter(
-                  ([handle]) => handle !== facet.handle
-                )
-              )
-        )
-      }
-      options={[
-        { value: "", label: `Semua ${facet.label.toLowerCase()}` },
-        ...facet.values.map((v) => ({ value: v, label: v })),
-      ]}
-    />
-  ))
+    attributes.map((facet) => {
+      const label = facetLabel(facet.handle, facet.label)
+      return (
+        <Facet
+          key={facet.handle}
+          id={`facet-${facet.handle}-${place}`}
+          label={label}
+          value={selected[facet.handle] ?? ""}
+          onChange={(value) =>
+            onAttributesChange?.(
+              value
+                ? { ...selected, [facet.handle]: value }
+                : Object.fromEntries(
+                    Object.entries(selected).filter(
+                      ([handle]) => handle !== facet.handle
+                    )
+                  )
+            )
+          }
+          options={[
+            { value: "", label: `Semua ${label.toLowerCase()}` },
+            ...facet.values.map((v) => ({
+              value: v,
+              label: facetValueLabel(facet.handle, v),
+            })),
+          ]}
+        />
+      )
+    })
 
   return (
     <aside data-slot="facet-sidebar" className={cn("min-w-0", className)}>
-      {/* Phone: the sort stays in view; every other filter moves into a
-          bottom sheet so the results start above the fold. */}
-      {/* Sort and Filter are toolbar controls, so on a phone they sit at the
-          card button's height (h-8), never taller, with compact text. */}
-      <div className="flex items-end gap-2 lg:hidden">
-        <div className="min-w-0 flex-1 [&_label]:text-[11px]! [&>div]:gap-1.5! [&_select]:h-8! [&_select]:rounded-lg! [&_select]:ps-3! [&_select]:pe-8! [&_select]:text-sm! [&_svg]:end-2.5!">
-          {sortField("phone")}
-        </div>
-        <Button
+      {/* Phone: one chip row, all of it opening the same sheet, as on /lelang.
+          The chip row stays above the results so nothing pushes them down. */}
+      <div className="flex gap-2 overflow-x-auto pb-1 lg:hidden">
+        <button
           type="button"
-          variant="soft"
-          size="sm"
-          onClick={() => setSheetOpen(true)}
+          onClick={(event) => openSheet(event.currentTarget)}
+          aria-haspopup="dialog"
+          aria-expanded={sheetOpen}
           aria-label={active ? `Filter, ${active} aktif` : "Filter"}
-          className="shrink-0 gap-1.5 rounded-lg px-3 text-[13px] font-semibold"
+          className={CHIP}
         >
-          <SlidersHorizontal aria-hidden className="size-3.5" />
+          <SlidersHorizontal aria-hidden className="size-4" />
           Filter
           <RenderIf when={active > 0}>
             {() => (
               <span
                 aria-hidden
-                className="flex size-4.5 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground"
+                className="flex size-5 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground tabular-nums"
               >
                 {active}
               </span>
             )}
           </RenderIf>
-        </Button>
+        </button>
 
-        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <RenderIf when={categories.length > 0}>
+          {() => (
+            <button
+              type="button"
+              onClick={(event) => openSheet(event.currentTarget)}
+              aria-haspopup="dialog"
+              aria-expanded={sheetOpen}
+              aria-label={`${categoryLabel}: ${category || allCategoriesLabel}`}
+              className={CHIP}
+            >
+              {category || categoryLabel}
+            </button>
+          )}
+        </RenderIf>
+
+        <button
+          type="button"
+          onClick={(event) => openSheet(event.currentTarget)}
+          aria-haspopup="dialog"
+          aria-expanded={sheetOpen}
+          aria-label={`Urutkan: ${currentSort}`}
+          className={CHIP}
+        >
+          {currentSort}
+        </button>
+
+        <Sheet open={sheetOpen} onOpenChange={changeSheet}>
           <SheetContent side="bottom" className="gap-0">
             <SheetHeader className="border-b border-border pe-14">
               <SheetTitle className="text-base font-semibold">Filter</SheetTitle>
             </SheetHeader>
-            <div className="flex flex-col gap-4 px-4 py-4">
-              <RenderIf when={categories.length > 0}>
-                {() => (
-                  <Facet
-                    id={`${scope}-category-sheet`}
-                    label={categoryLabel}
-                    value={category}
-                    onChange={onCategoryChange}
-                    options={categoryOptions}
-                  />
-                )}
-              </RenderIf>
+            <div className="flex max-h-[65svh] flex-col gap-4 overflow-y-auto px-4 py-4">
+              {sortField("sheet")}
+              {categoryField("sheet")}
               {attributeFields("sheet")}
             </div>
             <SheetFooter className="sticky bottom-0 flex-row border-t border-border bg-popover pb-[max(1rem,env(safe-area-inset-bottom))]">
               <Button
                 type="button"
                 variant="outline"
-                onClick={clearAll}
-                disabled={active === 0}
+                onClick={reset}
+                disabled={!dirty}
                 className="flex-1"
               >
                 Hapus filter
@@ -228,11 +289,11 @@ export function FacetSidebar({
 
         {attributeFields("side")}
 
-        <RenderIf when={narrowed}>
+        <RenderIf when={dirty}>
           {() => (
             <button
               type="button"
-              onClick={() => onAttributesChange?.({})}
+              onClick={reset}
               className="self-start rounded-control text-sm font-semibold text-accent-ink underline underline-offset-2 outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               Hapus filter

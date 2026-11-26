@@ -74,7 +74,7 @@ export function extensionNotice(input: {
   if (!Number.isFinite(minutes) || minutes <= 0) return null
 
   return {
-    title: 'Waktu diperpanjang.',
+    title: `Waktu ditambah ${minutes} menit.`,
     text: `Ada bid baru di ${minutes} menit terakhir. Lelang sekarang berakhir ${formatWibClock(
       input.currentEnd
     )} WIB.`

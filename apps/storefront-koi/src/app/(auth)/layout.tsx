@@ -10,14 +10,9 @@ export const metadata: Metadata = {
 export default async function AuthLayout({
   children
 }: Readonly<{ children: React.ReactNode }>) {
-  const { account, cart } = await getShell();
+  const { account } = await getShell();
 
   return (
-    <AppShell
-      account={account}
-      cart={cart}
-    >
-      {children}
-    </AppShell>
+    <AppShell account={account}>{children}</AppShell>
   );
 }

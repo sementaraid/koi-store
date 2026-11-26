@@ -37,8 +37,9 @@ test('refuses a blank rejection reason', () => {
   assert.equal(normalizeRejectReason('  Foto kebun tidak jelas  '), 'Foto kebun tidak jelas');
 });
 
-test('reads the registration date in Jakarta time', () => {
+test('reads the registration date in Jakarta time, labelled WIB', () => {
   const formatted = formatFarmDate('2026-11-14T17:20:00.000Z');
   assert.match(formatted, /2026/);
   assert.match(formatted, /15/);
+  assert.match(formatted, / WIB$/);
 });

@@ -1,7 +1,6 @@
 import { BadgeCheck, Fish, MapPin, PackageCheck, Star } from 'lucide-react';
 
 import { Badge, Button, RenderIf } from "@koi/ui";
-import { ChatButton } from '@/components/cells/ChatButton/ChatButton';
 import { EmptyFeed } from '@/components/cells/EmptyFeed/EmptyFeed';
 import { Eyebrow } from '@/components/atoms/Eyebrow/Eyebrow';
 import { FeedGrid } from '@/components/atoms/FeedGrid/FeedGrid';
@@ -111,17 +110,6 @@ export function Partner({
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <ChatButton
-                partner={{
-                  id: partner.id,
-                  name,
-                  ...(logo ? { photoUrl: logo } : {})
-                }}
-                subject={name}
-                topicId={partner.id}
-                variant="soft"
-              />
-
               <Badge variant="live" className="gap-1.5 px-3">
                 <PackageCheck aria-hidden />
                 {total} listing aktif
@@ -192,16 +180,6 @@ export function Partner({
                     key={item.id}
                     product={item}
                     href={koiHref(item.id)}
-                    action={
-                      <Button
-                        render={<Link href={koiHref(item.id)} />}
-                        size="sm"
-                        variant="outline"
-                        className="flex-1"
-                      >
-                        Lihat detail
-                      </Button>
-                    }
                   />
                 ))}
               </FeedGrid>

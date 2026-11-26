@@ -199,6 +199,16 @@ export type CreateLotsStepInput = {
     ob: number
     kb: number
     end_ms: number
+    // US-105 (D-081): the koi's fields, null when the farmer left them empty.
+    variety: string
+    size_cm: number
+    age: string | null
+    sex: string | null
+    has_certificate: boolean | null
+    certificate_issuer: string | null
+    pond_origin: string | null
+    breeder_notes: string | null
+    video_url: string | null
   }[]
 }
 
@@ -216,6 +226,16 @@ export const createLotsStep = createStep(
         current_price: lot.ob,
         end_time: new Date(lot.end_ms),
         status: "open" as const,
+        // US-105 (D-081).
+        variety: lot.variety,
+        size_cm: lot.size_cm,
+        age: lot.age,
+        sex: lot.sex,
+        has_certificate: lot.has_certificate,
+        certificate_issuer: lot.certificate_issuer,
+        pond_origin: lot.pond_origin,
+        breeder_notes: lot.breeder_notes,
+        video_url: lot.video_url,
       }))
     )
     return new StepResponse(

@@ -11,6 +11,96 @@ export const TAB_STATUS: Record<AuctionTab, StoreLotStatus> = {
   ended: "closed",
 }
 
+// D-081's fixed list, in the order the store validator accepts. Keep in step
+// with `packages/api/src/utils/koi-lot-fields.ts`.
+export const KOI_VARIETIES = [
+  "Kohaku",
+  "Sanke",
+  "Showa",
+  "Shiro Utsuri",
+  "Hi Utsuri",
+  "Asagi",
+  "Shusui",
+  "Tancho",
+  "Ogon",
+  "Kujaku",
+  "Chagoi",
+  "Goshiki",
+  "Bekko",
+  "Lainnya",
+] as const
+
+export type LotFilterState = {
+  variety: string[]
+  sizeMin?: number
+  sizeMax?: number
+  certificate?: boolean
+  hasVideo?: boolean
+  // US-111 AC6 (US-097 AC13): the viewer's own joined lots, set by `joined=1`.
+  joined?: boolean
+}
+
+const isVariety = (value: string): value is (typeof KOI_VARIETIES)[number] =>
+  (KOI_VARIETIES as readonly string[]).includes(value)
+
+const readSize = (value: string | string[] | undefined) => {
+  const raw = Array.isArray(value) ? value[0] : value
+  if (!raw) return undefined
+  const n = Number(raw)
+  return Number.isInteger(n) && n >= 1 && n <= 150 ? n : undefined
+}
+
+const readBool = (value: string | string[] | undefined) => {
+  const raw = Array.isArray(value) ? value[0] : value
+  return raw === "true" ? true : raw === "false" ? false : undefined
+}
+
+// The koi filters live in the URL, like the tab, so a narrowed list can be
+// linked and the back button undoes a change (US-097 AC13, AC16; US-105 AC5).
+export function readLotFilters(
+  params: Record<string, string | string[] | undefined>
+): LotFilterState {
+  const raw = params.variety
+  const list = Array.isArray(raw) ? raw : raw ? [raw] : []
+  const variety = [...new Set(list.filter(isVariety))]
+
+  const sizeMin = readSize(params.size_min)
+  const sizeMax = readSize(params.size_max)
+  const certificate = readBool(params.certificate)
+  const hasVideo = readBool(params.has_video)
+  // The toggle writes `joined=1`; anything else leaves the feed unfiltered.
+  const joinedRaw = Array.isArray(params.joined) ? params.joined[0] : params.joined
+  const joined = joinedRaw === "1" ? true : undefined
+
+  return {
+    variety,
+    ...(sizeMin !== undefined ? { sizeMin } : {}),
+    ...(sizeMax !== undefined ? { sizeMax } : {}),
+    ...(certificate !== undefined ? { certificate } : {}),
+    ...(hasVideo !== undefined ? { hasVideo } : {}),
+    ...(joined ? { joined } : {}),
+  }
+}
+
+export const hasLotFilters = (filters: LotFilterState) =>
+  filters.variety.length > 0 ||
+  filters.sizeMin !== undefined ||
+  filters.sizeMax !== undefined ||
+  filters.certificate !== undefined ||
+  filters.hasVideo !== undefined ||
+  filters.joined === true
+
+// Counts for the sidebar come from the lots already fetched for the current
+// tab, never a second endpoint (US-105 AC5). Every fixed variety is present, so
+// a zero still draws its row.
+export function varietyCounts(lots: StoreLot[]): Record<string, number> {
+  const counts = Object.fromEntries(KOI_VARIETIES.map((v) => [v, 0]))
+  for (const lot of lots) {
+    if (lot.variety && lot.variety in counts) counts[lot.variety] += 1
+  }
+  return counts
+}
+
 const TAB_LABEL: Record<AuctionTab, string> = {
   live: "Live",
   upcoming: "Akan datang",
@@ -32,6 +122,9 @@ export type UpcomingAuction = {
   image: string | undefined
   // The auction has no page of its own; the card opens its first lot.
   firstLotId: string
+  // US-105 AC5: unique varieties across the session's lots, first seen first.
+  // Empty on a session whose lots predate the koi fields, so the card omits it.
+  varieties: string[]
 }
 
 // One card per scheduled auction (US-097 AC6). Cancelled lots don't count and
@@ -46,6 +139,9 @@ export function groupUpcoming(lots: StoreLot[]): UpcomingAuction[] {
   return [...byAuction.values()]
     .map((group) => {
       const first = group.reduce((a, b) => (b.lot_number < a.lot_number ? b : a))
+      const varieties = [
+        ...new Set(group.map((lot) => lot.variety).filter((v): v is string => Boolean(v))),
+      ]
       return {
         auctionId: first.auction.id,
         farm: first.auction.seller?.name,
@@ -53,6 +149,7 @@ export function groupUpcoming(lots: StoreLot[]): UpcomingAuction[] {
         startAt: first.auction.start_at,
         image: first.photos[0],
         firstLotId: first.id,
+        varieties,
       }
     })
     .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())

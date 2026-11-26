@@ -27,7 +27,7 @@ function samples() {
     formatEndTime(NEW_YEAR, { weekday: "long", year: true }),
     formatDeadline(NEW_YEAR),
     formatClaimOpenedAt(new Date(THU).toISOString()),
-    sessionLabel("Kebun A", NEW_YEAR),
+    sessionLabel("Farm A", NEW_YEAR),
     wibInputValue(NEW_YEAR),
     JSON.stringify(shippingDates(2, new Date(NEW_YEAR))),
   ]
@@ -44,7 +44,7 @@ test("the pinned strings, character for character", () => {
     "Jumat, 1 Jan 2027, 00.30 WIB",
     "1 Jan, 00.30",
     "26 Nov 2026, 16.59",
-    "Sesi 1 Jan · Kebun A",
+    "Sesi 1 Jan · Farm A",
     "2027-01-01T00:30",
     '[{"id":"2027-01-01","day":"Sabtu","date":"2 Jan"},{"id":"2027-01-02","day":"Minggu","date":"3 Jan"}]',
   ])

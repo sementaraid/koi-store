@@ -149,8 +149,8 @@ medusaIntegrationTestRunner({
       return wallet.id as string
     }
 
-    const join = async (auctionId: string, headers: Record<string, string>) => {
-      const res = await api.post(`/store/auctions/${auctionId}/join`, {}, { headers })
+    const join = async (lotId: string, headers: Record<string, string>) => {
+      const res = await api.post(`/store/lots/${lotId}/join`, {}, { headers })
       expect(res.status).toEqual(201)
     }
 
@@ -168,6 +168,12 @@ medusaIntegrationTestRunner({
       (await wallets().listWalletTransactions()).filter(
         (t) => t.type === "refund" && t.reference === auctionId
       )
+    const allRefunds = async () =>
+      (await wallets().listWalletTransactions()).filter(
+        (t) => t.type === "refund"
+      )
+    const cancelLot = (lotId: string, body: unknown = { reason: "Ikan sakit." }) =>
+      api.post(`/admin/lots/${lotId}/cancel`, body, { headers: admin })
     const storedAuction = (id: string) =>
       auctions().retrieveAuction(id) as Promise<{
         status: string
@@ -199,8 +205,8 @@ medusaIntegrationTestRunner({
       })
       const first = await customer(150_000)
       const second = await customer(150_000)
-      await join(event.id, first.headers)
-      await join(event.id, second.headers)
+      await join(open[0].id, first.headers)
+      await join(open[0].id, second.headers)
       return { event, farmerWallet, open, won, first, second }
     }
 
@@ -289,15 +295,15 @@ medusaIntegrationTestRunner({
     })
 
     it("writes no refund for a Rp0 join (AC3)", async () => {
-      const { event, first } = await ready()
+      const { event, open, first } = await ready()
       const free = await customer(0)
       await auctions().updateAuctions([
         { id: event.id, fee_override_join_fee: 0 },
       ])
-      await join(event.id, free.headers)
+      await join(open[0].id, free.headers)
       expect(
         (await ledgerOf(free.walletId)).filter(
-          (t) => t.type === "join_fee" && t.reference === event.id
+          (t) => t.type === "join_fee" && t.reference === open[0].id
         )
       ).toHaveLength(0)
 
@@ -311,6 +317,102 @@ medusaIntegrationTestRunner({
       expect(rows).toHaveLength(2)
       expect(rows.some((r) => r.wallet_id === first.walletId)).toBe(true)
       expect(rows.some((r) => r.wallet_id === free.walletId)).toBe(false)
+    })
+
+    // US-111 fix round: cancelling a lot refunds its joins (reference = lot
+    // id); the later auction cancel must not refund the same charges again.
+    it("refunds each join once when a lot is cancelled before its auction", async () => {
+      const event = await auction()
+      const refunded = await lot(event.id)
+      const open = await lot(event.id)
+      const first = await customer(150_000)
+      const second = await customer(150_000)
+      const third = await customer(150_000)
+      await join(refunded.id, first.headers)
+      await join(refunded.id, second.headers)
+      await join(open.id, third.headers)
+
+      expect((await cancelLot(refunded.id)).status).toEqual(200)
+      const afterLot = await allRefunds()
+      expect(afterLot).toHaveLength(2)
+      expect(afterLot.every((r) => r.reference === refunded.id)).toBe(true)
+
+      const res = await cancel(event.id)
+      expect(res.status).toEqual(200)
+      // Only the other lot's join is still outstanding.
+      expect(res.data.refund).toEqual({ participants: 1, total: JOIN_FEE })
+
+      const refunds = await allRefunds()
+      expect(refunds).toHaveLength(3)
+      for (const buyer of [first, second, third]) {
+        expect(refunds.filter((r) => r.wallet_id === buyer.walletId)).toHaveLength(1)
+        // 150.000 − 100.000 charge + 100.000 refund.
+        expect(await balanceOf(buyer.walletId)).toEqual(150_000)
+      }
+      // No second refund references the already-cancelled lot.
+      expect(refunds.filter((r) => r.reference === refunded.id)).toHaveLength(2)
+    })
+
+    it("writes no second refund when a lot is cancelled after its auction", async () => {
+      const event = await auction()
+      const open = await lot(event.id)
+      const first = await customer(150_000)
+      await join(open.id, first.headers)
+
+      expect((await cancel(event.id)).status).toEqual(200)
+      const afterAuction = await allRefunds()
+      expect(afterAuction).toHaveLength(1)
+      expect(afterAuction[0].reference).toEqual(event.id)
+
+      // The auction cancel already cancelled the lot, so the admin lot cancel
+      // is refused and appends nothing.
+      expect((await failure(cancelLot(open.id))).status).toEqual(409)
+      expect(await allRefunds()).toHaveLength(1)
+      expect(await balanceOf(first.walletId)).toEqual(150_000)
+    })
+
+    // US-111 fix round: join-lot takes the auction lock, so a join can never
+    // insert its participant and charge after the refund read without being
+    // refunded. Either order leaves the buyer's balance unchanged and at most
+    // one refund per charge.
+    it("never charges a join that races the auction cancel", async () => {
+      const event = await auction()
+      const seeded = await lot(event.id)
+      const buyer = await customer(150_000)
+
+      const results = await Promise.allSettled([
+        api.post(`/store/lots/${seeded.id}/join`, {}, { headers: buyer.headers }),
+        cancel(event.id),
+      ])
+      const statusOf = (result: PromiseSettledResult<{ status: number }>) =>
+        result.status === "fulfilled"
+          ? result.value.status
+          : (result.reason as { response: HttpResponse }).response.status
+
+      const joinStatus = statusOf(results[0])
+      expect(statusOf(results[1])).toEqual(200)
+      expect([201, 409]).toContain(joinStatus)
+
+      const participants = await auctions().listLotParticipants({
+        lot_id: seeded.id,
+      })
+      const ledger = await ledgerOf(buyer.walletId)
+      const fees = ledger.filter(
+        (t) => t.type === "join_fee" && t.reference === seeded.id
+      )
+      const refunds = ledger.filter((t) => t.type === "refund")
+
+      if (joinStatus === 201) {
+        expect(participants).toHaveLength(1)
+        expect(fees).toHaveLength(1)
+        expect(refunds).toHaveLength(1)
+        expect(Number(refunds[0].amount)).toEqual(JOIN_FEE)
+      } else {
+        expect(participants).toHaveLength(0)
+        expect(fees).toHaveLength(0)
+        expect(refunds).toHaveLength(0)
+      }
+      expect(await balanceOf(buyer.walletId)).toEqual(150_000)
     })
 
     it("409s every status but live and writes nothing (AC2, D-022)", async () => {
@@ -357,7 +459,7 @@ medusaIntegrationTestRunner({
     })
 
     it("401s an anonymous caller and a customer token (D-002)", async () => {
-      const { event, first } = await ready()
+      const { event, open, first } = await ready()
       const customerHeader = {
         authorization: `Bearer ${jwt(getContainer(), first.id, "customer")}`,
       }

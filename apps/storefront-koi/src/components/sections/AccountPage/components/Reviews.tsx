@@ -49,16 +49,6 @@ export function Reviews({ reviews, openOrders, identity }: ReviewsProps) {
   return (
     <AccountFrame
       title="Ulasan"
-      eyebrow={
-        <>
-          <MessageSquareText
-            aria-hidden
-            className="size-3.5"
-          />
-          Akun
-        </>
-      }
-      description="Apa yang Anda tulis tentang farm dan koi yang sudah tiba."
       openOrders={openOrders}
       identity={identity}
     >

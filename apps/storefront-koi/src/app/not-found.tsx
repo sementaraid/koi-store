@@ -12,15 +12,13 @@ export const metadata: Metadata = {
 // Reached only for a URL no route group matches. A missing record inside a group
 // uses that group's own `not-found.tsx`, under the group's shell.
 export default async function NotFound() {
-  const { account, cart } = await getShell().catch(() => ({
-    account: undefined,
-    cart: undefined
+  const { account } = await getShell().catch(() => ({
+    account: undefined
   }));
 
   return (
     <AppShell
       account={account}
-      cart={cart}
       markActive={false}
     >
       <NotFoundPage />

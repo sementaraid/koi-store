@@ -18,24 +18,26 @@ const rule = (rules: LotRule[], kind: LotRuleKind) => {
 const fullText = (rules: LotRule[]) =>
   rules.map((item) => `${item.title} ${item.detail ?? ''}`).join(' ');
 
-test('the join fee comes from the auction and covers every lot in it', () => {
+test('the join fee comes from the lot and covers that lot only (D-070)', () => {
   const fee = rule(lotRules({ joinFee: 100_000 }), 'join-fee');
 
   assert.match(fee.title, new RegExp(formatPrice(100_000).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
-  assert.match(fee.title, /sekali per lelang/);
   assert.match(fee.title, /dipotong dari saldo/);
-  assert.match(fee.detail ?? '', /semua lot di lelang ini/);
+  assert.doesNotMatch(fee.title, /sekali per lelang/);
+  assert.match(fee.detail ?? '', /Berlaku untuk lot ini saja/);
   assert.match(fee.detail ?? '', /Tidak dikembalikan jika Anda kalah atau keluar/);
   assert.match(
     fee.detail ?? '',
-    /Hanya dikembalikan jika farm atau admin membatalkan lelang\.$/
+    /Hanya dikembalikan jika farm atau admin membatalkan lelang atau lot ini\.$/
   );
 });
 
-test('a zero join fee reads as free, never as Rp 0', () => {
+test('a zero join fee reads as free for that lot, never as Rp 0', () => {
   const fee = rule(lotRules({ joinFee: 0 }), 'join-fee');
 
   assert.match(fee.title, /tanpa biaya/);
+  assert.match(fee.title, /lot ini/);
+  assert.equal(fee.detail, 'Berlaku untuk lot ini saja.');
   assert.doesNotMatch(fullText([fee]), /Rp\s?0/);
 });
 
@@ -66,15 +68,16 @@ test('the extend rule uses the auction window and defaults to five minutes', () 
   assert.match(live.title, /10 menit\.$/);
 });
 
-test('bids cannot be withdrawn, and payment goes straight to the farm', () => {
+test('bids cannot be withdrawn, and payment goes to the company account', () => {
   const rules = lotRules({});
   const withdraw = rule(rules, 'withdraw');
   const payment = rule(rules, 'payment');
 
   assert.equal(withdraw.title, 'Bid tidak bisa ditarik kembali.');
-  assert.match(payment.title, /langsung ke farm/);
+  assert.match(payment.title, /rekening Koi Auction House/);
   assert.match(payment.title, /1×24 jam/);
-  assert.match(payment.detail ?? '', /menandai lot lunas, lalu mengirim/);
+  assert.match(payment.detail ?? '', /Admin memverifikasi transfer/);
+  assert.match(payment.detail ?? '', /farm mengirim koi/);
 });
 
 test('the summary never carries the retired rules (US-098 AC6)', () => {
@@ -82,16 +85,23 @@ test('the summary never carries the retired rules (US-098 AC6)', () => {
     lotRules({ joinFee: 100_000, bidStep: 50_000, nextMinimum: 2_550_000, extendWindowMinutes: 5 })
   );
 
-  // "dikembalikan" is allowed: the join fee is refunded when the auction is
-  // cancelled. Held-balance and pay-back wording is still banned.
+  // "dikembalikan" is allowed: the join fee is refunded when the auction or
+  // the lot is cancelled. Held-balance and pay-back wording is still banned,
+  // and so is the retired once-per-auction fee (D-070).
   for (const retired of [
     /ditahan/i,
     /rekber/i,
     /otomatis/i,
     /2 menit/i,
-    /per lot/i,
+    /sekali per lelang/i,
+    /satu biaya/i,
+    /semua lot di lelang ini/i,
     /saldo kembali/i,
-    /dana kembali/i
+    /dana kembali/i,
+    // D-068 / T-108.5: the winner pays the company account, not the farmer,
+    // and the farmer no longer marks the lot paid.
+    /dibayar langsung ke farm/i,
+    /Tandai dibayar/i
   ]) {
     assert.doesNotMatch(text, retired);
   }

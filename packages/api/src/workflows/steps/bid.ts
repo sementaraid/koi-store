@@ -90,21 +90,35 @@ export const getBiddableLotStep = createStep(
         "own_auction"
       )
     }
-    // US-042 AC1 + US-041: only customers who joined the auction.
+    // US-111 AC2 (D-070): only customers who joined THIS lot. D-080: a join
+    // made per auction before US-111 still grants every lot of that auction,
+    // with no extra charge.
     const {
-      data: [participant],
+      data: [lotParticipant],
     } = await query.graph({
-      entity: "auction_participant",
+      entity: "lot_participant",
       fields: ["id"],
       filters: {
-        auction_id: auction.id,
+        lot_id: input.lot_id,
         customer_id: input.customer_id,
       },
     })
-    if (!participant) {
+    const {
+      data: [auctionParticipant],
+    } = lotParticipant
+      ? { data: [] }
+      : await query.graph({
+          entity: "auction_participant",
+          fields: ["id"],
+          filters: {
+            auction_id: auction.id,
+            customer_id: input.customer_id,
+          },
+        })
+    if (!lotParticipant && !auctionParticipant) {
       throw new MedusaError(
         MedusaError.Types.FORBIDDEN,
-        "Anda belum ikut lelang ini.",
+        "Anda belum ikut lot ini.",
         "not_participant"
       )
     }

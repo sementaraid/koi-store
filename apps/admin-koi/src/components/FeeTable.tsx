@@ -13,11 +13,17 @@ import {
   updateFeeCategory,
   type FeeCategory
 } from '@/lib/data/fee-categories';
+import { feeCategoryLabel } from '@/lib/helpers/fee-category-label';
 
+import { AdminEmpty } from './AdminEmpty';
+import { ConfirmDialog } from './ConfirmDialog';
+
+// D-070: the join fee is charged per lot, not per auction. The column and its
+// payload stay `join_fee`; only the copy the admin reads changed.
 const fee = (label: string) =>
   z.number({ message: `Masukkan ${label}` }).int('Harus bilangan bulat').min(0, 'Tidak boleh negatif');
 
-const feesSchema = z.object({ listing_fee: fee('biaya listing'), join_fee: fee('biaya join') });
+const feesSchema = z.object({ listing_fee: fee('biaya listing'), join_fee: fee('biaya ikut') });
 const newCategorySchema = feesSchema.extend({ name: z.string().trim().min(1, 'Wajib diisi') });
 
 type FeesData = z.infer<typeof feesSchema>;
@@ -35,13 +41,16 @@ export function FeeTable({ categories }: FeeTableProps) {
       <CardHeader>
         <CardTitle>Tabel biaya</CardTitle>
         <CardDescription>
-          Biaya listing per lot dan biaya join per lelang, per kategori. Perubahan hanya berlaku
+          Biaya listing per lot dan biaya ikut per lot, per kategori. Perubahan hanya berlaku
           untuk lelang yang dibuat setelah disimpan (US-014 AC3).
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
         {categories.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Belum ada kategori biaya.</p>
+          <AdminEmpty
+            title="Belum ada kategori biaya"
+            description="Tambahkan kategori pertama untuk mengatur biaya listing dan biaya ikut."
+          />
         ) : (
           <div className="grid gap-3">
             {categories.map((category) => (
@@ -65,6 +74,7 @@ export function FeeTable({ categories }: FeeTableProps) {
 }
 
 function CategoryRow({ category }: { category: FeeCategory }) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const {
     register,
     handleSubmit,
@@ -80,18 +90,18 @@ function CategoryRow({ category }: { category: FeeCategory }) {
       toast.error(result.error);
       return;
     }
-    toast.success(`Biaya ${category.name} disimpan.`);
+    toast.success(`Biaya ${feeCategoryLabel(category.name)} disimpan.`);
   }
 
   async function remove() {
-    if (!confirm(`Hapus kategori "${category.name}"?`)) return;
-
     const result = await deleteFeeCategory(category.id);
+    setConfirmOpen(false);
+
     if (!result.success) {
       toast.error(result.error);
       return;
     }
-    toast.success(`Kategori ${category.name} dihapus.`);
+    toast.success(`Kategori ${feeCategoryLabel(category.name)} dihapus.`);
   }
 
   return (
@@ -102,9 +112,12 @@ function CategoryRow({ category }: { category: FeeCategory }) {
     >
       <div className="grid gap-1.5 sm:col-span-1">
         <span className="text-sm font-medium">Kategori</span>
-        <span className="flex h-9 items-center text-sm text-foreground">{category.name}</span>
+        <span className="flex h-9 items-center text-sm text-foreground">
+          {feeCategoryLabel(category.name)}
+        </span>
       </div>
       <FormField
+        id={`fee-${category.id}-listing`}
         label="Biaya listing (per lot)"
         type="number"
         min={0}
@@ -113,7 +126,8 @@ function CategoryRow({ category }: { category: FeeCategory }) {
         {...register('listing_fee', { valueAsNumber: true })}
       />
       <FormField
-        label="Biaya join (per lelang)"
+        id={`fee-${category.id}-join`}
+        label="Biaya ikut (per lot)"
         type="number"
         min={0}
         step={1}
@@ -123,9 +137,20 @@ function CategoryRow({ category }: { category: FeeCategory }) {
       <Button type="submit" size="sm" disabled={isSubmitting || !isDirty}>
         Simpan
       </Button>
-      <Button type="button" variant="outline" size="sm" onClick={remove}>
+      <Button type="button" variant="outline" size="sm" onClick={() => setConfirmOpen(true)}>
         Hapus
       </Button>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Hapus kategori biaya?"
+        description={`Hapus kategori "${feeCategoryLabel(category.name)}"? Lelang yang sudah ada tidak berubah.`}
+        confirmLabel="Hapus"
+        busyLabel="Menghapus…"
+        destructive
+        onConfirm={remove}
+      />
     </form>
   );
 }
@@ -166,7 +191,7 @@ function NewCategoryRow({ onDone }: { onDone: () => void }) {
         {...register('listing_fee', { valueAsNumber: true })}
       />
       <FormField
-        label="Biaya join (per lelang)"
+        label="Biaya ikut (per lot)"
         type="number"
         min={0}
         step={1}

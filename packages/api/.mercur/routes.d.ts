@@ -234,8 +234,12 @@ export type Routes = {
             };
             paymentProviders: typeof import("@medusajs/medusa/api/admin/payments/payment-providers/route");
         };
-        payouts: typeof import("@mercurjs/core/api/admin/payouts/route") & {
-            $id: typeof import("@mercurjs/core/api/admin/payouts/[id]/route");
+        payouts: typeof import("../src/api/admin/payouts/route") & {
+            $id: typeof import("@mercurjs/core/api/admin/payouts/[id]/route") & {
+                arrivalProof: typeof import("../src/api/admin/payouts/[id]/arrival-proof/route");
+                pay: typeof import("../src/api/admin/payouts/[id]/pay/route");
+                refund: typeof import("../src/api/admin/payouts/[id]/refund/route");
+            };
         };
         plugins: typeof import("@medusajs/medusa/api/admin/plugins/route");
         priceLists: typeof import("@medusajs/medusa/api/admin/price-lists/route") & {
@@ -546,9 +550,12 @@ export type Routes = {
         liveLots: {
             $id: typeof import("../src/api/admin/live-lots/[id]/route");
         };
-        lots: {
+        lots: typeof import("../src/api/admin/lots/route") & {
             $id: {
                 cancel: typeof import("../src/api/admin/lots/[id]/cancel/route");
+                confirmPayment: typeof import("../src/api/admin/lots/[id]/confirm-payment/route");
+                paymentProof: typeof import("../src/api/admin/lots/[id]/payment-proof/route");
+                rejectPaymentProof: typeof import("../src/api/admin/lots/[id]/reject-payment-proof/route");
             };
         };
         reports: typeof import("../src/api/admin/reports/route");
@@ -693,16 +700,13 @@ export type Routes = {
                 calculate: typeof import("@medusajs/medusa/api/store/shipping-options/[id]/calculate/route");
             };
         };
-        auctions: {
-            $id: {
-                join: typeof import("../src/api/store/auctions/[id]/join/route");
-            };
-        };
         bids: typeof import("../src/api/store/bids/route");
         custom: typeof import("../src/api/store/custom/route");
         farmUploads: typeof import("../src/api/store/farm-uploads/route");
         lots: typeof import("../src/api/store/lots/route") & {
-            $id: typeof import("../src/api/store/lots/[id]/route");
+            $id: typeof import("../src/api/store/lots/[id]/route") & {
+                join: typeof import("../src/api/store/lots/[id]/join/route");
+            };
         };
         myBids: typeof import("../src/api/store/my-bids/route");
         platformBankAccount: typeof import("../src/api/store/platform-bank-account/route");
@@ -711,12 +715,13 @@ export type Routes = {
         wallet: typeof import("../src/api/store/wallet/route");
         wonLots: typeof import("../src/api/store/won-lots/route") & {
             $id: typeof import("../src/api/store/won-lots/[id]/route") & {
+                arrivalProof: typeof import("../src/api/store/won-lots/[id]/arrival-proof/route");
                 claims: typeof import("../src/api/store/won-lots/[id]/claims/route") & {
                     confirm: typeof import("../src/api/store/won-lots/[id]/claims/confirm/route");
                 };
                 delivered: typeof import("../src/api/store/won-lots/[id]/delivered/route");
+                proof: typeof import("../src/api/store/won-lots/[id]/proof/route");
                 rating: typeof import("../src/api/store/won-lots/[id]/rating/route");
-                reveal: typeof import("../src/api/store/won-lots/[id]/reveal/route");
             };
         };
     };
@@ -1022,8 +1027,6 @@ export type Routes = {
         feeCategories: typeof import("../src/api/vendor/fee-categories/route");
         soldLots: typeof import("../src/api/vendor/sold-lots/route") & {
             $id: {
-                paid: typeof import("../src/api/vendor/sold-lots/[id]/paid/route");
-                report: typeof import("../src/api/vendor/sold-lots/[id]/report/route");
                 reveal: typeof import("../src/api/vendor/sold-lots/[id]/reveal/route");
                 shipped: typeof import("../src/api/vendor/sold-lots/[id]/shipped/route");
             };

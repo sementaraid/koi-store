@@ -48,7 +48,14 @@ export const getAttributeFacets = async (
         .map((value) => value.name);
 
       return values.length
-        ? [{ handle: attribute.handle, label: attribute.name, values }]
+        ? [
+            {
+              handle: attribute.handle,
+              label: attribute.name,
+              values,
+              is_variant_axis: attribute.is_variant_axis
+            }
+          ]
         : [];
     });
 };
@@ -72,6 +79,9 @@ export const listProducts = async ({
   response: { products: HttpTypes.StoreProduct[]; count: number };
   nextPage: number | null;
   queryParams?: HttpTypes.FindParams & HttpTypes.StoreProductParams;
+  // True when the read failed. The catch below still returns an empty list, so
+  // a listing page can tell "no products" from "could not load".
+  failed: boolean;
 }> => {
   if (!countryCode && !regionId) {
     throw new Error('Country code or region ID is required');
@@ -86,7 +96,7 @@ export const listProducts = async ({
     : await retrieveRegion(regionId!);
 
   if (!region) {
-    return { response: { products: [], count: 0 }, nextPage: null };
+    return { response: { products: [], count: 0 }, nextPage: null, failed: false };
   }
 
   return (
@@ -112,12 +122,14 @@ export const listProducts = async ({
         response: { products, count },
         nextPage,
         queryParams,
+        failed: false,
       };
     })
     .catch(() => ({
       response: { products: [], count: 0 },
       nextPage: null,
       queryParams,
+      failed: true,
     }));
 };
 
@@ -197,6 +209,7 @@ export const searchProducts = async ({
   collection_id,
   seller_id,
   attributes,
+  attributeValues,
   page = 1,
   limit = 12,
   sortBy,
@@ -208,6 +221,7 @@ export const searchProducts = async ({
   collection_id?: string | string[];
   seller_id?: string | string[];
   attributes?: Record<string, string | string[]>;
+  attributeValues?: Record<string, string | string[]>;
   page?: number;
   limit?: number;
   sortBy?: SortOptions;
@@ -215,11 +229,12 @@ export const searchProducts = async ({
   products: HttpTypes.StoreProduct[];
   count: number;
   nextPage: number | null;
+  failed: boolean;
 }> => {
   const region = countryCode ? await getRegion(countryCode) : { id: regionId };
 
   if (!region?.id) {
-    return { products: [], count: 0, nextPage: null };
+    return { products: [], count: 0, nextPage: null, failed: false };
   }
 
   const offset = Math.max(page - 1, 0) * limit;
@@ -227,14 +242,17 @@ export const searchProducts = async ({
 
   const hasAttributeFilters =
     attributes && Object.keys(attributes).length > 0;
+  const hasAttributeValueFilters =
+    attributeValues && Object.keys(attributeValues).length > 0;
 
-  const { products, count } = await (sdk.store.products.query({
+  const { products, count, failed = false } = await (sdk.store.products.query({
     q: query || undefined,
     region_id: region.id,
     category_id,
     collection_id,
     seller_id,
     attributes: hasAttributeFilters ? attributes : undefined,
+    attribute_values: hasAttributeValueFilters ? attributeValues : undefined,
     order,
     limit,
     offset,
@@ -243,9 +261,11 @@ export const searchProducts = async ({
   } as never) as unknown as Promise<{
     products: HttpTypes.StoreProduct[];
     count: number;
+    failed?: boolean;
   }>).catch(() => ({
     products: [] as HttpTypes.StoreProduct[],
     count: 0,
+    failed: true,
   }));
 
   const ordered =
@@ -255,5 +275,5 @@ export const searchProducts = async ({
 
   const nextPage = count > offset + limit ? page + 1 : null;
 
-  return { products: ordered, count, nextPage };
+  return { products: ordered, count, nextPage, failed };
 };

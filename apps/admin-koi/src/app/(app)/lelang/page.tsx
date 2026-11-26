@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@koi/ui';
+import { AdminError } from '@/components/AdminError';
+import { AdminPageHeader } from '@/components/AdminPageHeader';
 import { AuctionQueue } from '@/components/AuctionQueue';
 import { ROUTES } from '@/const/routes';
 import { getAuctionQueue } from '@/lib/data/auctions';
@@ -16,23 +17,18 @@ export default async function AuctionsRoute() {
 
   return (
     <div className="grid gap-6">
-      <div className="grid gap-1">
-        <h1 className="text-xl font-medium tracking-tight">Persetujuan lelang</h1>
-        <p className="text-sm text-muted-foreground">
-          Periksa kategori, foto lot, dan biaya, lalu setujui atau tolak.
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Persetujuan lelang"
+        description="Periksa kategori, foto lot, dan biaya, lalu setujui atau tolak."
+      />
 
       {queue ? (
         <AuctionQueue auctions={queue.auctions} total={queue.total} />
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Gagal memuat antrean lelang</CardTitle>
-            <CardDescription>Muat ulang halaman untuk mencoba lagi.</CardDescription>
-          </CardHeader>
-          <CardContent />
-        </Card>
+        <AdminError
+          title="Gagal memuat antrean lelang"
+          description="Antrean persetujuan lelang tidak dapat dimuat."
+        />
       )}
     </div>
   );

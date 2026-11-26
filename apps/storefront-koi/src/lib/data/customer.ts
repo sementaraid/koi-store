@@ -135,13 +135,27 @@ export async function login(formData: FormData) {
   }
 }
 
-export async function signout() {
+async function clearSession() {
   await removeAuthToken();
   await removeMemberToken();
   await removeCartId();
 
   await rotateCacheId();
 
+  // US-107 AC7: the chip and menu live in the layouts, so their cached render
+  // has to go before the caller refetches it.
+  revalidatePath('/', 'layout');
+}
+
+/** Client-callable sign out: clear the session, then the caller refreshes in place. */
+export async function signOut() {
+  await clearSession();
+  return { success: true };
+}
+
+/** The `/keluar` POST fallback keeps its redirect for a plain form submit. */
+export async function signout() {
+  await clearSession();
   redirect(`/`);
 }
 

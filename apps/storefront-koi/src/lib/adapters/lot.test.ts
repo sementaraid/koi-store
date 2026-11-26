@@ -2,9 +2,9 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 
 import { toAuctionProduct } from "./lot.ts"
-import type { StoreLot } from "../data/lots.ts"
+import type { StoreLotListItem } from "../data/lots.ts"
 
-const lot = (over: Partial<StoreLot> = {}): StoreLot => ({
+const lot = (over: Partial<StoreLotListItem> = {}): StoreLotListItem => ({
   id: "lot_1",
   lot_number: 7,
   title: "Kohaku 62",
@@ -18,6 +18,16 @@ const lot = (over: Partial<StoreLot> = {}): StoreLot => ({
   sold: null,
   cancelled: false,
   bid_count: 3,
+  variety: null,
+  size_cm: null,
+  age: null,
+  sex: null,
+  has_certificate: null,
+  certificate_issuer: null,
+  pond_origin: null,
+  breeder_notes: null,
+  video_url: null,
+  joined: false,
   auction: {
     id: "auc_1",
     status: "live",
@@ -78,6 +88,18 @@ test("the live link passes through verbatim, and stays null when unset (US-046 A
   assert.equal(toAuctionProduct(lot()).auction.live_stream_url, null)
 })
 
+test("the lot's fee category name reads Indonesian; the API row is untouched", () => {
+  const out = toAuctionProduct(
+    lot({
+      auction: {
+        ...lot().auction,
+        category: { id: "feecat_1", name: "Lokal, no certificate" }
+      }
+    })
+  )
+  assert.equal(out.listing?.category, "Lokal, tanpa sertifikat")
+})
+
 test("the detail's bids map to { bidder, amount, at }, mask verbatim (D-051)", () => {
   const out = toAuctionProduct(
     lot({
@@ -110,6 +132,14 @@ test("the lot number reaches the card state, cancelled or not", () => {
   assert.equal(toAuctionProduct(lot({ cancelled: true })).auction.lotNumber, 7)
 })
 
+test("the list's joined flag rides onto the card, false included (US-111 AC6)", () => {
+  assert.equal(toAuctionProduct(lot({ joined: true })).joined, true)
+  assert.equal(toAuctionProduct(lot({ joined: false })).joined, false)
+  // A cancelled lot keeps the flag too, even though the card never draws the
+  // note on it.
+  assert.equal(toAuctionProduct(lot({ cancelled: true, joined: true })).joined, true)
+})
+
 test("delivery, extend window and farm handle reach the spec (T-098.2)", () => {
   const out = toAuctionProduct(lot())
   assert.equal(out.auction.deliveryMethod, "courier")
@@ -121,4 +151,41 @@ test("delivery, extend window and farm handle reach the spec (T-098.2)", () => {
   assert.equal(cancelled.auction.deliveryMethod, "courier")
   assert.equal(cancelled.auction.extendWindowMinutes, 5)
   assert.equal(cancelled.auction.joinFee, 50_000)
+})
+
+// Unit-only fixture: no lot in the database carries these fields until the
+// US-105 migration is applied, so the rendering is exercised here only.
+test("the koi fields reach the listing; an old lot maps them absent (US-105 AC6)", () => {
+  const out = toAuctionProduct(
+    lot({
+      variety: "Kohaku",
+      size_cm: 48,
+      age: "Sansai (3 tahun)",
+      sex: "Betina",
+      has_certificate: false,
+      certificate_issuer: "Tidak ada (koi lokal)",
+      pond_origin: "Blitar, Jawa Timur",
+      breeder_notes: "Shiroji bersih, beni tebal.",
+      video_url: "https://youtu.be/abc123XYZ_",
+    })
+  )
+  assert.equal(out.listing?.variety, "Kohaku")
+  assert.equal(out.listing?.sizeCm, 48)
+  assert.equal(out.listing?.age, "Sansai (3 tahun)")
+  assert.equal(out.listing?.sex, "Betina")
+  assert.equal(out.listing?.hasCertificate, false)
+  assert.equal(out.listing?.certificateIssuer, "Tidak ada (koi lokal)")
+  assert.equal(out.listing?.pondOrigin, "Blitar, Jawa Timur")
+  assert.equal(out.listing?.breederNotes, "Shiroji bersih, beni tebal.")
+  assert.equal(out.listing?.videoUrl, "https://youtu.be/abc123XYZ_")
+
+  const old = toAuctionProduct(lot())
+  assert.equal(old.listing?.variety, undefined)
+  assert.equal(old.listing?.sizeCm, undefined)
+  assert.equal(old.listing?.hasCertificate, undefined)
+  assert.equal(old.listing?.videoUrl, undefined)
+
+  // has_certificate false is a real value, not "absent": it must survive.
+  const noCert = toAuctionProduct(lot({ has_certificate: false }))
+  assert.equal(noCert.listing?.hasCertificate, false)
 })

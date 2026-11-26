@@ -44,7 +44,7 @@ export function ActiveBidCard({ bid }: { bid: StoreMyBid }) {
           <h3 className="text-base font-semibold">
             <Link
               href={lotHref(lot.id)}
-              className="rounded-control after:absolute after:inset-0 after:rounded-control focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-offset-2"
+              className="rounded-control after:absolute after:inset-0 after:rounded-control focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-offset-2"
             >
               {title}
             </Link>
@@ -78,7 +78,9 @@ export function ActiveBidCard({ bid }: { bid: StoreMyBid }) {
         </div>
         <div className="col-span-2">
           <dt className="sr-only">Waktu</dt>
-          <dd className="flex flex-col text-muted-foreground tabular-nums">
+          {/* Reserve the countdown line before it mounts, so the card does not
+              grow after hydration and the skeleton swaps without a shift. */}
+          <dd className="flex min-h-10 flex-col text-muted-foreground tabular-nums">
             {remaining !== null && remaining > 0 ? (
               <span className="font-semibold text-foreground">{formatTimeLeft(remaining)}</span>
             ) : null}

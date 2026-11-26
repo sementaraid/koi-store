@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useId, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge, Button, Label } from '@koi/ui';
@@ -23,12 +23,17 @@ import {
   strikeReasonError
 } from '@/lib/helpers/strike-format';
 
+import { ConfirmDialog } from './ConfirmDialog';
+
 export type StrikeTarget = Pick<GiveStrikeInput, 'lot_id' | 'customer_id' | 'seller_id'>;
 
 export type StrikePanelProps = {
   defaultReasonType: StrikeReasonType;
   customerId: string | null;
   target: StrikeTarget;
+  /** Stable id of this panel's mount site (row id or account id). Two panels on
+      one page must not share it: their fields would share an id. */
+  idPrefix: string;
 };
 
 const REASON_TYPES: StrikeReasonType[] = [
@@ -44,14 +49,16 @@ function banToast(prefix: string, ban: { active_count: number; banned: boolean }
   return `${prefix} ${activeStrikeLabel(ban.active_count)} — ${banLabel(ban.banned).toLowerCase()}.`;
 }
 
-export function StrikePanel({ defaultReasonType, customerId, target }: StrikePanelProps) {
+export function StrikePanel({ defaultReasonType, customerId, target, idPrefix }: StrikePanelProps) {
   const router = useRouter();
-  const id = useId();
+  /* Deterministic, not `useId`, so the server HTML and the client agree. */
+  const id = `${idPrefix}-strike`;
   const [open, setOpen] = useState(false);
   const [reasonType, setReasonType] = useState<StrikeReasonType>(defaultReasonType);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [history, setHistory] = useState<StrikeHistory | null | 'loading'>(null);
 
   async function loadHistory() {
@@ -66,19 +73,22 @@ export function StrikePanel({ defaultReasonType, customerId, target }: StrikePan
     if (history === null) await loadHistory();
   }
 
-  async function submit(event: React.FormEvent) {
+  function submit(event: React.FormEvent) {
     event.preventDefault();
     const message = strikeReasonError(reason);
     if (message) {
       setError(message);
       return;
     }
-    if (!confirm(CONFIRM_COPY)) return;
+    setConfirmOpen(true);
+  }
 
+  async function confirmStrike() {
     setBusy(true);
     setError(null);
     const result = await giveStrike({ ...target, reason_type: reasonType, reason });
     setBusy(false);
+    setConfirmOpen(false);
 
     if (!result.success) {
       const info = strikeFailureInfo(result.status, result.error);
@@ -180,6 +190,17 @@ export function StrikePanel({ defaultReasonType, customerId, target }: StrikePan
           }}
         />
       ) : null}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Beri strike?"
+        description={CONFIRM_COPY}
+        confirmLabel="Beri strike"
+        busyLabel="Menyimpan…"
+        destructive
+        onConfirm={confirmStrike}
+      />
     </div>
   );
 }
@@ -222,26 +243,31 @@ function StrikeHistoryRow({
   strike: StrikeHistory['strikes'][number];
   onChanged: () => void;
 }) {
-  const id = useId();
+  /* The strike id is unique per row, so each revocation form has its own id. */
+  const id = `strike-${strike.id}`;
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const active = strike.removed_at === null;
 
-  async function remove(event: React.FormEvent) {
+  function remove(event: React.FormEvent) {
     event.preventDefault();
     const message = strikeReasonError(reason, 'Masukkan alasan pencabutan');
     if (message) {
       setError(message);
       return;
     }
-    if (!confirm('Cabut strike ini? Riwayatnya tetap tersimpan.')) return;
+    setConfirmOpen(true);
+  }
 
+  async function confirmRemove() {
     setBusy(true);
     setError(null);
     const result = await removeStrike(strike.id, reason);
     setBusy(false);
+    setConfirmOpen(false);
 
     if (!result.success) {
       const info = strikeFailureInfo(result.status, result.error);
@@ -313,6 +339,17 @@ function StrikeHistoryRow({
           </div>
         )
       ) : null}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Cabut strike?"
+        description="Cabut strike ini? Riwayatnya tetap tersimpan."
+        confirmLabel="Cabut strike"
+        busyLabel="Mencabut…"
+        destructive
+        onConfirm={confirmRemove}
+      />
     </div>
   );
 }

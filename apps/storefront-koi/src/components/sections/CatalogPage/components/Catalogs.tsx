@@ -1,4 +1,4 @@
-import { BadgeCheck, ShoppingBag } from "lucide-react"
+import { BadgeCheck, ShoppingBag, TriangleAlert } from "lucide-react"
 
 import { Button, RenderIf } from "@koi/ui"
 import { Link } from "@/components/atoms/Link/Link"
@@ -14,6 +14,7 @@ import {
 } from "@/const/catalog"
 import { EmptyFeed } from "@/components/cells/EmptyFeed/EmptyFeed"
 import { FacetSidebar } from "@/components/cells/FacetSidebar/FacetSidebar"
+import { RetryButton } from "@/components/cells/RetryButton/RetryButton"
 import { FeedFilters } from "@/components/molecules/FeedFilters/FeedFilters"
 import { FeedGrid } from "@/components/atoms/FeedGrid/FeedGrid"
 import { FeedHero } from "@/components/cells/FeedHero/FeedHero"
@@ -40,6 +41,7 @@ export function Catalogs({
   onFilterChange,
   onPageChange,
   searching = false,
+  failed = false,
   attributes,
   selected = {},
   onAttributesChange,
@@ -99,17 +101,18 @@ export function Catalogs({
             {available} ekor tersedia
           </>
         }
-      />
-
-      <FeedFilters
-        scope="catalog"
-        filter={filter}
-        onFilterChange={onFilterChange}
-        tabs={DEFAULT_CATALOG_TABS}
+        tabs={
+          <FeedFilters
+            scope="catalog"
+            filter={filter}
+            onFilterChange={onFilterChange}
+            tabs={DEFAULT_CATALOG_TABS}
+          />
+        }
       />
 
       <div
-        className={`${CONTAINER} grid gap-8 py-8 max-sm:gap-4 max-sm:py-4 lg:grid-cols-[240px_minmax(0,1fr)] lg:py-10`}
+        className={`${CONTAINER} grid gap-8 py-8 max-sm:gap-4 max-sm:py-5 lg:grid-cols-[240px_minmax(0,1fr)] lg:py-10`}
       >
         <FacetSidebar
           scope="catalog"
@@ -125,83 +128,83 @@ export function Catalogs({
           onCategoryChange={(category) => onFilterChange?.({ ...filter, category })}
           attributes={attributes}
           selected={selected}
+          onReset={reset}
+          hasFilters={filtered}
           {...(onAttributesChange ? { onAttributesChange } : {})}
         />
 
         <div className="min-w-0">
-          <FeedSummary
-            total={total}
-            statusLabel={AVAILABILITY_LABEL[filter.status]}
-            category={filter.category}
-            page={current}
-            pageCount={pageCount}
-            onReset={filtered ? reset : undefined}
-          />
+          {failed ? (
+            <div role="alert">
+              <EmptyFeed
+                icon={<TriangleAlert aria-hidden />}
+                narrowing={false}
+                noMatchTitle="Katalog belum bisa dimuat"
+                noMatchBody="Ada gangguan saat mengambil daftar koi. Data Anda aman. Muat ulang daftar ini."
+                action={<RetryButton />}
+              />
+            </div>
+          ) : (
+            <>
+              <FeedSummary
+                total={total}
+                statusLabel={AVAILABILITY_LABEL[filter.status]}
+                category={filter.category}
+                page={current}
+                pageCount={pageCount}
+                onReset={filtered ? reset : undefined}
+              />
 
-          <RenderIf when={items.length ? items : null}>
-            {(list) => (
-              <FeedGrid cols={3}>
-                {list.map((item) => (
-                  <ProductCard
-                    key={item.id}
-                    product={item}
-                    href={koiHref(item.id)}
+              <RenderIf when={items.length ? items : null}>
+                {(list) => (
+                  <FeedGrid cols={3}>
+                    {list.map((item) => (
+                      <ProductCard
+                        key={item.id}
+                        product={item}
+                        href={koiHref(item.id)}
+                      />
+                    ))}
+                  </FeedGrid>
+                )}
+              </RenderIf>
+
+              <RenderIf when={!items.length}>
+                {() => (
+                  <EmptyFeed
+                    icon={<ShoppingBag aria-hidden />}
+                    narrowing={narrowing}
+                    {...(filtered ? { onReset: reset } : {})}
+                    noMatchTitle="Tidak ada koi yang cocok"
+                    noMatchBody={
+                      searching
+                        ? "Coba kata kunci lain, atau telusuri seluruh katalog."
+                        : "Coba longgarkan filter, atau lihat semua koi yang tersedia."
+                    }
+                    emptyTitle="Belum ada koi"
+                    emptyBody="Stok baru masuk setiap minggu. Pantau halaman ini atau ikut lelang yang sedang dibuka."
                     action={
                       <Button
-                        render={<Link href={koiHref(item.id)} />}
-                        size="sm"
-                        variant={
-                          item.sale.availability === "available"
-                            ? "solid"
-                            : "outline"
+                        render={
+                          <Link href={searching ? ROUTES.catalogs : ROUTES.auctions} />
                         }
-                        className="flex-1"
+                        nativeButton={false}
                       >
-                        {item.sale.availability === "available"
-                          ? "Beli sekarang"
-                          : "Lihat detail"}
+                        {searching ? "Lihat semua koi" : "Lihat lelang"}
                       </Button>
                     }
                   />
-                ))}
-              </FeedGrid>
-            )}
-          </RenderIf>
+                )}
+              </RenderIf>
 
-          <RenderIf when={!items.length}>
-            {() => (
-              <EmptyFeed
-                icon={<ShoppingBag aria-hidden />}
-                narrowing={narrowing}
-                {...(filtered ? { onReset: reset } : {})}
-                noMatchTitle="Tidak ada koi yang cocok"
-                noMatchBody={
-                  searching
-                    ? "Coba kata kunci lain, atau telusuri seluruh katalog."
-                    : "Coba longgarkan filter, atau lihat semua koi yang tersedia."
-                }
-                emptyTitle="Belum ada koi"
-                emptyBody="Stok baru masuk setiap minggu. Pantau halaman ini atau ikut lelang yang sedang dibuka."
-                action={
-                  <Button
-                    render={
-                      <Link href={searching ? ROUTES.catalogs : ROUTES.auctions} />
-                    }
-                    nativeButton={false}
-                  >
-                    {searching ? "Lihat semua koi" : "Lihat lelang"}
-                  </Button>
-                }
+              <FeedPagination
+                page={current}
+                pageCount={pageCount}
+                href={basePath}
+                onPageChange={onPageChange}
               />
-            )}
-          </RenderIf>
-
-          <FeedPagination
-            page={current}
-            pageCount={pageCount}
-            href={basePath}
-            onPageChange={onPageChange}
-          />
+            </>
+          )}
         </div>
       </div>
     </div>
