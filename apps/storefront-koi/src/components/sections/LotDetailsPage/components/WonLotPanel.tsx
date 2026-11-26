@@ -5,9 +5,10 @@ import { useState, type FormEvent } from 'react';
 import { ChevronRight, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { Badge, Button, FormField, RenderIf } from '@koi/ui';
+import { Badge, Button, RenderIf } from '@koi/ui';
 import { Link } from '@/components/atoms';
 import { ArrivalProof } from '@/components/molecules/ArrivalProof/ArrivalProof';
+import { FileField } from '@/components/molecules/FileField/FileField';
 import { PaymentInstructions } from '@/components/molecules/PaymentInstructions/PaymentInstructions';
 import { PaymentProof } from '@/components/molecules/PaymentProof/PaymentProof';
 import { ROUTES, myBidsTabHref } from '@/const/routes';
@@ -95,6 +96,7 @@ export function WonLotPanel({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fileWarning, setFileWarning] = useState<string | null>(null);
+  const [claimVideo, setClaimVideo] = useState<File | null>(null);
 
   const label = wonLotStatusLabel(status);
   const action = wonLotAction(status);
@@ -122,8 +124,9 @@ export function WonLotPanel({
     if (info.refresh) router.refresh();
   }
 
-  function onFileChange(files: FileList | null) {
-    const file = files?.[0];
+  function onFileChange(files: File[]) {
+    const file = files[0];
+    setClaimVideo(file ?? null);
     setFileWarning(
       file && file.size > CLAIM_VIDEO_MAX_BYTES
         ? 'Ukuran video maksimal 100 MB. Pilih video yang lebih kecil.'
@@ -131,13 +134,18 @@ export function WonLotPanel({
     );
   }
 
+  function removeFile() {
+    setClaimVideo(null);
+    setFileWarning(null);
+  }
+
   async function submitClaim(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const video = form.get('video');
+    const video = claimVideo;
     const remedy = form.get('remedy');
 
-    if (!(video instanceof File) || video.size === 0) {
+    if (!video) {
       setError('Video unboxing wajib diunggah.');
       return;
     }
@@ -278,15 +286,15 @@ export function WonLotPanel({
               <RemedyOption value="replacement" current="replacement" label="Ikan pengganti" />
             </fieldset>
 
-            <FormField
+            <FileField
               id="lot-claim-video"
               label="Video unboxing"
-              type="file"
-              name="video"
               accept="video/mp4,video/webm,video/quicktime"
               hint="MP4, WebM, atau QuickTime. Maksimal 100 MB."
+              files={claimVideo ? [claimVideo] : []}
+              onChoose={onFileChange}
+              onRemove={removeFile}
               error={fileWarning ?? undefined}
-              onChange={(e) => onFileChange(e.target.files)}
             />
 
             <div className="flex flex-wrap items-center gap-2">

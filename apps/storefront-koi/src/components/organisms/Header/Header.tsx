@@ -84,7 +84,7 @@ export function Header({
             {() => (
               <Link
                 href={ROUTES.myBids}
-                className="hidden h-10 items-center rounded-md px-2 text-sm font-semibold text-foreground outline-none hover:text-accent-ink focus-visible:ring-2 focus-visible:ring-ring lg:inline-flex"
+                className="hidden h-10 items-center rounded-control px-2 text-sm font-semibold text-foreground outline-none hover:text-accent-ink focus-visible:ring-2 focus-visible:ring-ring lg:inline-flex"
               >
                 Bid Saya
               </Link>

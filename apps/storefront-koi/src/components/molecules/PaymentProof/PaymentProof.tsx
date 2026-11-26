@@ -1,18 +1,15 @@
 'use client';
 
-import { AlertTriangle, CheckCircle2, Clock, ImageUp, Upload, X } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@koi/ui';
+import { FileField } from '@/components/molecules/FileField/FileField';
 import { uploadPaymentProof, type WonLotPaymentProof } from '@/lib/data/lots';
 import { formatDeadline } from '@/lib/helpers/format-deadline';
-import {
-  MAX_SCREENSHOT_BYTES,
-  formatFileSize,
-  screenshotError
-} from '@/lib/helpers/topup-request';
+import { MAX_SCREENSHOT_BYTES, screenshotError } from '@/lib/helpers/topup-request';
 
 export type PaymentProofProps = {
   lotId: string;
@@ -24,22 +21,9 @@ export type PaymentProofProps = {
 // won-lot route so the admin's decision survives a reload.
 export function PaymentProof({ lotId, proof }: PaymentProofProps) {
   const router = useRouter();
-  const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    if (!file) {
-      setPreview(null);
-      return;
-    }
-
-    const url = URL.createObjectURL(file);
-    setPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [file]);
 
   function acceptFile(candidate: File | undefined) {
     if (!candidate) return;
@@ -57,7 +41,6 @@ export function PaymentProof({ lotId, proof }: PaymentProofProps) {
   function removeFile() {
     setFile(null);
     setError(null);
-    if (inputRef.current) inputRef.current.value = '';
   }
 
   async function submit() {
@@ -135,91 +118,21 @@ export function PaymentProof({ lotId, proof }: PaymentProofProps) {
         </div>
       ) : null}
 
-      <div className="grid gap-1">
-        <p className="text-sm font-medium text-foreground">
-          {rejected ? 'Unggah bukti transfer lagi' : 'Unggah bukti transfer'}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          Foto atau tangkapan layar. JPG, PNG, atau WEBP, maksimal{' '}
-          {MAX_SCREENSHOT_BYTES / (1024 * 1024)} MB.
-        </p>
-      </div>
-
-      <input
-        ref={inputRef}
-        type="file"
+      <FileField
+        id="payment-proof"
+        label={rejected ? 'Unggah bukti transfer lagi' : 'Unggah bukti transfer'}
+        hint={
+          <>
+            Foto atau tangkapan layar. JPG, PNG, atau WEBP, maksimal{' '}
+            {MAX_SCREENSHOT_BYTES / (1024 * 1024)} MB.
+          </>
+        }
         accept="image/jpeg,image/png,image/webp"
-        className="sr-only"
-        tabIndex={-1}
-        aria-label="Pilih bukti transfer"
-        onChange={(event) => {
-          acceptFile(event.target.files?.[0]);
-          event.target.value = '';
-        }}
+        files={file ? [file] : []}
+        onChoose={files => acceptFile(files[0])}
+        onRemove={removeFile}
+        error={error ?? undefined}
       />
-
-      {file ? (
-        <div className="flex items-center gap-3 rounded-control border border-border p-3">
-          {preview ? (
-            // eslint-disable-next-line @next/next/no-img-element -- a local object URL, not a catalog image
-            <img
-              src={preview}
-              alt="Pratinjau bukti transfer"
-              className="size-14 shrink-0 rounded object-cover"
-            />
-          ) : (
-            <span className="flex size-14 shrink-0 items-center justify-center rounded bg-muted">
-              <ImageUp aria-hidden className="size-6 text-muted-foreground" />
-            </span>
-          )}
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-foreground">{file.name}</p>
-            <p className="text-xs text-muted-foreground">
-              Terpilih · {formatFileSize(file.size)}
-            </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-1">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="min-h-11 md:min-h-8"
-              onClick={() => inputRef.current?.click()}
-            >
-              Ganti
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className="size-11 md:size-8"
-              aria-label="Hapus bukti transfer"
-              onClick={removeFile}
-            >
-              <X aria-hidden />
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col items-center gap-2 rounded-control border border-dashed border-border bg-muted/30 p-4 text-center">
-          <Upload aria-hidden className="size-6 text-muted-foreground" />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="min-h-11 md:min-h-8"
-            onClick={() => inputRef.current?.click()}
-          >
-            Pilih file
-          </Button>
-        </div>
-      )}
-
-      {error ? (
-        <p role="alert" className="text-xs text-destructive-ink">
-          {error}
-        </p>
-      ) : null}
 
       {file ? (
         <Button

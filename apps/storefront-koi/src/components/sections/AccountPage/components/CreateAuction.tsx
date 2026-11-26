@@ -7,8 +7,9 @@ import { useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, FormField, Label, RenderIf } from '@koi/ui';
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, FormField, Label, RenderIf, Textarea } from '@koi/ui';
 import { NativeSelect } from '@koi/ui/primitives/native-select';
+import { FileField } from '@/components/molecules';
 import { createAuction, uploadLotPhoto, type FeeCategory } from '@/lib/data/auctions';
 import { feeCategoryLabel } from '@/lib/helpers/fee-category-label';
 import {
@@ -32,7 +33,7 @@ import type { AccountIdentity } from './AccountFrame';
 
 import { AccountFrame } from './AccountFrame';
 
-type LotPhotos = { urls: string[]; uploading: boolean };
+type LotPhotos = { urls: string[]; files: File[]; uploading: boolean };
 
 export type CreateAuctionProps = {
   categories: FeeCategory[] | null;
@@ -42,7 +43,9 @@ export type CreateAuctionProps = {
 
 export function CreateAuction({ categories, openOrders, identity }: CreateAuctionProps) {
   const router = useRouter();
-  const [photos, setPhotos] = useState<LotPhotos[]>([{ urls: [], uploading: false }]);
+  const [photos, setPhotos] = useState<LotPhotos[]>([
+    { urls: [], files: [], uploading: false }
+  ]);
   const [photoError, setPhotoError] = useState<string | null>(null);
 
   const {
@@ -68,8 +71,7 @@ export function CreateAuction({ categories, openOrders, identity }: CreateAuctio
   const feeCategoryId = watch('fee_category_id');
   const category = categories?.find((c) => c.id === feeCategoryId);
 
-  async function onPhotosChosen(index: number, files: FileList | null) {
-    const list = Array.from(files ?? []);
+  async function onPhotosChosen(index: number, list: File[]) {
     if (!list.length) return;
 
     setPhotoError(null);
@@ -92,7 +94,23 @@ export function CreateAuction({ categories, openOrders, identity }: CreateAuctio
 
     setPhotos((current) =>
       current.map((p, i) =>
-        i === index ? { urls: [...p.urls, ...uploaded], uploading: false } : p
+        i === index
+          ? { urls: [...p.urls, ...uploaded], files: [...p.files, ...list], uploading: false }
+          : p
+      )
+    );
+  }
+
+  function removePhoto(index: number, photoIndex: number) {
+    setPhotos((current) =>
+      current.map((p, i) =>
+        i === index
+          ? {
+              ...p,
+              urls: p.urls.filter((_, j) => j !== photoIndex),
+              files: p.files.filter((_, j) => j !== photoIndex)
+            }
+          : p
       )
     );
   }
@@ -100,7 +118,7 @@ export function CreateAuction({ categories, openOrders, identity }: CreateAuctio
   function addLot() {
     if (fields.length >= MAX_LOTS_PER_AUCTION) return;
     append(EMPTY_LOT);
-    setPhotos((current) => [...current, { urls: [], uploading: false }]);
+    setPhotos((current) => [...current, { urls: [], files: [], uploading: false }]);
   }
 
   function removeLot(index: number) {
@@ -198,7 +216,7 @@ export function CreateAuction({ categories, openOrders, identity }: CreateAuctio
               <CardContent className="grid gap-4 px-0 pb-0">
                 <div className="grid gap-1.5">
                   <Label htmlFor="fee-category">Kategori biaya</Label>
-                  <NativeSelect id="fee-category" {...register('fee_category_id')}>
+                  <NativeSelect id="fee-category" variant="filled" {...register('fee_category_id')}>
                     {cats.map((c) => (
                       <option key={c.id} value={c.id}>
                         {feeCategoryLabel(c.name)}
@@ -255,7 +273,7 @@ export function CreateAuction({ categories, openOrders, identity }: CreateAuctio
 
                 <div className="grid gap-1.5">
                   <Label htmlFor="delivery-method">Metode pengiriman</Label>
-                  <NativeSelect id="delivery-method" {...register('delivery_method')}>
+                  <NativeSelect id="delivery-method" variant="filled" {...register('delivery_method')}>
                     <option value="courier">Kurir</option>
                     <option value="self_delivery">Antar sendiri</option>
                   </NativeSelect>
@@ -290,10 +308,9 @@ export function CreateAuction({ categories, openOrders, identity }: CreateAuctio
 
                   <div className="grid gap-1.5">
                     <Label htmlFor={`lot-${index}-description`}>Deskripsi (opsional)</Label>
-                    <textarea
+                    <Textarea
                       id={`lot-${index}-description`}
                       rows={3}
-                      className="w-full min-w-0 resize-y rounded-control border border-input bg-transparent px-2.5 py-2 text-base outline-none placeholder:text-muted-foreground focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 md:text-sm dark:bg-input/30"
                       {...register(`lots.${index}.description`)}
                     />
                   </div>
@@ -303,6 +320,7 @@ export function CreateAuction({ categories, openOrders, identity }: CreateAuctio
                       <Label htmlFor={`lot-${index}-variety`}>Varietas</Label>
                       <NativeSelect
                         id={`lot-${index}-variety`}
+                        variant="filled"
                         {...register(`lots.${index}.variety`)}
                       >
                         <option value="">Pilih varietas</option>
@@ -331,7 +349,7 @@ export function CreateAuction({ categories, openOrders, identity }: CreateAuctio
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="grid gap-1.5">
                       <Label htmlFor={`lot-${index}-age`}>Umur</Label>
-                      <NativeSelect id={`lot-${index}-age`} {...register(`lots.${index}.age`)}>
+                      <NativeSelect id={`lot-${index}-age`} variant="filled" {...register(`lots.${index}.age`)}>
                         <option value="">Tidak diisi</option>
                         {KOI_AGES.map((age) => (
                           <option key={age} value={age}>
@@ -342,7 +360,7 @@ export function CreateAuction({ categories, openOrders, identity }: CreateAuctio
                     </div>
                     <div className="grid gap-1.5">
                       <Label htmlFor={`lot-${index}-sex`}>Jenis kelamin</Label>
-                      <NativeSelect id={`lot-${index}-sex`} {...register(`lots.${index}.sex`)}>
+                      <NativeSelect id={`lot-${index}-sex`} variant="filled" {...register(`lots.${index}.sex`)}>
                         <option value="">Tidak diisi</option>
                         {KOI_SEXES.map((sex) => (
                           <option key={sex} value={sex}>
@@ -357,6 +375,7 @@ export function CreateAuction({ categories, openOrders, identity }: CreateAuctio
                     <Label htmlFor={`lot-${index}-certificate`}>Sertifikat</Label>
                     <NativeSelect
                       id={`lot-${index}-certificate`}
+                      variant="filled"
                       {...register(`lots.${index}.has_certificate`)}
                     >
                       <option value="no">Tidak ada (koi lokal)</option>
@@ -394,10 +413,9 @@ export function CreateAuction({ categories, openOrders, identity }: CreateAuctio
 
                   <div className="grid gap-1.5">
                     <Label htmlFor={`lot-${index}-notes`}>Catatan breeder (opsional)</Label>
-                    <textarea
+                    <Textarea
                       id={`lot-${index}-notes`}
                       rows={3}
-                      className="w-full min-w-0 resize-y rounded-control border border-input bg-transparent px-2.5 py-2 text-base outline-none placeholder:text-muted-foreground focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 md:text-sm dark:bg-input/30"
                       {...register(`lots.${index}.breeder_notes`)}
                     />
                     <RenderIf when={errors.lots?.[index]?.breeder_notes?.message}>
@@ -421,15 +439,17 @@ export function CreateAuction({ categories, openOrders, identity }: CreateAuctio
                   </div>
 
                   <div className="grid gap-1.5">
-                    <FormField
+                    <FileField
                       id={`lot-${index}-photos`}
                       label="Foto lot"
-                      type="file"
                       accept="image/jpeg,image/png,image/webp"
                       multiple
                       disabled={photos[index]?.uploading}
                       hint="Foto pertama jadi gambar utama lot."
-                      onChange={(e) => onPhotosChosen(index, e.target.files)}
+                      files={photos[index]?.files ?? []}
+                      onChoose={(files) => onPhotosChosen(index, files)}
+                      onRemove={(photoIndex) => removePhoto(index, photoIndex)}
+                      fileStatus="Terunggah"
                     />
                     <RenderIf when={photos[index]?.urls.length ? true : undefined}>
                       {() => (

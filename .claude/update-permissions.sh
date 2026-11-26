@@ -1,20 +1,31 @@
 #!/usr/bin/env bash
 # Merge the Koi Store dev allowlist into .claude/settings.local.json.
 # Safe to rerun: existing entries are kept, duplicates are not added.
-# Usage: .claude/update-permissions.sh [--dry-run]
+#
+# Usage: .claude/update-permissions.sh [all|bash|playwright] [--dry-run]
+#   all         Bash rules + every Playwright MCP tool (default)
+#   bash        only the Bash(...) rules
+#   playwright  only mcp__playwright
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 file="$root/.claude/settings.local.json"
+mode="all"
 dry=0
-[[ "${1:-}" == "--dry-run" ]] && dry=1
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run) dry=1 ;;
+    all|bash|playwright) mode="$arg" ;;
+    *) echo "unknown argument: $arg" >&2; exit 2 ;;
+  esac
+done
 
-python3 - "$file" "$dry" <<'PY'
+python3 - "$file" "$dry" "$mode" <<'PY'
 import json, os, sys
 
-path, dry = sys.argv[1], sys.argv[2] == "1"
+path, dry, mode = sys.argv[1], sys.argv[2] == "1", sys.argv[3]
 
-allow = [
+bash_rules = [
     # checks and dev commands used by the role agents
     "Bash(bun run:*)",
     "Bash(bun test:*)",
@@ -45,10 +56,20 @@ allow = [
     # local dev server probes only
     "Bash(curl http://localhost:*)",
     "Bash(curl http://127.0.0.1:*)",
+]
+
+mcp_rules = [
     # every tool of the Playwright MCP server, including future ones.
     # Note: covers browser_run_code_unsafe too.
     "mcp__playwright",
 ]
+
+if mode == "bash":
+    allow = bash_rules
+elif mode == "playwright":
+    allow = mcp_rules
+else:
+    allow = bash_rules + mcp_rules
 
 data = {}
 if os.path.exists(path):
@@ -61,7 +82,7 @@ added = [r for r in allow if r not in current]
 merged = current + added
 perms["allow"] = merged
 
-print(f"{path}: {len(current)} -> {len(merged)} rules")
+print(f"{path}: {len(current)} -> {len(merged)} rules (mode: {mode})")
 for r in added:
     print("  +", r)
 if not added:

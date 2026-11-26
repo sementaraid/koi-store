@@ -61,7 +61,7 @@ export function AccountNav({
       aria-label="Menu akun"
       className={className}
     >
-      <ul className="flex flex-col gap-1">
+      <ul className="grid grid-cols-3 gap-2 lg:grid-cols-2">
         {items.map((item) => (
           <Row
             key={item.href}
@@ -81,7 +81,7 @@ export function AccountNav({
               role="separator"
               className="mx-3 my-2 h-px bg-divider"
             />
-            <ul className="flex flex-col gap-1">
+            <ul className="grid grid-cols-3 gap-2 lg:grid-cols-2">
               {rows.map((item) => (
                 <Row
                   key={item.href}
@@ -119,7 +119,7 @@ function Row({
   const Icon = ICONS[item.href];
 
   const className = cn(
-    'flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2 text-sm whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset focus-visible:ring-offset-0 lg:min-h-10',
+    'flex min-h-20 w-full flex-col items-center justify-center gap-1.5 rounded-control px-2 py-3 text-center text-xs leading-tight transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset focus-visible:ring-offset-0',
     current
       ? 'bg-accent font-semibold text-accent-ink'
       : signout
@@ -129,22 +129,24 @@ function Row({
 
   const body = (
     <>
-      <RenderIf when={Icon}>
-        {(Glyph) => (
-          <Glyph
-            aria-hidden
-            className="size-4.5 shrink-0"
-          />
-        )}
-      </RenderIf>
-      <span className="min-w-0 flex-1 truncate text-start">{item.label}</span>
-      <RenderIf when={item.count}>
-        {(count) => (
-          <span className="min-w-5 rounded-full bg-destructive/12 px-1.5 py-0.5 text-center text-2xs font-bold text-destructive-ink tabular-nums">
-            {count}
-          </span>
-        )}
-      </RenderIf>
+      <span className="relative grid size-6 shrink-0 place-items-center">
+        <RenderIf when={Icon}>
+          {(Glyph) => (
+            <Glyph
+              aria-hidden
+              className="size-5"
+            />
+          )}
+        </RenderIf>
+        <RenderIf when={item.count}>
+          {(count) => (
+            <span className="absolute -top-2 -right-3 min-w-5 rounded-full bg-destructive/12 px-1.5 py-0.5 text-center text-2xs font-bold text-destructive-ink tabular-nums">
+              {count}
+            </span>
+          )}
+        </RenderIf>
+      </span>
+      <span className="max-w-full break-words">{item.label}</span>
     </>
   );
 

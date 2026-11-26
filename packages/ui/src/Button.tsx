@@ -1,7 +1,7 @@
 import { isValidElement } from "react"
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "cn"
+import { cn } from "./cn"
 
 /* koi button. Primary (`solid`) and `outline` follow the redesign: 12 px radius,
    semibold, a soft lift, and a top-to-bottom gradient on primary. The other

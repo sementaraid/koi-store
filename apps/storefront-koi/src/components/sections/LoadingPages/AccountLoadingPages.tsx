@@ -14,20 +14,20 @@ import { LoadingRegion } from './LoadingPages';
  * its `<Suspense>` render the same skeleton.
  */
 
-// One menu row (AccountNav: min-h-11). Eight account pages, then the divider and
-// the farm and sign-out rows (US-103 AC10).
+// One menu tile (AccountNav: min-h-20). Eight account pages, then the divider
+// and the farm and sign-out tiles (US-103 AC10).
 function MenuRows() {
   return (
     <>
-      <div className="flex flex-col gap-1">
+      <div className="grid grid-cols-3 gap-2 lg:grid-cols-2">
         {Array.from({ length: 8 }, (_, i) => (
-          <Skeleton key={i} className="h-11 w-full rounded-lg" />
+          <Skeleton key={i} className="h-20 w-full rounded-control" />
         ))}
       </div>
       <Skeleton className="mx-3 my-2 h-px w-[calc(100%-1.5rem)]" />
-      <div className="flex flex-col gap-1">
+      <div className="grid grid-cols-3 gap-2 lg:grid-cols-2">
         {Array.from({ length: 2 }, (_, i) => (
-          <Skeleton key={i} className="h-11 w-full rounded-lg" />
+          <Skeleton key={i} className="h-20 w-full rounded-control" />
         ))}
       </div>
     </>

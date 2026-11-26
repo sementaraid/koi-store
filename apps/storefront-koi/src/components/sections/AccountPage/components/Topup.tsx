@@ -7,15 +7,13 @@ import {
   Banknote,
   CheckCircle2,
   Clock,
-  ImageUp,
   Info,
   Upload,
-  X,
   XCircle
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -31,6 +29,7 @@ import {
   RenderIf
 } from '@koi/ui';
 import { CopyValue, EmptyFeed } from '@/components/cells';
+import { FileField } from '@/components/molecules';
 import { ROUTES } from '@/const/routes';
 import { createTopupRequest } from '@/lib/data/topups';
 import type {
@@ -43,7 +42,6 @@ import { formatDeadline } from '@/lib/helpers/format-deadline';
 import { formatPrice, formatPriceCompact, formatRupiahNumber } from '@/lib/helpers/format-price';
 import {
   MAX_SCREENSHOT_BYTES,
-  formatFileSize,
   parseTopupAmount,
   screenshotError,
   topupDisabledReason
@@ -90,11 +88,8 @@ export function Topup({
   // differently on the server and the client under Next's bundled React.
   const amountId = 'topup-amount';
   const formRef = useRef<HTMLFormElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const amountRef = useRef<HTMLInputElement | null>(null);
-  const [dragging, setDragging] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
 
   const {
     control,
@@ -134,17 +129,6 @@ export function Topup({
   );
   const amountIsOther = amountText !== '' && !chipValues.includes(Number(amountText));
 
-  useEffect(() => {
-    if (!file) {
-      setPreview(null);
-      return;
-    }
-
-    const url = URL.createObjectURL(file);
-    setPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [file]);
-
   function acceptFile(candidate: File | undefined) {
     if (!candidate) return;
 
@@ -157,8 +141,8 @@ export function Topup({
     clearErrors('screenshot');
     setSubmitted(false);
 
-    // RHF wants a FileList; the file picker and the drop area both produce one
-    // this way, so the form validates the same screenshot the preview shows.
+    // RHF wants a FileList; the picker and the drop area both produce one this
+    // way, so the form validates the same screenshot the field shows.
     const transfer = new DataTransfer();
     transfer.items.add(candidate);
     setValue('screenshot', transfer.files, { shouldValidate: true });
@@ -167,10 +151,9 @@ export function Topup({
   function removeFile() {
     // `screenshot` is set through `setValue`, never registered, so `resetField`
     // does nothing here. Store an empty FileList instead: that clears the value
-    // the submit reads, the preview and the input's own selection.
+    // the submit reads and the field's own selection.
     setValue('screenshot', new DataTransfer().files, { shouldValidate: false });
     clearErrors('screenshot');
-    if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
   function chooseAmount(amount: number) {
@@ -332,15 +315,15 @@ export function Topup({
                   </Label>
                   <div
                     className={cn(
-                      'flex h-12 items-center gap-2 rounded-field bg-muted px-2',
+                      'flex h-12 items-center gap-3 rounded-field bg-field pr-1.5 pl-4',
                       fieldState.error
-                        ? 'ring-1 ring-destructive'
-                        : 'focus-within:ring-2 focus-within:ring-accent-ink/40'
+                        ? 'bg-destructive/5 ring-[1.5px] ring-destructive ring-inset'
+                        : 'focus-within:bg-accent focus-within:ring-[1.5px] focus-within:ring-ring focus-within:ring-inset'
                     )}
                   >
                     <span
                       aria-hidden
-                      className="inline-flex h-9 shrink-0 items-center rounded-control bg-background px-2.5 shadow-xs before:text-sm before:font-semibold before:text-muted-foreground before:content-['Rp']"
+                      className="inline-flex h-9 shrink-0 items-center rounded-md border border-divider bg-background px-3 text-sm font-semibold text-muted-foreground shadow-xs before:content-['Rp'] -ml-2.5"
                     />
                     <input
                       id={amountId}
@@ -362,7 +345,7 @@ export function Topup({
                       onBlur={field.onBlur}
                       aria-invalid={fieldState.error ? true : undefined}
                       aria-describedby={describedBy}
-                      className="h-full w-full min-w-0 bg-transparent text-base text-foreground tabular-nums outline-none placeholder:text-muted-foreground"
+                      className="h-full w-full min-w-0 bg-transparent text-base text-foreground tabular-nums outline-none placeholder:text-muted-foreground md:text-[15px]"
                     />
                   </div>
                   {showHint ? (
@@ -389,103 +372,25 @@ export function Topup({
           <Card className="order-3 px-5 py-5 lg:rounded-none lg:border-0 lg:bg-transparent lg:px-6 lg:pt-0 lg:pb-6 lg:shadow-none">
             <StepHeading step={3}>Unggah bukti transfer</StepHeading>
 
-          <div className="mt-4 grid gap-3">
-            <input
-              ref={fileInputRef}
-              type="file"
+          <div className="mt-4">
+            <FileField
+              id="topup-screenshot"
+              label="Bukti transfer"
+              hint={
+                <>
+                  Foto atau tangkapan layar. JPG, PNG, atau WEBP, maksimal{' '}
+                  {MAX_SCREENSHOT_BYTES / (1024 * 1024)} MB.
+                </>
+              }
               accept="image/jpeg,image/png,image/webp"
-              className="sr-only"
-              tabIndex={-1}
-              aria-label="Pilih bukti transfer"
-              onChange={event => {
-                acceptFile(event.target.files?.[0]);
-                event.target.value = '';
-              }}
+              files={file ? [file] : []}
+              onChoose={files => acceptFile(files[0])}
+              onRemove={removeFile}
+              dragAndDrop
+              dragLabel="atau tarik foto ke sini"
+              fileStatus="Terunggah"
+              error={errors.screenshot?.message}
             />
-
-            {file ? (
-              <div className="flex items-center gap-3 rounded-control border border-border p-3">
-                {preview ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- a local object URL, not a catalog image
-                  <img
-                    src={preview}
-                    alt="Pratinjau bukti transfer"
-                    className="size-14 shrink-0 rounded object-cover"
-                  />
-                ) : (
-                  <span className="flex size-14 shrink-0 items-center justify-center rounded bg-muted">
-                    <ImageUp aria-hidden className="size-6 text-muted-foreground" />
-                  </span>
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-foreground">{file.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Terunggah · {formatFileSize(file.size)}
-                  </p>
-                </div>
-                <div className="flex shrink-0 items-center gap-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    Ganti
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label="Hapus bukti transfer"
-                    onClick={removeFile}
-                  >
-                    <X aria-hidden />
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div
-                onDragOver={event => {
-                  event.preventDefault();
-                  setDragging(true);
-                }}
-                onDragLeave={() => setDragging(false)}
-                onDrop={event => {
-                  event.preventDefault();
-                  setDragging(false);
-                  acceptFile(event.dataTransfer.files?.[0]);
-                }}
-                className={cn(
-                  'flex flex-col items-center gap-2 rounded-control border border-dashed p-6 text-center',
-                  dragging
-                    ? 'border-accent-ink bg-accent'
-                    : 'border-outline-edge bg-muted/40'
-                )}
-              >
-                <Upload aria-hidden className="size-8 text-muted-foreground" />
-                <p className="text-sm text-foreground">
-                  <span className="font-semibold">Tarik foto ke sini</span> atau{' '}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    Pilih file
-                  </Button>
-                </p>
-              </div>
-            )}
-
-            <p className="text-sm text-muted-foreground">
-              Foto atau tangkapan layar. JPG, PNG, atau WEBP, maksimal{' '}
-              {MAX_SCREENSHOT_BYTES / (1024 * 1024)} MB.
-            </p>
-            {errors.screenshot?.message ? (
-              <p role="alert" className="text-sm text-destructive-ink">
-                {errors.screenshot.message}
-              </p>
-            ) : null}
           </div>
 
           <div className="mt-4 grid gap-2">

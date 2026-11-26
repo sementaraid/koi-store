@@ -13,6 +13,7 @@ export {
   CardTitle,
   Input,
   RenderIf,
+  Textarea,
 } from '@koi/ui';
 export { Eyebrow } from './Eyebrow/Eyebrow';
 export { FeedGrid } from './FeedGrid/FeedGrid';

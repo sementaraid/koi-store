@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { Button, Label, RenderIf } from '@koi/ui';
+import { Button, Label, RenderIf, Textarea } from '@koi/ui';
 import {
   Sheet,
   SheetContent,
@@ -128,14 +128,13 @@ export function RateFarmer({ lotId, sellerName }: RateFarmerProps) {
                   {noteLength}/{NOTE_MAX}
                 </span>
               </div>
-              <textarea
+              <Textarea
                 id={`${id}-note`}
                 rows={5}
                 maxLength={NOTE_MAX}
                 placeholder="Kondisi koi saat tiba, pengemasan, komunikasi peternak…"
                 aria-invalid={errors.note ? true : undefined}
                 aria-describedby={errors.note ? noteErrorId : undefined}
-                className="w-full min-w-0 resize-y rounded-control border border-input bg-transparent px-2.5 py-2 text-base transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30"
                 {...register('note')}
               />
               <RenderIf when={errors.note?.message}>

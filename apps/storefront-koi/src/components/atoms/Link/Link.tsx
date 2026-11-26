@@ -11,9 +11,12 @@ function Link({ className, href, ...props }: LinkProps) {
      outline is removed, so draw the same ring the Button uses, small enough to
      hug the text. Callers keep control through `cn`: a caller drawing its own
      ring (e.g. a card-wide `after:` ring) overrides this with
-     `focus-visible:ring-0 focus-visible:ring-offset-0`. */
+     `focus-visible:ring-0 focus-visible:ring-offset-0`. The default 4 px corner
+     is a base-layer rule on `[data-slot="link"]` (globals.css), not a class:
+     Base UI appends a server-rendered Button's variant classes to this anchor
+     after the atom renders, and a utility radius must be able to beat it. */
   const cls = cn(
-    "rounded-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none",
+    "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none",
     className
   )
 

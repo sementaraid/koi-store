@@ -25,10 +25,13 @@ import {
   CardHeader,
   CardTitle,
   FormField,
+  Input,
   Label,
-  RenderIf
+  RenderIf,
+  Textarea
 } from '@koi/ui';
 import { Link } from '@/components/atoms';
+import { FileField } from '@/components/molecules';
 import { ROUTES } from '@/const/routes';
 import { registerFarm, type FarmSeller, type FarmStep, type FarmUploads } from '@/lib/data/farm';
 import {
@@ -224,7 +227,7 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
 
   const phone = customer.phone?.trim();
 
-  function chooseKtp(file: File | undefined, input: HTMLInputElement) {
+  function chooseKtp(file: File | undefined) {
     setFileError(null);
     if (!file) {
       setKtp(null);
@@ -234,16 +237,14 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
     if (error) {
       setFileError(`Foto KTP: ${error}`);
       setKtp(null);
-      input.value = '';
       return;
     }
     setKtp(file);
     setUploads((current) => ({ ...current, ktp_photo_key: undefined }));
   }
 
-  function choosePhotos(files: FileList | null, input: HTMLInputElement) {
+  function choosePhotos(list: File[]) {
     setFileError(null);
-    const list = Array.from(files ?? []);
     if (!list.length) {
       setFarmPhotos([]);
       return;
@@ -253,7 +254,6 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
     if (error) {
       setFileError(`Foto farm: ${error}`);
       setFarmPhotos([]);
-      input.value = '';
       return;
     }
 
@@ -262,12 +262,17 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
       if (each) {
         setFileError(`Foto farm: ${each}`);
         setFarmPhotos([]);
-        input.value = '';
         return;
       }
     }
 
     setFarmPhotos(list);
+    setUploads((current) => ({ ...current, farm_photo_urls: [] }));
+  }
+
+  function removeFarmPhoto(index: number) {
+    setFileError(null);
+    setFarmPhotos((current) => current.filter((_, i) => i !== index));
     setUploads((current) => ({ ...current, farm_photo_urls: [] }));
   }
 
@@ -329,11 +334,10 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
 
           <div className="grid gap-1.5">
             <Label htmlFor="farm-description">Deskripsi farm (opsional)</Label>
-            <textarea
+            <Textarea
               id="farm-description"
               rows={4}
               placeholder="Jenis koi, pengalaman, dan hal lain yang perlu pembeli tahu…"
-              className="w-full min-w-0 resize-y rounded-control border border-input bg-transparent px-2.5 py-2 text-base outline-none placeholder:text-muted-foreground focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 md:text-sm dark:bg-input/30"
               {...register('description')}
             />
             <RenderIf when={errors.description?.message}>
@@ -366,14 +370,14 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
 
           <div className="grid gap-1.5">
             <Label htmlFor="farm-phone">Nomor WhatsApp</Label>
-            <input
+            <Input
               id="farm-phone"
               type="tel"
               readOnly
               value={phone ?? ''}
               aria-readonly
               aria-describedby="farm-phone-hint"
-              className="h-12 w-full min-w-0 rounded-control border border-input bg-muted px-2.5 py-1 text-base text-muted-foreground md:h-10 md:text-sm"
+              className="bg-muted text-muted-foreground"
             />
             <div id="farm-phone-hint" className="text-xs text-muted-foreground">
               {phone ? (
@@ -444,23 +448,25 @@ function RegistrationForm({ customer }: { customer: HttpTypes.StoreCustomer }) {
             {...register('nik')}
           />
 
-          <FormField
+          <FileField
             id="farm-ktp"
             label="Foto KTP"
-            type="file"
             accept="image/jpeg,image/png,image/webp"
             hint={`JPG, PNG, atau WEBP. Maksimal ${MB} MB. Hanya admin yang dapat melihatnya.`}
-            onChange={(event) => chooseKtp(event.target.files?.[0], event.target)}
+            files={ktp ? [ktp] : []}
+            onChoose={(files) => chooseKtp(files[0])}
+            onRemove={() => chooseKtp(undefined)}
           />
 
-          <FormField
+          <FileField
             id="farm-photos"
             label={`Foto farm (1–${MAX_FARM_PHOTOS})`}
-            type="file"
             accept="image/jpeg,image/png,image/webp"
             multiple
             hint={`Pilih minimal satu, maksimal ${MAX_FARM_PHOTOS}. Tiap file maksimal ${MB} MB.`}
-            onChange={(event) => choosePhotos(event.target.files, event.target)}
+            files={farmPhotos}
+            onChoose={choosePhotos}
+            onRemove={removeFarmPhoto}
           />
 
           <RenderIf when={ktp || farmPhotos.length ? true : undefined}>

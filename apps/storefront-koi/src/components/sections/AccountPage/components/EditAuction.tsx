@@ -16,9 +16,11 @@ import {
   CardTitle,
   FormField,
   Label,
-  RenderIf
+  RenderIf,
+  Textarea
 } from '@koi/ui';
 import { NativeSelect } from '@koi/ui/primitives/native-select';
+import { FileField } from '@/components/molecules';
 import {
   addAuctionLots,
   removeAuctionLot,
@@ -133,12 +135,12 @@ export function EditAuction({ auction: initial, categories, openOrders, identity
     defaultValues: EMPTY_LOT
   });
   const [lotPhotos, setLotPhotos] = useState<string[]>([]);
+  const [lotPhotoFiles, setLotPhotoFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
 
-  async function onLotPhotos(files: FileList | null) {
-    const list = Array.from(files ?? []);
+  async function onLotPhotos(list: File[]) {
     if (!list.length) return;
 
     setPhotoError(null);
@@ -154,7 +156,13 @@ export function EditAuction({ auction: initial, categories, openOrders, identity
       uploaded.push(result.data);
     }
     setLotPhotos((current) => [...current, ...uploaded]);
+    setLotPhotoFiles((current) => [...current, ...list]);
     setUploading(false);
+  }
+
+  function removeLotPhoto(index: number) {
+    setLotPhotos((current) => current.filter((_, i) => i !== index));
+    setLotPhotoFiles((current) => current.filter((_, i) => i !== index));
   }
 
   async function addLot(data: LotFormData) {
@@ -191,6 +199,7 @@ export function EditAuction({ auction: initial, categories, openOrders, identity
 
     setAuction(result.data);
     setLotPhotos([]);
+    setLotPhotoFiles([]);
     setPhotoError(null);
     resetLot(EMPTY_LOT);
     toast.success('Lot ditambahkan.');
@@ -351,10 +360,9 @@ export function EditAuction({ auction: initial, categories, openOrders, identity
 
                     <div className="grid gap-1.5">
                       <Label htmlFor="add-lot-description">Deskripsi (opsional)</Label>
-                      <textarea
+                      <Textarea
                         id="add-lot-description"
                         rows={3}
-                        className="w-full min-w-0 resize-y rounded-control border border-input bg-transparent px-2.5 py-2 text-base outline-none placeholder:text-muted-foreground focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 md:text-sm dark:bg-input/30"
                         {...registerLot('description')}
                       />
                     </div>
@@ -362,7 +370,7 @@ export function EditAuction({ auction: initial, categories, openOrders, identity
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="grid gap-1.5">
                         <Label htmlFor="add-lot-variety">Varietas</Label>
-                        <NativeSelect id="add-lot-variety" {...registerLot('variety')}>
+                        <NativeSelect id="add-lot-variety" variant="filled" {...registerLot('variety')}>
                           <option value="">Pilih varietas</option>
                           {KOI_VARIETIES.map((variety) => (
                             <option key={variety} value={variety}>
@@ -389,7 +397,7 @@ export function EditAuction({ auction: initial, categories, openOrders, identity
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="grid gap-1.5">
                         <Label htmlFor="add-lot-age">Umur</Label>
-                        <NativeSelect id="add-lot-age" {...registerLot('age')}>
+                        <NativeSelect id="add-lot-age" variant="filled" {...registerLot('age')}>
                           <option value="">Tidak diisi</option>
                           {KOI_AGES.map((age) => (
                             <option key={age} value={age}>
@@ -400,7 +408,7 @@ export function EditAuction({ auction: initial, categories, openOrders, identity
                       </div>
                       <div className="grid gap-1.5">
                         <Label htmlFor="add-lot-sex">Jenis kelamin</Label>
-                        <NativeSelect id="add-lot-sex" {...registerLot('sex')}>
+                        <NativeSelect id="add-lot-sex" variant="filled" {...registerLot('sex')}>
                           <option value="">Tidak diisi</option>
                           {KOI_SEXES.map((sex) => (
                             <option key={sex} value={sex}>
@@ -415,6 +423,7 @@ export function EditAuction({ auction: initial, categories, openOrders, identity
                       <Label htmlFor="add-lot-certificate">Sertifikat</Label>
                       <NativeSelect
                         id="add-lot-certificate"
+                        variant="filled"
                         {...registerLot('has_certificate')}
                       >
                         <option value="no">Tidak ada (koi lokal)</option>
@@ -452,10 +461,9 @@ export function EditAuction({ auction: initial, categories, openOrders, identity
 
                     <div className="grid gap-1.5">
                       <Label htmlFor="add-lot-notes">Catatan breeder (opsional)</Label>
-                      <textarea
+                      <Textarea
                         id="add-lot-notes"
                         rows={3}
-                        className="w-full min-w-0 resize-y rounded-control border border-input bg-transparent px-2.5 py-2 text-base outline-none placeholder:text-muted-foreground focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 md:text-sm dark:bg-input/30"
                         {...registerLot('breeder_notes')}
                       />
                       <RenderIf when={lotErrors.breeder_notes?.message}>
@@ -479,15 +487,17 @@ export function EditAuction({ auction: initial, categories, openOrders, identity
                     </div>
 
                     <div className="grid gap-1.5">
-                      <FormField
+                      <FileField
                         id="add-lot-photos"
                         label="Foto lot"
-                        type="file"
                         accept="image/jpeg,image/png,image/webp"
                         multiple
                         disabled={uploading}
                         hint="Foto pertama jadi gambar utama lot."
-                        onChange={(e) => onLotPhotos(e.target.files)}
+                        files={lotPhotoFiles}
+                        onChoose={onLotPhotos}
+                        onRemove={removeLotPhoto}
+                        fileStatus="Terunggah"
                       />
                       <RenderIf when={lotPhotos.length ? true : undefined}>
                         {() => (
@@ -544,7 +554,7 @@ export function EditAuction({ auction: initial, categories, openOrders, identity
           >
             <div className="grid gap-1.5">
               <Label htmlFor="edit-fee-category">Kategori biaya</Label>
-              <NativeSelect id="edit-fee-category" {...register('fee_category_id')}>
+              <NativeSelect id="edit-fee-category" variant="filled" {...register('fee_category_id')}>
                 {cats.map((c) => (
                   <option key={c.id} value={c.id}>
                     {feeCategoryLabel(c.name)}
@@ -573,7 +583,7 @@ export function EditAuction({ auction: initial, categories, openOrders, identity
 
             <div className="grid gap-1.5">
               <Label htmlFor="edit-delivery-method">Metode pengiriman</Label>
-              <NativeSelect id="edit-delivery-method" {...register('delivery_method')}>
+              <NativeSelect id="edit-delivery-method" variant="filled" {...register('delivery_method')}>
                 <option value="courier">Kurir</option>
                 <option value="self_delivery">Antar sendiri</option>
               </NativeSelect>

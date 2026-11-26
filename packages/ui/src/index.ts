@@ -31,3 +31,4 @@ export { Input } from './Input';
 export { Label } from './primitives/label';
 export { RenderIf, type RenderIfProps } from './RenderIf';
 export { Skeleton } from './primitives/skeleton';
+export { Textarea } from './Textarea';

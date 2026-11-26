@@ -66,4 +66,12 @@
   html {
     @apply font-sans;
     }
+  /* The Link atom's default corner for the focus ring. Base layer, so any
+     `rounded-*` utility on the same element (a Button variant's
+     `rounded-button` / `rounded-control`, or a caller's `rounded-full`) wins.
+     The atom used to carry `rounded-sm`, which lost only by source order when
+     a server-rendered Button appended its classes to the anchor. */
+  [data-slot="link"] {
+    border-radius: 4px;
+    }
 }
