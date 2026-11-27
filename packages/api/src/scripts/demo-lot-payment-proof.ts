@@ -75,7 +75,7 @@ const chunk = (type: string, data: Buffer): Buffer => {
 
 // A real 480x270 RGB PNG: paper background, blue header band, red disc, dark
 // footer bar. Viewable in any browser; the admin route streams these bytes.
-const createProofPng = (width = 480, height = 270): Buffer => {
+export const createProofPng = (width = 480, height = 270): Buffer => {
   const stride = width * 3 + 1
   const raw = Buffer.alloc(height * stride)
 

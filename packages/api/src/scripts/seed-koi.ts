@@ -45,6 +45,8 @@ import {
   updateUsersWorkflow,
 } from "@medusajs/medusa/core-flows";
 import { seedFeeCategories } from "./seed-fee-categories";
+import seedLots from "./seed-lots";
+import { seedAdminDemo } from "./seed-admin-demo";
 import { WALLET_MODULE } from "../modules/wallet";
 import type WalletModuleService from "../modules/wallet/service";
 import { createCustomerWalletWorkflow } from "../workflows/create-customer-wallet";
@@ -1373,6 +1375,9 @@ export default async function seedKoiData({ container }: ExecArgs) {
     );
     // T-020.9: still complete the demo farmer on a database seeded before it.
     await seedDemoFarmer(container);
+    // The live auction and the admin-koi queues (owner request 2026-11-27).
+    await seedLots({ container });
+    await seedAdminDemo(container);
     logger.info("Finished seeding.");
     return;
   }
@@ -1917,4 +1922,8 @@ export default async function seedKoiData({ container }: ExecArgs) {
   // T-020.9: the seller loop above created the member and open seller for this
   // email; the customer row and wallet complete the D-003 dual actor.
   await seedDemoFarmer(container);
+
+  // Owner request (2026-11-27): the live auction and every admin-koi queue.
+  await seedLots({ container });
+  await seedAdminDemo(container);
 }

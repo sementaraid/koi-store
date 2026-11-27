@@ -1,4 +1,4 @@
-import { ExecArgs } from "@medusajs/framework/types"
+import type { MedusaContainer } from "@medusajs/framework/types"
 import {
   ContainerRegistrationKeys,
   Modules,
@@ -86,7 +86,7 @@ const productHandle = (suffix: string) =>
 const minutesFromNow = (minutes: number) =>
   new Date(Date.now() + minutes * 60_000)
 
-export default async function seedLots({ container }: ExecArgs) {
+export default async function seedLots({ container }: { container: MedusaContainer }) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER)
   const query = container.resolve(ContainerRegistrationKeys.QUERY)
   const auctionService = container.resolve<AuctionModuleService>(AUCTION_MODULE)

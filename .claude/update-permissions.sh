@@ -26,20 +26,24 @@ import json, os, sys
 path, dry, mode = sys.argv[1], sys.argv[2] == "1", sys.argv[3]
 
 bash_rules = [
-    # checks and dev commands used by the role agents
+    # checks, dev commands, processes and containers used by the role agents
     "Bash(bun run:*)",
     "Bash(bun test:*)",
     "Bash(bunx:*)",
-    "Bash(docker run:*)",
-    "Bash(docker compose:*)",
-    "Bash(docker ps:*)",
+    "Bash(docker:*)",
+    "Bash(psql:*)",
+    "Bash(pg_dump:*)",
+    "Bash(pg_restore:*)",
+    "Bash(gzip:*)",
+    "Bash(gunzip:*)",
+    "Bash(tar:*)",
+    "Bash(timeout:*)",
+    "Bash(sleep:*)",
+    "Bash(xargs:*)",
+    "Bash(tee:*)",
+    # git (push, force-push, reset --hard stay denied or asked in settings.json)
+    "Bash(git:*)",
     # read and navigation
-    "Bash(git status:*)",
-    "Bash(git diff:*)",
-    "Bash(git log:*)",
-    "Bash(git stash list:*)",
-    "Bash(git stash push:*)",
-    "Bash(git stash pop:*)",
     "Bash(tmux:*)",
     "Bash(ps:*)",
     "Bash(ss:*)",
@@ -51,11 +55,24 @@ bash_rules = [
     "Bash(wc:*)",
     "Bash(mkdir:*)",
     "Bash(cp:*)",
+    "Bash(mv:*)",
+    "Bash(chmod:*)",
+    "Bash(cat:*)",
+    "Bash(head:*)",
+    "Bash(tail:*)",
+    "Bash(echo:*)",
+    "Bash(grep:*)",
     "Bash(awk:*)",
     "Bash(sed:*)",
-    # local dev server probes only
-    "Bash(curl http://localhost:*)",
-    "Bash(curl http://127.0.0.1:*)",
+    "Bash(sort:*)",
+    "Bash(uniq:*)",
+    "Bash(cut:*)",
+    "Bash(tr:*)",
+    "Bash(jq:*)",
+    "Bash(which:*)",
+    "Bash(python3:*)",
+    "Bash(node:*)",
+    "Bash(curl:*)",
 ]
 
 mcp_rules = [

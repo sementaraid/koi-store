@@ -37,7 +37,10 @@ function Table({
       aria-label={label}
       tabIndex={0}
       className={cn(
-        "w-full overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+        /* `relative` keeps absolutely positioned descendants (sr-only labels)
+           inside this scroll region; without a positioned ancestor they escape
+           the clip and widen the page on narrow screens. */
+        "relative w-full overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
         containerClassName
       )}
     >

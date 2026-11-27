@@ -28,7 +28,6 @@
     ],
     "ask": [
       "Bash(bun remove:*)",
-      "Bash(git push:*)",
       "Bash(docker compose down:*)"
     ],
     "deny": [
