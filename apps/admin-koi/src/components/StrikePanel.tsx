@@ -1,10 +1,25 @@
 'use client';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import { z } from 'zod';
 
-import { Badge, Button, Label } from '@koi/ui';
+import {
+  Badge,
+  Button,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Label,
+  Textarea
+} from '@koi/ui';
 import {
   giveStrike,
   listStrikes,
@@ -34,6 +49,8 @@ export type StrikePanelProps = {
   /** Stable id of this panel's mount site (row id or account id). Two panels on
       one page must not share it: their fields would share an id. */
   idPrefix: string;
+  /** Who the strike lands on, for the dialog heading. */
+  targetName?: string;
 };
 
 const REASON_TYPES: StrikeReasonType[] = [
@@ -45,21 +62,48 @@ const REASON_TYPES: StrikeReasonType[] = [
 const CONFIRM_COPY =
   'Strike ini tidak bisa dihapus, hanya dicabut dengan alasan. Dua strike aktif memblokir akun.';
 
+const STRIKE_REASON_SCHEMA = z.object({
+  reason: z
+    .string()
+    .trim()
+    .min(5, 'Alasan minimal 5 karakter')
+    .max(STRIKE_REASON_MAX, `Alasan maksimal ${STRIKE_REASON_MAX} karakter`)
+});
+
+type StrikeReasonData = z.infer<typeof STRIKE_REASON_SCHEMA>;
+
 function banToast(prefix: string, ban: { active_count: number; banned: boolean }): string {
   return `${prefix} ${activeStrikeLabel(ban.active_count)} — ${banLabel(ban.banned).toLowerCase()}.`;
 }
 
-export function StrikePanel({ defaultReasonType, customerId, target, idPrefix }: StrikePanelProps) {
+export function StrikePanel({
+  defaultReasonType,
+  customerId,
+  target,
+  idPrefix,
+  targetName
+}: StrikePanelProps) {
   const router = useRouter();
   /* Deterministic, not `useId`, so the server HTML and the client agree. */
   const id = `${idPrefix}-strike`;
-  const [open, setOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
   const [reasonType, setReasonType] = useState<StrikeReasonType>(defaultReasonType);
-  const [reason, setReason] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [pendingReason, setPendingReason] = useState('');
+  const [apiError, setApiError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [history, setHistory] = useState<StrikeHistory | null | 'loading'>(null);
+  const [historyRequested, setHistoryRequested] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors }
+  } = useForm<StrikeReasonData>({
+    resolver: zodResolver(STRIKE_REASON_SCHEMA),
+    defaultValues: { reason: '' }
+  });
+  const fieldError = errors.reason?.message;
+  const title = targetName ? `Beri strike ke ${targetName}` : 'Beri strike';
 
   async function loadHistory() {
     if (!customerId) return;
@@ -67,121 +111,117 @@ export function StrikePanel({ defaultReasonType, customerId, target, idPrefix }:
     setHistory(await listStrikes(customerId));
   }
 
-  async function openPanel() {
+  async function openForm() {
     setReasonType(defaultReasonType);
-    setOpen(true);
+    setApiError(null);
+    setFormOpen(true);
+    if (customerId) setHistoryRequested(true);
     if (history === null) await loadHistory();
   }
 
-  function submit(event: React.FormEvent) {
-    event.preventDefault();
-    const message = strikeReasonError(reason);
-    if (message) {
-      setError(message);
-      return;
+  function changeFormOpen(next: boolean) {
+    setFormOpen(next);
+    if (!next) {
+      setApiError(null);
+      setPendingReason('');
+      reset();
     }
+  }
+
+  function submit(data: StrikeReasonData) {
+    setPendingReason(data.reason);
+    setApiError(null);
+    /* Hand off to the final confirmation step rather than firing the strike. */
+    setFormOpen(false);
     setConfirmOpen(true);
   }
 
   async function confirmStrike() {
-    setBusy(true);
-    setError(null);
-    const result = await giveStrike({ ...target, reason_type: reasonType, reason });
-    setBusy(false);
-    setConfirmOpen(false);
+    setApiError(null);
+    const result = await giveStrike({ ...target, reason_type: reasonType, reason: pendingReason });
 
     if (!result.success) {
       const info = strikeFailureInfo(result.status, result.error);
-      setError(info.message);
+      setApiError(info.message);
       toast.error(info.message);
       if (info.refresh) router.refresh();
       return;
     }
 
     toast.success(banToast('Strike diberikan.', result.ban));
-    setReason('');
-    setHistory(null);
-    setOpen(false);
+    setConfirmOpen(false);
+    setPendingReason('');
+    reset();
+    void loadHistory();
     router.refresh();
   }
 
   return (
     <div className="grid gap-3 border-t border-border pt-3">
-      {!open ? (
-        <div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={openPanel}
-          >
-            Beri strike
-          </Button>
-        </div>
-      ) : (
-        <form onSubmit={submit} className="grid gap-2" noValidate>
-          <div className="grid gap-1.5">
-            <Label htmlFor={`${id}-type`}>Jenis strike</Label>
-            <select
-              id={`${id}-type`}
-              value={reasonType}
-              onChange={(event) => setReasonType(event.target.value as StrikeReasonType)}
-              className="h-12 w-full max-w-sm rounded-control border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 md:h-10 dark:bg-input/30"
-            >
-              {REASON_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {reasonTypeLabel(type)}
-                </option>
-              ))}
-            </select>
-          </div>
+      <div>
+        <Button type="button" variant="outline" size="sm" onClick={openForm}>
+          Beri strike
+        </Button>
+      </div>
 
-          <div className="grid gap-1.5">
-            <Label htmlFor={`${id}-reason`}>Alasan strike</Label>
-            <textarea
-              id={`${id}-reason`}
-              rows={3}
-              maxLength={STRIKE_REASON_MAX}
-              value={reason}
-              aria-invalid={error ? true : undefined}
-              aria-describedby={error ? `${id}-error` : undefined}
-              onChange={(event) => {
-                setReason(event.target.value);
-                if (error) setError(null);
-              }}
-              className="w-full min-w-0 resize-y rounded-control border border-input bg-transparent px-2.5 py-2 text-base transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30"
-            />
-            {error ? (
-              <p id={`${id}-error`} role="alert" className="text-xs text-destructive-ink">
-                {error}
-              </p>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                Tersimpan bersama strike ini. Maksimal {STRIKE_REASON_MAX} karakter.
-              </p>
-            )}
-          </div>
+      <Dialog open={formOpen} onOpenChange={changeFormOpen}>
+        <DialogContent>
+          <form onSubmit={handleSubmit(submit)} className="grid gap-4" noValidate>
+            <DialogHeader>
+              <DialogTitle>{title}</DialogTitle>
+              <DialogDescription>{CONFIRM_COPY}</DialogDescription>
+            </DialogHeader>
 
-          <p className="text-xs text-muted-foreground">{CONFIRM_COPY}</p>
+            <div className="grid gap-1.5">
+              <Label htmlFor={`${id}-type`}>Jenis strike</Label>
+              <select
+                id={`${id}-type`}
+                value={reasonType}
+                onChange={(event) => setReasonType(event.target.value as StrikeReasonType)}
+                className="h-12 w-full rounded-control border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 md:h-10 dark:bg-input/30"
+              >
+                {REASON_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {reasonTypeLabel(type)}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Button type="submit" variant="destructive" size="sm" disabled={busy}>
-              {busy ? 'Menyimpan…' : 'Beri strike'}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              disabled={busy}
-              onClick={() => setOpen(false)}
-            >
-              Batal
-            </Button>
-          </div>
-        </form>
-      )}
+            <div className="grid gap-1.5">
+              <Label htmlFor={`${id}-reason`}>Alasan strike</Label>
+              <Textarea
+                id={`${id}-reason`}
+                rows={3}
+                maxLength={STRIKE_REASON_MAX}
+                aria-invalid={fieldError ? true : undefined}
+                aria-describedby={fieldError ? `${id}-error` : undefined}
+                {...register('reason')}
+              />
+              {fieldError ? (
+                <p id={`${id}-error`} role="alert" className="text-xs text-destructive-ink">
+                  {fieldError}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Wajib diisi, 5–{STRIKE_REASON_MAX} karakter. Tersimpan bersama strike ini.
+                </p>
+              )}
+            </div>
 
-      {open && customerId ? (
+            <DialogFooter>
+              <DialogClose render={<Button type="button" variant="outline" />}>
+                Batal
+              </DialogClose>
+              <Button type="submit" variant="destructive">
+                Lanjutkan
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {historyRequested && customerId ? (
         <StrikeHistoryList
           history={history}
           onChanged={() => {
@@ -193,12 +233,16 @@ export function StrikePanel({ defaultReasonType, customerId, target, idPrefix }:
 
       <ConfirmDialog
         open={confirmOpen}
-        onOpenChange={setConfirmOpen}
-        title="Beri strike?"
+        onOpenChange={(open) => {
+          setConfirmOpen(open);
+          if (!open) setApiError(null);
+        }}
+        title={targetName ? `Beri strike ke ${targetName}?` : 'Beri strike?'}
         description={CONFIRM_COPY}
         confirmLabel="Beri strike"
         busyLabel="Menyimpan…"
         destructive
+        error={apiError}
         onConfirm={confirmStrike}
       />
     </div>
@@ -243,43 +287,52 @@ function StrikeHistoryRow({
   strike: StrikeHistory['strikes'][number];
   onChanged: () => void;
 }) {
-  /* The strike id is unique per row, so each revocation form has its own id. */
+  /* The strike id is unique per row, so each revocation dialog has its own id. */
   const id = `strike-${strike.id}`;
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [fieldError, setFieldError] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const active = strike.removed_at === null;
 
-  function remove(event: React.FormEvent) {
+  function changeOpen(next: boolean) {
+    setOpen(next);
+    if (!next) {
+      setReason('');
+      setFieldError(null);
+      setApiError(null);
+    }
+  }
+
+  function submit(event: React.FormEvent) {
     event.preventDefault();
     const message = strikeReasonError(reason, 'Masukkan alasan pencabutan');
     if (message) {
-      setError(message);
+      setFieldError(message);
       return;
     }
+    setOpen(false);
+    setApiError(null);
     setConfirmOpen(true);
   }
 
   async function confirmRemove() {
-    setBusy(true);
-    setError(null);
+    setApiError(null);
     const result = await removeStrike(strike.id, reason);
-    setBusy(false);
-    setConfirmOpen(false);
 
     if (!result.success) {
       const info = strikeFailureInfo(result.status, result.error);
-      setError(info.message);
+      setApiError(info.message);
       toast.error(info.message);
       if (info.refresh) onChanged();
       return;
     }
 
     toast.success(banToast('Strike dicabut.', result.ban));
+    setConfirmOpen(false);
     setReason('');
-    setOpen(false);
+    setFieldError(null);
     onChanged();
   }
 
@@ -295,59 +348,76 @@ function StrikeHistoryRow({
         <p className="text-muted-foreground">Alasan pencabutan: {strike.removed_reason}</p>
       ) : null}
       {active ? (
-        open ? (
-          <form onSubmit={remove} className="grid gap-1.5" noValidate>
-            <Label htmlFor={`${id}-reason`}>Alasan pencabutan</Label>
-            <textarea
-              id={`${id}-reason`}
-              rows={2}
-              maxLength={STRIKE_REASON_MAX}
-              value={reason}
-              aria-invalid={error ? true : undefined}
-              aria-describedby={error ? `${id}-error` : undefined}
-              onChange={(event) => {
-                setReason(event.target.value);
-                if (error) setError(null);
-              }}
-              className="w-full min-w-0 resize-y rounded-control border border-input bg-transparent px-2.5 py-2 text-base outline-none focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30"
-            />
-            {error ? (
-              <p id={`${id}-error`} role="alert" className="text-destructive-ink">
-                {error}
-              </p>
-            ) : null}
-            <div className="flex flex-wrap items-center gap-2">
-              <Button type="submit" variant="destructive" size="xs" disabled={busy}>
-                {busy ? 'Mencabut…' : 'Cabut strike'}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="xs"
-                disabled={busy}
-                onClick={() => setOpen(false)}
-              >
-                Batal
-              </Button>
-            </div>
-          </form>
-        ) : (
-          <div>
-            <Button type="button" variant="outline" size="xs" onClick={() => setOpen(true)}>
-              Cabut strike
-            </Button>
-          </div>
-        )
+        <div>
+          <Button
+            type="button"
+            variant="outline"
+            size="xs"
+            onClick={() => {
+              setReason('');
+              setFieldError(null);
+              setApiError(null);
+              setOpen(true);
+            }}
+          >
+            Cabut strike
+          </Button>
+        </div>
       ) : null}
+
+      <Dialog open={open} onOpenChange={changeOpen}>
+        <DialogContent>
+          <form onSubmit={submit} className="grid gap-4" noValidate>
+            <DialogHeader>
+              <DialogTitle>Cabut strike</DialogTitle>
+              <DialogDescription>Riwayatnya tetap tersimpan.</DialogDescription>
+            </DialogHeader>
+
+            <div className="grid gap-1.5">
+              <Label htmlFor={`${id}-reason`}>Alasan pencabutan</Label>
+              <Textarea
+                id={`${id}-reason`}
+                rows={2}
+                maxLength={STRIKE_REASON_MAX}
+                value={reason}
+                aria-invalid={fieldError ? true : undefined}
+                aria-describedby={fieldError ? `${id}-error` : undefined}
+                onChange={(event) => {
+                  setReason(event.target.value);
+                  if (fieldError) setFieldError(null);
+                }}
+              />
+              {fieldError ? (
+                <p id={`${id}-error`} role="alert" className="text-xs text-destructive-ink">
+                  {fieldError}
+                </p>
+              ) : null}
+            </div>
+
+            <DialogFooter>
+              <DialogClose render={<Button type="button" variant="outline" />}>
+                Batal
+              </DialogClose>
+              <Button type="submit" variant="destructive">
+                Cabut strike
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         open={confirmOpen}
-        onOpenChange={setConfirmOpen}
+        onOpenChange={(next) => {
+          setConfirmOpen(next);
+          if (!next) setApiError(null);
+        }}
         title="Cabut strike?"
         description="Cabut strike ini? Riwayatnya tetap tersimpan."
         confirmLabel="Cabut strike"
         busyLabel="Mencabut…"
         destructive
+        error={apiError}
         onConfirm={confirmRemove}
       />
     </div>

@@ -1,11 +1,15 @@
 'use client';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import { z } from 'zod';
 
 import {
+  Alert,
   Badge,
   Button,
   Dialog,
@@ -15,8 +19,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-  Label,
+  FormField,
   Table,
   TableBody,
   TableCell,
@@ -39,16 +42,11 @@ import {
   lotPaymentTitle,
   paymentClosedAtLabel,
   paymentDeadlineLabel,
-  paymentProofReasonError,
   paymentProofStatusLabel,
   paymentProofUploadedAtLabel,
   PAYMENT_PROOF_REASON_MAX
 } from '@/lib/helpers/lot-payment-format';
-import {
-  STRIKE_REASON_MAX,
-  strikeFailureInfo,
-  strikeReasonError
-} from '@/lib/helpers/strike-format';
+import { STRIKE_REASON_MAX, strikeFailureInfo } from '@/lib/helpers/strike-format';
 
 import { AdminEmpty } from './AdminEmpty';
 import {
@@ -59,6 +57,8 @@ import {
   DetailPricePanel,
   DetailSection
 } from './DetailDialog';
+import { ConfirmDialog } from './ConfirmDialog';
+import { RowActions, type RowAction } from './RowActions';
 
 export type PaymentQueueProps = {
   lots: WonLotPayment[];
@@ -131,6 +131,46 @@ export function PaymentQueue({ lots, total, overdueOnly }: PaymentQueueProps) {
 }
 
 function PaymentRow({ lot }: { lot: WonLotPayment }) {
+  const router = useRouter();
+  const actionsRef = useRef<HTMLDivElement>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [strikeOpen, setStrikeOpen] = useState(false);
+
+  const actions: RowAction[] = [
+    {
+      label: 'Konfirmasi diterima',
+      onSelect: () => setConfirmOpen(true),
+      disabled: lot.final_price === null
+    }
+  ];
+
+  if (lot.proof.status === 'pending') {
+    actions.push({
+      label: 'Tolak bukti',
+      onSelect: () => setRejectOpen(true),
+      tone: 'destructive'
+    });
+  }
+
+  if (lot.overdue && lot.winner_customer_id) {
+    actions.push({
+      label: 'Beri strike',
+      onSelect: () => setStrikeOpen(true),
+      tone: 'destructive'
+    });
+  }
+
+  function done() {
+    setConfirmOpen(false);
+    setRejectOpen(false);
+    setStrikeOpen(false);
+    router.refresh();
+    requestAnimationFrame(() => {
+      actionsRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    });
+  }
+
   return (
     <TableRow className={lot.overdue ? 'bg-warning/5' : undefined}>
       <TableCell>
@@ -167,11 +207,31 @@ function PaymentRow({ lot }: { lot: WonLotPayment }) {
         <PaymentDetail lot={lot} />
       </TableCell>
       <TableCell>
-        <div className="grid justify-items-start gap-1.5">
-          <ConfirmPayment lot={lot} />
-          {lot.proof.status === 'pending' ? <RejectProof lot={lot} /> : null}
-          <StrikeWinner lot={lot} />
+        <div ref={actionsRef} className="inline-flex">
+          <RowActions
+            label={`Aksi untuk ${lotPaymentLabel(lot.lot_number, lot.title)}`}
+            actions={actions}
+          />
         </div>
+
+        <ConfirmPaymentDialog
+          lot={lot}
+          open={confirmOpen}
+          onOpenChange={setConfirmOpen}
+          onDone={done}
+        />
+        <RejectProofDialog
+          lot={lot}
+          open={rejectOpen}
+          onOpenChange={setRejectOpen}
+          onDone={done}
+        />
+        <StrikeWinnerDialog
+          lot={lot}
+          open={strikeOpen}
+          onOpenChange={setStrikeOpen}
+          onDone={done}
+        />
       </TableCell>
     </TableRow>
   );
@@ -325,159 +385,168 @@ function ProofThumbnail({ id }: { id: string }) {
   );
 }
 
-function ConfirmPayment({ lot }: { lot: WonLotPayment }) {
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+const rejectProofSchema = z.object({
+  reason: z
+    .string()
+    .trim()
+    .min(5, 'Alasan minimal 5 karakter')
+    .max(PAYMENT_PROOF_REASON_MAX, `Alasan maksimal ${PAYMENT_PROOF_REASON_MAX} karakter`)
+});
 
-  async function submit() {
-    setSubmitting(true);
-    const result = await confirmLotPayment(lot.id);
-    setSubmitting(false);
+type RejectProofData = z.infer<typeof rejectProofSchema>;
 
-    if (!result.success) {
-      toast.error(result.error);
-      if (result.refresh) {
-        setOpen(false);
-        router.refresh();
-      }
-      return;
-    }
+const strikeSchema = z.object({
+  reason: z
+    .string()
+    .trim()
+    .min(5, 'Alasan minimal 5 karakter')
+    .max(STRIKE_REASON_MAX, `Alasan maksimal ${STRIKE_REASON_MAX} karakter`)
+});
 
-    setOpen(false);
-    toast.success(`Pembayaran ${lotPaymentTitle(lot.title)} dikonfirmasi.`);
-    router.refresh();
-  }
+type StrikeData = z.infer<typeof strikeSchema>;
 
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="sm" disabled={lot.final_price === null} />}>
-        Konfirmasi diterima
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Konfirmasi pembayaran</DialogTitle>
-          <DialogDescription>
-            {lot.final_price === null
-              ? 'Nominal lot ini tidak tercatat. Periksa data lot sebelum mengonfirmasi.'
-              : confirmPaymentQuestion(lot.final_price, lot.title)}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <DialogClose render={<Button variant="outline" />}>Batal</DialogClose>
-          <Button
-            type="button"
-            onClick={submit}
-            disabled={submitting || lot.final_price === null}
-          >
-            {submitting ? 'Mengonfirmasi…' : 'Konfirmasi'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// US-108 AC7 (D-079): the admin raises a winner's non-payment from this list.
-// Only an overdue `won` row with a winner id can be struck; the backend's
-// `GET /admin/lots` returns `winner_customer_id` for exactly this call.
-function StrikeWinner({ lot }: { lot: WonLotPayment }) {
-  const id = `strike-winner-${lot.id}`;
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [reason, setReason] = useState('');
+function ConfirmPaymentDialog({
+  lot,
+  open,
+  onOpenChange,
+  onDone
+}: {
+  lot: WonLotPayment;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onDone: () => void;
+}) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  if (!lot.overdue || !lot.winner_customer_id) return null;
-
   function changeOpen(next: boolean) {
-    setOpen(next);
+    if (busy) return;
+    onOpenChange(next);
     if (!next) setError(null);
   }
 
-  async function submit(event: React.FormEvent) {
-    event.preventDefault();
-    const message = strikeReasonError(reason);
-    if (message) {
-      setError(message);
-      return;
-    }
-
+  async function confirm() {
+    if (busy || lot.final_price === null) return;
     setBusy(true);
     setError(null);
-    const result = await giveStrike({
-      customer_id: lot.winner_customer_id ?? undefined,
-      lot_id: lot.id,
-      reason_type: 'winner_unpaid',
-      reason
-    });
+    const result = await confirmLotPayment(lot.id);
     setBusy(false);
 
     if (!result.success) {
-      const info = strikeFailureInfo(result.status, result.error);
-      setError(info.message);
-      toast.error(info.message);
-      if (info.refresh) {
-        setOpen(false);
-        router.refresh();
-      }
+      setError(result.error);
       return;
     }
 
-    setReason('');
-    setOpen(false);
-    toast.success('Strike diberikan.');
-    router.refresh();
+    toast.success(`Pembayaran ${lotPaymentTitle(lot.title)} dikonfirmasi.`);
+    onDone();
+  }
+
+  return (
+    <ConfirmDialog
+      open={open}
+      onOpenChange={changeOpen}
+      title={`Konfirmasi pembayaran ${lotPaymentLabel(lot.lot_number, lot.title)}?`}
+      description={
+        <>
+          <span>
+            {lot.final_price === null
+              ? 'Nominal lot ini tidak tercatat. Periksa data lot sebelum mengonfirmasi.'
+              : confirmPaymentQuestion(lot.final_price, lot.title)}
+          </span>
+          {error ? (
+            <span role="alert" className="mt-2 block font-medium text-destructive-ink">
+              {error}
+            </span>
+          ) : null}
+        </>
+      }
+      confirmLabel="Ya, konfirmasi"
+      busyLabel="Memproses…"
+      onConfirm={confirm}
+    />
+  );
+}
+
+function RejectProofDialog({
+  lot,
+  open,
+  onOpenChange,
+  onDone
+}: {
+  lot: WonLotPayment;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onDone: () => void;
+}) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting }
+  } = useForm<RejectProofData>({
+    resolver: zodResolver(rejectProofSchema),
+    defaultValues: { reason: '' }
+  });
+  const [error, setError] = useState<string | null>(null);
+
+  function changeOpen(next: boolean) {
+    if (isSubmitting) return;
+    onOpenChange(next);
+    if (!next) {
+      setError(null);
+      reset();
+    }
+  }
+
+  async function submit(data: RejectProofData) {
+    if (isSubmitting) return;
+    setError(null);
+    const result = await rejectLotPaymentProof(lot.id, data.reason);
+
+    if (!result.success) {
+      setError(result.error);
+      return;
+    }
+
+    reset();
+    toast.success(`Bukti transfer ${lotPaymentTitle(lot.title)} ditolak.`);
+    onDone();
   }
 
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
-      <DialogTrigger render={<Button size="sm" variant="destructive" />}>
-        Beri strike
-      </DialogTrigger>
       <DialogContent>
-        <form onSubmit={submit} className="grid gap-4" noValidate>
+        <form onSubmit={handleSubmit(submit)} className="grid gap-4" noValidate>
           <DialogHeader>
-            <DialogTitle>Beri strike pemenang</DialogTitle>
+            <DialogTitle>Tolak bukti transfer {lotPaymentLabel(lot.lot_number, lot.title)}?</DialogTitle>
             <DialogDescription>
-              {lotPaymentTitle(lot.title)} lewat batas bayar dan belum dikonfirmasi. Strike ini
-              tidak bisa dihapus, hanya dicabut dengan alasan. Dua strike aktif memblokir akun.
+              Pemenang melihat alasan ini dan boleh mengunggah bukti lagi selama lot masih
+              menang. Penolakan tidak memberi strike.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-1.5">
-            <Label htmlFor={`${id}-reason`}>Alasan strike</Label>
-            <textarea
-              id={`${id}-reason`}
-              rows={3}
-              maxLength={STRIKE_REASON_MAX}
-              value={reason}
-              aria-invalid={error ? true : undefined}
-              aria-describedby={error ? `${id}-error` : undefined}
-              onChange={(event) => {
-                setReason(event.target.value);
-                if (error) setError(null);
-              }}
-              className="w-full min-w-0 resize-y rounded-control border border-input bg-transparent px-2.5 py-2 text-base transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30"
-            />
-            {error ? (
-              <p id={`${id}-error`} role="alert" className="text-xs text-destructive-ink">
-                {error}
-              </p>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                Wajib diisi. Maksimal {STRIKE_REASON_MAX} karakter.
-              </p>
-            )}
-          </div>
+          {error ? (
+            <Alert tone="signal" role="alert" title="Gagal menolak bukti transfer">
+              <p className="text-destructive-ink">{error}</p>
+            </Alert>
+          ) : null}
+
+          <FormField
+            id={`reject-proof-${lot.id}-reason`}
+            label="Alasan penolakan"
+            hint={`Minimal 5 karakter, maksimal ${PAYMENT_PROOF_REASON_MAX} karakter.`}
+            maxLength={PAYMENT_PROOF_REASON_MAX}
+            disabled={isSubmitting}
+            error={errors.reason?.message}
+            {...register('reason')}
+          />
 
           <DialogFooter>
-            <DialogClose render={<Button type="button" variant="outline" />}>
+            <DialogClose render={<Button type="button" variant="outline" disabled={isSubmitting} />}>
               Batal
             </DialogClose>
-            <Button type="submit" variant="destructive" disabled={busy}>
-              {busy ? 'Menyimpan…' : 'Beri strike'}
+            <Button type="submit" variant="destructive" disabled={isSubmitting}>
+              {isSubmitting ? 'Memproses…' : 'Ya, tolak'}
             </Button>
           </DialogFooter>
         </form>
@@ -486,95 +555,99 @@ function StrikeWinner({ lot }: { lot: WonLotPayment }) {
   );
 }
 
-function RejectProof({ lot }: { lot: WonLotPayment }) {
-  const id = `reject-proof-${lot.id}`;
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [reason, setReason] = useState('');
+// US-108 AC7 (D-079): the admin raises a winner's non-payment from this list.
+// Only an overdue `won` row with a winner id can be struck; the backend's
+// `GET /admin/lots` returns `winner_customer_id` for exactly this call.
+function StrikeWinnerDialog({
+  lot,
+  open,
+  onOpenChange,
+  onDone
+}: {
+  lot: WonLotPayment;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onDone: () => void;
+}) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting }
+  } = useForm<StrikeData>({
+    resolver: zodResolver(strikeSchema),
+    defaultValues: { reason: '' }
+  });
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
 
   function changeOpen(next: boolean) {
-    setOpen(next);
-    if (!next) setError(null);
+    if (isSubmitting) return;
+    onOpenChange(next);
+    if (!next) {
+      setError(null);
+      reset();
+    }
   }
 
-  async function submit(event: React.FormEvent) {
-    event.preventDefault();
-    const reasonError = paymentProofReasonError(reason);
-    if (reasonError) {
-      setError(reasonError);
-      return;
-    }
-
-    setBusy(true);
+  async function submit(data: StrikeData) {
+    if (isSubmitting) return;
     setError(null);
-    const result = await rejectLotPaymentProof(lot.id, reason);
-    setBusy(false);
+    const result = await giveStrike({
+      customer_id: lot.winner_customer_id ?? undefined,
+      lot_id: lot.id,
+      reason_type: 'winner_unpaid',
+      reason: data.reason
+    });
 
     if (!result.success) {
-      setError(result.error);
-      toast.error(result.error);
-      if (result.refresh) {
-        setOpen(false);
-        router.refresh();
-      }
+      const info = strikeFailureInfo(result.status, result.error);
+      setError(
+        info.refresh
+          ? 'Data strike sudah berubah. Tutup dialog lalu muat ulang daftar.'
+          : info.message
+      );
       return;
     }
 
-    setReason('');
-    setOpen(false);
-    toast.success(`Bukti transfer ${lotPaymentTitle(lot.title)} ditolak.`);
-    router.refresh();
+    reset();
+    toast.success('Strike diberikan.');
+    onDone();
   }
 
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
-      <DialogTrigger render={<Button size="sm" variant="outline" />}>
-        Tolak bukti
-      </DialogTrigger>
       <DialogContent>
-        <form onSubmit={submit} className="grid gap-4" noValidate>
+        <form onSubmit={handleSubmit(submit)} className="grid gap-4" noValidate>
           <DialogHeader>
-            <DialogTitle>Tolak bukti transfer</DialogTitle>
+            <DialogTitle>Beri strike pemenang {lotPaymentTitle(lot.title)}?</DialogTitle>
             <DialogDescription>
-              Pemenang melihat alasan ini dan boleh mengunggah bukti lagi selama lot masih
-              menang. Penolakan tidak memberi strike.
+              Lot ini lewat batas bayar dan belum dikonfirmasi. Strike ini tidak bisa dihapus,
+              hanya dicabut dengan alasan. Dua strike aktif memblokir akun.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-1.5">
-            <Label htmlFor={`${id}-reason`}>Alasan penolakan</Label>
-            <textarea
-              id={`${id}-reason`}
-              rows={3}
-              maxLength={PAYMENT_PROOF_REASON_MAX}
-              value={reason}
-              aria-invalid={error ? true : undefined}
-              aria-describedby={error ? `${id}-error` : undefined}
-              onChange={(event) => {
-                setReason(event.target.value);
-                if (error) setError(null);
-              }}
-              className="w-full min-w-0 resize-y rounded-control border border-input bg-transparent px-2.5 py-2 text-base transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30"
-            />
-            {error ? (
-              <p id={`${id}-error`} role="alert" className="text-xs text-destructive-ink">
-                {error}
-              </p>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                Wajib diisi. Maksimal {PAYMENT_PROOF_REASON_MAX} karakter.
-              </p>
-            )}
-          </div>
+          {error ? (
+            <Alert tone="signal" role="alert" title="Gagal memberi strike">
+              <p className="text-destructive-ink">{error}</p>
+            </Alert>
+          ) : null}
+
+          <FormField
+            id={`strike-winner-${lot.id}-reason`}
+            label="Alasan strike"
+            hint={`Minimal 5 karakter, maksimal ${STRIKE_REASON_MAX} karakter.`}
+            maxLength={STRIKE_REASON_MAX}
+            disabled={isSubmitting}
+            error={errors.reason?.message}
+            {...register('reason')}
+          />
 
           <DialogFooter>
-            <DialogClose render={<Button type="button" variant="outline" />}>
+            <DialogClose render={<Button type="button" variant="outline" disabled={isSubmitting} />}>
               Batal
             </DialogClose>
-            <Button type="submit" variant="destructive" disabled={busy}>
-              {busy ? 'Menolak…' : 'Tolak bukti'}
+            <Button type="submit" variant="destructive" disabled={isSubmitting}>
+              {isSubmitting ? 'Memproses…' : 'Ya, beri strike'}
             </Button>
           </DialogFooter>
         </form>

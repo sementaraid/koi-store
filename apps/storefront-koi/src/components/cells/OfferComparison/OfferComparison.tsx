@@ -68,14 +68,14 @@ export function OfferComparison({
             <div className="flex shrink-0 items-center gap-2">
               <RenderIf when={offer.id === winnerId}>
                 {() => (
-                  <Badge variant="attention" className="text-[11px]">
+                  <Badge variant="attention" className="text-[12px]">
                     Pilihan
                   </Badge>
                 )}
               </RenderIf>
               <RenderIf when={offer.stock <= 0}>
                 {() => (
-                  <Badge variant="muted" className="text-[11px]">
+                  <Badge variant="muted" className="text-[12px]">
                     Stok habis
                   </Badge>
                 )}

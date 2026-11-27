@@ -1,14 +1,23 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
 import {
+  Alert,
   Badge,
   Button,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   FormField,
   Table,
   TableBody,
@@ -32,7 +41,6 @@ import {
 } from '@/lib/helpers/topup-format';
 
 import { AdminEmpty } from './AdminEmpty';
-import { ConfirmDialog } from './ConfirmDialog';
 import {
   DetailDialog,
   DetailIdentity,
@@ -41,6 +49,7 @@ import {
   DetailPricePanel,
   DetailSection
 } from './DetailDialog';
+import { RowActions } from './RowActions';
 
 export type TopupQueueProps = {
   pending: TopupRequest[];
@@ -120,7 +129,19 @@ function customerName(request: TopupRequest): string {
 }
 
 function PendingRow({ request }: { request: TopupRequest }) {
-  const [busy, setBusy] = useState(false);
+  const router = useRouter();
+  const actionsRef = useRef<HTMLDivElement>(null);
+  const [approveOpen, setApproveOpen] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
+
+  function done() {
+    setApproveOpen(false);
+    setRejectOpen(false);
+    router.refresh();
+    requestAnimationFrame(() => {
+      actionsRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    });
+  }
 
   return (
     <TableRow>
@@ -138,10 +159,35 @@ function PendingRow({ request }: { request: TopupRequest }) {
         <TopupDetail request={request} />
       </TableCell>
       <TableCell>
-        <div className="grid gap-3">
-          <ApproveForm id={request.id} busy={busy} onBusyChange={setBusy} />
-          <RejectForm id={request.id} busy={busy} onBusyChange={setBusy} />
+        <div ref={actionsRef} className="inline-flex">
+          <RowActions
+            label={`Aksi untuk top-up ${customerName(request)}`}
+            actions={[
+              {
+                label: 'Setujui top-up',
+                onSelect: () => setApproveOpen(true)
+              },
+              {
+                label: 'Tolak top-up',
+                onSelect: () => setRejectOpen(true),
+                tone: 'destructive'
+              }
+            ]}
+          />
         </div>
+
+        <ApproveTopupDialog
+          request={request}
+          open={approveOpen}
+          onOpenChange={setApproveOpen}
+          onDone={done}
+        />
+        <RejectTopupDialog
+          request={request}
+          open={rejectOpen}
+          onOpenChange={setRejectOpen}
+          onDone={done}
+        />
       </TableCell>
     </TableRow>
   );
@@ -296,14 +342,16 @@ const approveSchema = z.object({
 
 type ApproveData = z.infer<typeof approveSchema>;
 
-function ApproveForm({
-  id,
-  busy,
-  onBusyChange
+function ApproveTopupDialog({
+  request,
+  open,
+  onOpenChange,
+  onDone
 }: {
-  id: string;
-  busy: boolean;
-  onBusyChange: (busy: boolean) => void;
+  request: TopupRequest;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onDone: () => void;
 }) {
   const {
     register,
@@ -314,74 +362,95 @@ function ApproveForm({
     resolver: zodResolver(approveSchema),
     defaultValues: { bank_reference: '' }
   });
-  const [pending, setPending] = useState<ApproveData | null>(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function submit(data: ApproveData) {
-    setPending(data);
-    setConfirmOpen(true);
+  function changeOpen(next: boolean) {
+    if (isSubmitting) return;
+    onOpenChange(next);
+    if (!next) {
+      setError(null);
+      reset();
+    }
   }
 
-  async function confirm() {
-    if (!pending) return;
-
-    onBusyChange(true);
-    const result = await approveTopup(id, pending.bank_reference);
-    onBusyChange(false);
-    setConfirmOpen(false);
-    setPending(null);
+  async function submit(data: ApproveData) {
+    if (isSubmitting) return;
+    setError(null);
+    const result = await approveTopup(request.id, data.bank_reference);
 
     if (!result.success) {
-      toast.error(result.error);
+      setError(result.error);
       return;
     }
 
-    toast.success('Top-up disetujui.');
     reset();
+    toast.success('Top-up disetujui.');
+    onDone();
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} className="grid gap-2" noValidate>
-      <FormField
-        id={`topup-${id}-reference`}
-        label="Referensi mutasi bank"
-        hint="Nomor referensi atau keterangan dari mutasi rekening."
-        error={errors.bank_reference?.message}
-        {...register('bank_reference')}
-      />
-      <div>
-        <Button type="submit" size="sm" disabled={isSubmitting || busy}>
-          {isSubmitting ? 'Menyetujui…' : 'Setujui'}
-        </Button>
-      </div>
+    <Dialog open={open} onOpenChange={changeOpen}>
+      <DialogContent>
+        <form onSubmit={handleSubmit(submit)} className="grid gap-4" noValidate>
+          <DialogHeader>
+            <DialogTitle>
+              Setujui top-up {formatRupiah(request.amount)} dari {customerName(request)}?
+            </DialogTitle>
+            <DialogDescription>
+              Saldo pelanggan bertambah {formatRupiah(request.amount)} setelah disetujui.
+              Masukkan referensi mutasi bank sebagai bukti.
+            </DialogDescription>
+          </DialogHeader>
 
-      <ConfirmDialog
-        open={confirmOpen}
-        onOpenChange={setConfirmOpen}
-        title="Setujui top-up?"
-        description="Setujui top-up ini dan tambahkan saldo pelanggan?"
-        confirmLabel="Setujui"
-        busyLabel="Menyetujui…"
-        onConfirm={confirm}
-      />
-    </form>
+          {error ? (
+            <Alert tone="signal" role="alert" title="Gagal menyetujui top-up">
+              <p className="text-destructive-ink">{error}</p>
+            </Alert>
+          ) : null}
+
+          <FormField
+            id={`topup-${request.id}-reference`}
+            label="Referensi mutasi bank"
+            hint="Nomor referensi atau keterangan dari mutasi rekening."
+            error={errors.bank_reference?.message}
+            disabled={isSubmitting}
+            {...register('bank_reference')}
+          />
+
+          <DialogFooter>
+            <DialogClose render={<Button type="button" variant="outline" disabled={isSubmitting} />}>
+              Batal
+            </DialogClose>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Memproses…' : 'Ya, setujui'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
 const rejectSchema = z.object({
-  reason: z.string().trim().min(1, 'Masukkan alasan penolakan')
+  reason: z
+    .string()
+    .trim()
+    .min(5, 'Alasan minimal 5 karakter')
+    .max(500, 'Alasan maksimal 500 karakter')
 });
 
 type RejectData = z.infer<typeof rejectSchema>;
 
-function RejectForm({
-  id,
-  busy,
-  onBusyChange
+function RejectTopupDialog({
+  request,
+  open,
+  onOpenChange,
+  onDone
 }: {
-  id: string;
-  busy: boolean;
-  onBusyChange: (busy: boolean) => void;
+  request: TopupRequest;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onDone: () => void;
 }) {
   const {
     register,
@@ -392,57 +461,72 @@ function RejectForm({
     resolver: zodResolver(rejectSchema),
     defaultValues: { reason: '' }
   });
-  const [pending, setPending] = useState<RejectData | null>(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function submit(data: RejectData) {
-    setPending(data);
-    setConfirmOpen(true);
+  function changeOpen(next: boolean) {
+    if (isSubmitting) return;
+    onOpenChange(next);
+    if (!next) {
+      setError(null);
+      reset();
+    }
   }
 
-  async function confirm() {
-    if (!pending) return;
-
-    onBusyChange(true);
-    const result = await rejectTopup(id, pending.reason);
-    onBusyChange(false);
-    setConfirmOpen(false);
-    setPending(null);
+  async function submit(data: RejectData) {
+    if (isSubmitting) return;
+    setError(null);
+    const result = await rejectTopup(request.id, data.reason);
 
     if (!result.success) {
-      toast.error(result.error);
+      setError(result.error);
       return;
     }
 
-    toast.success('Top-up ditolak.');
     reset();
+    toast.success('Top-up ditolak.');
+    onDone();
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} className="grid gap-2" noValidate>
-      <FormField
-        id={`topup-${id}-reject-reason`}
-        label="Alasan penolakan"
-        hint="Pelanggan akan membaca alasan ini."
-        error={errors.reason?.message}
-        {...register('reason')}
-      />
-      <div>
-        <Button type="submit" variant="destructive" size="sm" disabled={isSubmitting || busy}>
-          {isSubmitting ? 'Menolak…' : 'Tolak'}
-        </Button>
-      </div>
+    <Dialog open={open} onOpenChange={changeOpen}>
+      <DialogContent>
+        <form onSubmit={handleSubmit(submit)} className="grid gap-4" noValidate>
+          <DialogHeader>
+            <DialogTitle>
+              Tolak top-up {formatRupiah(request.amount)} dari {customerName(request)}?
+            </DialogTitle>
+            <DialogDescription>
+              Top-up ditolak dan keputusan tidak bisa diubah. Pelanggan akan membaca alasan di
+              bawah ini.
+            </DialogDescription>
+          </DialogHeader>
 
-      <ConfirmDialog
-        open={confirmOpen}
-        onOpenChange={setConfirmOpen}
-        title="Tolak top-up?"
-        description="Tolak top-up ini? Keputusan tidak bisa diubah."
-        confirmLabel="Tolak"
-        busyLabel="Menolak…"
-        destructive
-        onConfirm={confirm}
-      />
-    </form>
+          {error ? (
+            <Alert tone="signal" role="alert" title="Gagal menolak top-up">
+              <p className="text-destructive-ink">{error}</p>
+            </Alert>
+          ) : null}
+
+          <FormField
+            id={`topup-${request.id}-reject-reason`}
+            label="Alasan penolakan"
+            hint="Minimal 5 karakter, maksimal 500 karakter."
+            error={errors.reason?.message}
+            disabled={isSubmitting}
+            maxLength={500}
+            {...register('reason')}
+          />
+
+          <DialogFooter>
+            <DialogClose render={<Button type="button" variant="outline" disabled={isSubmitting} />}>
+              Batal
+            </DialogClose>
+            <Button type="submit" variant="destructive" disabled={isSubmitting}>
+              {isSubmitting ? 'Memproses…' : 'Ya, tolak'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

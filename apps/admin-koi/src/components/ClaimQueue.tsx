@@ -1,19 +1,31 @@
 'use client';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import { z } from 'zod';
 
 import {
+  Alert,
   Badge,
   Button,
-  FormField,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Label,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
+  TableRow,
+  Textarea
 } from '@koi/ui';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@koi/ui/primitives/tabs';
 import { approveClaim, getClaimVideo, rejectClaim, type AdminClaim } from '@/lib/data/claims';
@@ -28,7 +40,6 @@ import {
 import { activeStrikeLabel, banLabel } from '@/lib/helpers/strike-format';
 
 import { AdminEmpty } from './AdminEmpty';
-import { ConfirmDialog } from './ConfirmDialog';
 import {
   DetailDialog,
   DetailIdentity,
@@ -36,6 +47,7 @@ import {
   DetailMediaFrame,
   DetailSection
 } from './DetailDialog';
+import { RowActions, type RowAction } from './RowActions';
 import { StrikePanel } from './StrikePanel';
 
 export type ClaimQueueProps = {
@@ -143,6 +155,13 @@ function ClaimStatus({ claim }: { claim: AdminClaim }) {
 }
 
 function DisputedRow({ claim }: { claim: AdminClaim }) {
+  const [decision, setDecision] = useState<'approve' | 'reject' | null>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const actions: RowAction[] = [
+    { label: 'Setujui', onSelect: () => setDecision('approve') },
+    { label: 'Tolak', tone: 'destructive', onSelect: () => setDecision('reject') }
+  ];
+
   return (
     <TableRow>
       <TableCell>
@@ -155,7 +174,23 @@ function DisputedRow({ claim }: { claim: AdminClaim }) {
         <ClaimDetail claim={claim} />
       </TableCell>
       <TableCell>
-        <DecisionForm id={claim.id} />
+        <div ref={triggerRef} className="inline-flex">
+          <RowActions
+            label={`Aksi klaim ${claim.product.title ?? claim.id}`}
+            actions={actions}
+          />
+        </div>
+        {decision ? (
+          <DecisionDialog
+            claim={claim}
+            decision={decision}
+            open
+            onOpenChange={(open) => {
+              if (!open) setDecision(null);
+            }}
+            finalFocus={() => triggerRef.current?.querySelector('button') ?? null}
+          />
+        ) : null}
       </TableCell>
     </TableRow>
   );
@@ -271,6 +306,7 @@ function DecidedRow({ claim, now }: { claim: AdminClaim; now: string }) {
                 : { seller_id: claim.seller.id }
             }
             idPrefix={`claim-${claim.id}`}
+            targetName={claim.seller.name || undefined}
           />
         ) : (
           <span className="text-muted-foreground">—</span>
@@ -280,94 +316,132 @@ function DecidedRow({ claim, now }: { claim: AdminClaim; now: string }) {
   );
 }
 
-function DecisionForm({ id }: { id: string }) {
+const DECISION_SCHEMA = z.object({
+  reason: z
+    .string()
+    .trim()
+    .min(5, 'Alasan minimal 5 karakter')
+    .max(500, 'Alasan maksimal 500 karakter')
+});
+
+type DecisionData = z.infer<typeof DECISION_SCHEMA>;
+
+/* The dialog carries the consequence and the required reason, so pressing
+   "Ya, setujui" or "Ya, tolak" is the confirmation. */
+function DecisionDialog({
+  claim,
+  decision,
+  open,
+  onOpenChange,
+  finalFocus
+}: {
+  claim: AdminClaim;
+  decision: 'approve' | 'reject';
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  finalFocus?: () => HTMLElement | null;
+}) {
   const router = useRouter();
-  const [reason, setReason] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [pendingDecision, setPendingDecision] = useState<'approve' | 'reject' | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting }
+  } = useForm<DecisionData>({
+    resolver: zodResolver(DECISION_SCHEMA),
+    defaultValues: { reason: '' }
+  });
+  const label = claim.product.title ?? 'lot ini';
+  const approve = decision === 'approve';
+  const uid = `claim-${claim.id}-${decision}`;
 
-  function decide(decision: 'approve' | 'reject') {
-    if (!reason.trim()) {
-      setError('Masukkan alasan keputusan');
-      return;
+  function changeOpen(next: boolean) {
+    if (isSubmitting) return;
+    onOpenChange(next);
+    if (!next) {
+      setApiError(null);
+      reset();
     }
-    setPendingDecision(decision);
   }
 
-  async function confirmDecision() {
-    const decision = pendingDecision;
-    if (!decision) return;
+  async function submit(data: DecisionData) {
+    if (isSubmitting) return;
+    setApiError(null);
+    const result = approve
+      ? await approveClaim(claim.id, data.reason)
+      : await rejectClaim(claim.id, data.reason);
 
-    const trimmed = reason.trim();
-    setBusy(true);
-    setError(null);
-    const result =
-      decision === 'approve' ? await approveClaim(id, trimmed) : await rejectClaim(id, trimmed);
-    setBusy(false);
-    setPendingDecision(null);
-
-    if (result.success) {
-      toast.success(decision === 'approve' ? 'Klaim disetujui.' : 'Klaim ditolak.');
-      router.refresh();
+    if (!result.success) {
+      setApiError(claimDecisionFailure(result.status, result.error).message);
       return;
     }
 
-    const info = claimDecisionFailure(result.status, result.error);
-    setError(info.message);
-    toast.error(info.message);
-    if (info.refresh) router.refresh();
+    toast.success(approve ? 'Klaim disetujui.' : 'Klaim ditolak.');
+    onOpenChange(false);
+    reset();
+    router.refresh();
   }
+
+  const error = errors.reason?.message;
+  const describedBy = error ? `${uid}-hint ${uid}-error` : `${uid}-hint`;
 
   return (
-    <form
-      onSubmit={(event) => event.preventDefault()}
-      className="grid gap-2"
-      noValidate
-    >
-      <FormField
-        id={`claim-${id}-reason`}
-        label="Alasan keputusan"
-        hint="Tersimpan bersama keputusan ini dan menjadi catatan audit."
-        value={reason}
-        error={error ?? undefined}
-        onChange={(event) => {
-          setReason(event.target.value);
-          if (error) setError(null);
-        }}
-      />
-      <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" size="sm" disabled={busy} onClick={() => decide('approve')}>
-          {busy ? 'Memproses…' : 'Setujui'}
-        </Button>
-        <Button
-          type="button"
-          variant="destructive"
-          size="sm"
-          disabled={busy}
-          onClick={() => decide('reject')}
-        >
-          Tolak
-        </Button>
-      </div>
+    <Dialog open={open} onOpenChange={changeOpen}>
+      <DialogContent showCloseButton={!isSubmitting} finalFocus={finalFocus}>
+        <form onSubmit={handleSubmit(submit)} className="grid gap-4" noValidate>
+          <DialogHeader>
+            <DialogTitle>
+              {approve ? `Setujui klaim ${label}?` : `Tolak klaim ${label}?`}
+            </DialogTitle>
+            <DialogDescription>
+              {approve
+                ? 'Klaim disetujui dan keputusan ini final. Pemenang mengirim ulang koi atau menerima ganti rugi sesuai remedi.'
+                : 'Klaim ditolak dan keputusan ini final. Petani bisa menerima strike bila klaim yang disetujui tidak dipenuhi.'}
+            </DialogDescription>
+          </DialogHeader>
 
-      <ConfirmDialog
-        open={pendingDecision !== null}
-        onOpenChange={(open) => {
-          if (!open) setPendingDecision(null);
-        }}
-        title={pendingDecision === 'approve' ? 'Setujui klaim?' : 'Tolak klaim?'}
-        description={
-          pendingDecision === 'approve'
-            ? 'Setujui klaim ini? Keputusan bersifat final.'
-            : 'Tolak klaim ini? Keputusan bersifat final.'
-        }
-        confirmLabel={pendingDecision === 'approve' ? 'Setujui' : 'Tolak'}
-        busyLabel="Memproses…"
-        destructive={pendingDecision === 'reject'}
-        onConfirm={confirmDecision}
-      />
-    </form>
+          <div className="grid gap-1.5">
+            <Label htmlFor={`${uid}-reason`}>Alasan keputusan</Label>
+            <Textarea
+              id={`${uid}-reason`}
+              rows={3}
+              maxLength={500}
+              disabled={isSubmitting}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={describedBy}
+              {...register('reason')}
+            />
+            <p id={`${uid}-hint`} className="text-xs text-muted-foreground">
+              Wajib diisi, 5–500 karakter. Tersimpan bersama keputusan ini sebagai catatan
+              audit.
+            </p>
+            {error ? (
+              <p id={`${uid}-error`} role="alert" className="text-xs text-destructive-ink">
+                {error}
+              </p>
+            ) : null}
+          </div>
+
+          {apiError ? (
+            <Alert tone="signal" role="alert" title="Gagal memutuskan klaim">
+              {apiError}
+            </Alert>
+          ) : null}
+
+          <DialogFooter>
+            <DialogClose
+              render={<Button type="button" variant="outline" disabled={isSubmitting} />}
+            >
+              Batal
+            </DialogClose>
+            <Button type="submit" variant={approve ? 'solid' : 'destructive'} disabled={isSubmitting}>
+              {isSubmitting ? 'Memproses…' : approve ? 'Ya, setujui' : 'Ya, tolak'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 

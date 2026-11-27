@@ -1,14 +1,23 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
 import {
+  Alert,
   Badge,
   Button,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   FormField,
   Table,
   TableBody,
@@ -44,6 +53,7 @@ import {
   DetailMediaStage,
   DetailSection
 } from './DetailDialog';
+import { RowActions } from './RowActions';
 
 export type FarmQueueProps = {
   pending: AdminFarm[];
@@ -128,7 +138,21 @@ function applicantName(applicant: FarmApplicant | null): string {
 }
 
 function PendingRow({ farm }: { farm: AdminFarm }) {
-  const [busy, setBusy] = useState(false);
+  const router = useRouter();
+  const actionsRef = useRef<HTMLDivElement>(null);
+  const [approveOpen, setApproveOpen] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
+
+  // After a successful decision the row usually leaves this queue, so the
+  // trigger may be gone by the next paint. Focus it when it is still there.
+  function done() {
+    setApproveOpen(false);
+    setRejectOpen(false);
+    router.refresh();
+    requestAnimationFrame(() => {
+      actionsRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    });
+  }
 
   return (
     <TableRow>
@@ -181,10 +205,37 @@ function PendingRow({ farm }: { farm: AdminFarm }) {
       </TableCell>
 
       <TableCell>
-        <div className="grid gap-3">
-          <ApproveForm id={farm.id} busy={busy} onBusyChange={setBusy} />
-          <RejectForm id={farm.id} busy={busy} onBusyChange={setBusy} />
+        <div ref={actionsRef} className="inline-flex">
+          <RowActions
+            label={`Aksi untuk ${farm.name}`}
+            actions={[
+              {
+                label: 'Setujui kebun',
+                onSelect: () => setApproveOpen(true)
+              },
+              {
+                label: 'Tolak kebun',
+                onSelect: () => setRejectOpen(true),
+                tone: 'destructive'
+              }
+            ]}
+          />
         </div>
+
+        <ApproveFarmDialog
+          id={farm.id}
+          name={farm.name}
+          open={approveOpen}
+          onOpenChange={setApproveOpen}
+          onDone={done}
+        />
+        <RejectFarmDialog
+          id={farm.id}
+          name={farm.name}
+          open={rejectOpen}
+          onOpenChange={setRejectOpen}
+          onDone={done}
+        />
       </TableCell>
     </TableRow>
   );
@@ -580,72 +631,88 @@ function KtpView({ id }: { id: string }) {
   );
 }
 
-function ApproveForm({
+function ApproveFarmDialog({
   id,
-  busy,
-  onBusyChange
+  name,
+  open,
+  onOpenChange,
+  onDone
 }: {
   id: string;
-  busy: boolean;
-  onBusyChange: (busy: boolean) => void;
+  name: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onDone: () => void;
 }) {
-  const [submitting, setSubmitting] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  async function approve() {
-    onBusyChange(true);
-    setSubmitting(true);
+  function changeOpen(next: boolean) {
+    if (busy) return;
+    onOpenChange(next);
+    if (!next) setError(null);
+  }
+
+  async function confirm() {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
     const result = await approveFarm(id);
-    setSubmitting(false);
-    onBusyChange(false);
-    setConfirmOpen(false);
+    setBusy(false);
 
     if (!result.success) {
-      toast.error(result.error);
+      setError(result.error);
       return;
     }
 
     toast.success('Kebun disetujui.');
+    onDone();
   }
 
   return (
-    <div>
-      <Button
-        type="button"
-        size="sm"
-        onClick={() => setConfirmOpen(true)}
-        disabled={submitting || busy}
-      >
-        {submitting ? 'Menyetujui…' : 'Setujui kebun'}
-      </Button>
-
-      <ConfirmDialog
-        open={confirmOpen}
-        onOpenChange={setConfirmOpen}
-        title="Setujui kebun?"
-        description="Setujui pendaftaran kebun ini dan beri akses petani?"
-        confirmLabel="Setujui kebun"
-        busyLabel="Menyetujui…"
-        onConfirm={approve}
-      />
-    </div>
+    <ConfirmDialog
+      open={open}
+      onOpenChange={changeOpen}
+      title={`Setujui pendaftaran ${name}?`}
+      description={
+        <>
+          <span>Pendaftaran disetujui dan petani mendapat akses menjual.</span>
+          {error ? (
+            <span role="alert" className="mt-2 block font-medium text-destructive-ink">
+              {error}
+            </span>
+          ) : null}
+        </>
+      }
+      confirmLabel="Ya, setujui"
+      busyLabel="Memproses…"
+      onConfirm={confirm}
+    />
   );
 }
 
 const rejectSchema = z.object({
-  reason: z.string().trim().min(1, 'Masukkan alasan penolakan')
+  reason: z
+    .string()
+    .trim()
+    .min(5, 'Alasan minimal 5 karakter')
+    .max(500, 'Alasan maksimal 500 karakter')
 });
 
 type RejectData = z.infer<typeof rejectSchema>;
 
-function RejectForm({
+function RejectFarmDialog({
   id,
-  busy,
-  onBusyChange
+  name,
+  open,
+  onOpenChange,
+  onDone
 }: {
   id: string;
-  busy: boolean;
-  onBusyChange: (busy: boolean) => void;
+  name: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onDone: () => void;
 }) {
   const {
     register,
@@ -656,55 +723,70 @@ function RejectForm({
     resolver: zodResolver(rejectSchema),
     defaultValues: { reason: '' }
   });
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [pendingReason, setPendingReason] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  function submit(data: RejectData) {
-    setPendingReason(data.reason);
-    setConfirmOpen(true);
+  function changeOpen(next: boolean) {
+    if (isSubmitting) return;
+    onOpenChange(next);
+    if (!next) {
+      setError(null);
+      reset();
+    }
   }
 
-  async function reject() {
-    onBusyChange(true);
-    const result = await rejectFarm(id, pendingReason);
-    onBusyChange(false);
-    setConfirmOpen(false);
+  async function submit(data: RejectData) {
+    if (isSubmitting) return;
+    setError(null);
+    const result = await rejectFarm(id, data.reason);
 
     if (!result.success) {
-      toast.error(result.error);
+      setError(result.error);
       return;
     }
 
-    toast.success('Kebun ditolak.');
-    setPendingReason('');
     reset();
+    toast.success('Kebun ditolak.');
+    onDone();
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} className="grid gap-2" noValidate>
-      <FormField
-        id={`farm-${id}-reject-reason`}
-        label="Alasan penolakan"
-        hint="Pendaftar akan membaca alasan ini. Penolakan final, tanpa pendaftaran ulang."
-        error={errors.reason?.message}
-        {...register('reason')}
-      />
-      <div>
-        <Button type="submit" variant="destructive" size="sm" disabled={isSubmitting || busy}>
-          {isSubmitting ? 'Menolak…' : 'Tolak kebun'}
-        </Button>
-      </div>
+    <Dialog open={open} onOpenChange={changeOpen}>
+      <DialogContent>
+        <form onSubmit={handleSubmit(submit)} className="grid gap-4" noValidate>
+          <DialogHeader>
+            <DialogTitle>Tolak pendaftaran {name}?</DialogTitle>
+            <DialogDescription>
+              Pendaftaran ditolak dan keputusan ini final. Pendaftar akan membaca alasan di
+              bawah ini.
+            </DialogDescription>
+          </DialogHeader>
 
-      <ConfirmDialog
-        open={confirmOpen}
-        onOpenChange={setConfirmOpen}
-        title="Tolak pendaftaran kebun?"
-        description="Tolak pendaftaran kebun ini? Keputusan ini final dan tidak bisa dibatalkan."
-        confirmLabel="Tolak kebun"
-        busyLabel="Menolak…"
-        destructive
-        onConfirm={reject}
-      />
-    </form>
+          {error ? (
+            <Alert tone="signal" role="alert" title="Gagal menolak kebun">
+              <p className="text-destructive-ink">{error}</p>
+            </Alert>
+          ) : null}
+
+          <FormField
+            id={`farm-${id}-reject-reason`}
+            label="Alasan penolakan"
+            hint="Minimal 5 karakter, maksimal 500 karakter."
+            error={errors.reason?.message}
+            disabled={isSubmitting}
+            maxLength={500}
+            {...register('reason')}
+          />
+
+          <DialogFooter>
+            <DialogClose render={<Button type="button" variant="outline" disabled={isSubmitting} />}>
+              Batal
+            </DialogClose>
+            <Button type="submit" variant="destructive" disabled={isSubmitting}>
+              {isSubmitting ? 'Memproses…' : 'Ya, tolak'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

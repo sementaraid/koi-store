@@ -26,8 +26,8 @@
     /* koi type rung below `xs`: the eyebrow/tier label over a name, read as a
        caption rather than as body text. Leading stays near the size, because
        these stack two-deep and must not drift apart. */
-    --text-2xs: 0.625rem;
-    --text-2xs--line-height: 0.875rem;
+    --text-2xs: 0.6875rem;
+    --text-2xs--line-height: 0.9375rem;
 }
 
 /* App-only tokens, pointed at the kit's palette so `.dark` switches them with

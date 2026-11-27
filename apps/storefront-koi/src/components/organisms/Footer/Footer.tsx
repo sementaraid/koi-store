@@ -174,7 +174,7 @@ function TrustPill({ label, icon: Icon, tone = "info" }: FooterTrust) {
       />
       <span
         className={cn(
-          "text-[11px] font-bold",
+          "text-[12px] font-bold",
           tone === "gold" ? "text-gold-ink" : "text-info-ink"
         )}
       >

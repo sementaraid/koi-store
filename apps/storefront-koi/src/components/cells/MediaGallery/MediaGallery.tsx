@@ -299,7 +299,7 @@ export function MediaGallery({
                       >
                         <span className="flex size-full flex-col items-center justify-center gap-0.5">
                           <Play aria-hidden className="size-4 fill-current lg:size-5" />
-                          <span className="text-[10px] font-semibold">Video</span>
+                          <span className="text-[12px] font-semibold">Video</span>
                         </span>
                         {/* US-098 AC12: the current thumbnail is marked with an
                             icon, not only the border colour. */}

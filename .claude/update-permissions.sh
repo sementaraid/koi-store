@@ -2,10 +2,11 @@
 # Merge the Koi Store dev allowlist into .claude/settings.local.json.
 # Safe to rerun: existing entries are kept, duplicates are not added.
 #
-# Usage: .claude/update-permissions.sh [all|bash|playwright] [--dry-run]
-#   all         Bash rules + every Playwright MCP tool (default)
+# Usage: .claude/update-permissions.sh [all|bash|playwright|tools] [--dry-run]
+#   all         Bash + MCP + file/research tools (default)
 #   bash        only the Bash(...) rules
 #   playwright  only mcp__playwright
+#   tools       only Read/Edit/Write/Glob/Grep/Skill/ToolSearch/Agent/WebFetch/WebSearch
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
@@ -15,7 +16,7 @@ dry=0
 for arg in "$@"; do
   case "$arg" in
     --dry-run) dry=1 ;;
-    all|bash|playwright) mode="$arg" ;;
+    all|bash|playwright|tools) mode="$arg" ;;
     *) echo "unknown argument: $arg" >&2; exit 2 ;;
   esac
 done
@@ -76,17 +77,38 @@ bash_rules = [
 ]
 
 mcp_rules = [
-    # every tool of the Playwright MCP server, including future ones.
-    # Note: covers browser_run_code_unsafe too.
+    # every tool of the MCP servers this repo uses
     "mcp__playwright",
+    "mcp__mercur",
+    "mcp__medusa",
+    "mcp__plugin_telegram_telegram__reply",
+    "mcp__plugin_telegram_telegram__react",
+    "mcp__plugin_telegram_telegram__edit_message",
+    "mcp__plugin_telegram_telegram__download_attachment",
+]
+
+tool_rules = [
+    # file and research tools: no prompts while the owner is away
+    "Read",
+    "Edit",
+    "Write",
+    "Glob",
+    "Grep",
+    "Skill",
+    "ToolSearch",
+    "Agent",
+    "WebFetch",
+    "WebSearch",
 ]
 
 if mode == "bash":
     allow = bash_rules
 elif mode == "playwright":
     allow = mcp_rules
+elif mode == "tools":
+    allow = tool_rules
 else:
-    allow = bash_rules + mcp_rules
+    allow = bash_rules + mcp_rules + tool_rules
 
 data = {}
 if os.path.exists(path):

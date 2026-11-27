@@ -1,22 +1,39 @@
 'use client';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import { z } from 'zod';
 
 import {
+  Alert,
   Badge,
+  Button,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  Label,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
+  TableRow,
+  Textarea
 } from '@koi/ui';
-import { CancelAction } from '@/components/CancelAction';
 import type { AdminLiveAuction, AdminLiveLot } from '@/lib/data/live-auctions';
+import { cancelAuction, cancelLot } from '@/lib/data/live-auctions';
 import { ROUTES } from '@/const/routes';
 import { formatAuctionDate } from '@/lib/helpers/auction-format';
-import { lotStatusLabel, lotStatusTone, timeLeftLabel } from '@/lib/helpers/live-bid-format';
+import { cancelAuctionToast, lotStatusLabel, lotStatusTone, timeLeftLabel } from '@/lib/helpers/live-bid-format';
 import { formatRupiah } from '@/lib/helpers/topup-format';
 
 import { AdminEmpty } from './AdminEmpty';
@@ -34,6 +51,35 @@ export type LiveAuctionsProps = {
   total: number;
   now: string;
 };
+
+const COPY = {
+  lot: {
+    button: 'Batalkan lot',
+    title: 'Batalkan lot?',
+    consequence:
+      'Lot tidak bisa dibuka lagi. Peserta yang sudah ikut tidak otomatis dikembalikan kecuali lelangnya dibatalkan.',
+    reasonLabel: 'Alasan pembatalan lot',
+    confirm: 'Ya, batalkan lot'
+  },
+  auction: {
+    button: 'Batalkan lelang',
+    title: 'Batalkan lelang?',
+    consequence:
+      'Semua biaya ikut lelang dikembalikan ke saldo peserta. Biaya pasang lelang tidak dikembalikan. Semua lot yang masih terbuka ikut dibatalkan.',
+    reasonLabel: 'Alasan pembatalan lelang',
+    confirm: 'Ya, batalkan lelang'
+  }
+} as const;
+
+const REASON_SCHEMA = z.object({
+  reason: z
+    .string()
+    .trim()
+    .min(5, 'Alasan minimal 5 karakter')
+    .max(500, 'Alasan maksimal 500 karakter')
+});
+
+type ReasonData = z.infer<typeof REASON_SCHEMA>;
 
 export function lotPanelHref(lotId: string): string {
   return `${ROUTES.liveAuctions}?lot=${encodeURIComponent(lotId)}`;
@@ -80,9 +126,10 @@ export function LiveAuctions({ auctions, total, now }: LiveAuctionsProps) {
                       </p>
                     </div>
                     {auction.status === 'live' ? (
-                      <CancelAction
+                      <CancelControl
                         kind="auction"
                         id={auction.id}
+                        recordLabel={auction.seller?.name ?? 'lelang ini'}
                         onCancelled={() => setCancelled((prev) => [...prev, auction])}
                       />
                     ) : null}
@@ -172,10 +219,140 @@ function LotRow({
           >
             Lihat bid
           </Link>
-          {lot.status === 'open' ? <CancelAction kind="lot" id={lot.id} /> : null}
+          {lot.status === 'open' ? (
+            <CancelControl kind="lot" id={lot.id} recordLabel={lot.title ?? 'lot ini'} />
+          ) : null}
         </div>
       </TableCell>
     </TableRow>
+  );
+}
+
+/* One dialog carries the consequence and the required reason, so it is the
+   confirmation. Nothing is written until "Ya, batalkan…" is pressed. */
+function CancelControl({
+  kind,
+  id,
+  recordLabel,
+  onCancelled
+}: {
+  kind: 'lot' | 'auction';
+  id: string;
+  recordLabel: string;
+  onCancelled?: () => void;
+}) {
+  /* Deterministic, not `useId`: same id in the server HTML and the client. */
+  const uid = `cancel-${kind}-${id}`;
+  const copy = COPY[kind];
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting }
+  } = useForm<ReasonData>({
+    resolver: zodResolver(REASON_SCHEMA),
+    defaultValues: { reason: '' }
+  });
+
+  function changeOpen(next: boolean) {
+    if (isSubmitting) return;
+    setOpen(next);
+    if (!next) {
+      setApiError(null);
+      reset();
+    }
+  }
+
+  async function submit(data: ReasonData) {
+    if (isSubmitting) return;
+    setApiError(null);
+
+    if (kind === 'lot') {
+      const result = await cancelLot(id, data.reason);
+      if (!result.success) {
+        setApiError(result.error);
+        return;
+      }
+      toast.success('Lot dibatalkan. Lot ini tidak bisa dibuka lagi.');
+    } else {
+      const result = await cancelAuction(id, data.reason);
+      if (!result.success) {
+        setApiError(result.error);
+        return;
+      }
+      toast.success(cancelAuctionToast(result.refund, formatRupiah));
+      onCancelled?.();
+    }
+
+    setOpen(false);
+    reset();
+    router.refresh();
+  }
+
+  const error = errors.reason?.message;
+  const describedBy = error ? `${uid}-hint ${uid}-error` : `${uid}-hint`;
+
+  return (
+    <Dialog open={open} onOpenChange={changeOpen}>
+      <DialogTrigger
+        render={
+          <Button type="button" variant="outline" size={kind === 'lot' ? 'xs' : 'sm'} />
+        }
+      >
+        {copy.button}
+      </DialogTrigger>
+      <DialogContent showCloseButton={!isSubmitting}>
+        <form onSubmit={handleSubmit(submit)} className="grid gap-4" noValidate>
+          <DialogHeader>
+            <DialogTitle>{copy.title}</DialogTitle>
+            <DialogDescription>
+              Berlaku untuk {recordLabel}. {copy.consequence}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-1.5">
+            <Label htmlFor={`${uid}-reason`}>{copy.reasonLabel}</Label>
+            <Textarea
+              id={`${uid}-reason`}
+              rows={3}
+              maxLength={500}
+              disabled={isSubmitting}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={describedBy}
+              {...register('reason')}
+            />
+            <p id={`${uid}-hint`} className="text-xs text-muted-foreground">
+              Wajib diisi, 5–500 karakter. Tersimpan sebagai catatan audit.
+            </p>
+            {error ? (
+              <p id={`${uid}-error`} role="alert" className="text-xs text-destructive-ink">
+                {error}
+              </p>
+            ) : null}
+          </div>
+
+          {apiError ? (
+            <Alert tone="signal" role="alert" title="Gagal membatalkan">
+              {apiError}
+            </Alert>
+          ) : null}
+
+          <DialogFooter>
+            <DialogClose
+              render={<Button type="button" variant="outline" disabled={isSubmitting} />}
+            >
+              Batal
+            </DialogClose>
+            <Button type="submit" variant="destructive" disabled={isSubmitting}>
+              {isSubmitting ? 'Memproses…' : copy.confirm}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 

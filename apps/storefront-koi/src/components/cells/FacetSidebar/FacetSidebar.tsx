@@ -175,7 +175,7 @@ export function FacetSidebar({
             {() => (
               <span
                 aria-hidden
-                className="flex size-5 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground tabular-nums"
+                className="flex size-5 items-center justify-center rounded-full bg-primary text-[12px] font-semibold text-primary-foreground tabular-nums"
               >
                 {active}
               </span>

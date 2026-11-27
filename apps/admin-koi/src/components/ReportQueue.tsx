@@ -112,6 +112,7 @@ function ReportRow({ report }: { report: AdminReport }) {
                   : { lot_id: report.lot_id }
               }
               idPrefix={`report-${report.id}`}
+              targetName={report.winner.name || undefined}
             />
           ) : null}
         </div>

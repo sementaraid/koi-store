@@ -1,11 +1,15 @@
 'use client';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import { z } from 'zod';
 
 import {
+  Alert,
   Badge,
   Button,
   Dialog,
@@ -15,7 +19,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   Input,
   Label,
   Table,
@@ -23,7 +26,8 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
+  TableRow,
+  Textarea
 } from '@koi/ui';
 import { ROUTES } from '@/const/routes';
 import {
@@ -36,13 +40,10 @@ import { revealFarmPii } from '@/lib/data/farms';
 import {
   type FarmPayoutTab,
   feeDigits,
-  feeFromDigits,
   formatFeeDigits,
   payoutDueReasonLabel,
-  payoutFeeError,
   payoutLotLabel,
   payoutNetAmount,
-  payoutReferenceError,
   payoutTimeLabel,
   PAYOUT_NOTE_MAX,
   PAYOUT_REFERENCE_MAX
@@ -58,6 +59,7 @@ import {
   DetailPricePanel,
   DetailSection
 } from './DetailDialog';
+import { RowActions, type RowAction } from './RowActions';
 
 export type FarmPayoutQueueProps = {
   payouts: FarmPayout[];
@@ -427,7 +429,37 @@ function ArrivalProofMedia({ id }: { id: string }) {
   );
 }
 
+const PAY_SCHEMA = z.object({
+  fee: z
+    .string()
+    .trim()
+    .min(1, 'Masukkan biaya transfer. Isi 0 bila bank tidak memungut biaya.')
+    .regex(/^\d+$/, 'Biaya harus bilangan bulat 0 atau lebih'),
+  transfer_reference: z
+    .string()
+    .trim()
+    .max(PAYOUT_REFERENCE_MAX, `Referensi maksimal ${PAYOUT_REFERENCE_MAX} karakter`),
+  note: z.string().trim().max(PAYOUT_NOTE_MAX, `Catatan maksimal ${PAYOUT_NOTE_MAX} karakter`)
+});
+
+type PayData = z.infer<typeof PAY_SCHEMA>;
+
+const REFUND_SCHEMA = z.object({
+  transfer_reference: z
+    .string()
+    .trim()
+    .min(1, 'Referensi transfer wajib diisi.')
+    .max(PAYOUT_REFERENCE_MAX, `Referensi maksimal ${PAYOUT_REFERENCE_MAX} karakter`),
+  note: z.string().trim().max(PAYOUT_NOTE_MAX, `Catatan maksimal ${PAYOUT_NOTE_MAX} karakter`)
+});
+
+type RefundData = z.infer<typeof REFUND_SCHEMA>;
+
 function PayoutActions({ payout }: { payout: FarmPayout }) {
+  const [dialog, setDialog] = useState<'pay' | 'refund' | null>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const label = payoutLotLabel(payout.lot_number, payout.title);
+
   if (payout.status === 'paid') {
     return (
       <div className="grid gap-0.5 text-xs text-muted-foreground">
@@ -444,71 +476,131 @@ function PayoutActions({ payout }: { payout: FarmPayout }) {
     );
   }
 
+  const actions: RowAction[] = [];
+  if (payout.status === 'due') {
+    actions.push({ label: 'Catat transfer', onSelect: () => setDialog('pay') });
+  }
+  if (payout.refund_eligible) {
+    actions.push({
+      label: 'Refund ke pemenang',
+      tone: 'destructive',
+      onSelect: () => setDialog('refund')
+    });
+  }
+
+  if (actions.length === 0) {
+    return <p className="text-xs text-muted-foreground">Menunggu koi diterima</p>;
+  }
+
+  const finalFocus = () => triggerRef.current?.querySelector('button') ?? null;
+
   return (
     <div className="grid justify-items-start gap-1.5">
-      {payout.status === 'due' ? <RecordTransfer payout={payout} /> : null}
-      {payout.status === 'pending' ? (
-        <p className="text-xs text-muted-foreground">Menunggu koi diterima</p>
+      <div ref={triggerRef} className="inline-flex">
+        {actions.length > 1 ? (
+          <RowActions label={`Aksi pembayaran ${label}`} actions={actions} />
+        ) : (
+          <Button
+            type="button"
+            size="sm"
+            variant={actions[0].tone === 'destructive' ? 'outline' : 'solid'}
+            onClick={actions[0].onSelect}
+          >
+            {actions[0].label}
+          </Button>
+        )}
+      </div>
+
+      {dialog === 'pay' ? (
+        <PayDialog
+          payout={payout}
+          open
+          onOpenChange={(open) => {
+            if (!open) setDialog(null);
+          }}
+          finalFocus={finalFocus}
+        />
       ) : null}
-      {payout.refund_eligible ? <RefundPayout payout={payout} /> : null}
+
+      {dialog === 'refund' ? (
+        <RefundDialog
+          payout={payout}
+          open
+          onOpenChange={(open) => {
+            if (!open) setDialog(null);
+          }}
+          finalFocus={finalFocus}
+        />
+      ) : null}
     </div>
   );
 }
 
-function RecordTransfer({ payout }: { payout: FarmPayout }) {
+/* The dialog carries the amount, the consequence and an explicit "Ya, catat
+   transfer" button, so it is the confirmation. */
+function PayDialog({
+  payout,
+  open,
+  onOpenChange,
+  finalFocus
+}: {
+  payout: FarmPayout;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  finalFocus?: () => HTMLElement | null;
+}) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [fee, setFee] = useState('0');
-  const [reference, setReference] = useState('');
-  const [note, setNote] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  const feeValue = feeFromDigits(fee);
-  const net = payoutNetAmount(payout.gross_amount, feeValue ?? 0);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const {
+    register,
+    handleSubmit,
+    watch,
+    control,
+    formState: { errors, isSubmitting }
+  } = useForm<PayData>({
+    resolver: zodResolver(PAY_SCHEMA),
+    defaultValues: { fee: '0', transfer_reference: '', note: '' }
+  });
+  const fee = watch('fee');
+  const net = payoutNetAmount(payout.gross_amount, fee ? Number(fee) : 0);
+  const feeError = errors.fee?.message;
+  const referenceError = errors.transfer_reference?.message;
+  const noteError = errors.note?.message;
 
   function changeOpen(next: boolean) {
-    setOpen(next);
-    if (!next) setError(null);
+    if (isSubmitting) return;
+    onOpenChange(next);
+    if (!next) setApiError(null);
   }
 
-  async function submit(event: React.FormEvent) {
-    event.preventDefault();
-    const feeError = payoutFeeError(fee);
-    if (feeError) {
-      setError(feeError);
-      return;
-    }
-
-    setBusy(true);
-    setError(null);
+  async function submit(data: PayData) {
+    if (isSubmitting) return;
+    setApiError(null);
     const result = await payFarmPayout(payout.id, {
-      bank_fee: Number(fee),
-      transfer_reference: reference.trim() || undefined,
-      note: note.trim() || undefined
+      bank_fee: Number(data.fee),
+      transfer_reference: data.transfer_reference || undefined,
+      note: data.note || undefined
     });
-    setBusy(false);
 
     if (!result.success) {
-      setError(result.error);
-      toast.error(result.error);
-      if (result.refresh) {
-        setOpen(false);
-        router.refresh();
-      }
+      setApiError(result.error);
       return;
     }
 
-    setOpen(false);
     toast.success(`Transfer ke ${payout.farm.name || 'farm'} dicatat.`);
+    onOpenChange(false);
     router.refresh();
   }
 
+  const feeId = `payout-${payout.id}-fee`;
+  const referenceId = `payout-${payout.id}-reference`;
+  const noteId = `payout-${payout.id}-note`;
+  const errorId = `payout-${payout.id}-error`;
+
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
-      <DialogTrigger render={<Button size="sm" />}>Catat transfer</DialogTrigger>
-      <DialogContent>
-        <form onSubmit={submit} className="grid gap-4" noValidate>
+      <DialogContent showCloseButton={!isSubmitting} finalFocus={finalFocus}>
+        <form onSubmit={handleSubmit(submit)} className="grid gap-4" noValidate>
           <DialogHeader>
             <DialogTitle>Catat transfer ke farm</DialogTitle>
             <DialogDescription>
@@ -519,35 +611,44 @@ function RecordTransfer({ payout }: { payout: FarmPayout }) {
           </DialogHeader>
 
           <div className="grid gap-1.5">
-            <Label htmlFor={`payout-${payout.id}-fee`}>Biaya transfer bank (Rp)</Label>
-            <Input
-              id={`payout-${payout.id}-fee`}
-              inputMode="numeric"
-              autoComplete="off"
-              value={formatFeeDigits(fee)}
-              aria-invalid={error ? true : undefined}
-              aria-describedby={error ? `payout-${payout.id}-error` : undefined}
-              onChange={(event) => {
-                setFee(feeDigits(event.target.value));
-                if (error) setError(null);
-              }}
+            <Label htmlFor={feeId}>Biaya transfer bank (Rp)</Label>
+            <Controller
+              name="fee"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  id={feeId}
+                  name={field.name}
+                  ref={field.ref}
+                  inputMode="numeric"
+                  autoComplete="off"
+                  disabled={isSubmitting}
+                  value={formatFeeDigits(field.value)}
+                  aria-invalid={feeError ? true : undefined}
+                  aria-describedby={feeError ? `${feeId}-hint ${errorId}` : `${feeId}-hint`}
+                  onChange={(event) => field.onChange(feeDigits(event.target.value))}
+                  onBlur={field.onBlur}
+                />
+              )}
             />
-            <p className="text-xs text-muted-foreground">
+            <p id={`${feeId}-hint`} className="text-xs text-muted-foreground">
               Biaya yang benar-benar dipotong bank, bilangan bulat. Isi 0 bila gratis.
             </p>
+            {feeError ? (
+              <p id={errorId} role="alert" className="text-xs text-destructive-ink">
+                {feeError}
+              </p>
+            ) : null}
           </div>
 
-          <dl
-            className="grid gap-1 rounded-md bg-muted px-3 py-2 text-sm"
-            aria-live="polite"
-          >
+          <dl className="grid gap-1 rounded-md bg-muted px-3 py-2 text-sm" aria-live="polite">
             <div className="flex justify-between gap-4">
               <dt>Bruto</dt>
               <dd className="tabular-nums">{formatRupiah(payout.gross_amount)}</dd>
             </div>
             <div className="flex justify-between gap-4">
               <dt>Biaya transfer</dt>
-              <dd className="tabular-nums">{formatRupiah(feeValue ?? 0)}</dd>
+              <dd className="tabular-nums">{formatRupiah(fee ? Number(fee) : 0)}</dd>
             </div>
             <div className="flex justify-between gap-4 font-medium">
               <dt>Net diterima farm</dt>
@@ -556,46 +657,61 @@ function RecordTransfer({ payout }: { payout: FarmPayout }) {
           </dl>
 
           <div className="grid gap-1.5">
-            <Label htmlFor={`payout-${payout.id}-reference`}>Referensi transfer</Label>
+            <Label htmlFor={referenceId}>Referensi transfer</Label>
             <Input
-              id={`payout-${payout.id}-reference`}
+              id={referenceId}
               maxLength={PAYOUT_REFERENCE_MAX}
               autoComplete="off"
-              value={reference}
-              onChange={(event) => setReference(event.target.value)}
+              disabled={isSubmitting}
+              aria-invalid={referenceError ? true : undefined}
+              aria-describedby={referenceError ? `${referenceId}-hint ${referenceId}-error` : `${referenceId}-hint`}
+              {...register('transfer_reference')}
             />
-            <p className="text-xs text-muted-foreground">
+            <p id={`${referenceId}-hint`} className="text-xs text-muted-foreground">
               Opsional. Nomor referensi atau keterangan dari mutasi bank.
             </p>
+            {referenceError ? (
+              <p id={`${referenceId}-error`} role="alert" className="text-xs text-destructive-ink">
+                {referenceError}
+              </p>
+            ) : null}
           </div>
 
           <div className="grid gap-1.5">
-            <Label htmlFor={`payout-${payout.id}-note`}>Catatan</Label>
-            <textarea
-              id={`payout-${payout.id}-note`}
+            <Label htmlFor={noteId}>Catatan</Label>
+            <Textarea
+              id={noteId}
               rows={2}
               maxLength={PAYOUT_NOTE_MAX}
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              className="w-full min-w-0 resize-y rounded-control border border-input bg-transparent px-2.5 py-2 text-base transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30"
+              disabled={isSubmitting}
+              aria-invalid={noteError ? true : undefined}
+              aria-describedby={noteError ? `${noteId}-hint ${noteId}-error` : `${noteId}-hint`}
+              {...register('note')}
             />
-            <p className="text-xs text-muted-foreground">
+            <p id={`${noteId}-hint`} className="text-xs text-muted-foreground">
               Opsional. Maksimal {PAYOUT_NOTE_MAX} karakter.
             </p>
+            {noteError ? (
+              <p id={`${noteId}-error`} role="alert" className="text-xs text-destructive-ink">
+                {noteError}
+              </p>
+            ) : null}
           </div>
 
-          {error ? (
-            <p id={`payout-${payout.id}-error`} role="alert" className="text-xs text-destructive-ink">
-              {error}
-            </p>
+          {apiError ? (
+            <Alert tone="signal" role="alert" title="Gagal mencatat transfer">
+              {apiError}
+            </Alert>
           ) : null}
 
           <DialogFooter>
-            <DialogClose render={<Button type="button" variant="outline" />}>
+            <DialogClose
+              render={<Button type="button" variant="outline" disabled={isSubmitting} />}
+            >
               Batal
             </DialogClose>
-            <Button type="submit" disabled={busy}>
-              {busy ? 'Menyimpan…' : 'Simpan transfer'}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Menyimpan…' : 'Ya, catat transfer'}
             </Button>
           </DialogFooter>
         </form>
@@ -604,57 +720,61 @@ function RecordTransfer({ payout }: { payout: FarmPayout }) {
   );
 }
 
-function RefundPayout({ payout }: { payout: FarmPayout }) {
+function RefundDialog({
+  payout,
+  open,
+  onOpenChange,
+  finalFocus
+}: {
+  payout: FarmPayout;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  finalFocus?: () => HTMLElement | null;
+}) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [reference, setReference] = useState('');
-  const [note, setNote] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting }
+  } = useForm<RefundData>({
+    resolver: zodResolver(REFUND_SCHEMA),
+    defaultValues: { transfer_reference: '', note: '' }
+  });
+  const referenceError = errors.transfer_reference?.message;
+  const noteError = errors.note?.message;
 
   function changeOpen(next: boolean) {
-    setOpen(next);
-    if (!next) setError(null);
+    if (isSubmitting) return;
+    onOpenChange(next);
+    if (!next) setApiError(null);
   }
 
-  async function submit(event: React.FormEvent) {
-    event.preventDefault();
-    const referenceError = payoutReferenceError(reference);
-    if (referenceError) {
-      setError(referenceError);
-      return;
-    }
-
-    setBusy(true);
-    setError(null);
+  async function submit(data: RefundData) {
+    if (isSubmitting) return;
+    setApiError(null);
     const result = await refundFarmPayout(payout.id, {
-      transfer_reference: reference,
-      note: note.trim() || undefined
+      transfer_reference: data.transfer_reference,
+      note: data.note || undefined
     });
-    setBusy(false);
 
     if (!result.success) {
-      setError(result.error);
-      toast.error(result.error);
-      if (result.refresh) {
-        setOpen(false);
-        router.refresh();
-      }
+      setApiError(result.error);
       return;
     }
 
-    setOpen(false);
     toast.success('Refund ke pemenang dicatat. Farm tidak dibayar untuk lot ini.');
+    onOpenChange(false);
     router.refresh();
   }
 
+  const referenceId = `payout-${payout.id}-refund-reference`;
+  const noteId = `payout-${payout.id}-refund-note`;
+
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
-      <DialogTrigger render={<Button size="sm" variant="outline" />}>
-        Refund ke pemenang
-      </DialogTrigger>
-      <DialogContent>
-        <form onSubmit={submit} className="grid gap-4" noValidate>
+      <DialogContent showCloseButton={!isSubmitting} finalFocus={finalFocus}>
+        <form onSubmit={handleSubmit(submit)} className="grid gap-4" noValidate>
           <DialogHeader>
             <DialogTitle>Refund ke pemenang</DialogTitle>
             <DialogDescription>
@@ -665,57 +785,63 @@ function RefundPayout({ payout }: { payout: FarmPayout }) {
           </DialogHeader>
 
           <div className="grid gap-1.5">
-            <Label htmlFor={`payout-${payout.id}-refund-reference`}>
-              Referensi transfer refund
-            </Label>
+            <Label htmlFor={referenceId}>Referensi transfer refund</Label>
             <Input
-              id={`payout-${payout.id}-refund-reference`}
+              id={referenceId}
               maxLength={PAYOUT_REFERENCE_MAX}
               autoComplete="off"
-              value={reference}
-              aria-invalid={error ? true : undefined}
-              aria-describedby={error ? `payout-${payout.id}-refund-error` : undefined}
-              onChange={(event) => {
-                setReference(event.target.value);
-                if (error) setError(null);
-              }}
+              disabled={isSubmitting}
+              aria-invalid={referenceError ? true : undefined}
+              aria-describedby={
+                referenceError ? `${referenceId}-hint ${referenceId}-error` : `${referenceId}-hint`
+              }
+              {...register('transfer_reference')}
             />
-            <p className="text-xs text-muted-foreground">
+            <p id={`${referenceId}-hint`} className="text-xs text-muted-foreground">
               Wajib diisi. Nomor referensi atau keterangan dari mutasi bank.
             </p>
+            {referenceError ? (
+              <p id={`${referenceId}-error`} role="alert" className="text-xs text-destructive-ink">
+                {referenceError}
+              </p>
+            ) : null}
           </div>
 
           <div className="grid gap-1.5">
-            <Label htmlFor={`payout-${payout.id}-refund-note`}>Catatan</Label>
-            <textarea
-              id={`payout-${payout.id}-refund-note`}
+            <Label htmlFor={noteId}>Catatan</Label>
+            <Textarea
+              id={noteId}
               rows={2}
               maxLength={PAYOUT_NOTE_MAX}
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              className="w-full min-w-0 resize-y rounded-control border border-input bg-transparent px-2.5 py-2 text-base transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-info focus-visible:ring-3 focus-visible:ring-info/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30"
+              disabled={isSubmitting}
+              aria-invalid={noteError ? true : undefined}
+              aria-describedby={noteError ? `${noteId}-hint ${noteId}-error` : `${noteId}-hint`}
+              {...register('note')}
             />
-            <p className="text-xs text-muted-foreground">
+            <p id={`${noteId}-hint`} className="text-xs text-muted-foreground">
               Opsional. Maksimal {PAYOUT_NOTE_MAX} karakter.
             </p>
+            {noteError ? (
+              <p id={`${noteId}-error`} role="alert" className="text-xs text-destructive-ink">
+                {noteError}
+              </p>
+            ) : null}
           </div>
 
-          {error ? (
-            <p
-              id={`payout-${payout.id}-refund-error`}
-              role="alert"
-              className="text-xs text-destructive-ink"
-            >
-              {error}
-            </p>
+          {apiError ? (
+            <Alert tone="signal" role="alert" title="Gagal mencatat refund">
+              {apiError}
+            </Alert>
           ) : null}
 
           <DialogFooter>
-            <DialogClose render={<Button type="button" variant="outline" />}>
+            <DialogClose
+              render={<Button type="button" variant="outline" disabled={isSubmitting} />}
+            >
               Batal
             </DialogClose>
-            <Button type="submit" variant="destructive" disabled={busy}>
-              {busy ? 'Menyimpan…' : 'Catat refund'}
+            <Button type="submit" variant="destructive" disabled={isSubmitting}>
+              {isSubmitting ? 'Menyimpan…' : 'Ya, refund'}
             </Button>
           </DialogFooter>
         </form>

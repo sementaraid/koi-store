@@ -1,14 +1,23 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
 import {
+  Alert,
   Badge,
   Button,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   FormField,
   Table,
   TableBody,
@@ -46,6 +55,7 @@ import {
   DetailPricePanel,
   DetailSection
 } from './DetailDialog';
+import { RowActions, type RowAction } from './RowActions';
 
 export type AuctionQueueProps = {
   auctions: AdminAuction[];
@@ -90,7 +100,42 @@ export function AuctionQueue({ auctions, total }: AuctionQueueProps) {
 }
 
 function AuctionRow({ auction }: { auction: AdminAuction }) {
-  const [busy, setBusy] = useState(false);
+  const router = useRouter();
+  const actionsRef = useRef<HTMLDivElement>(null);
+  const [approveOpen, setApproveOpen] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [removeLinkOpen, setRemoveLinkOpen] = useState(false);
+
+  const readOnly = auction.status === 'closed' || auction.status === 'cancelled';
+  const sellerName = auction.seller?.name ?? 'lelang ini';
+
+  function done() {
+    setApproveOpen(false);
+    setRejectOpen(false);
+    setLinkOpen(false);
+    setRemoveLinkOpen(false);
+    router.refresh();
+    requestAnimationFrame(() => {
+      actionsRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    });
+  }
+
+  const actions: RowAction[] = [
+    { label: 'Setujui lelang', onSelect: () => setApproveOpen(true) },
+    { label: 'Tolak lelang', onSelect: () => setRejectOpen(true), tone: 'destructive' }
+  ];
+
+  if (!readOnly) {
+    actions.push({ label: 'Ubah tautan siaran', onSelect: () => setLinkOpen(true) });
+    if (auction.live_stream_url) {
+      actions.push({
+        label: 'Hapus tautan siaran',
+        onSelect: () => setRemoveLinkOpen(true),
+        tone: 'destructive'
+      });
+    }
+  }
 
   return (
     <TableRow>
@@ -126,7 +171,7 @@ function AuctionRow({ auction }: { auction: AdminAuction }) {
       </TableCell>
 
       <TableCell>
-        <LiveLinkControl auction={auction} />
+        <LiveLinkCell auction={auction} />
       </TableCell>
 
       <TableCell>
@@ -134,10 +179,34 @@ function AuctionRow({ auction }: { auction: AdminAuction }) {
       </TableCell>
 
       <TableCell>
-        <div className="grid gap-3">
-          <ApproveForm auction={auction} busy={busy} onBusyChange={setBusy} />
-          <RejectForm id={auction.id} busy={busy} onBusyChange={setBusy} />
+        <div ref={actionsRef} className="inline-flex">
+          <RowActions label={`Aksi untuk lelang ${sellerName}`} actions={actions} />
         </div>
+
+        <ApproveAuctionDialog
+          auction={auction}
+          open={approveOpen}
+          onOpenChange={setApproveOpen}
+          onDone={done}
+        />
+        <RejectAuctionDialog
+          auction={auction}
+          open={rejectOpen}
+          onOpenChange={setRejectOpen}
+          onDone={done}
+        />
+        <LiveLinkDialog
+          auction={auction}
+          open={linkOpen}
+          onOpenChange={setLinkOpen}
+          onDone={done}
+        />
+        <RemoveLiveLinkDialog
+          auction={auction}
+          open={removeLinkOpen}
+          onOpenChange={setRemoveLinkOpen}
+          onDone={done}
+        />
       </TableCell>
     </TableRow>
   );
@@ -256,50 +325,62 @@ const approveSchema = z
   .object({
     listing_fee: feeField,
     join_fee: feeField,
-    reason: z.string()
+    reason: z.string().trim().max(500, 'Alasan maksimal 500 karakter')
   })
   .superRefine((data, ctx) => {
+    const hasFee = data.listing_fee !== '' || data.join_fee !== '';
     const error = overrideFormError({
       listingFee: data.listing_fee === '' ? null : Number(data.listing_fee),
       joinFee: data.join_fee === '' ? null : Number(data.join_fee),
       reason: data.reason
     });
-    if (error) ctx.addIssue({ code: 'custom', path: ['reason'], message: error });
+    if (error) {
+      ctx.addIssue({ code: 'custom', path: ['reason'], message: error });
+      return;
+    }
+    if (hasFee && data.reason.length < 5) {
+      ctx.addIssue({ code: 'custom', path: ['reason'], message: 'Alasan minimal 5 karakter' });
+    }
   });
 
 type ApproveData = z.infer<typeof approveSchema>;
 
-function ApproveForm({
+function ApproveAuctionDialog({
   auction,
-  busy,
-  onBusyChange
+  open,
+  onOpenChange,
+  onDone
 }: {
   auction: AdminAuction;
-  busy: boolean;
-  onBusyChange: (busy: boolean) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onDone: () => void;
 }) {
+  const sellerName = auction.seller?.name ?? 'lelang ini';
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting }
   } = useForm<ApproveData>({
     resolver: zodResolver(approveSchema),
     defaultValues: { listing_fee: '', join_fee: '', reason: '' }
   });
-  const [pending, setPending] = useState<{ data: ApproveData; overriding: boolean } | null>(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function submit(data: ApproveData) {
-    const overriding = data.listing_fee !== '' || data.join_fee !== '';
-    setPending({ data, overriding });
-    setConfirmOpen(true);
+  function changeOpen(next: boolean) {
+    if (isSubmitting) return;
+    onOpenChange(next);
+    if (!next) {
+      setError(null);
+      reset();
+    }
   }
 
-  async function confirmApprove() {
-    if (!pending) return;
-    const { data, overriding } = pending;
-
-    onBusyChange(true);
+  async function submit(data: ApproveData) {
+    if (isSubmitting) return;
+    setError(null);
+    const overriding = data.listing_fee !== '' || data.join_fee !== '';
     const result = overriding
       ? await approveAuctionWithOverride(auction.id, {
           ...(data.listing_fee !== '' ? { listing_fee: Number(data.listing_fee) } : {}),
@@ -307,72 +388,100 @@ function ApproveForm({
           reason: data.reason
         })
       : await approveAuction(auction.id);
-    onBusyChange(false);
-    setConfirmOpen(false);
-    setPending(null);
 
     if (!result.success) {
-      toast.error(result.error);
+      setError(result.error);
       return;
     }
 
+    reset();
     toast.success('Lelang disetujui.');
+    onDone();
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} className="grid gap-2" noValidate>
-      <h3 className="text-sm font-medium">Setujui</h3>
-      <p className="text-xs text-muted-foreground">
-        Kosongkan kedua biaya untuk menyetujui sesuai tabel biaya. Isi salah satu untuk mengubah
-        biaya khusus lelang ini — alasan wajib diisi.
-      </p>
-      <div className="grid gap-2 sm:grid-cols-2">
-        <FormField
-          id={`auction-${auction.id}-listing`}
-          label={`Biaya listing baru (asal: ${formatRupiah(auction.listing_fee)})`}
-          type="number"
-          min={0}
-          step={1}
-          placeholder="Biarkan kosong"
-          {...register('listing_fee')}
-        />
-        <FormField
-          id={`auction-${auction.id}-join`}
-          label={`Biaya ikut baru per lot (asal: ${formatRupiah(auction.join_fee)})`}
-          type="number"
-          min={0}
-          step={1}
-          placeholder="Biarkan kosong"
-          {...register('join_fee')}
-        />
-      </div>
-      <FormField
-        id={`auction-${auction.id}-reason`}
-        label="Alasan perubahan biaya"
-        hint="Wajib diisi hanya jika mengubah salah satu biaya di atas."
-        error={errors.reason?.message}
-        {...register('reason')}
-      />
-      <div>
-        <Button type="submit" size="sm" disabled={isSubmitting || busy}>
-          {isSubmitting ? 'Menyetujui…' : 'Setujui lelang'}
-        </Button>
-      </div>
+    <Dialog open={open} onOpenChange={changeOpen}>
+      <DialogContent>
+        <form onSubmit={handleSubmit(submit)} className="grid gap-4" noValidate>
+          <DialogHeader>
+            <DialogTitle>Setujui lelang {sellerName}?</DialogTitle>
+            <DialogDescription>
+              Biaya pasang lelang ditagihkan ke saldo petani. Kosongkan kedua biaya untuk
+              memakai tabel biaya, atau isi salah satu untuk mengubah biaya lelang ini.
+            </DialogDescription>
+          </DialogHeader>
 
-      <ConfirmDialog
-        open={confirmOpen}
-        onOpenChange={setConfirmOpen}
-        title="Setujui lelang?"
-        description={
-          pending?.overriding
-            ? 'Setujui lelang ini dengan biaya yang diubah dan tagih biaya listing?'
-            : 'Setujui lelang ini dan tagih biaya listing sesuai tabel biaya?'
-        }
-        confirmLabel="Setujui lelang"
-        busyLabel="Menyetujui…"
-        onConfirm={confirmApprove}
-      />
-    </form>
+          {error ? (
+            <Alert tone="signal" role="alert" title="Gagal menyetujui lelang">
+              <p className="text-destructive-ink">{error}</p>
+            </Alert>
+          ) : null}
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <FormField
+              id={`auction-${auction.id}-listing`}
+              label={`Biaya listing baru (asal: ${formatRupiah(auction.listing_fee)})`}
+              type="number"
+              min={0}
+              step={1}
+              placeholder="Biarkan kosong"
+              disabled={isSubmitting}
+              error={errors.listing_fee?.message}
+              {...register('listing_fee')}
+            />
+            <FormField
+              id={`auction-${auction.id}-join`}
+              label={`Biaya ikut baru per lot (asal: ${formatRupiah(auction.join_fee)})`}
+              type="number"
+              min={0}
+              step={1}
+              placeholder="Biarkan kosong"
+              disabled={isSubmitting}
+              error={errors.join_fee?.message}
+              {...register('join_fee')}
+            />
+          </div>
+
+          <FormField
+            id={`auction-${auction.id}-reason`}
+            label="Alasan perubahan biaya"
+            hint="Wajib diisi (minimal 5 karakter) hanya jika mengubah salah satu biaya di atas."
+            maxLength={500}
+            disabled={isSubmitting}
+            error={errors.reason?.message}
+            {...register('reason')}
+          />
+
+          <DialogFooter>
+            <DialogClose render={<Button type="button" variant="outline" disabled={isSubmitting} />}>
+              Batal
+            </DialogClose>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Memproses…' : 'Ya, setujui'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function LiveLinkCell({ auction }: { auction: AdminAuction }) {
+  if (!auction.live_stream_url) {
+    return <p className="text-sm text-muted-foreground">Belum ada tautan siaran.</p>;
+  }
+
+  return (
+    <p className="text-sm break-all">
+      <a
+        href={auction.live_stream_url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-accent-ink underline underline-offset-4"
+      >
+        {auction.live_stream_url}
+      </a>
+    </p>
   );
 }
 
@@ -385,9 +494,18 @@ const liveLinkSchema = z.object({
 
 type LiveLinkData = z.infer<typeof liveLinkSchema>;
 
-function LiveLinkControl({ auction }: { auction: AdminAuction }) {
-  const [stored, setStored] = useState<string | null>(auction.live_stream_url);
-  const [busy, setBusy] = useState(false);
+function LiveLinkDialog({
+  auction,
+  open,
+  onOpenChange,
+  onDone
+}: {
+  auction: AdminAuction;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onDone: () => void;
+}) {
+  const sellerName = auction.seller?.name ?? 'lelang ini';
   const {
     register,
     handleSubmit,
@@ -397,95 +515,160 @@ function LiveLinkControl({ auction }: { auction: AdminAuction }) {
     resolver: zodResolver(liveLinkSchema),
     defaultValues: { live_stream_url: auction.live_stream_url ?? '' }
   });
+  const [error, setError] = useState<string | null>(null);
 
-  const readOnly = auction.status === 'closed' || auction.status === 'cancelled';
+  // The row can refresh with a new link while the dialog is closed; prefill the
+  // current value each time it opens.
+  useEffect(() => {
+    if (open) reset({ live_stream_url: auction.live_stream_url ?? '' });
+  }, [open, auction.live_stream_url, reset]);
 
-  async function save(url: string | null, successMessage: string) {
-    setBusy(true);
-    const result = await setAuctionLiveLink(auction.id, url);
-    setBusy(false);
+  function changeOpen(next: boolean) {
+    if (isSubmitting) return;
+    onOpenChange(next);
+    if (!next) setError(null);
+  }
+
+  async function submit(data: LiveLinkData) {
+    if (isSubmitting) return;
+    setError(null);
+    const result = await setAuctionLiveLink(auction.id, data.live_stream_url);
 
     if (!result.success) {
-      toast.error(result.error);
+      setError(result.error);
       return;
     }
 
-    setStored(result.live_stream_url);
-    toast.success(successMessage);
-    reset({ live_stream_url: '' });
+    toast.success('Tautan siaran tersimpan.');
+    onDone();
   }
 
   return (
-    <div className="grid gap-2">
-      <h3 className="text-sm font-medium">Tautan siaran</h3>
-      {stored ? (
-        <p className="text-sm break-all">
-          <a
-            href={stored}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-accent-ink underline underline-offset-4"
-          >
-            {stored}
-          </a>
-        </p>
-      ) : (
-        <p className="text-sm text-muted-foreground">Belum ada tautan siaran.</p>
-      )}
+    <Dialog open={open} onOpenChange={changeOpen}>
+      <DialogContent>
+        <form onSubmit={handleSubmit(submit)} className="grid gap-4" noValidate>
+          <DialogHeader>
+            <DialogTitle>Ubah tautan siaran {sellerName}?</DialogTitle>
+            <DialogDescription>
+              Tautan ini tampil di halaman lelang. Hanya YouTube atau Instagram (https). Tidak
+              ada video yang diunggah ke {SITE_NAME}.
+            </DialogDescription>
+          </DialogHeader>
 
-      {readOnly ? null : (
-        <form
-          onSubmit={handleSubmit((data) => save(data.live_stream_url, 'Tautan siaran tersimpan.'))}
-          className="grid gap-2"
-          noValidate
-        >
+          {error ? (
+            <Alert tone="signal" role="alert" title="Gagal menyimpan tautan siaran">
+              <p className="text-destructive-ink">{error}</p>
+            </Alert>
+          ) : null}
+
           <FormField
             id={`auction-${auction.id}-live-url`}
             label="Tautan YouTube atau Instagram"
             type="url"
             inputMode="url"
             placeholder="https://www.youtube.com/live/…"
-            hint={`Hanya tautan YouTube atau Instagram (https). Tidak ada video yang diunggah ke ${SITE_NAME}.`}
+            hint="Hanya tautan YouTube atau Instagram (https)."
+            disabled={isSubmitting}
             error={errors.live_stream_url?.message}
             {...register('live_stream_url')}
           />
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" size="sm" disabled={isSubmitting || busy}>
-              {isSubmitting ? 'Menyimpan…' : 'Simpan tautan'}
+
+          <DialogFooter>
+            <DialogClose render={<Button type="button" variant="outline" disabled={isSubmitting} />}>
+              Batal
+            </DialogClose>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Menyimpan…' : 'Ya, simpan'}
             </Button>
-            {stored ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={isSubmitting || busy}
-                onClick={() => save(null, 'Tautan siaran dihapus.')}
-              >
-                Hapus tautan
-              </Button>
-            ) : null}
-          </div>
+          </DialogFooter>
         </form>
-      )}
-    </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function RemoveLiveLinkDialog({
+  auction,
+  open,
+  onOpenChange,
+  onDone
+}: {
+  auction: AdminAuction;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onDone: () => void;
+}) {
+  const sellerName = auction.seller?.name ?? 'lelang ini';
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  function changeOpen(next: boolean) {
+    if (busy) return;
+    onOpenChange(next);
+    if (!next) setError(null);
+  }
+
+  async function confirm() {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    const result = await setAuctionLiveLink(auction.id, null);
+    setBusy(false);
+
+    if (!result.success) {
+      setError(result.error);
+      return;
+    }
+
+    toast.success('Tautan siaran dihapus.');
+    onDone();
+  }
+
+  return (
+    <ConfirmDialog
+      open={open}
+      onOpenChange={changeOpen}
+      title={`Hapus tautan siaran ${sellerName}?`}
+      description={
+        <>
+          <span>Tautan siaran dihapus dari halaman lelang ini.</span>
+          {error ? (
+            <span role="alert" className="mt-2 block font-medium text-destructive-ink">
+              {error}
+            </span>
+          ) : null}
+        </>
+      }
+      confirmLabel="Ya, hapus"
+      busyLabel="Memproses…"
+      destructive
+      onConfirm={confirm}
+    />
   );
 }
 
 const rejectSchema = z.object({
-  reason: z.string().trim().min(1, 'Masukkan alasan penolakan')
+  reason: z
+    .string()
+    .trim()
+    .min(5, 'Alasan minimal 5 karakter')
+    .max(500, 'Alasan maksimal 500 karakter')
 });
 
 type RejectData = z.infer<typeof rejectSchema>;
 
-function RejectForm({
-  id,
-  busy,
-  onBusyChange
+function RejectAuctionDialog({
+  auction,
+  open,
+  onOpenChange,
+  onDone
 }: {
-  id: string;
-  busy: boolean;
-  onBusyChange: (busy: boolean) => void;
+  auction: AdminAuction;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onDone: () => void;
 }) {
+  const sellerName = auction.seller?.name ?? 'lelang ini';
   const {
     register,
     handleSubmit,
@@ -495,56 +678,70 @@ function RejectForm({
     resolver: zodResolver(rejectSchema),
     defaultValues: { reason: '' }
   });
-  const [pendingReason, setPendingReason] = useState('');
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function submit(data: RejectData) {
-    setPendingReason(data.reason);
-    setConfirmOpen(true);
+  function changeOpen(next: boolean) {
+    if (isSubmitting) return;
+    onOpenChange(next);
+    if (!next) {
+      setError(null);
+      reset();
+    }
   }
 
-  async function confirmReject() {
-    onBusyChange(true);
-    const result = await rejectAuction(id, pendingReason);
-    onBusyChange(false);
-    setConfirmOpen(false);
+  async function submit(data: RejectData) {
+    if (isSubmitting) return;
+    setError(null);
+    const result = await rejectAuction(auction.id, data.reason);
 
     if (!result.success) {
-      toast.error(result.error);
+      setError(result.error);
       return;
     }
 
-    toast.success('Lelang ditolak.');
-    setPendingReason('');
     reset();
+    toast.success('Lelang ditolak.');
+    onDone();
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} className="grid gap-2" noValidate>
-      <h3 className="text-sm font-medium">Tolak</h3>
-      <FormField
-        id={`auction-${id}-reject-reason`}
-        label="Alasan penolakan"
-        hint="Petani akan membaca alasan ini, memperbaiki, dan mengirim ulang."
-        error={errors.reason?.message}
-        {...register('reason')}
-      />
-      <div>
-        <Button type="submit" variant="destructive" size="sm" disabled={isSubmitting || busy}>
-          {isSubmitting ? 'Menolak…' : 'Tolak lelang'}
-        </Button>
-      </div>
+    <Dialog open={open} onOpenChange={changeOpen}>
+      <DialogContent>
+        <form onSubmit={handleSubmit(submit)} className="grid gap-4" noValidate>
+          <DialogHeader>
+            <DialogTitle>Tolak lelang {sellerName}?</DialogTitle>
+            <DialogDescription>
+              Lelang kembali ke draft dan petani harus mengirim ulang. Petani akan membaca
+              alasan di bawah ini.
+            </DialogDescription>
+          </DialogHeader>
 
-      <ConfirmDialog
-        open={confirmOpen}
-        onOpenChange={setConfirmOpen}
-        title="Tolak lelang?"
-        description="Tolak lelang ini? Lelang kembali ke draft dan petani harus mengirim ulang."
-        confirmLabel="Tolak lelang"
-        busyLabel="Menolak…"
-        destructive
-        onConfirm={confirmReject}
-      />
-    </form>
+          {error ? (
+            <Alert tone="signal" role="alert" title="Gagal menolak lelang">
+              <p className="text-destructive-ink">{error}</p>
+            </Alert>
+          ) : null}
+
+          <FormField
+            id={`auction-${auction.id}-reject-reason`}
+            label="Alasan penolakan"
+            hint="Minimal 5 karakter, maksimal 500 karakter."
+            maxLength={500}
+            disabled={isSubmitting}
+            error={errors.reason?.message}
+            {...register('reason')}
+          />
+
+          <DialogFooter>
+            <DialogClose render={<Button type="button" variant="outline" disabled={isSubmitting} />}>
+              Batal
+            </DialogClose>
+            <Button type="submit" variant="destructive" disabled={isSubmitting}>
+              {isSubmitting ? 'Memproses…' : 'Ya, tolak'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

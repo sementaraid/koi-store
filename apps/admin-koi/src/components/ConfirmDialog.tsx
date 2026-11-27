@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { useState } from 'react';
 
 import {
+  Alert,
   Button,
   Dialog,
   DialogClose,
@@ -26,6 +27,8 @@ export type ConfirmDialogProps = {
   busyLabel?: string;
   cancelLabel?: string;
   destructive?: boolean;
+  /** The server's complaint, shown inside the dialog so it stays open. */
+  error?: string | null;
   onConfirm: () => void | Promise<void>;
 };
 
@@ -38,6 +41,7 @@ export function ConfirmDialog({
   busyLabel = 'Memproses…',
   cancelLabel = 'Batal',
   destructive = false,
+  error = null,
   onConfirm
 }: ConfirmDialogProps) {
   const [busy, setBusy] = useState(false);
@@ -63,6 +67,11 @@ export function ConfirmDialog({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
+        {error ? (
+          <Alert tone="signal" role="alert" title="Gagal memproses">
+            {error}
+          </Alert>
+        ) : null}
         <DialogFooter>
           <DialogClose render={<Button type="button" variant="outline" disabled={busy} />}>
             {cancelLabel}
