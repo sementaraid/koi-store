@@ -31,6 +31,10 @@ function DialogOverlay({ className, ...props }: DialogPrimitive.Backdrop.Props) 
   return (
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
+      /* Pages wrap their content in a Sheet/Dialog root (spec sheet, filters),
+         which makes every dialog inside it "nested" and Base UI then skips the
+         backdrop. Every popup must dim what is behind it, so force it. */
+      forceRender
       className={cn(
         "fixed inset-0 z-50 bg-black/40 transition-opacity duration-150 motion-reduce:transition-none data-ending-style:opacity-0 data-starting-style:opacity-0",
         className

@@ -6,7 +6,17 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, FormField } from '@koi/ui';
+import {
+  Badge,
+  Button,
+  FormField,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@koi/ui';
 import {
   approveAuction,
   approveAuctionWithOverride,
@@ -28,6 +38,14 @@ import { formatRupiah } from '@/lib/helpers/topup-format';
 
 import { AdminEmpty } from './AdminEmpty';
 import { ConfirmDialog } from './ConfirmDialog';
+import {
+  DetailDialog,
+  DetailIdentity,
+  DetailItem,
+  DetailMediaStage,
+  DetailPricePanel,
+  DetailSection
+} from './DetailDialog';
 
 export type AuctionQueueProps = {
   auctions: AdminAuction[];
@@ -36,30 +54,38 @@ export type AuctionQueueProps = {
 
 export function AuctionQueue({ auctions, total }: AuctionQueueProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Persetujuan lelang ({total})</CardTitle>
-        <CardDescription>
-          Periksa kategori, foto tiap lot, dan biaya sebelum menyetujui atau menolak.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-3">
-        {total > auctions.length ? (
-          <p className="text-sm text-muted-foreground">
-            Menampilkan {auctions.length} dari {total} lelang. Selesaikan yang di atas untuk
-            melihat sisanya.
-          </p>
-        ) : null}
-        {auctions.length === 0 ? (
-          <AdminEmpty
-            title="Tidak ada lelang yang menunggu persetujuan"
-            description="Lelang baru muncul di sini setelah petani mengirimnya."
-          />
-        ) : (
-          auctions.map((auction) => <AuctionRow key={auction.id} auction={auction} />)
-        )}
-      </CardContent>
-    </Card>
+    <div className="grid gap-3">
+      {total > auctions.length ? (
+        <p className="text-sm text-muted-foreground">
+          Menampilkan {auctions.length} dari {total} lelang. Selesaikan yang di atas untuk
+          melihat sisanya.
+        </p>
+      ) : null}
+      {auctions.length === 0 ? (
+        <AdminEmpty
+          title="Tidak ada lelang yang menunggu persetujuan"
+          description="Lelang baru muncul di sini setelah petani mengirimnya."
+        />
+      ) : (
+        <Table label="Lelang yang menunggu persetujuan" minWidth="80rem">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Lelang</TableHead>
+              <TableHead>Biaya</TableHead>
+              <TableHead>Lot</TableHead>
+              <TableHead>Tautan siaran</TableHead>
+              <TableHead>Detail</TableHead>
+              <TableHead>Tindakan</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {auctions.map((auction) => (
+              <AuctionRow key={auction.id} auction={auction} />
+            ))}
+          </TableBody>
+        </Table>
+      )}
+    </div>
   );
 }
 
@@ -67,70 +93,158 @@ function AuctionRow({ auction }: { auction: AdminAuction }) {
   const [busy, setBusy] = useState(false);
 
   return (
-    <div className="grid gap-3 rounded-md border border-border p-3">
-      <div className="grid gap-1 sm:grid-cols-[auto_1fr] sm:items-start sm:gap-4">
-        <p className="text-base font-medium">{auction.seller?.name ?? '—'}</p>
-        <div className="grid gap-0.5 text-sm">
-          <p className="text-muted-foreground">
-            {auction.fee_category
-              ? feeCategoryLabel(auction.fee_category.name)
-              : 'Kategori tidak ditemukan'}{' '}
-            ·{' '}
-            {deliveryMethodLabel(auction.delivery_method)} · {auction.lots.length} lot
-          </p>
-          <p className="text-muted-foreground">
-            {formatAuctionDate(auction.start_at)} – {formatAuctionDate(auction.end_at)}
-          </p>
-        </div>
-      </div>
-
-      <div className="grid gap-1 rounded-md border border-border p-2 text-sm sm:grid-cols-3">
-        <p>Biaya listing: {formatRupiah(auction.listing_fee)}</p>
-        <p>Biaya ikut per lot: {formatRupiah(auction.join_fee)}</p>
-        <p className="font-medium">
-          Total: {formatRupiah(auctionFeeTotal(auction.listing_fee, auction.join_fee))}
+    <TableRow>
+      <TableCell>
+        <p className="font-medium">{auction.seller?.name ?? '—'}</p>
+        <p className="text-muted-foreground">
+          {auction.fee_category
+            ? feeCategoryLabel(auction.fee_category.name)
+            : 'Kategori tidak ditemukan'}{' '}
+          · {deliveryMethodLabel(auction.delivery_method)} · {auction.lots.length} lot
         </p>
-      </div>
+        <p className="text-muted-foreground">
+          {formatAuctionDate(auction.start_at)} – {formatAuctionDate(auction.end_at)}
+        </p>
+      </TableCell>
 
-      <div className="grid gap-2">
-        {auction.lots.map((lot) => (
-          <LotCard key={lot.id} lot={lot} />
-        ))}
-      </div>
+      <TableCell>
+        <ul className="grid gap-1">
+          <li>Biaya listing: {formatRupiah(auction.listing_fee)}</li>
+          <li>Biaya ikut per lot: {formatRupiah(auction.join_fee)}</li>
+          <li className="font-medium">
+            Total: {formatRupiah(auctionFeeTotal(auction.listing_fee, auction.join_fee))}
+          </li>
+        </ul>
+      </TableCell>
 
-      <LiveLinkControl auction={auction} />
+      <TableCell>
+        <div className="grid gap-2">
+          {auction.lots.map((lot) => (
+            <LotSummary key={lot.id} lot={lot} />
+          ))}
+        </div>
+      </TableCell>
 
-      <div className="grid gap-3 lg:grid-cols-2">
-        <ApproveForm auction={auction} busy={busy} onBusyChange={setBusy} />
-        <RejectForm id={auction.id} busy={busy} onBusyChange={setBusy} />
-      </div>
-    </div>
+      <TableCell>
+        <LiveLinkControl auction={auction} />
+      </TableCell>
+
+      <TableCell>
+        <AuctionDetail auction={auction} />
+      </TableCell>
+
+      <TableCell>
+        <div className="grid gap-3">
+          <ApproveForm auction={auction} busy={busy} onBusyChange={setBusy} />
+          <RejectForm id={auction.id} busy={busy} onBusyChange={setBusy} />
+        </div>
+      </TableCell>
+    </TableRow>
   );
 }
 
-function LotCard({ lot }: { lot: AuctionLot }) {
+function LotSummary({ lot }: { lot: AuctionLot }) {
   return (
-    <div className="grid gap-1 rounded-md border border-border p-2 text-sm">
+    <div className="grid gap-1 text-sm">
       <p className="font-medium">{lot.title ?? 'Lot tanpa judul'}</p>
       <p className="text-muted-foreground">
         OB {formatRupiah(lot.ob)} · KB {formatRupiah(lot.kb)}
       </p>
-      {lot.photos.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
-          {lot.photos.map((url) => (
-            /* eslint-disable-next-line @next/next/no-img-element -- backend's own file origin, same as FarmQueue's farm photos */
-            <img
-              key={url}
-              src={url}
-              alt={lot.title ?? 'Foto lot'}
-              className="h-24 w-32 rounded-md border border-border object-cover"
-            />
-          ))}
-        </div>
-      ) : (
-        <p className="text-xs text-muted-foreground">Tidak ada foto.</p>
-      )}
     </div>
+  );
+}
+
+function AuctionDetail({ auction }: { auction: AdminAuction }) {
+  const photos = auction.lots.flatMap((lot) =>
+    lot.photos.map((url) => ({
+      src: url,
+      kind: 'image' as const,
+      alt: `Foto lot ${lot.title ?? 'tanpa judul'}`
+    }))
+  );
+  const category = auction.fee_category
+    ? feeCategoryLabel(auction.fee_category.name)
+    : 'Kategori tidak ditemukan';
+
+  return (
+    <DetailDialog
+      triggerLabel={`Lihat detail lelang ${auction.seller?.name ?? auction.id}`}
+      title="Detail lelang"
+      media={photos.length > 0 ? <DetailMediaStage items={photos} /> : null}
+    >
+      {() => (
+        <>
+          <DetailIdentity
+            title={auction.seller?.name ?? 'Lelang'}
+            badge={<Badge variant="warning">Menunggu persetujuan</Badge>}
+            secondary={`${category} · ${deliveryMethodLabel(auction.delivery_method)} · ${auction.lots.length} lot`}
+          />
+
+          <DetailPricePanel
+            label="Total biaya"
+            value={formatRupiah(auctionFeeTotal(auction.listing_fee, auction.join_fee))}
+            note={`Listing ${formatRupiah(auction.listing_fee)} · Ikut per lot ${formatRupiah(auction.join_fee)}`}
+          />
+
+          <DetailSection title="Jadwal">
+            <DetailItem label="Mulai">{formatAuctionDate(auction.start_at)}</DetailItem>
+            <DetailItem label="Berakhir">{formatAuctionDate(auction.end_at)}</DetailItem>
+            <DetailItem label="Jendela perpanjangan">
+              {auction.extend_window_minutes} menit
+            </DetailItem>
+          </DetailSection>
+
+          <DetailSection title="Lot">
+            {auction.lots.length === 0 ? (
+              <DetailItem label="Lot">Lelang ini belum punya lot.</DetailItem>
+            ) : (
+              auction.lots.map((lot, lotIndex) => (
+                <DetailItem key={lot.id} label={`Lot ${lotIndex + 1}`}>
+                  <span className="font-medium">{lot.title ?? 'Lot tanpa judul'}</span>
+                  <span className="block text-sm font-normal text-muted-foreground">
+                    OB {formatRupiah(lot.ob)} · KB {formatRupiah(lot.kb)} · Harga berjalan{' '}
+                    {formatRupiah(lot.current_price)}
+                  </span>
+                  {lot.cancel_reason ? (
+                    <span className="block text-sm font-normal text-muted-foreground">
+                      Alasan batal: {lot.cancel_reason}
+                    </span>
+                  ) : null}
+                </DetailItem>
+              ))
+            )}
+          </DetailSection>
+
+          <DetailSection title="Siaran">
+            <DetailItem label="Tautan siaran">
+              {auction.live_stream_url ? (
+                <a
+                  href={auction.live_stream_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="break-all text-accent-ink underline underline-offset-4"
+                >
+                  {auction.live_stream_url}
+                </a>
+              ) : (
+                'Belum ada tautan siaran'
+              )}
+            </DetailItem>
+          </DetailSection>
+
+          {auction.fee_override_reason || auction.rejection_reason ? (
+            <DetailSection title="Catatan">
+              {auction.fee_override_reason ? (
+                <DetailItem label="Alasan ubah biaya">{auction.fee_override_reason}</DetailItem>
+              ) : null}
+              {auction.rejection_reason ? (
+                <DetailItem label="Alasan penolakan">{auction.rejection_reason}</DetailItem>
+              ) : null}
+            </DetailSection>
+          ) : null}
+        </>
+      )}
+    </DetailDialog>
   );
 }
 
@@ -206,7 +320,7 @@ function ApproveForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} className="grid gap-2 rounded-md border border-border p-3" noValidate>
+    <form onSubmit={handleSubmit(submit)} className="grid gap-2" noValidate>
       <h3 className="text-sm font-medium">Setujui</h3>
       <p className="text-xs text-muted-foreground">
         Kosongkan kedua biaya untuk menyetujui sesuai tabel biaya. Isi salah satu untuk mengubah
@@ -302,7 +416,7 @@ function LiveLinkControl({ auction }: { auction: AdminAuction }) {
   }
 
   return (
-    <div className="grid gap-2 rounded-md border border-border p-3">
+    <div className="grid gap-2">
       <h3 className="text-sm font-medium">Tautan siaran</h3>
       {stored ? (
         <p className="text-sm break-all">
@@ -406,7 +520,7 @@ function RejectForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} className="grid gap-2 rounded-md border border-border p-3" noValidate>
+    <form onSubmit={handleSubmit(submit)} className="grid gap-2" noValidate>
       <h3 className="text-sm font-medium">Tolak</h3>
       <FormField
         id={`auction-${id}-reject-reason`}

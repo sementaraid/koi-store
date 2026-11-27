@@ -14,20 +14,27 @@ import { LoadingRegion } from './LoadingPages';
  * its `<Suspense>` render the same skeleton.
  */
 
-// One menu tile (AccountNav: min-h-20). Eight account pages, then the divider
-// and the farm and sign-out tiles (US-103 AC10).
+// One menu tile (phone) or list row (desktop rail, AccountNav's `lg` mode).
+// Eight account pages, then the divider and the farm and sign-out rows
+// (US-103 AC10).
 function MenuRows() {
   return (
     <>
-      <div className="grid grid-cols-3 gap-2 lg:grid-cols-2">
+      <div className="grid grid-cols-3 gap-2 lg:flex lg:flex-col lg:gap-1">
         {Array.from({ length: 8 }, (_, i) => (
-          <Skeleton key={i} className="h-20 w-full rounded-control" />
+          <Skeleton
+            key={i}
+            className="h-20 w-full rounded-control lg:h-10 lg:rounded-lg"
+          />
         ))}
       </div>
       <Skeleton className="mx-3 my-2 h-px w-[calc(100%-1.5rem)]" />
-      <div className="grid grid-cols-3 gap-2 lg:grid-cols-2">
+      <div className="grid grid-cols-3 gap-2 lg:flex lg:flex-col lg:gap-1">
         {Array.from({ length: 2 }, (_, i) => (
-          <Skeleton key={i} className="h-20 w-full rounded-control" />
+          <Skeleton
+            key={i}
+            className="h-20 w-full rounded-control lg:h-10 lg:rounded-lg"
+          />
         ))}
       </div>
     </>
@@ -41,7 +48,7 @@ export function AccountSkeleton({
   children
 }: {
   label: string;
-  /** The menu list below the content on mobile (the account home only). */
+  /** The menu above the content on mobile (the account home only). */
   menu?: boolean;
   /** Extra classes for the content column, matching the page's AccountFrame. */
   contentClassName?: string;
@@ -69,17 +76,14 @@ export function AccountSkeleton({
         </aside>
 
         <div className={cn('flex min-w-0 flex-col gap-6', contentClassName)}>
-          <Skeleton className="h-8 w-40" />
-          {children}
-
           {menu ? (
             <section className="flex flex-col gap-3 lg:hidden">
               <Skeleton className="mx-3 h-6 w-28" />
-              <div className="rounded-xl border border-border bg-card p-2">
-                <MenuRows />
-              </div>
+              <MenuRows />
             </section>
           ) : null}
+          <Skeleton className="h-8 w-40" />
+          {children}
         </div>
       </div>
     </LoadingRegion>

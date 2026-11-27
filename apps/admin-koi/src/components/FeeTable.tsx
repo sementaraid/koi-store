@@ -6,7 +6,17 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, FormField } from '@koi/ui';
+import {
+  Badge,
+  Button,
+  FormField,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@koi/ui';
 import {
   createFeeCategory,
   deleteFeeCategory,
@@ -14,9 +24,17 @@ import {
   type FeeCategory
 } from '@/lib/data/fee-categories';
 import { feeCategoryLabel } from '@/lib/helpers/fee-category-label';
+import { formatRupiah } from '@/lib/helpers/topup-format';
 
 import { AdminEmpty } from './AdminEmpty';
 import { ConfirmDialog } from './ConfirmDialog';
+import {
+  DetailDialog,
+  DetailIdentity,
+  DetailItem,
+  DetailPricePanel,
+  DetailSection
+} from './DetailDialog';
 
 // D-070: the join fee is charged per lot, not per auction. The column and its
 // payload stay `join_fee`; only the copy the admin reads changed.
@@ -37,43 +55,47 @@ export function FeeTable({ categories }: FeeTableProps) {
   const [adding, setAdding] = useState(false);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Tabel biaya</CardTitle>
-        <CardDescription>
-          Biaya listing per lot dan biaya ikut per lot, per kategori. Perubahan hanya berlaku
-          untuk lelang yang dibuat setelah disimpan (US-014 AC3).
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-4">
-        {categories.length === 0 ? (
-          <AdminEmpty
-            title="Belum ada kategori biaya"
-            description="Tambahkan kategori pertama untuk mengatur biaya listing dan biaya ikut."
-          />
-        ) : (
-          <div className="grid gap-3">
+    <div className="grid gap-4">
+      {categories.length === 0 && !adding ? (
+        <AdminEmpty
+          title="Belum ada kategori biaya"
+          description="Tambahkan kategori pertama untuk mengatur biaya listing dan biaya ikut."
+        />
+      ) : (
+        <Table label="Tabel biaya per kategori" minWidth="56rem">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Kategori</TableHead>
+              <TableHead>Biaya listing (per lot)</TableHead>
+              <TableHead>Biaya ikut (per lot)</TableHead>
+              <TableHead>Tindakan</TableHead>
+              <TableHead>Detail</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {categories.map((category) => (
               <CategoryRow key={category.id} category={category} />
             ))}
-          </div>
-        )}
+            {adding ? <NewCategoryRow onDone={() => setAdding(false)} /> : null}
+          </TableBody>
+        </Table>
+      )}
 
-        {adding ? (
-          <NewCategoryRow onDone={() => setAdding(false)} />
-        ) : (
-          <div>
-            <Button type="button" variant="outline" size="sm" onClick={() => setAdding(true)}>
-              Tambah kategori
-            </Button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {adding ? null : (
+        <div>
+          <Button type="button" variant="outline" size="sm" onClick={() => setAdding(true)}>
+            Tambah kategori
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }
 
+// A <form> cannot wrap a table row, so each row keeps a form of its own next to
+// its buttons, and the inputs point at it with the `form` attribute.
 function CategoryRow({ category }: { category: FeeCategory }) {
+  const formId = `fee-form-${category.id}`;
   const [confirmOpen, setConfirmOpen] = useState(false);
   const {
     register,
@@ -105,57 +127,101 @@ function CategoryRow({ category }: { category: FeeCategory }) {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit(save)}
-      className="grid items-end gap-3 rounded-md border border-border p-3 sm:grid-cols-[1fr_1fr_1fr_auto_auto]"
-      noValidate
-    >
-      <div className="grid gap-1.5 sm:col-span-1">
-        <span className="text-sm font-medium">Kategori</span>
-        <span className="flex h-9 items-center text-sm text-foreground">
-          {feeCategoryLabel(category.name)}
-        </span>
-      </div>
-      <FormField
-        id={`fee-${category.id}-listing`}
-        label="Biaya listing (per lot)"
-        type="number"
-        min={0}
-        step={1}
-        error={errors.listing_fee?.message}
-        {...register('listing_fee', { valueAsNumber: true })}
-      />
-      <FormField
-        id={`fee-${category.id}-join`}
-        label="Biaya ikut (per lot)"
-        type="number"
-        min={0}
-        step={1}
-        error={errors.join_fee?.message}
-        {...register('join_fee', { valueAsNumber: true })}
-      />
-      <Button type="submit" size="sm" disabled={isSubmitting || !isDirty}>
-        Simpan
-      </Button>
-      <Button type="button" variant="outline" size="sm" onClick={() => setConfirmOpen(true)}>
-        Hapus
-      </Button>
+    <TableRow>
+      <TableCell>
+        <p className="font-medium">{feeCategoryLabel(category.name)}</p>
+      </TableCell>
+      <TableCell>
+        <FormField
+          id={`fee-${category.id}-listing`}
+          label="Biaya listing (per lot)"
+          type="number"
+          min={0}
+          step={1}
+          form={formId}
+          error={errors.listing_fee?.message}
+          {...register('listing_fee', { valueAsNumber: true })}
+        />
+      </TableCell>
+      <TableCell>
+        <FormField
+          id={`fee-${category.id}-join`}
+          label="Biaya ikut (per lot)"
+          type="number"
+          min={0}
+          step={1}
+          form={formId}
+          error={errors.join_fee?.message}
+          {...register('join_fee', { valueAsNumber: true })}
+        />
+      </TableCell>
+      <TableCell>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="submit" form={formId} size="sm" disabled={isSubmitting || !isDirty}>
+            Simpan
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={() => setConfirmOpen(true)}>
+            Hapus
+          </Button>
+        </div>
+        <form id={formId} onSubmit={handleSubmit(save)} className="hidden" noValidate />
 
-      <ConfirmDialog
-        open={confirmOpen}
-        onOpenChange={setConfirmOpen}
-        title="Hapus kategori biaya?"
-        description={`Hapus kategori "${feeCategoryLabel(category.name)}"? Lelang yang sudah ada tidak berubah.`}
-        confirmLabel="Hapus"
-        busyLabel="Menghapus…"
-        destructive
-        onConfirm={remove}
-      />
-    </form>
+        <ConfirmDialog
+          open={confirmOpen}
+          onOpenChange={setConfirmOpen}
+          title="Hapus kategori biaya?"
+          description={`Hapus kategori "${feeCategoryLabel(category.name)}"? Lelang yang sudah ada tidak berubah.`}
+          confirmLabel="Hapus"
+          busyLabel="Menghapus…"
+          destructive
+          onConfirm={remove}
+        />
+      </TableCell>
+      <TableCell>
+        <FeeCategoryDetail category={category} />
+      </TableCell>
+    </TableRow>
+  );
+}
+
+function FeeCategoryDetail({ category }: { category: FeeCategory }) {
+  const label = feeCategoryLabel(category.name);
+
+  return (
+    <DetailDialog
+      triggerLabel={`Lihat detail kategori ${label}`}
+      title="Detail kategori"
+    >
+      {() => (
+        <>
+          <DetailIdentity
+            title={label}
+            badge={<Badge variant="neutral">Kategori biaya</Badge>}
+            secondary="Berlaku untuk lelang yang dibuat setelah disimpan."
+          />
+
+          <DetailPricePanel
+            label="Biaya listing per lot"
+            value={formatRupiah(category.listing_fee)}
+            note={`Ikut per lot ${formatRupiah(category.join_fee)}`}
+          />
+
+          <DetailSection title="Biaya">
+            <DetailItem label="Biaya listing (per lot)">
+              {formatRupiah(category.listing_fee)}
+            </DetailItem>
+            <DetailItem label="Biaya ikut (per lot)">
+              {formatRupiah(category.join_fee)}
+            </DetailItem>
+          </DetailSection>
+        </>
+      )}
+    </DetailDialog>
   );
 }
 
 function NewCategoryRow({ onDone }: { onDone: () => void }) {
+  const formId = 'fee-form-new';
   const {
     register,
     handleSubmit,
@@ -176,34 +242,49 @@ function NewCategoryRow({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit(submit)}
-      className="grid items-end gap-3 rounded-md border border-dashed border-border p-3 sm:grid-cols-[1fr_1fr_1fr_auto_auto]"
-      noValidate
-    >
-      <FormField label="Nama kategori" error={errors.name?.message} {...register('name')} />
-      <FormField
-        label="Biaya listing (per lot)"
-        type="number"
-        min={0}
-        step={1}
-        error={errors.listing_fee?.message}
-        {...register('listing_fee', { valueAsNumber: true })}
-      />
-      <FormField
-        label="Biaya ikut (per lot)"
-        type="number"
-        min={0}
-        step={1}
-        error={errors.join_fee?.message}
-        {...register('join_fee', { valueAsNumber: true })}
-      />
-      <Button type="submit" size="sm" disabled={isSubmitting}>
-        {isSubmitting ? 'Menambah…' : 'Tambah'}
-      </Button>
-      <Button type="button" variant="outline" size="sm" onClick={onDone}>
-        Batal
-      </Button>
-    </form>
+    <TableRow>
+      <TableCell>
+        <FormField
+          label="Nama kategori"
+          form={formId}
+          error={errors.name?.message}
+          {...register('name')}
+        />
+      </TableCell>
+      <TableCell>
+        <FormField
+          label="Biaya listing (per lot)"
+          type="number"
+          min={0}
+          step={1}
+          form={formId}
+          error={errors.listing_fee?.message}
+          {...register('listing_fee', { valueAsNumber: true })}
+        />
+      </TableCell>
+      <TableCell>
+        <FormField
+          label="Biaya ikut (per lot)"
+          type="number"
+          min={0}
+          step={1}
+          form={formId}
+          error={errors.join_fee?.message}
+          {...register('join_fee', { valueAsNumber: true })}
+        />
+      </TableCell>
+      <TableCell>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="submit" form={formId} size="sm" disabled={isSubmitting}>
+            {isSubmitting ? 'Menambah…' : 'Tambah'}
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={onDone}>
+            Batal
+          </Button>
+        </div>
+        <form id={formId} onSubmit={handleSubmit(submit)} className="hidden" noValidate />
+      </TableCell>
+      <TableCell />
+    </TableRow>
   );
 }

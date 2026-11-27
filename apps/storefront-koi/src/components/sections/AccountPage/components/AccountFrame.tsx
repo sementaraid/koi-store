@@ -29,9 +29,9 @@ export type AccountFrameProps = {
   /** Extra classes for the content column, e.g. a route's stable min-height. */
   contentClassName?: string;
   /**
-   * Show the account menu as a list below the content on mobile. Only the
-   * account home (`/akun`) does, so every other account page starts with its
-   * own content (US-103 AC4).
+   * Show the account menu above the content on mobile. Only the account home
+   * (`/akun`) does, so every other account page starts with its own content.
+   * The phone menu is the mobile stand-in for the desktop rail.
    */
   showMenuOnMobile?: boolean;
 };
@@ -73,12 +73,11 @@ export function AccountFrame({
     { label: 'Keluar', href: ROUTES.signout }
   ];
 
-  const menu = (signOutFormId: string, navClassName?: string) => (
+  const menu = (signOutFormId: string) => (
     <AccountNav
       items={items}
       footer={footer}
       signOutFormId={signOutFormId}
-      className={navClassName}
     />
   );
 
@@ -116,6 +115,27 @@ export function AccountFrame({
       </aside>
 
       <div className={cn('flex min-w-0 flex-col gap-6', contentClassName)}>
+        {/* Phone-only: the same menu tiles the desktop rail shows, above the
+            page so a customer can switch pages without scrolling to the end.
+            No card wrapper: this is a section of the page, not a card nested
+            in the content column. */}
+        <RenderIf when={showMenuOnMobile}>
+          {() => (
+            <section
+              aria-labelledby="menu-akun-ponsel"
+              className="flex flex-col gap-3 lg:hidden"
+            >
+              <h2
+                id="menu-akun-ponsel"
+                className="px-3 font-heading text-base font-bold text-foreground"
+              >
+                Menu akun
+              </h2>
+              {menu('akun-nav-keluar-ponsel')}
+            </section>
+          )}
+        </RenderIf>
+
         <div className="flex flex-wrap items-end justify-between gap-4 max-sm:flex-col max-sm:items-stretch">
           <div className="flex min-w-0 items-center gap-1">
             {backHref ? (
@@ -153,23 +173,6 @@ export function AccountFrame({
         </div>
 
         {children}
-
-        <RenderIf when={showMenuOnMobile}>
-          {() => (
-            <section
-              aria-labelledby="menu-akun-ponsel"
-              className="flex flex-col gap-3 lg:hidden"
-            >
-              <h2
-                id="menu-akun-ponsel"
-                className="px-3 font-heading text-base font-bold text-foreground"
-              >
-                Menu akun
-              </h2>
-              {menu('akun-nav-keluar-ponsel', 'rounded-xl border border-border bg-card p-2')}
-            </section>
-          )}
-        </RenderIf>
       </div>
     </div>
   );

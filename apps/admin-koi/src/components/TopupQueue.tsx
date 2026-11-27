@@ -9,12 +9,13 @@ import { z } from 'zod';
 import {
   Badge,
   Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  FormField
+  FormField,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@koi/ui';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@koi/ui/primitives/tabs';
 import {
@@ -32,6 +33,14 @@ import {
 
 import { AdminEmpty } from './AdminEmpty';
 import { ConfirmDialog } from './ConfirmDialog';
+import {
+  DetailDialog,
+  DetailIdentity,
+  DetailItem,
+  DetailMediaFrame,
+  DetailPricePanel,
+  DetailSection
+} from './DetailDialog';
 
 export type TopupQueueProps = {
   pending: TopupRequest[];
@@ -40,44 +49,66 @@ export type TopupQueueProps = {
 
 export function TopupQueue({ pending, decided }: TopupQueueProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Permintaan top-up</CardTitle>
-        <CardDescription>
-          Cocokkan bukti transfer dengan mutasi bank sebelum menyetujui.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="pending" className="gap-4">
-          <TabsList>
-            <TabsTrigger value="pending">Menunggu ({pending.length})</TabsTrigger>
-            <TabsTrigger value="decided">Sudah diputuskan ({decided.length})</TabsTrigger>
-          </TabsList>
+    <Tabs defaultValue="pending" className="gap-4">
+      <TabsList>
+        <TabsTrigger value="pending">Menunggu ({pending.length})</TabsTrigger>
+        <TabsTrigger value="decided">Sudah diputuskan ({decided.length})</TabsTrigger>
+      </TabsList>
 
-          <TabsContent value="pending" className="grid gap-3">
-            {pending.length === 0 ? (
-              <AdminEmpty
-                title="Tidak ada permintaan top-up yang menunggu"
-                description="Permintaan baru muncul di sini setelah pelanggan mengunggah bukti transfer."
-              />
-            ) : (
-              pending.map((request) => <PendingRow key={request.id} request={request} />)
-            )}
-          </TabsContent>
+      <TabsContent value="pending" className="grid gap-3">
+        {pending.length === 0 ? (
+          <AdminEmpty
+            title="Tidak ada permintaan top-up yang menunggu"
+            description="Permintaan baru muncul di sini setelah pelanggan mengunggah bukti transfer."
+          />
+        ) : (
+          <Table label="Permintaan top-up yang menunggu" minWidth="64rem">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nominal</TableHead>
+                <TableHead>Pelanggan</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Detail</TableHead>
+                <TableHead>Tindakan</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {pending.map((request) => (
+                <PendingRow key={request.id} request={request} />
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </TabsContent>
 
-          <TabsContent value="decided" className="grid gap-3">
-            {decided.length === 0 ? (
-              <AdminEmpty
-                title="Belum ada permintaan yang diputuskan"
-                description="Top-up yang disetujui atau ditolak muncul di sini."
-              />
-            ) : (
-              decided.map((request) => <DecidedRow key={request.id} request={request} />)
-            )}
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+      <TabsContent value="decided" className="grid gap-3">
+        {decided.length === 0 ? (
+          <AdminEmpty
+            title="Belum ada permintaan yang diputuskan"
+            description="Top-up yang disetujui atau ditolak muncul di sini."
+          />
+        ) : (
+          <Table label="Permintaan top-up yang sudah diputuskan" minWidth="56rem">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nominal</TableHead>
+                <TableHead>Pelanggan</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Diajukan</TableHead>
+                <TableHead>Alasan</TableHead>
+                <TableHead>Diputuskan oleh</TableHead>
+                <TableHead>Detail</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {decided.map((request) => (
+                <DecidedRow key={request.id} request={request} />
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </TabsContent>
+    </Tabs>
   );
 }
 
@@ -92,52 +123,98 @@ function PendingRow({ request }: { request: TopupRequest }) {
   const [busy, setBusy] = useState(false);
 
   return (
-    <div className="grid gap-3 rounded-md border border-border p-3">
-      <div className="grid gap-1 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-4">
-        <p className="text-base font-medium">{formatRupiah(request.amount)}</p>
-        <div className="grid gap-0.5 text-sm">
-          <p className="text-muted-foreground">
-            {formatTopupDate(request.created_at)} · {customerName(request)}
-          </p>
-          <div>
-            <Badge variant={topupStatusTone(request.status)}>
-              {topupStatusLabel(request.status)}
-            </Badge>
-          </div>
+    <TableRow>
+      <TableCell>
+        <p className="font-medium tabular-nums">{formatRupiah(request.amount)}</p>
+        <p className="text-muted-foreground">{formatTopupDate(request.created_at)}</p>
+      </TableCell>
+      <TableCell>{customerName(request)}</TableCell>
+      <TableCell>
+        <Badge variant={topupStatusTone(request.status)}>
+          {topupStatusLabel(request.status)}
+        </Badge>
+      </TableCell>
+      <TableCell>
+        <TopupDetail request={request} />
+      </TableCell>
+      <TableCell>
+        <div className="grid gap-3">
+          <ApproveForm id={request.id} busy={busy} onBusyChange={setBusy} />
+          <RejectForm id={request.id} busy={busy} onBusyChange={setBusy} />
         </div>
-      </div>
+      </TableCell>
+    </TableRow>
+  );
+}
 
-      {request.has_screenshot ? (
-        <ScreenshotView id={request.id} />
-      ) : (
-        <p className="text-xs text-muted-foreground">Tidak ada bukti transfer.</p>
+function TopupDetail({ request }: { request: TopupRequest }) {
+  return (
+    <DetailDialog
+      triggerLabel={`Lihat detail top-up ${customerName(request)}`}
+      title="Detail top-up"
+      media={request.has_screenshot ? <ScreenshotView id={request.id} /> : null}
+    >
+      {() => (
+        <>
+          <DetailIdentity
+            title={`Top-up ${customerName(request)}`}
+            badge={
+              <Badge variant={topupStatusTone(request.status)}>
+                {topupStatusLabel(request.status)}
+              </Badge>
+            }
+            secondary={formatTopupDate(request.created_at)}
+          />
+
+          <DetailPricePanel
+            label="Nominal top-up"
+            value={formatRupiah(request.amount)}
+            note={`Diajukan ${formatTopupDate(request.created_at)}`}
+          />
+
+          <DetailSection title="Identitas">
+            <DetailItem label="Pelanggan">{customerName(request)}</DetailItem>
+            <DetailItem label="Diajukan">{formatTopupDate(request.created_at)}</DetailItem>
+            <DetailItem label="Bukti transfer">
+              {request.has_screenshot ? 'Ada' : 'Tidak ada'}
+            </DetailItem>
+          </DetailSection>
+
+          {request.reason || request.reviewed_by ? (
+            <DetailSection title="Keputusan">
+              {request.reason ? (
+                <DetailItem label="Alasan">{request.reason}</DetailItem>
+              ) : null}
+              {request.reviewed_by ? (
+                <DetailItem label="Diputuskan oleh">{request.reviewed_by}</DetailItem>
+              ) : null}
+            </DetailSection>
+          ) : null}
+        </>
       )}
-
-      <div className="grid gap-3 lg:grid-cols-2">
-        <ApproveForm id={request.id} busy={busy} onBusyChange={setBusy} />
-        <RejectForm id={request.id} busy={busy} onBusyChange={setBusy} />
-      </div>
-    </div>
+    </DetailDialog>
   );
 }
 
 function DecidedRow({ request }: { request: TopupRequest }) {
   return (
-    <div className="grid gap-1 rounded-md border border-border p-3 text-sm">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="font-medium">{formatRupiah(request.amount)}</p>
+    <TableRow>
+      <TableCell className="font-medium tabular-nums">{formatRupiah(request.amount)}</TableCell>
+      <TableCell>{customerName(request)}</TableCell>
+      <TableCell>
         <Badge variant={topupStatusTone(request.status)}>
           {topupStatusLabel(request.status)}
         </Badge>
-      </div>
-      <p className="text-muted-foreground">
-        {formatTopupDate(request.created_at)} · {customerName(request)}
-      </p>
-      {request.reason ? <p>Alasan: {request.reason}</p> : null}
-      {request.reviewed_by ? (
-        <p className="text-xs text-muted-foreground">Diputuskan oleh {request.reviewed_by}</p>
-      ) : null}
-    </div>
+      </TableCell>
+      <TableCell className="text-muted-foreground">
+        {formatTopupDate(request.created_at)}
+      </TableCell>
+      <TableCell>{request.reason ?? '—'}</TableCell>
+      <TableCell className="text-muted-foreground">{request.reviewed_by ?? '—'}</TableCell>
+      <TableCell>
+        <TopupDetail request={request} />
+      </TableCell>
+    </TableRow>
   );
 }
 
@@ -174,12 +251,14 @@ function ScreenshotView({ id }: { id: string }) {
   if (state.status === 'ready') {
     return (
       <div className="grid gap-2">
-        {/* eslint-disable-next-line @next/next/no-img-element -- blob URL, not a remote asset */}
-        <img
-          src={state.url}
-          alt="Bukti transfer"
-          className="max-h-96 w-fit max-w-full rounded-md border border-border object-contain"
-        />
+        <DetailMediaFrame>
+          {/* eslint-disable-next-line @next/next/no-img-element -- blob URL, not a remote asset */}
+          <img
+            src={state.url}
+            alt="Bukti transfer"
+            className="size-full max-h-[420px] object-contain"
+          />
+        </DetailMediaFrame>
         <div>
           <Button type="button" variant="outline" size="sm" onClick={load}>
             Muat ulang bukti

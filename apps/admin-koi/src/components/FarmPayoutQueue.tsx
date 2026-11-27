@@ -8,11 +8,6 @@ import { toast } from 'sonner';
 import {
   Badge,
   Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
   Dialog,
   DialogClose,
   DialogContent,
@@ -22,7 +17,13 @@ import {
   DialogTitle,
   DialogTrigger,
   Input,
-  Label
+  Label,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@koi/ui';
 import { ROUTES } from '@/const/routes';
 import {
@@ -49,6 +50,14 @@ import {
 import { formatRupiah } from '@/lib/helpers/topup-format';
 
 import { AdminEmpty } from './AdminEmpty';
+import {
+  DetailDialog,
+  DetailIdentity,
+  DetailItem,
+  DetailMediaFrame,
+  DetailPricePanel,
+  DetailSection
+} from './DetailDialog';
 
 export type FarmPayoutQueueProps = {
   payouts: FarmPayout[];
@@ -70,97 +79,69 @@ const EMPTY: Record<FarmPayoutTab, string> = {
 
 export function FarmPayoutQueue({ payouts, total, status }: FarmPayoutQueueProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Pembayaran ke farm</CardTitle>
-        <CardDescription>
-          Catat transfer ke rekening farm setelah koi diterima atau 3 hari setelah dikirim.
-          Payout yang sudah dibayar tidak bisa diubah.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-4">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Saring pembayaran farm">
-          {TABS.map((tab) => {
-            const active = status === tab.value;
-            const href =
-              tab.value === 'due'
-                ? ROUTES.farmPayouts
-                : `${ROUTES.farmPayouts}?status=${tab.value}`;
-            return (
-              <Button
-                key={tab.value}
-                render={<Link href={href} />}
-                variant={active ? 'solid' : 'outline'}
-                size="sm"
-                aria-current={active ? 'page' : undefined}
-              >
-                {tab.label}
-              </Button>
-            );
-          })}
-        </div>
+    <div className="grid gap-4">
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Saring pembayaran farm">
+        {TABS.map((tab) => {
+          const active = status === tab.value;
+          const href =
+            tab.value === 'due'
+              ? ROUTES.farmPayouts
+              : `${ROUTES.farmPayouts}?status=${tab.value}`;
+          return (
+            <Button
+              key={tab.value}
+              render={<Link href={href} />}
+              variant={active ? 'solid' : 'outline'}
+              size="sm"
+              aria-current={active ? 'page' : undefined}
+            >
+              {tab.label}
+            </Button>
+          );
+        })}
+      </div>
 
-        {total > payouts.length ? (
-          <p className="text-sm text-muted-foreground">
-            Menampilkan {payouts.length} dari {total} payout. Selesaikan yang di atas untuk
-            melihat sisanya.
-          </p>
-        ) : null}
+      {total > payouts.length ? (
+        <p className="text-sm text-muted-foreground">
+          Menampilkan {payouts.length} dari {total} payout. Selesaikan yang di atas untuk
+          melihat sisanya.
+        </p>
+      ) : null}
 
-        {payouts.length === 0 ? (
-          <AdminEmpty
-            title={EMPTY[status]}
-            description="Payout muncul di sini setelah koi diterima atau 3 hari setelah dikirim."
-          />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[72rem] text-left text-sm">
-              <caption className="sr-only">
-                Payout ke farm, {TABS.find((tab) => tab.value === status)?.label.toLowerCase()}.
-                Kolom bukti kondisi koi membuka foto atau video yang diunggah pemenang.
-              </caption>
-              <thead className="border-b border-border text-xs text-muted-foreground uppercase">
-                <tr>
-                  <th scope="col" className="p-2 font-medium">
-                    Lot
-                  </th>
-                  <th scope="col" className="p-2 font-medium">
-                    Farm
-                  </th>
-                  <th scope="col" className="p-2 font-medium">
-                    Bruto
-                  </th>
-                  <th scope="col" className="p-2 font-medium">
-                    Alasan jatuh tempo
-                  </th>
-                  <th scope="col" className="p-2 font-medium">
-                    Jatuh tempo sejak
-                  </th>
-                  <th scope="col" className="p-2 font-medium">
-                    Kondisi koi
-                  </th>
-                  <th scope="col" className="p-2 font-medium">
-                    Tindakan
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {payouts.map((payout) => (
-                  <PayoutRow key={payout.id} payout={payout} />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {payouts.length === 0 ? (
+        <AdminEmpty
+          title={EMPTY[status]}
+          description="Payout muncul di sini setelah koi diterima atau 3 hari setelah dikirim."
+        />
+      ) : (
+        <Table label="Pembayaran ke farm" minWidth="72rem">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Lot</TableHead>
+              <TableHead>Farm</TableHead>
+              <TableHead>Bruto</TableHead>
+              <TableHead>Alasan jatuh tempo</TableHead>
+              <TableHead>Jatuh tempo sejak</TableHead>
+              <TableHead>Kondisi koi</TableHead>
+              <TableHead>Detail</TableHead>
+              <TableHead>Tindakan</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {payouts.map((payout) => (
+              <PayoutRow key={payout.id} payout={payout} />
+            ))}
+          </TableBody>
+        </Table>
+      )}
+    </div>
   );
 }
 
 function PayoutRow({ payout }: { payout: FarmPayout }) {
   return (
-    <tr className="border-b border-border align-top last:border-b-0">
-      <td className="p-2">
+    <TableRow>
+      <TableCell>
         <p className="font-medium">{payoutLotLabel(payout.lot_number, payout.title)}</p>
         {payout.overdue ? (
           <Badge
@@ -181,21 +162,113 @@ function PayoutRow({ payout }: { payout: FarmPayout }) {
             Lewat jatuh tempo
           </Badge>
         ) : null}
-      </td>
-      <td className="p-2">
+      </TableCell>
+      <TableCell>
         <p>{payout.farm.name || '—'}</p>
         <FarmBankAccount farmId={payout.farm.id} />
-      </td>
-      <td className="p-2 tabular-nums">{formatRupiah(payout.gross_amount)}</td>
-      <td className="p-2">{payoutDueReasonLabel(payout.due_reason)}</td>
-      <td className="p-2">{payoutTimeLabel(payout.due_at)}</td>
-      <td className="p-2">
-        <ArrivalProofCell payout={payout} />
-      </td>
-      <td className="p-2">
+      </TableCell>
+      <TableCell className="tabular-nums">{formatRupiah(payout.gross_amount)}</TableCell>
+      <TableCell>{payoutDueReasonLabel(payout.due_reason)}</TableCell>
+      <TableCell>{payoutTimeLabel(payout.due_at)}</TableCell>
+      <TableCell>
+        <ArrivalProofSummary payout={payout} />
+      </TableCell>
+      <TableCell>
+        <PayoutDetail payout={payout} />
+      </TableCell>
+      <TableCell>
         <PayoutActions payout={payout} />
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
+  );
+}
+
+function PayoutDetail({ payout }: { payout: FarmPayout }) {
+  const statusLabel =
+    payout.status === 'paid'
+      ? 'Sudah ditransfer'
+      : payout.status === 'pending'
+        ? 'Menunggu koi diterima'
+        : 'Jatuh tempo';
+  const statusTone =
+    payout.status === 'paid' ? 'success' : payout.status === 'pending' ? 'neutral' : 'warning';
+
+  return (
+    <DetailDialog
+      triggerLabel={`Lihat detail ${payoutLotLabel(payout.lot_number, payout.title)}`}
+      title="Detail pembayaran farm"
+      media={
+        payout.has_arrival_proof ? (
+          <div className="grid gap-2">
+            <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              Bukti kondisi koi
+            </p>
+            <ArrivalProofMedia id={payout.id} />
+          </div>
+        ) : null
+      }
+    >
+      {() => (
+        <>
+          <DetailIdentity
+            title={payoutLotLabel(payout.lot_number, payout.title)}
+            badge={<Badge variant={statusTone}>{statusLabel}</Badge>}
+            secondary={`${payout.farm.name || '—'} · ${payoutDueReasonLabel(payout.due_reason)}`}
+          />
+
+          <DetailPricePanel
+            label="Bruto payout"
+            value={formatRupiah(payout.gross_amount)}
+            note={
+              payout.net_amount !== null
+                ? `Net diterima farm ${formatRupiah(payout.net_amount)}`
+                : 'Payout belum ditransfer'
+            }
+          />
+
+          <DetailSection title="Identitas">
+            <DetailItem label="Farm">{payout.farm.name || '—'}</DetailItem>
+            <DetailItem label="Rekening">
+              <FarmBankAccount farmId={payout.farm.id} />
+            </DetailItem>
+            <DetailItem label="Jatuh tempo sejak">
+              {payoutTimeLabel(payout.due_at)}
+            </DetailItem>
+            <DetailItem label="Lewat jatuh tempo">{payout.overdue ? 'Ya' : 'Tidak'}</DetailItem>
+            <DetailItem label="Refund ke pemenang">
+              {payout.refund_eligible ? 'Bisa direfund' : 'Tidak'}
+            </DetailItem>
+          </DetailSection>
+
+          <DetailSection title="Pembayaran">
+            <DetailItem label="Status">{statusLabel}</DetailItem>
+            <DetailItem label="Ditransfer">
+              {payout.paid_at ? payoutTimeLabel(payout.paid_at) : '—'}
+            </DetailItem>
+            <DetailItem label="Biaya transfer">
+              {payout.bank_fee !== null ? formatRupiah(payout.bank_fee) : '—'}
+            </DetailItem>
+            <DetailItem label="Net diterima farm">
+              {payout.net_amount !== null ? formatRupiah(payout.net_amount) : '—'}
+            </DetailItem>
+            <DetailItem label="Referensi transfer">
+              {payout.transfer_reference ?? '—'}
+            </DetailItem>
+          </DetailSection>
+
+          <DetailSection title="Bukti kondisi koi">
+            <DetailItem label="Bukti">
+              {payout.has_arrival_proof ? 'Ada' : 'Belum ada'}
+            </DetailItem>
+            {payout.has_arrival_proof ? (
+              <DetailItem label="Diunggah">
+                {payoutTimeLabel(payout.arrival_proof_uploaded_at)}
+              </DetailItem>
+            ) : null}
+          </DetailSection>
+        </>
+      )}
+    </DetailDialog>
   );
 }
 
@@ -257,44 +330,16 @@ function FarmBankAccount({ farmId }: { farmId: string }) {
   );
 }
 
-function ArrivalProofCell({ payout }: { payout: FarmPayout }) {
+function ArrivalProofSummary({ payout }: { payout: FarmPayout }) {
   if (!payout.has_arrival_proof) {
     return <p className="text-xs text-muted-foreground">Belum ada bukti</p>;
   }
 
   return (
-    <div className="grid justify-items-start gap-1">
-      <ArrivalProofDialog payout={payout} />
-      <p className="text-xs text-muted-foreground">
-        Diunggah {payoutTimeLabel(payout.arrival_proof_uploaded_at)}
-      </p>
+    <div className="grid gap-0.5 text-xs text-muted-foreground">
+      <p>Bukti tersedia</p>
+      <p>Diunggah {payoutTimeLabel(payout.arrival_proof_uploaded_at)}</p>
     </div>
-  );
-}
-
-// AC4 / D-018: the private photo or video opens in a viewer; no external URL.
-function ArrivalProofDialog({ payout }: { payout: FarmPayout }) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="sm" variant="outline" />}>
-        Lihat bukti
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Kondisi koi saat diterima</DialogTitle>
-          <DialogDescription>
-            {payoutLotLabel(payout.lot_number, payout.title)} · diunggah{' '}
-            {payoutTimeLabel(payout.arrival_proof_uploaded_at)}
-          </DialogDescription>
-        </DialogHeader>
-        {open ? <ArrivalProofMedia id={payout.id} /> : null}
-        <DialogFooter>
-          <DialogClose render={<Button variant="outline" />}>Tutup</DialogClose>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
 
@@ -355,24 +400,30 @@ function ArrivalProofMedia({ id }: { id: string }) {
 
   if (state.contentType.startsWith('video/')) {
     return (
-      <video
-        src={state.url}
-        controls
-        preload="metadata"
-        className="max-h-[60dvh] w-fit max-w-full rounded-md border border-border"
-      >
-        Browser Anda tidak mendukung pemutaran video.
-      </video>
+      <DetailMediaFrame>
+        <video
+          src={state.url}
+          aria-label="Video kondisi koi saat diterima"
+          controls
+          playsInline
+          preload="metadata"
+          className="size-full max-h-[420px] object-contain"
+        >
+          Browser Anda tidak mendukung pemutaran video.
+        </video>
+      </DetailMediaFrame>
     );
   }
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element -- blob URL, not a remote asset
-    <img
-      src={state.url}
-      alt="Foto kondisi koi saat diterima"
-      className="max-h-[60dvh] w-fit max-w-full rounded-md border border-border"
-    />
+    <DetailMediaFrame>
+      {/* eslint-disable-next-line @next/next/no-img-element -- blob URL, not a remote asset */}
+      <img
+        src={state.url}
+        alt="Foto kondisi koi saat diterima"
+        className="size-full max-h-[420px] object-contain"
+      />
+    </DetailMediaFrame>
   );
 }
 

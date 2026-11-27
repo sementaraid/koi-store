@@ -8,11 +8,11 @@ import { CONTAINER } from "@/const/layout"
 import { ROUTES } from "@/const/routes"
 import { SITE_NAME } from "@/const/site"
 import { AccountMenu } from "@/components/cells/AccountMenu/AccountMenu"
-import { BrandMark } from "@/components/cells/BrandMark/BrandMark"
 import { DEFAULT_BRAND_ICON, DEFAULT_LINKS } from "@/const/header"
 import { NavLinks } from "@/components/cells/NavLinks/NavLinks"
 import { formatPrice, formatPriceCompact } from "@/lib/helpers/format-price"
 import type { HeaderAccount, HeaderBrand, HeaderLink } from "@/types/header"
+import { HeaderMobileBrand } from "./HeaderMobileBrand"
 
 export type * from "@/types/header"
 
@@ -57,9 +57,10 @@ export function Header({
         )}
       >
         <div className="flex min-w-0 flex-1 items-center gap-1 lg:flex-none lg:gap-8">
-          {/* AC1: the phone header keeps the fish mark. */}
+          {/* AC1: the phone header keeps the fish mark, except on account
+              sub-pages, where it becomes a back arrow to /akun. */}
           <div className="lg:hidden">
-            <BrandMark brandIcon={brandIcon} brandHref={brandHref} />
+            <HeaderMobileBrand brandIcon={brandIcon} brandHref={brandHref} />
           </div>
 
           <Link

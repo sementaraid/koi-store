@@ -61,7 +61,7 @@ export function AccountNav({
       aria-label="Menu akun"
       className={className}
     >
-      <ul className="grid grid-cols-3 gap-2 lg:grid-cols-2">
+      <ul className="grid grid-cols-3 gap-2 lg:flex lg:flex-col lg:gap-1">
         {items.map((item) => (
           <Row
             key={item.href}
@@ -81,7 +81,7 @@ export function AccountNav({
               role="separator"
               className="mx-3 my-2 h-px bg-divider"
             />
-            <ul className="grid grid-cols-3 gap-2 lg:grid-cols-2">
+            <ul className="grid grid-cols-3 gap-2 lg:flex lg:flex-col lg:gap-1">
               {rows.map((item) => (
                 <Row
                   key={item.href}
@@ -119,7 +119,10 @@ function Row({
   const Icon = ICONS[item.href];
 
   const className = cn(
-    'flex min-h-20 w-full flex-col items-center justify-center gap-1.5 rounded-control px-2 py-3 text-center text-xs leading-tight transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset focus-visible:ring-offset-0',
+    // Phone: a tile with the icon above the label, three to a row.
+    'relative flex min-h-20 w-full flex-col items-center justify-center gap-1.5 rounded-control px-2 py-3 text-center text-xs leading-tight transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset focus-visible:ring-offset-0',
+    // Desktop rail: the original vertical list, icon inline with the label.
+    'lg:min-h-10 lg:flex-row lg:justify-start lg:gap-3 lg:rounded-lg lg:px-3 lg:py-2 lg:text-start lg:text-sm lg:whitespace-nowrap',
     current
       ? 'bg-accent font-semibold text-accent-ink'
       : signout
@@ -129,24 +132,26 @@ function Row({
 
   const body = (
     <>
-      <span className="relative grid size-6 shrink-0 place-items-center">
+      {/* `relative` holds the phone badge over the icon; at lg the wrapper goes
+          static so the badge can sit at the row's end instead. */}
+      <span className="relative grid size-6 shrink-0 place-items-center lg:static lg:size-4.5">
         <RenderIf when={Icon}>
           {(Glyph) => (
             <Glyph
               aria-hidden
-              className="size-5"
+              className="size-5 lg:size-4.5"
             />
           )}
         </RenderIf>
         <RenderIf when={item.count}>
           {(count) => (
-            <span className="absolute -top-2 -right-3 min-w-5 rounded-full bg-destructive/12 px-1.5 py-0.5 text-center text-2xs font-bold text-destructive-ink tabular-nums">
+            <span className="absolute -top-2 -right-3 min-w-5 rounded-full bg-destructive/12 px-1.5 py-0.5 text-center text-2xs font-bold text-destructive-ink tabular-nums lg:top-1/2 lg:right-3 lg:-translate-y-1/2">
               {count}
             </span>
           )}
         </RenderIf>
       </span>
-      <span className="max-w-full break-words">{item.label}</span>
+      <span className="max-w-full break-words lg:min-w-0 lg:flex-1 lg:truncate">{item.label}</span>
     </>
   );
 

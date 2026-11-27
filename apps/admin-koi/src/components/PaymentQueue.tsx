@@ -8,11 +8,6 @@ import { toast } from 'sonner';
 import {
   Badge,
   Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
   Dialog,
   DialogClose,
   DialogContent,
@@ -21,7 +16,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  Label
+  Label,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@koi/ui';
 import { ROUTES } from '@/const/routes';
 import { giveStrike } from '@/lib/data/strikes';
@@ -50,6 +51,14 @@ import {
 } from '@/lib/helpers/strike-format';
 
 import { AdminEmpty } from './AdminEmpty';
+import {
+  DetailDialog,
+  DetailIdentity,
+  DetailItem,
+  DetailMediaFrame,
+  DetailPricePanel,
+  DetailSection
+} from './DetailDialog';
 
 export type PaymentQueueProps = {
   lots: WonLotPayment[];
@@ -59,109 +68,72 @@ export type PaymentQueueProps = {
 
 export function PaymentQueue({ lots, total, overdueOnly }: PaymentQueueProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Pembayaran pemenang</CardTitle>
-        <CardDescription>
-          Konfirmasi setelah transfer pemenang masuk ke rekening perusahaan. Lot yang
-          dikonfirmasi langsung berstatus dibayar.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-4">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Saring pembayaran">
-          <Button
-            render={<Link href={ROUTES.payments} />}
-            variant={overdueOnly ? 'outline' : 'solid'}
-            size="sm"
-            aria-current={overdueOnly ? undefined : 'page'}
-          >
-            Semua
-          </Button>
-          <Button
-            render={<Link href={`${ROUTES.payments}?overdue=true`} />}
-            variant={overdueOnly ? 'solid' : 'outline'}
-            size="sm"
-            aria-current={overdueOnly ? 'page' : undefined}
-          >
-            Lewat batas
-          </Button>
-        </div>
+    <div className="grid gap-4">
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Saring pembayaran">
+        <Button
+          render={<Link href={ROUTES.payments} />}
+          variant={overdueOnly ? 'outline' : 'solid'}
+          size="sm"
+          aria-current={overdueOnly ? undefined : 'page'}
+        >
+          Semua
+        </Button>
+        <Button
+          render={<Link href={`${ROUTES.payments}?overdue=true`} />}
+          variant={overdueOnly ? 'solid' : 'outline'}
+          size="sm"
+          aria-current={overdueOnly ? 'page' : undefined}
+        >
+          Lewat batas
+        </Button>
+      </div>
 
-        {total > lots.length ? (
-          <p className="text-sm text-muted-foreground">
-            Menampilkan {lots.length} dari {total} pembayaran. Konfirmasi yang di atas untuk
-            melihat sisanya.
-          </p>
-        ) : null}
+      {total > lots.length ? (
+        <p className="text-sm text-muted-foreground">
+          Menampilkan {lots.length} dari {total} pembayaran. Konfirmasi yang di atas untuk
+          melihat sisanya.
+        </p>
+      ) : null}
 
-        {lots.length === 0 ? (
-          <AdminEmpty
-            title={overdueOnly ? 'Tidak ada pembayaran yang lewat batas' : 'Tidak ada pembayaran yang menunggu'}
-            description={
-              overdueOnly
-                ? 'Semua lot yang sudah menang dibayar dalam batas 1×24 jam.'
-                : 'Pembayaran muncul di sini setelah lot dimenangkan dan menunggu konfirmasi.'
-            }
-          />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[64rem] text-left text-sm">
-              <caption className="sr-only">
-                Lot yang sudah dimenangkan dan menunggu konfirmasi pembayaran, batas bayar
-                paling lama di atas. Kolom bukti transfer menampilkan gambar, status dan waktu
-                unggah.
-              </caption>
-              <thead className="border-b border-border text-xs text-muted-foreground uppercase">
-                <tr>
-                  <th scope="col" className="p-2 font-medium">
-                    Lot
-                  </th>
-                  <th scope="col" className="p-2 font-medium">
-                    Kebun
-                  </th>
-                  <th scope="col" className="p-2 font-medium">
-                    Pemenang
-                  </th>
-                  <th scope="col" className="p-2 font-medium">
-                    Nominal
-                  </th>
-                  <th scope="col" className="p-2 font-medium">
-                    Ditutup
-                  </th>
-                  <th scope="col" className="p-2 font-medium">
-                    Batas bayar
-                  </th>
-                  <th scope="col" className="p-2 font-medium">
-                    Bukti transfer
-                  </th>
-                  <th scope="col" className="p-2 font-medium">
-                    Tindakan
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {lots.map((lot) => (
-                  <PaymentRow key={lot.id} lot={lot} />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {lots.length === 0 ? (
+        <AdminEmpty
+          title={overdueOnly ? 'Tidak ada pembayaran yang lewat batas' : 'Tidak ada pembayaran yang menunggu'}
+          description={
+            overdueOnly
+              ? 'Semua lot yang sudah menang dibayar dalam batas 1×24 jam.'
+              : 'Pembayaran muncul di sini setelah lot dimenangkan dan menunggu konfirmasi.'
+          }
+        />
+      ) : (
+        <Table label="Pembayaran pemenang" minWidth="64rem">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Lot</TableHead>
+              <TableHead>Kebun</TableHead>
+              <TableHead>Pemenang</TableHead>
+              <TableHead>Nominal</TableHead>
+              <TableHead>Ditutup</TableHead>
+              <TableHead>Batas bayar</TableHead>
+              <TableHead>Bukti transfer</TableHead>
+              <TableHead>Detail</TableHead>
+              <TableHead>Tindakan</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {lots.map((lot) => (
+              <PaymentRow key={lot.id} lot={lot} />
+            ))}
+          </TableBody>
+        </Table>
+      )}
+    </div>
   );
 }
 
 function PaymentRow({ lot }: { lot: WonLotPayment }) {
   return (
-    <tr
-      className={
-        lot.overdue
-          ? 'border-b border-border bg-warning/5 align-top last:border-b-0'
-          : 'border-b border-border align-top last:border-b-0'
-      }
-    >
-      <td className="p-2">
+    <TableRow className={lot.overdue ? 'bg-warning/5' : undefined}>
+      <TableCell>
         <p className="font-medium">{lotPaymentLabel(lot.lot_number, lot.title)}</p>
         {lot.overdue ? (
           <Badge
@@ -182,23 +154,79 @@ function PaymentRow({ lot }: { lot: WonLotPayment }) {
             Lewat batas
           </Badge>
         ) : null}
-      </td>
-      <td className="p-2">{lot.seller.name || '—'}</td>
-      <td className="p-2">{lot.winner?.name || '—'}</td>
-      <td className="p-2 tabular-nums">{formatPaymentAmount(lot.final_price)}</td>
-      <td className="p-2">{paymentClosedAtLabel(lot.closed_at)}</td>
-      <td className="p-2">{paymentDeadlineLabel(lot.pay_by)}</td>
-      <td className="p-2">
+      </TableCell>
+      <TableCell>{lot.seller.name || '—'}</TableCell>
+      <TableCell>{lot.winner?.name || '—'}</TableCell>
+      <TableCell className="tabular-nums">{formatPaymentAmount(lot.final_price)}</TableCell>
+      <TableCell>{paymentClosedAtLabel(lot.closed_at)}</TableCell>
+      <TableCell>{paymentDeadlineLabel(lot.pay_by)}</TableCell>
+      <TableCell>
         <ProofCell lot={lot} />
-      </td>
-      <td className="p-2">
+      </TableCell>
+      <TableCell>
+        <PaymentDetail lot={lot} />
+      </TableCell>
+      <TableCell>
         <div className="grid justify-items-start gap-1.5">
           <ConfirmPayment lot={lot} />
           {lot.proof.status === 'pending' ? <RejectProof lot={lot} /> : null}
           <StrikeWinner lot={lot} />
         </div>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
+  );
+}
+
+function PaymentDetail({ lot }: { lot: WonLotPayment }) {
+  return (
+    <DetailDialog
+      triggerLabel={`Lihat detail ${lotPaymentLabel(lot.lot_number, lot.title)}`}
+      title="Detail pembayaran"
+      media={lot.proof.has_image ? <ProofThumbnail id={lot.id} /> : null}
+    >
+      {() => (
+        <>
+          <DetailIdentity
+            title={lotPaymentLabel(lot.lot_number, lot.title)}
+            badge={
+              <Badge variant={proofBadgeVariant(lot.proof.status)}>
+                {paymentProofStatusLabel(lot.proof.status, lot.proof.reason)}
+              </Badge>
+            }
+            secondary={`${lot.seller.name || '—'} · Pemenang ${lot.winner?.name || '—'}`}
+          />
+
+          <DetailPricePanel
+            label="Nominal pembayaran"
+            value={formatPaymentAmount(lot.final_price)}
+            note={`Batas bayar ${paymentDeadlineLabel(lot.pay_by)}`}
+          />
+
+          <DetailSection title="Identitas">
+            <DetailItem label="Kebun">{lot.seller.name || '—'}</DetailItem>
+            <DetailItem label="Pemenang">{lot.winner?.name || '—'}</DetailItem>
+            <DetailItem label="Ditutup">{paymentClosedAtLabel(lot.closed_at)}</DetailItem>
+            <DetailItem label="Batas bayar">{paymentDeadlineLabel(lot.pay_by)}</DetailItem>
+            <DetailItem label="Lewat batas">{lot.overdue ? 'Ya' : 'Tidak'}</DetailItem>
+          </DetailSection>
+
+          <DetailSection title="Bukti transfer">
+            <DetailItem label="Status">
+              {paymentProofStatusLabel(lot.proof.status, lot.proof.reason)}
+            </DetailItem>
+            {lot.proof.reason ? (
+              <DetailItem label="Alasan penolakan">{lot.proof.reason}</DetailItem>
+            ) : null}
+            <DetailItem label="Waktu unggah">
+              {paymentProofUploadedAtLabel(lot.proof.uploaded_at) || '—'}
+            </DetailItem>
+            <DetailItem label="Gambar">
+              {lot.proof.has_image ? 'Ada' : 'Tidak ada'}
+            </DetailItem>
+          </DetailSection>
+        </>
+      )}
+    </DetailDialog>
   );
 }
 
@@ -220,7 +248,6 @@ function ProofCell({ lot }: { lot: WonLotPayment }) {
 
   return (
     <div className="grid justify-items-start gap-1.5">
-      {lot.proof.has_image ? <ProofThumbnail id={lot.id} /> : null}
       <Badge
         variant={proofBadgeVariant(lot.proof.status)}
         className="max-w-64 whitespace-normal text-left"
@@ -276,12 +303,14 @@ function ProofThumbnail({ id }: { id: string }) {
 
   if (state.status === 'ready') {
     return (
-      // eslint-disable-next-line @next/next/no-img-element -- blob URL, not a remote asset
-      <img
-        src={state.url}
-        alt="Bukti transfer pemenang"
-        className="h-24 w-24 rounded-md border border-border object-cover"
-      />
+      <DetailMediaFrame>
+        {/* eslint-disable-next-line @next/next/no-img-element -- blob URL, not a remote asset */}
+        <img
+          src={state.url}
+          alt="Bukti transfer pemenang"
+          className="size-full max-h-[420px] object-contain"
+        />
+      </DetailMediaFrame>
     );
   }
 

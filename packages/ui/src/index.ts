@@ -31,4 +31,13 @@ export { Input } from './Input';
 export { Label } from './primitives/label';
 export { RenderIf, type RenderIfProps } from './RenderIf';
 export { Skeleton } from './primitives/skeleton';
+export {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  type TableProps
+} from './Table';
 export { Textarea } from './Textarea';
